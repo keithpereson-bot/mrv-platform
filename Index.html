@@ -1,0 +1,2821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MRV Money Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  /* ── ENTERPRISE TOKEN SYSTEM ── */
+  :root {
+    /* Navy-slate primary — authority, precision */
+    --ink:        #0F1C2E;
+    --ink-mid:    #2D3F55;
+    --ink-light:  #4A5E78;
+
+    /* Amber accent — warmth, African fintech energy */
+    --amber:      #C8872A;
+    --amber-lt:   #FDF3E3;
+    --amber-mid:  #E8A040;
+
+    /* Surface system */
+    --surface:    #F4F6F9;
+    --surface-2:  #EAECF0;
+    --card:       #FFFFFF;
+    --card-raised:#FFFFFF;
+
+    /* Borders */
+    --border:     #DDE2EB;
+    --border-mid: #C8D0DC;
+
+    /* Semantic */
+    --success:    #16A34A;
+    --success-lt: #DCFCE7;
+    --warn:       #D97706;
+    --warn-lt:    #FEF3C7;
+    --danger:     #DC2626;
+    --danger-lt:  #FEE2E2;
+    --info:       #2563EB;
+    --info-lt:    #DBEAFE;
+    --muted:      #6B7A99;
+
+    /* Accent (kept for compatibility) */
+    --teal:       #1B5E4B;
+    --teal-mid:   #237A5F;
+    --teal-light: #E0F0EA;
+    --teal-pale:  #F0F8F5;
+    --purple:     #4338CA;
+    --purple-lt:  #EEF2FF;
+    --gold:       #C8872A;
+
+    /* Geometry */
+    --radius:     8px;
+    --radius-lg:  12px;
+    --shadow-sm:  0 1px 3px rgba(15,28,46,.06), 0 1px 2px rgba(15,28,46,.04);
+    --shadow:     0 4px 12px rgba(15,28,46,.08), 0 1px 4px rgba(15,28,46,.04);
+    --shadow-lg:  0 16px 48px rgba(15,28,46,.14), 0 4px 16px rgba(15,28,46,.06);
+  }
+
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+  body {
+    font-family:'Inter',sans-serif;
+    background:var(--surface);
+    color:var(--ink);
+    min-height:100vh;
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ── TOPNAV ── */
+  nav {
+    background:var(--ink);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 24px;
+    height:56px;
+    position:sticky;
+    top:0;
+    z-index:100;
+    box-shadow:0 1px 0 rgba(255,255,255,.06), 0 4px 20px rgba(0,0,0,.25);
+  }
+  .nav-brand { display:flex;align-items:center;gap:12px; }
+  .nav-logo {
+    width:32px;height:32px;
+    background:var(--amber);
+    border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:#fff;
+    letter-spacing:-.5px;
+    flex-shrink:0;
+  }
+  .nav-title { font-size:14px;font-weight:600;letter-spacing:.01em;color:#fff; }
+  .nav-sub {
+    font-size:10.5px;opacity:.5;letter-spacing:.08em;text-transform:uppercase;
+    font-weight:500;
+  }
+  .nav-user {
+    width:32px;height:32px;border-radius:50%;
+    background:rgba(200,135,42,.25);
+    border:1.5px solid rgba(200,135,42,.5);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;cursor:pointer;color:var(--amber-mid);
+    transition:all .15s;
+  }
+  .nav-user:hover { background:rgba(200,135,42,.4); }
+
+  /* ── LAYOUT ── */
+  .layout { display:flex;height:calc(100vh - 56px);overflow:hidden; }
+
+  aside {
+    width:232px;
+    background:var(--ink);
+    padding:20px 10px;
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    border-right:1px solid rgba(255,255,255,.05);
+    height:100%;
+    overflow-y:auto;
+    overflow-x:hidden;
+  }
+
+  .aside-section {
+    font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:rgba(255,255,255,.3);
+    padding:14px 12px 6px;
+    margin-top:4px;
+  }
+  .aside-section:first-child { margin-top:0; }
+
+  .aside-item {
+    display:flex;align-items:center;gap:10px;
+    padding:8px 12px;
+    border-radius:6px;
+    font-size:13px;font-weight:450;
+    color:rgba(255,255,255,.6);
+    cursor:pointer;
+    transition:all .15s;
+    margin-bottom:1px;
+    text-decoration:none;
+    position:relative;
+    letter-spacing:.01em;
+  }
+  .aside-item:hover {
+    background:rgba(255,255,255,.07);
+    color:rgba(255,255,255,.9);
+  }
+  .aside-item.active {
+    background:rgba(200,135,42,.15);
+    color:#fff;
+    font-weight:500;
+  }
+  .aside-item.active::before {
+    content:'';
+    position:absolute;
+    left:0;top:6px;bottom:6px;
+    width:3px;
+    background:var(--amber);
+    border-radius:0 3px 3px 0;
+  }
+  .aside-icon { width:18px;text-align:center;font-size:14px;opacity:.8;flex-shrink:0; }
+  .aside-badge {
+    margin-left:auto;
+    background:var(--amber);
+    color:#fff;
+    font-size:9px;font-weight:700;
+    border-radius:20px;padding:2px 6px;
+    letter-spacing:.03em;
+  }
+
+  /* ── MAIN CONTENT ── */
+  main { flex:1;padding:28px 32px;overflow-y:auto;overflow-x:hidden;background:var(--surface);height:100%; }
+  .view { display:none; }
+  .view.active { display:block; }
+
+  /* ── PAGE HEADER ── */
+  .page-header { margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border); }
+  .page-header h1 {
+    font-family:'Playfair Display',serif;
+    font-size:24px;font-weight:600;
+    color:var(--ink);margin-bottom:4px;
+    letter-spacing:-.3px;
+  }
+  .page-header p { font-size:13px;color:var(--muted);font-weight:400; }
+
+  /* ── STAT CARDS ── */
+  .stats { display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px; }
+  .stat-card {
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:20px 22px;
+    box-shadow:var(--shadow-sm);
+    position:relative;
+    overflow:hidden;
+    transition:box-shadow .15s;
+  }
+  .stat-card:hover { box-shadow:var(--shadow); }
+  .stat-card::after {
+    content:'';position:absolute;
+    top:0;left:0;right:0;height:3px;
+    background:var(--border);
+    border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .stat-card:nth-child(1)::after { background:var(--amber); }
+  .stat-card:nth-child(2)::after { background:var(--success); }
+  .stat-card:nth-child(3)::after { background:var(--info); }
+  .stat-card:nth-child(4)::after { background:var(--warn); }
+
+  .stat-label {
+    font-size:10.5px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.1em;
+    color:var(--muted);margin-bottom:10px;
+  }
+  .stat-value {
+    font-family:'Playfair Display',serif;
+    font-size:26px;font-weight:600;
+    color:var(--ink);line-height:1;
+    letter-spacing:-.5px;
+  }
+  .stat-value.teal, .stat-value.green { color:var(--success); }
+  .stat-value.purple, .stat-value.blue { color:var(--info); }
+  .stat-value.gold, .stat-value.amber { color:var(--amber); }
+  .stat-sub { font-size:11.5px;color:var(--muted);margin-top:6px;font-weight:400; }
+
+  /* ── CARDS ── */
+  .card {
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-sm);
+    margin-bottom:20px;
+    transition:box-shadow .15s;
+  }
+  .card-header {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 20px;
+    border-bottom:1px solid var(--border);
+    background:var(--card);
+    border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .card-title {
+    font-size:13.5px;font-weight:600;
+    color:var(--ink);letter-spacing:.01em;
+  }
+  .card-body { padding:20px; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display:inline-flex;align-items:center;gap:6px;
+    border-radius:6px;
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;font-weight:500;
+    cursor:pointer;
+    transition:all .15s;
+    border:none;
+    padding:8px 16px;
+    letter-spacing:.01em;
+    white-space:nowrap;
+  }
+  .btn:disabled { opacity:.45;cursor:not-allowed; }
+  .btn-primary {
+    background:var(--ink);color:#fff;
+    box-shadow:0 1px 3px rgba(15,28,46,.2);
+  }
+  .btn-primary:hover:not(:disabled) { background:var(--ink-mid); }
+  .btn-secondary {
+    background:var(--card);color:var(--ink-mid);
+    border:1px solid var(--border);
+    box-shadow:var(--shadow-sm);
+  }
+  .btn-secondary:hover:not(:disabled) { background:var(--surface);border-color:var(--border-mid); }
+  .btn-amber {
+    background:var(--amber);color:#fff;
+    box-shadow:0 1px 3px rgba(200,135,42,.3);
+  }
+  .btn-amber:hover:not(:disabled) { background:#b07520; }
+  .btn-sm { padding:5px 12px;font-size:11.5px;border-radius:5px; }
+  .btn-ghost {
+    background:transparent;color:var(--muted);
+    border:1px solid var(--border);
+  }
+  .btn-ghost:hover:not(:disabled) { background:var(--surface);color:var(--ink); }
+  .btn-purple { background:var(--purple);color:#fff; }
+  .btn-purple:hover:not(:disabled) { background:#3730a3; }
+  /* Legacy compat */
+  .btn-primary.amber, button.btn-primary[onclick*="sign"], button.btn-primary[onclick*="approve"] {
+    background:var(--amber);
+  }
+
+  /* ── FORMS ── */
+  label {
+    display:block;
+    font-size:11px;font-weight:600;
+    color:var(--muted);
+    text-transform:uppercase;letter-spacing:.07em;
+    margin-bottom:6px;
+  }
+  input, select, textarea {
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:9px 12px;
+    font-family:'Inter',sans-serif;
+    font-size:13.5px;
+    color:var(--ink);
+    background:#fff;
+    outline:none;
+    transition:border-color .15s, box-shadow .15s;
+    line-height:1.4;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color:var(--ink-mid);
+    box-shadow:0 0 0 3px rgba(15,28,46,.08);
+  }
+  .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+  .form-group { margin-bottom:16px; }
+  .form-full { grid-column:1/-1; }
+
+  /* ── TABLES ── */
+  table { width:100%;border-collapse:collapse; }
+  th {
+    font-size:10.5px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.09em;
+    color:var(--muted);
+    padding:10px 16px;
+    text-align:left;
+    border-bottom:2px solid var(--border);
+    background:var(--surface);
+    white-space:nowrap;
+  }
+  td {
+    padding:12px 16px;
+    font-size:13px;
+    border-bottom:1px solid var(--surface-2);
+    vertical-align:middle;
+    color:var(--ink-mid);
+  }
+  td:first-child { color:var(--muted);font-size:11.5px;font-family:'JetBrains Mono',monospace;font-weight:500; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:var(--surface); }
+
+  /* ── BADGES ── */
+  .badge {
+    display:inline-flex;align-items:center;
+    font-size:10.5px;font-weight:600;
+    padding:3px 8px;border-radius:4px;
+    letter-spacing:.03em;text-transform:uppercase;
+  }
+  .badge-teal, .badge-green  { background:var(--success-lt);color:var(--success); }
+  .badge-purple, .badge-blue { background:var(--info-lt);color:var(--info); }
+  .badge-gold, .badge-amber  { background:var(--warn-lt);color:var(--warn); }
+  .badge-danger              { background:var(--danger-lt);color:var(--danger); }
+  .badge-gray                { background:var(--surface-2);color:var(--muted); }
+
+  /* ── PROCESS BAR ── */
+  .process-bar {
+    display:flex;align-items:center;
+    background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius-lg);padding:14px 20px;
+    margin-bottom:24px;gap:0;overflow-x:auto;
+    box-shadow:var(--shadow-sm);
+  }
+  .ps { display:flex;align-items:center;gap:8px;flex-shrink:0; }
+  .ps-dot {
+    width:26px;height:26px;border-radius:50%;
+    background:var(--surface-2);color:var(--muted);
+    font-size:11px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    border:2px solid var(--border);
+  }
+  .ps-dot.done { background:var(--success);color:#fff;border-color:var(--success); }
+  .ps-dot.active { background:var(--ink);color:#fff;border-color:var(--ink);box-shadow:0 0 0 3px rgba(15,28,46,.12); }
+  .ps-label { font-size:11.5px;font-weight:500;color:var(--muted);white-space:nowrap; }
+  .ps-label.active { color:var(--ink);font-weight:600; }
+  .ps-label.done { color:var(--success); }
+  .ps-arrow { color:var(--border-mid);font-size:16px;padding:0 8px;flex-shrink:0; }
+
+  /* ── PROGRESS ── */
+  .progress-wrap { background:var(--surface-2);border-radius:20px;height:6px;overflow:hidden; }
+  .progress-fill { background:var(--amber);height:100%;border-radius:20px;transition:width .5s; }
+
+  /* ── ALERTS ── */
+  .alert {
+    border-radius:var(--radius);padding:12px 16px;
+    font-size:13px;margin-bottom:16px;
+    display:flex;align-items:flex-start;gap:10px;
+    line-height:1.5;
+  }
+  .alert-info { background:var(--info-lt);color:var(--info);border:1px solid rgba(37,99,235,.2); }
+  .alert-warn { background:var(--warn-lt);color:var(--warn);border:1px solid rgba(217,119,6,.2); }
+
+  /* ── UTILITIES ── */
+  .flex { display:flex; } .items-center { align-items:center; }
+  .justify-between { justify-content:space-between; }
+  .gap-2 { gap:8px; } .gap-3 { gap:12px; }
+  .mt-1 { margin-top:4px; } .mt-2 { margin-top:8px; } .mb-3 { margin-bottom:12px; }
+  .text-sm { font-size:12px; } .text-muted { color:var(--muted); } .font-600 { font-weight:600; }
+  .two-col { display:grid;grid-template-columns:1fr 1fr;gap:20px; }
+  .currency { font-family:'Playfair Display',serif;font-weight:600; }
+
+  /* ── MODALS ── */
+  .modal-overlay {
+    display:none;position:fixed;inset:0;
+    background:rgba(10,18,30,.55);
+    backdrop-filter:blur(3px);
+    z-index:200;align-items:center;justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--card);
+    border-radius:14px;
+    width:520px;max-width:96vw;max-height:90vh;overflow-y:auto;
+    box-shadow:var(--shadow-lg);
+    animation:pop .2s cubic-bezier(.16,1,.3,1);
+    border:1px solid var(--border);
+  }
+  .modal-wide { width:680px; }
+  @keyframes pop { from{transform:scale(.96) translateY(8px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+  .modal-header {
+    padding:20px 24px;
+    border-bottom:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:flex-start;
+  }
+  .modal-body { padding:22px 24px; }
+  .modal-footer {
+    padding:16px 24px;
+    border-top:1px solid var(--border);
+    display:flex;justify-content:flex-end;gap:8px;
+    background:var(--surface);
+    border-radius:0 0 14px 14px;
+  }
+  .close-btn {
+    background:none;border:none;
+    width:28px;height:28px;border-radius:6px;
+    font-size:18px;cursor:pointer;color:var(--muted);
+    display:flex;align-items:center;justify-content:center;
+    transition:all .12s;line-height:1;
+  }
+  .close-btn:hover { background:var(--surface-2);color:var(--ink); }
+
+  /* ── SIGNATURE SYSTEM ── */
+  .sig-tabs {
+    display:flex;gap:0;
+    border:1px solid var(--border);border-radius:var(--radius);
+    overflow:hidden;margin-bottom:14px;
+  }
+  .sig-tab {
+    flex:1;padding:8px;font-size:12.5px;font-weight:500;
+    text-align:center;cursor:pointer;
+    background:var(--surface);color:var(--muted);
+    border:none;transition:all .15s;
+    font-family:'Inter',sans-serif;
+  }
+  .sig-tab.active { background:var(--ink);color:#fff; }
+
+  .sig-panel { display:none; }
+  .sig-panel.active { display:block; }
+
+  #sigCanvas {
+    width:100%;height:150px;
+    border:1.5px solid var(--border);border-radius:var(--radius);
+    cursor:crosshair;background:#FAFBFC;display:block;touch-action:none;
+  }
+  #sigCanvas.has-sig { border-color:var(--ink-mid); }
+
+  .sig-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px; }
+  .sig-card {
+    border:1.5px solid var(--border);border-radius:var(--radius);
+    padding:10px;cursor:pointer;
+    background:#fff;transition:all .15s;text-align:center;position:relative;
+  }
+  .sig-card:hover { border-color:var(--ink-mid);background:var(--surface); }
+  .sig-card.selected { border-color:var(--amber);background:var(--amber-lt); }
+  .sig-card img { width:100%;height:50px;object-fit:contain; }
+  .sig-card .sig-name {
+    font-size:10px;font-weight:600;color:var(--muted);
+    margin-top:6px;text-transform:uppercase;letter-spacing:.05em;
+  }
+  .sig-card .sig-check {
+    position:absolute;top:6px;right:6px;
+    width:17px;height:17px;
+    background:var(--amber);border-radius:50%;
+    color:#fff;font-size:10px;
+    display:none;align-items:center;justify-content:center;
+  }
+  .sig-card.selected .sig-check { display:flex; }
+  .sig-add-card {
+    border:1.5px dashed var(--border);border-radius:var(--radius);
+    padding:10px;cursor:pointer;background:var(--surface);
+    text-align:center;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:4px;
+    transition:all .15s;min-height:86px;
+  }
+  .sig-add-card:hover { border-color:var(--ink-mid);background:var(--surface-2); }
+  .sig-add-icon { font-size:20px;color:var(--muted); }
+  .sig-add-text { font-size:10.5px;color:var(--muted);font-weight:500; }
+
+  .sig-applied {
+    border:1px solid var(--border);border-radius:var(--radius);
+    padding:12px 16px;background:var(--surface);
+    display:flex;align-items:center;gap:12px;
+  }
+  .sig-applied img { height:40px;object-fit:contain;max-width:120px; }
+  .sig-applied-info { flex:1; }
+  .sig-applied-name { font-size:13px;font-weight:600;color:var(--ink); }
+  .sig-applied-time { font-size:11px;color:var(--muted); }
+  .sig-stamp {
+    font-size:10.5px;color:var(--success);font-weight:600;
+    background:var(--success-lt);padding:2px 8px;border-radius:4px;
+    letter-spacing:.03em;
+  }
+
+  .upload-zone {
+    border:1.5px dashed var(--border);border-radius:var(--radius);
+    padding:28px;text-align:center;cursor:pointer;
+    color:var(--muted);font-size:13px;transition:all .15s;
+  }
+  .upload-zone:hover { border-color:var(--ink-mid);background:var(--surface);color:var(--ink); }
+
+  /* ── TOAST ── */
+  #toast {
+    position:fixed;bottom:24px;right:24px;
+    background:var(--ink);color:#fff;
+    padding:11px 18px;border-radius:8px;
+    font-size:13px;font-weight:500;
+    box-shadow:0 8px 32px rgba(0,0,0,.25);
+    z-index:9998;opacity:0;pointer-events:none;
+    transition:opacity .25s,transform .25s;
+    transform:translateY(6px);
+    border:1px solid rgba(255,255,255,.1);
+    display:flex;align-items:center;gap:8px;
+  }
+  #toast.show { opacity:1;transform:translateY(0); }
+
+  /* ── LOGIN SCREEN ── */
+  #loginScreen {
+    position:fixed;inset:0;z-index:9999;
+    background:linear-gradient(135deg, var(--ink) 0%, #1a2d47 60%, #0d1f35 100%);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Inter',sans-serif;
+    transition:opacity .25s;
+  }
+  #loginScreen::before {
+    content:'';position:absolute;inset:0;
+    background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  #loginScreen.hidden { opacity:0;pointer-events:none;visibility:hidden; }
+
+  .login-box {
+    background:var(--card);
+    border-radius:16px;padding:40px;width:420px;max-width:94vw;
+    box-shadow:0 40px 100px rgba(0,0,0,.4);
+    animation:pop .35s cubic-bezier(.16,1,.3,1);
+    position:relative;z-index:1;
+    border:1px solid rgba(255,255,255,.08);
+  }
+  .login-wordmark {
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:28px;
+  }
+  .login-logo {
+    width:40px;height:40px;border-radius:10px;
+    background:var(--amber);
+    color:#fff;font-family:'Playfair Display',serif;font-size:18px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .login-brand-text { }
+  .login-title {
+    font-family:'Playfair Display',serif;
+    font-size:22px;font-weight:600;color:var(--ink);
+    letter-spacing:-.3px;line-height:1;
+  }
+  .login-sub { font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.02em; }
+  .login-divider {
+    height:1px;background:var(--border);margin-bottom:24px;
+  }
+  .login-error {
+    background:var(--danger-lt);color:var(--danger);
+    border:1px solid rgba(220,38,38,.2);
+    border-radius:6px;padding:10px 14px;
+    font-size:12.5px;margin-bottom:16px;display:none;
+  }
+  .login-role-badge {
+    display:inline-flex;align-items:center;gap:5px;
+    padding:3px 9px;border-radius:4px;
+    font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  }
+  .role-admin    { background:var(--info-lt);color:var(--info); }
+  .role-approver { background:var(--success-lt);color:var(--success); }
+  .role-requester{ background:var(--surface-2);color:var(--muted); }
+
+
+  /* ── ICONS ── */
+  .icon { display:inline-flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .icon svg { display:block; }
+  .aside-icon { width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.75; }
+  .aside-item.active .aside-icon { opacity:1; }
+  .aside-item:hover .aside-icon { opacity:1; }
+  .btn-icon { display:inline-flex;align-items:center;gap:6px; }
+  /* ── ROLE-BASED VISIBILITY ── */
+  body.role-requester .admin-only,
+  body.role-requester .approver-only,
+  body.role-approver  .admin-only { display:none !important; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width:5px;height:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border-mid);border-radius:3px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ── -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-wordmark">
+      <div class="login-logo">M</div>
+      <div class="login-brand-text">
+        <div class="login-title">MRV Platform</div>
+        <div class="login-sub">FINANCIAL OPERATIONS</div>
+      </div>
+    </div>
+    <div class="login-divider"></div>
+    <div class="login-error" id="loginError"></div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Email address</label>
+      <input id="loginEmail" type="email" placeholder="you@organisation.com" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="email">
+    </div>
+    <div class="form-group" style="margin-bottom:22px">
+      <label>Password</label>
+      <input id="loginPassword" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:11px;font-size:13.5px;border-radius:7px;justify-content:center;letter-spacing:.02em" onclick="doLogin()" id="loginBtn">Sign In</button>
+    <div style="text-align:center;margin-top:20px;font-size:11.5px;color:var(--muted);line-height:1.6">
+      Accounts are managed by your organisation Admin.<br>Contact your Admin if you need access.
+    </div>
+  </div>
+</div>
+
+<!-- ── USER MENU DROPDOWN ── -->
+<div id="userMenuDropdown" style="display:none;position:fixed;top:60px;right:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:500">
+  <div style="padding:10px 12px;border-bottom:1px solid var(--border);margin-bottom:4px">
+    <div style="font-weight:600;font-size:13px" id="menuUserName">—</div>
+    <div style="font-size:11px;color:var(--muted)" id="menuUserEmail">—</div>
+    <div style="margin-top:6px" id="menuUserRole"></div>
+  </div>
+  <div class="aside-item admin-only" onclick="showView('users',this);closeUserMenu()" style="padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer"><span class="aside-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Manage Users</div>
+  <div class="aside-item" onclick="showView('signatures',this);closeUserMenu()" style="padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 17l4-4 4 4 4-8 4 8"/><path d="M21 21H3"/></svg></span>My Signatures</div>
+  <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+  <div onclick="doLogout()" style="padding:8px 12px;border-radius:8px;font-size:13px;color:var(--danger);cursor:pointer;display:flex;align-items:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sign Out</div>
+</div>
+
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">MRV</div>
+    <div>
+      <div class="nav-title">MRV Platform</div>
+      <div class="nav-sub">Money-In / Money-Out</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px">
+    <div id="sheetsStatusPill" onclick="showView('sheets',null)" style="display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:5px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);cursor:pointer;font-size:11.5px;font-weight:500;transition:background .15s;color:rgba(255,255,255,.7)" title="Google Sheets sync">
+      <span id="sheetsStatusDot" style="width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0"></span>
+      <span id="sheetsStatusLabel">Not connected</span>
+    </div>
+    <span style="font-size:12px;opacity:.7">June 2026</span>
+    <div class="nav-user" onclick="toggleUserMenu()" style="position:relative;cursor:pointer" title="Account" id="navUserAvatar">
+      <span id="navUserInitials">?</span>
+      <span id="navRoleDot" style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;background:#C89B2A;border-radius:50%;border:2px solid var(--teal);"></span>
+    </div>
+  </div>
+</nav>
+
+<div class="layout">
+<aside>
+  <div class="aside-section">Cycle</div>
+  <div class="aside-item active" onclick="showView('dashboard',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Dashboard</div>
+  <div class="aside-item" onclick="showView('budgets',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>Approved Budgets</div>
+  <div class="aside-item approver-only" onclick="showView('funds',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span>Load Funds</div>
+  <div class="aside-item" onclick="showView('requests',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg></span>System Requests <span class="aside-badge">5</span></div>
+  <div class="aside-item" onclick="showView('expenses',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Weekly Expensing</div>
+  <div class="aside-item" onclick="showView('reconciliation',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>Reconciliation</div>
+  <div class="aside-section">Reports</div>
+  <div class="aside-item" onclick="showView('transactions',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Transactions</div>
+  <div class="aside-item" onclick="showView('signatures',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 17l4-4 4 4 4-8 4 8"/><path d="M21 21H3"/></svg></span>My Signatures</div>
+  <div class="aside-item" onclick="alert('PDF report generated!')"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h.01M12 13v4M15 15h.01"/></svg></span>PDF Reports</div>
+  <div class="aside-section admin-only">Admin</div>
+  <div class="aside-item admin-only" onclick="showView('users',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Manage Users</div>
+  <div class="aside-section">Integration</div>
+  <div class="aside-item admin-only" onclick="showView('sheets',this)" id="sheetsNavItem"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg></span>Google Sheets <span id="sheetsSyncBadge" class="aside-badge" style="display:none;background:var(--gold)">!</span></div>
+</aside>
+
+<main>
+
+  <!-- ── DASHBOARD ── -->
+  <div id="view-dashboard" class="view active">
+    <div class="page-header"><h1>Dashboard</h1><p>Monthly cycle overview — June 2026</p></div>
+    <div class="process-bar">
+      <div class="ps"><div class="ps-dot done">✓</div><span class="ps-label done">Approved Budgets</span></div>
+      <div class="ps-arrow">›</div>
+      <div class="ps"><div class="ps-dot done">✓</div><span class="ps-label done">Load Funds</span></div>
+      <div class="ps-arrow">›</div>
+      <div class="ps"><div class="ps-dot active">3</div><span class="ps-label active">Post Funds</span></div>
+      <div class="ps-arrow">›</div>
+      <div class="ps"><div class="ps-dot">4</div><span class="ps-label">Utilization</span></div>
+      <div class="ps-arrow">›</div>
+      <div class="ps"><div class="ps-dot">5</div><span class="ps-label">Expensing</span></div>
+      <div class="ps-arrow">›</div>
+      <div class="ps"><div class="ps-dot">6</div><span class="ps-label">Reconciliation</span></div>
+    </div>
+    <div id="dashStats" class="stats"></div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Approved Projects</div><span class="badge badge-teal" id="dashProjCount"></span></div>
+        <div class="card-body" style="padding:0"><table><thead><tr><th>Project</th><th>Department</th><th>Total Budget</th><th>Loaded</th><th>Utilized</th></tr></thead><tbody id="dashProjTable"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Recent Payments</div><span class="badge badge-purple">This Month</span></div>
+        <div class="card-body" style="padding:0"><table><thead><tr><th>Description</th><th>Project</th><th>Amount</th><th>Status</th></tr></thead><tbody id="dashPaymentsTable"></tbody></table></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Budget Utilisation by Project</div></div>
+      <div class="card-body"><div id="dashProgress" style="display:grid;gap:16px;"></div></div>
+    </div>
+  </div>
+
+  <!-- ── STEP 1: APPROVED BUDGETS ── -->
+  <div id="view-budgets" class="view">
+    <div class="page-header"><h1>Approved Budgets</h1><p>SMT-approved project budgets for June 2026 — read-only. All downstream data is linked to these budgets.</p></div>
+    <div id="budgetStatsRow" class="stats" style="grid-template-columns:repeat(4,1fr)"></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Approved Project Budgets — June 2026</div>
+        <span class="badge badge-teal" id="budgetApprovedBy">Approved by SMT</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table>
+          <thead><tr><th>Project</th><th>Department</th><th>SMT Approval Ref</th><th>Total Budget</th><th>Loaded (Money-In)</th><th>Utilised</th><th>Remaining</th><th>% Used</th><th>Detail</th></tr></thead>
+          <tbody id="budgetDetailBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Per-project line item breakdown -->
+    <div id="budgetLineCards"></div>
+  </div>
+
+  <!-- ── STEPS 2 & 3: LOAD FUNDS ── -->
+  <div id="view-funds" class="view">
+    <div class="page-header"><h1>Load & Post Funds</h1><p>Steps 2 & 3 — Consolidate cash requirements and post as Money-In</p></div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Load Monthly Fund Requirement</div></div>
+        <div class="card-body">
+          <div class="form-group"><label>Select Project</label><select id="loadProjectSelect"></select></div>
+          <div class="form-group"><label>Amount to Load (KES)</label><input type="number" id="loadAmount" placeholder="e.g. 800000" value="800000"></div>
+          <div class="form-group"><label>Account / Reference</label><input type="text" placeholder="Bank account or ref number"></div>
+          <div class="form-group"><label>Notes</label><textarea rows="2" placeholder="Optional notes..."></textarea></div>
+          <button class="btn btn-primary" onclick="loadFunds()">Post as Money-In →</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Money-In Ledger</div></div>
+        <div class="card-body" style="padding:0">
+          <table><thead><tr><th>Project</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
+          <tbody id="fundsLedger">
+            <tr><td>Nairobi Field Ops</td><td class="currency">1,800,000</td><td>01 Jun</td><td><span class="badge badge-teal">Posted</span></td></tr>
+            <tr><td>Mombasa Survey</td><td class="currency">1,200,000</td><td>01 Jun</td><td><span class="badge badge-teal">Posted</span></td></tr>
+            <tr><td>Kisumu Training</td><td class="currency">800,000</td><td>03 Jun</td><td><span class="badge badge-teal">Posted</span></td></tr>
+          </tbody></table>
+          <div style="padding:14px 16px;font-size:13px;color:var(--teal);font-weight:600;border-top:1px solid var(--border);">Total Money-In: <span class="currency" id="totalIn">KES 3,800,000</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: REQUESTS ── -->
+  <div id="view-requests" class="view">
+    <div class="page-header"><h1>Funds Utilization — System Requests</h1><p>Step 4 — Payments are made only against approved requests. MRV Officers & Coordinators process.</p></div>
+    <div class="alert alert-warn">⚠️ Controlled access: Only MRV Officers and Coordinators may approve and process payments.</div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Payment Requests</div><div class="flex gap-2"><button class="btn btn-secondary btn-sm" onclick="downloadRequestsPDF()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download PDF</button><button class="btn btn-secondary btn-sm" onclick="openBulkApprove()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M20 19.5v.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8.5L18 5.5"/><path d="M15 2v4h4"/><path d="m13.5 15.5 3-3-1.5-1.5-3 3 1.5 1.5z"/><path d="m9 21 1.5-1.5-1.5-1.5L7.5 19.5 9 21z"/></svg> Sign All</button><button class="btn btn-primary btn-sm" onclick="openModal('requestModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New Request</button></div></div>
+      <div class="card-body" style="padding:0">
+        <table><thead><tr><th>Request #</th><th>Project</th><th>Description</th><th>Amount</th><th>Requester</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody id="requestsBody">
+          <tr><td class="text-muted">#REQ-001</td><td>Nairobi Field Ops</td><td>Field allowances</td><td class="currency">450,000</td><td>J. Kamau</td><td><span class="badge badge-teal">Paid</span></td><td><button class="btn btn-ghost btn-sm" onclick="showReceipt('REQ-001','450000','J. Kamau')">Receipt</button></td></tr>
+          <tr><td class="text-muted">#REQ-002</td><td>Mombasa Survey</td><td>Transport costs</td><td class="currency">320,000</td><td>A. Ali</td><td><span class="badge badge-teal">Paid</span></td><td><button class="btn btn-ghost btn-sm" onclick="showReceipt('REQ-002','320000','A. Ali')">Receipt</button></td></tr>
+          <tr><td class="text-muted">#REQ-003</td><td>Nairobi Field Ops</td><td>Stationery purchase</td><td class="currency">85,000</td><td>M. Wanjiku</td><td><span class="badge badge-gold">Pending</span></td><td><button class="btn btn-primary btn-sm" onclick="openSignAndApprove(this,'REQ-003','M. Wanjiku')">Sign & Approve</button></td></tr>
+          <tr><td class="text-muted">#REQ-004</td><td>Kisumu Training</td><td>Venue hire</td><td class="currency">390,000</td><td>P. Otieno</td><td><span class="badge badge-gray">Draft</span></td><td><button class="btn btn-secondary btn-sm" onclick="openSignAndApprove(this,'REQ-004','P. Otieno')">Sign & Approve</button></td></tr>
+          <tr><td class="text-muted">#REQ-005</td><td>Mombasa Survey</td><td>Accommodation</td><td class="currency">200,000</td><td>A. Ali</td><td><span class="badge badge-gray">Draft</span></td><td><button class="btn btn-secondary btn-sm" onclick="openSignAndApprove(this,'REQ-005','A. Ali')">Sign & Approve</button></td></tr>
+        </tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 5: WEEKLY EXPENSING ── -->
+  <div id="view-expenses" class="view">
+    <div class="page-header"><h1>Weekly Expensing</h1><p>Step 5 — Upload receipts and supporting documents. Recipient signs digitally.</p></div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Record Expense</div></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group"><label>Project</label><select id="expProjectSelect"></select></div>
+            <div class="form-group"><label>Request Reference</label><select id="expReqSelect"></select></div>
+            <div class="form-group"><label>Amount Expensed (KES)</label><input type="number" placeholder="0"></div>
+            <div class="form-group"><label>Expense Date</label><input type="date"></div>
+            <div class="form-group form-full"><label>Description</label><input type="text" placeholder="Brief description of expense"></div>
+            <div class="form-group form-full">
+              <label>Receipt / Supporting Document</label>
+              <div class="upload-zone" onclick="toast('File upload simulated ✓')">📎 Click to attach receipt or drag & drop</div>
+            </div>
+          </div>
+          <!-- Inline signature widget -->
+          <div style="margin-bottom:16px;">
+            <label style="margin-bottom:10px;">Recipient Signature</label>
+            <div id="expSigDisplay" style="display:none;" class="sig-applied">
+              <img id="expSigImg" src="" alt="signature">
+              <div class="sig-applied-info">
+                <div class="sig-applied-name" id="expSigName"></div>
+                <div class="sig-applied-time" id="expSigTime"></div>
+              </div>
+              <span class="sig-stamp">✓ Signed</span>
+              <button class="btn btn-ghost btn-sm" onclick="clearExpSig()" style="margin-left:8px">Change</button>
+            </div>
+            <div id="expSigWidget">
+              <div class="sig-tabs">
+                <button class="sig-tab active" onclick="switchSigTab(this,'exp-saved')">💾 Saved Signatures</button>
+                <button class="sig-tab" onclick="switchSigTab(this,'exp-draw')">✏️ Draw</button>
+                <button class="sig-tab" onclick="switchSigTab(this,'exp-upload')">📷 Upload</button>
+              </div>
+              <div id="exp-saved" class="sig-panel active">
+                <div class="sig-grid" id="expSavedGrid"></div>
+                <p class="text-sm text-muted" style="margin-top:4px">No saved signature? <a href="#" onclick="showView('signatures',null);return false;" style="color:var(--teal)">Add one in My Signatures →</a></p>
+              </div>
+              <div id="exp-draw" class="sig-panel">
+                <canvas id="expCanvas" width="900" height="160" style="width:100%;height:160px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none;"></canvas>
+                <div class="flex gap-2" style="margin-top:8px">
+                  <button class="btn btn-ghost btn-sm" onclick="clearCanvas('expCanvas')">Clear</button>
+                  <button class="btn btn-primary btn-sm" onclick="applyDrawnSig('exp')">Apply Signature</button>
+                </div>
+              </div>
+              <div id="exp-upload" class="sig-panel">
+                <div class="upload-zone" onclick="document.getElementById('expSigUpload').click()">📷 Upload photo of your signature</div>
+                <input type="file" id="expSigUpload" accept="image/*" style="display:none" onchange="handleSigUpload(event,'exp')">
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="submitExpense()">Submit Expense</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Weekly Expense Log</div></div>
+        <div class="card-body" style="padding:0">
+          <table><thead><tr><th>Date</th><th>Project</th><th>Amount</th><th>Signature</th></tr></thead>
+          <tbody id="expenseLog">
+            <tr><td>02 Jun</td><td>Nairobi Field Ops</td><td class="currency">320,000</td><td><span class="badge badge-teal">✓ Signed</span></td></tr>
+            <tr><td>03 Jun</td><td>Mombasa Survey</td><td class="currency">180,000</td><td><span class="badge badge-teal">✓ Signed</span></td></tr>
+            <tr><td>05 Jun</td><td>Nairobi Field Ops</td><td class="currency">130,000</td><td><span class="badge badge-gold">Pending</span></td></tr>
+          </tbody></table>
+          <div style="padding:14px 16px;font-size:13px;color:var(--purple);font-weight:600;border-top:1px solid var(--border);">Total Expensed: <span class="currency">KES 630,000</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 6: RECONCILIATION ── -->
+  <div id="view-reconciliation" class="view">
+    <div class="page-header"><h1>Monthly Reconciliation</h1><p>Step 6 — Reconcile balance vs expenditures and close the advance for the month</p></div>
+    <div id="reconStats" class="stats" style="grid-template-columns:repeat(3,1fr)"></div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Reconciliation Summary — June 2026</div><button class="btn btn-secondary btn-sm" onclick="toast('PDF report downloaded!')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export PDF</button></div>
+      <div class="card-body" style="padding:0">
+        <table><thead><tr><th>Project</th><th>Dept</th><th>Total Budget</th><th>Money-In</th><th>Payments Made</th><th>Balance</th><th>Status</th></tr></thead>
+        <tbody id="reconTable"></tbody></table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Close Advance Balance</div></div>
+      <div class="card-body">
+        <div class="alert alert-warn">⚠️ Closing the advance will mark this cycle as complete and carry any unspent balance forward.</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Select Project to Close</label><select id="reconProjectSelect"></select></div>
+          <div class="form-group"><label>Carry-over / Return Amount (KES)</label><input type="number" placeholder="0"></div>
+          <div class="form-group form-full"><label>Reconciliation Notes</label><textarea rows="2" placeholder="Notes on closing balance..."></textarea></div>
+        </div>
+        <button class="btn btn-primary" onclick="closeAdvance()">Close & Reconcile →</button>
+      </div>
+    </div>
+  </div>
+  <!-- ── TRANSACTIONS ── -->
+  <div id="view-transactions" class="view">
+    <div class="page-header"><h1>Transaction Audit Trail</h1><p>Complete log of all Money-In and Money-Out events with digital signatures</p></div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">All Transactions — June 2026</div><button class="btn btn-secondary btn-sm" onclick="toast('PDF with signatures downloaded!')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download with Signatures</button></div>
+      <div class="card-body" style="padding:0">
+        <table><thead><tr><th>Ref</th><th>Type</th><th>Project</th><th>Description</th><th>Amount</th><th>Date</th><th>Signed By</th><th>Status</th></tr></thead><tbody>
+          <tr><td class="text-muted">TXN-001</td><td><span class="badge badge-teal">Money-In</span></td><td>Nairobi Field Ops</td><td>Monthly load</td><td class="currency">1,800,000</td><td>01 Jun</td><td>Finance Officer</td><td><span class="badge badge-teal">✓ Signed</span></td></tr>
+          <tr><td class="text-muted">TXN-002</td><td><span class="badge badge-teal">Money-In</span></td><td>Mombasa Survey</td><td>Monthly load</td><td class="currency">1,200,000</td><td>01 Jun</td><td>Finance Officer</td><td><span class="badge badge-teal">✓ Signed</span></td></tr>
+          <tr><td class="text-muted">TXN-003</td><td><span class="badge badge-teal">Money-In</span></td><td>Kisumu Training</td><td>Partial load</td><td class="currency">800,000</td><td>03 Jun</td><td>Finance Officer</td><td><span class="badge badge-teal">✓ Signed</span></td></tr>
+          <tr><td class="text-muted">TXN-004</td><td><span class="badge badge-purple">Money-Out</span></td><td>Nairobi Field Ops</td><td>Field allowances</td><td class="currency">450,000</td><td>04 Jun</td><td>J. Kamau</td><td><span class="badge badge-teal">✓ Signed</span></td></tr>
+          <tr><td class="text-muted">TXN-005</td><td><span class="badge badge-purple">Money-Out</span></td><td>Mombasa Survey</td><td>Transport costs</td><td class="currency">320,000</td><td>05 Jun</td><td>A. Ali</td><td><span class="badge badge-teal">✓ Signed</span></td></tr>
+        </tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MY SIGNATURES ── -->
+  <div id="view-signatures" class="view">
+    <div class="page-header"><h1>My Signatures</h1><p>Save your signature once — draw, upload a photo, or both. Hit Sign to apply instantly on any document.</p></div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Add New Signature</div></div>
+        <div class="card-body">
+          <div class="form-group"><label>Signature Label (name or role)</label><input type="text" id="newSigLabel" placeholder="e.g. J. Kamau — Field Officer"></div>
+          <div class="sig-tabs" style="margin-bottom:16px">
+            <button class="sig-tab active" onclick="switchSigTab(this,'new-draw')">✏️ Draw</button>
+            <button class="sig-tab" onclick="switchSigTab(this,'new-upload')">📷 Upload Photo</button>
+          </div>
+          <div id="new-draw" class="sig-panel active">
+            <canvas id="newCanvas" width="900" height="180" style="width:100%;height:180px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none;"></canvas>
+            <p class="text-sm text-muted" style="margin-top:6px">Draw your signature above using your mouse or finger.</p>
+            <div class="flex gap-2" style="margin-top:10px">
+              <button class="btn btn-ghost btn-sm" onclick="clearCanvas('newCanvas')">Clear</button>
+              <button class="btn btn-primary" onclick="saveNewSig('draw')" style="margin-left:auto">Save Signature</button>
+            </div>
+          </div>
+          <div id="new-upload" class="sig-panel">
+            <div class="upload-zone" onclick="document.getElementById('newSigFile').click()" id="newUploadZone">
+              📷 Click to upload a photo of your handwritten signature<br>
+              <span style="font-size:11px;margin-top:4px;display:block">JPG, PNG — best on white paper, good lighting</span>
+            </div>
+            <input type="file" id="newSigFile" accept="image/*" style="display:none" onchange="previewUpload(event)">
+            <div id="newUploadPreview" style="display:none;margin-top:12px;">
+              <img id="newPreviewImg" style="width:100%;max-height:160px;object-fit:contain;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px;">
+              <div class="flex gap-2" style="margin-top:10px">
+                <button class="btn btn-ghost btn-sm" onclick="clearUpload()">Clear</button>
+                <button class="btn btn-primary" onclick="saveNewSig('upload')" style="margin-left:auto">Save Signature</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Saved Signatures</div><span class="badge badge-teal" id="sigCount">0 saved</span></div>
+        <div class="card-body">
+          <div id="savedSigsGrid" style="display:grid;gap:14px;"></div>
+          <div id="noSigMsg" class="empty" style="padding:32px 0">
+            <div class="empty-icon">✍️</div>
+            <p>No signatures saved yet.<br>Draw or upload one to get started.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ── GOOGLE SHEETS / APPS SCRIPT INTEGRATION ── -->
+  <div id="view-sheets" class="view">
+    <div class="page-header"><h1>Google Sheets Integration</h1><p>Connect via Google Apps Script — no OAuth setup, no Cloud Console, completely free.</p></div>
+
+    <div class="alert alert-info">
+      ℹ️ This uses a <strong>Google Apps Script Web App</strong> as a free backend. You only need a Google account. No API keys, no Cloud Console.
+    </div>
+
+    <!-- Step 1: Web App URL -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Step 1 — Paste your Web App URL</div>
+        <span id="connStatusBadge" class="badge badge-gray">Not connected</span>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>Apps Script Web App URL</label>
+          <input id="webAppUrl" type="text" placeholder="https://script.google.com/macros/s/…/exec" value="">
+          <div style="font-size:11.5px;color:var(--muted);margin-top:5px">Paste the URL from <strong>Deploy → Manage deployments</strong> in your Apps Script project.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="connectWebApp()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Connect & Test</button>
+          <button class="btn btn-ghost" onclick="disconnectWebApp()" id="disconnectBtn" style="display:none">Disconnect</button>
+        </div>
+        <div id="connSuccessBox" style="display:none;margin-top:14px" class="sig-applied">
+          <span style="color:var(--success);display:flex"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x='3' y='3' width='18' height='18' rx='2'/><line x1='3' y1='9' x2='21' y2='9'/><line x1='3' y1='15' x2='21' y2='15'/><line x1='9' y1='3' x2='9' y2='21'/></svg></span>
+          <div class="sig-applied-info">
+            <div class="sig-applied-name" id="connSuccessMsg">Connected</div>
+            <div class="sig-applied-time" id="connSuccessUrl" style="word-break:break-all;font-size:11px"></div>
+          </div>
+          <span class="sig-stamp">✓ Live</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Sync -->
+    <div class="card" id="syncControlCard" style="opacity:.5;pointer-events:none">
+      <div class="card-header">
+        <div class="card-title">Step 2 — Sync Data</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary btn-sm" onclick="pullFromSheets()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/></svg> Pull from Sheets</button>
+          <button class="btn btn-primary btn-sm" onclick="pushToSheets()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg> Push to Sheets</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="two-col" style="gap:12px">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Sheet Tabs</div>
+            <table><thead><tr><th>Tab</th><th>Contents</th><th>Last Sync</th></tr></thead>
+            <tbody>
+              <tr><td>Requests</td><td>Payment requests & approvals</td><td id="syncTimeRequests" class="text-muted text-sm">—</td></tr>
+              <tr><td>Budgets</td><td>SMT project budgets & loaded funds</td><td id="syncTimeBudgets" class="text-muted text-sm">—</td></tr>
+              <tr><td>FundsLedger</td><td>Money-In fund posts</td><td id="syncTimeFunds" class="text-muted text-sm">—</td></tr>
+              <tr><td>Expenses</td><td>Weekly expense log</td><td id="syncTimeExpenses" class="text-muted text-sm">—</td></tr>
+              <tr><td>Signatures</td><td>Saved signature images (base64)</td><td id="syncTimeSigs" class="text-muted text-sm">—</td></tr>
+            </tbody>
+            </table>
+            <div style="margin-top:12px">
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);cursor:pointer">
+                <input type="checkbox" id="autoSyncToggle" onchange="toggleAutoSync(this.checked)" style="width:auto">
+                Auto-sync every 60 seconds
+              </label>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Sync Log</div>
+            <div id="syncLog" style="font-size:11.5px;color:var(--muted);line-height:1.9;max-height:200px;overflow-y:auto;padding:10px;background:var(--teal-pale);border-radius:8px;font-family:monospace">
+              Waiting for connection…
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Setup guide -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">Setup Guide — 5 minutes, no Cloud Console needed</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+          <div style="padding:14px;background:var(--teal-pale);border-radius:10px">
+            <div style="font-size:18px;margin-bottom:6px">1️⃣</div>
+            <div style="font-weight:600;font-size:12.5px;margin-bottom:5px">Create a Google Sheet</div>
+            <div style="font-size:11.5px;color:var(--muted)">Go to <a href="https://sheets.google.com" target="_blank" style="color:var(--teal)">sheets.google.com</a> and create a new blank spreadsheet. Name it <em>MRV Platform Data</em>.</div>
+          </div>
+          <div style="padding:14px;background:var(--teal-pale);border-radius:10px">
+            <div style="font-size:18px;margin-bottom:6px">2️⃣</div>
+            <div style="font-weight:600;font-size:12.5px;margin-bottom:5px">Open Apps Script</div>
+            <div style="font-size:11.5px;color:var(--muted)">In the sheet, go to <strong>Extensions → Apps Script</strong>. Delete any existing code, then paste the entire <strong>MRV_AppScript.js</strong> file provided.</div>
+          </div>
+          <div style="padding:14px;background:var(--teal-pale);border-radius:10px">
+            <div style="font-size:18px;margin-bottom:6px">3️⃣</div>
+            <div style="font-weight:600;font-size:12.5px;margin-bottom:5px">Deploy as Web App</div>
+            <div style="font-size:11.5px;color:var(--muted)">Click <strong>Deploy → New deployment</strong>. Type: <em>Web app</em>. Execute as: <em>Me</em>. Who has access: <em>Anyone</em>. Click Deploy and copy the URL.</div>
+          </div>
+          <div style="padding:14px;background:var(--teal-pale);border-radius:10px">
+            <div style="font-size:18px;margin-bottom:6px">4️⃣</div>
+            <div style="font-weight:600;font-size:12.5px;margin-bottom:5px">Paste URL & Connect</div>
+            <div style="font-size:11.5px;color:var(--muted)">Paste the Web App URL into the field above and click <strong>Connect & Test</strong>. Then push your data. Done!</div>
+          </div>
+        </div>
+        <div class="alert alert-warn" style="margin-top:16px;margin-bottom:0">
+          ⚠️ When deploying, set <strong>Execute as: Me</strong> and <strong>Who has access: Anyone</strong>. This lets the app read/write your sheet without requiring users to sign in. The URL acts as a secret key — keep it private.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── USERS (Admin only) ── -->
+  <div id="view-users" class="view">
+    <div class="page-header"><h1>Manage Users</h1><p>Add, edit, or remove platform users. Passwords are hashed — never stored in plain text.</p></div>
+
+    <div class="alert alert-warn">
+      ⚠️ User accounts are stored in the <strong>Users</strong> tab of your Google Sheet. Changes here push to Sheets immediately. To add a user, fill the form and click Add User.
+    </div>
+
+    <div class="two-col" style="align-items:start">
+      <!-- Add user form -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">Add / Edit User</div></div>
+        <div class="card-body">
+          <div class="form-group"><label>Full Name</label><input id="newUserName" type="text" placeholder="e.g. Alice Omondi"></div>
+          <div class="form-group"><label>Email</label><input id="newUserEmail" type="email" placeholder="alice@example.com"></div>
+          <div class="form-group">
+            <label>Role</label>
+            <select id="newUserRole">
+              <option value="requester">Requester — submit requests only</option>
+              <option value="approver">Approver — approve & load funds</option>
+              <option value="admin">Admin — full access</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Password</label><input id="newUserPass" type="password" placeholder="Min 6 characters"></div>
+          <div class="form-group"><label>Confirm Password</label><input id="newUserPass2" type="password" placeholder="Repeat password"></div>
+          <button class="btn btn-primary" onclick="addUser()" style="width:100%">Add User</button>
+        </div>
+      </div>
+
+      <!-- User list -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Current Users</div>
+          <span id="userCount" class="badge badge-gray">0 users</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="4" class="text-muted text-sm" style="padding:20px;text-align:center">No users yet — add one to get started</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- ── MODALS ── -->
+
+<!-- Request Modal -->
+<div id="requestModal" class="modal-overlay" onclick="closeModalOutside(event,'requestModal')">
+  <div class="modal">
+    <div class="modal-header"><strong>New Payment Request</strong><button class="close-btn" onclick="closeModal('requestModal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Project</label><select id="reqProjectSelect"></select></div>
+      <div class="form-group"><label>Description</label><input id="rDesc" type="text" placeholder="What is this payment for?"></div>
+      <div class="form-grid">
+        <div class="form-group"><label>Amount (KES)</label><input id="rAmount" type="number" placeholder="0"></div>
+        <div class="form-group"><label>Requester Name</label><input id="rName" type="text" placeholder="Your name"></div>
+      </div>
+      <div class="form-group"><label>Supporting Notes</label><textarea rows="2" placeholder="Additional context..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('requestModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitRequest()">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sign & Approve Modal -->
+<div id="signApproveModal" class="modal-overlay" onclick="closeModalOutside(event,'signApproveModal')">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div>
+        <strong>Sign & Approve Payment</strong>
+        <div id="signModalSub" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
+      </div>
+      <button class="close-btn" onclick="closeModal('signApproveModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Applied sig display -->
+      <div id="modalSigApplied" style="display:none;margin-bottom:16px;" class="sig-applied">
+        <img id="modalSigImg" src="" style="height:48px;object-fit:contain;max-width:160px;">
+        <div class="sig-applied-info">
+          <div class="sig-applied-name" id="modalSigName"></div>
+          <div class="sig-applied-time" id="modalSigTime"></div>
+        </div>
+        <span class="sig-stamp">✓ Signed</span>
+        <button class="btn btn-ghost btn-sm" onclick="clearModalSig()" style="margin-left:8px">Change</button>
+      </div>
+
+      <div id="modalSigWidget">
+        <label style="margin-bottom:10px;">Your Authorising Signature</label>
+        <div class="sig-tabs">
+          <button class="sig-tab active" onclick="switchSigTab(this,'modal-saved')">💾 Saved Signatures</button>
+          <button class="sig-tab" onclick="switchSigTab(this,'modal-draw')">✏️ Draw</button>
+          <button class="sig-tab" onclick="switchSigTab(this,'modal-upload')">📷 Upload</button>
+        </div>
+
+        <div id="modal-saved" class="sig-panel active">
+          <div class="sig-grid" id="modalSavedGrid"></div>
+          <p class="text-sm text-muted" style="margin-top:8px">
+            No saved signatures? <a href="#" onclick="closeModal('signApproveModal');showView('signatures',null);return false;" style="color:var(--teal)">Add one in My Signatures →</a>
+          </p>
+        </div>
+
+        <div id="modal-draw" class="sig-panel">
+          <canvas id="modalCanvas" width="900" height="160" style="width:100%;height:160px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none;"></canvas>
+          <div class="flex gap-2" style="margin-top:8px">
+            <button class="btn btn-ghost btn-sm" onclick="clearCanvas('modalCanvas')">Clear</button>
+            <button class="btn btn-primary btn-sm" onclick="applyDrawnSig('modal')">Use This Signature</button>
+          </div>
+        </div>
+
+        <div id="modal-upload" class="sig-panel">
+          <div class="upload-zone" onclick="document.getElementById('modalSigUpload').click()">📷 Upload photo of your signature</div>
+          <input type="file" id="modalSigUpload" accept="image/*" style="display:none" onchange="handleSigUpload(event,'modal')">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('signApproveModal')">Cancel</button>
+      <button class="btn btn-primary" id="confirmSignBtn" onclick="confirmSignAndApprove()" disabled style="opacity:.5">Confirm & Approve →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div id="receiptModal" class="modal-overlay" onclick="closeModalOutside(event,'receiptModal')">
+  <div class="modal">
+    <div class="modal-header"><strong>Payment Receipt</strong><button class="close-btn" onclick="closeModal('receiptModal')">×</button></div>
+    <div class="modal-body" id="receiptBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="toast('Receipt PDF downloaded!');closeModal('receiptModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download PDF</button>
+      <button class="btn btn-primary" onclick="closeModal('receiptModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── MASTER BUDGET STORE (SMT-approved, read-only) ─────────────────────────
+// Each project: {id, name, dept, smtRef, totalBudget, period, lineItems:[{category, budgetedAmount}], loaded, closed}
+const budgetStore = [
+  {
+    id: 'NBO-001', name: 'Nairobi Field Ops', dept: 'Field Operations',
+    smtRef: 'SMT/2026/06/001', totalBudget: 1800000, period: 'June 2026',
+    loaded: 1800000, closed: false,
+    lineItems: [
+      {category:'Staff Field Allowances',   budgetedAmount: 700000},
+      {category:'Transport & Fuel',         budgetedAmount: 350000},
+      {category:'Accommodation',            budgetedAmount: 300000},
+      {category:'Stationery & Supplies',    budgetedAmount: 200000},
+      {category:'Communication',            budgetedAmount: 150000},
+      {category:'Miscellaneous',            budgetedAmount: 100000},
+    ]
+  },
+  {
+    id: 'MSA-001', name: 'Mombasa Survey', dept: 'Research & Data',
+    smtRef: 'SMT/2026/06/002', totalBudget: 1200000, period: 'June 2026',
+    loaded: 1200000, closed: false,
+    lineItems: [
+      {category:'Survey Team Allowances',   budgetedAmount: 480000},
+      {category:'Transport & Logistics',    budgetedAmount: 320000},
+      {category:'Accommodation',            budgetedAmount: 200000},
+      {category:'Data Collection Tools',    budgetedAmount: 120000},
+      {category:'Miscellaneous',            budgetedAmount: 80000},
+    ]
+  },
+  {
+    id: 'KSM-001', name: 'Kisumu Training', dept: 'Capacity Building',
+    smtRef: 'SMT/2026/06/003', totalBudget: 1200000, period: 'June 2026',
+    loaded: 800000, closed: false,
+    lineItems: [
+      {category:'Trainer Fees',             budgetedAmount: 400000},
+      {category:'Venue Hire',               budgetedAmount: 300000},
+      {category:'Participant Allowances',   budgetedAmount: 250000},
+      {category:'Materials & Printing',     budgetedAmount: 150000},
+      {category:'Catering',                 budgetedAmount: 100000},
+    ]
+  },
+];
+
+// ── State ──────────────────────────────────────────────────
+// Signatures persist in localStorage so you never re-upload
+function loadSigsFromStorage() {
+  try { const s = localStorage.getItem('mrv_saved_signatures'); return s ? JSON.parse(s) : []; }
+  catch(e) { return []; }
+}
+function persistSigsToStorage() {
+  try { localStorage.setItem('mrv_saved_signatures', JSON.stringify(savedSigs)); } catch(e) {}
+}
+let savedSigs = loadSigsFromStorage();
+let reqCounter = 5;
+let activeSignRowBtn = null;
+let activeSignRef = '';
+let pendingModalSig = null;
+let pendingExpSig = null;
+
+// Central requests store
+let requestsStore = [
+  {ref:'REQ-001', project:'Nairobi Field Ops', description:'Field allowances',   amount:450000, requester:'J. Kamau',   status:'Paid',    sigDataUrl:null, sigLabel:'J. Kamau',   sigTime:'04 Jun 2026 09:14', date:'04 Jun 2026'},
+  {ref:'REQ-002', project:'Mombasa Survey',    description:'Transport costs',    amount:320000, requester:'A. Ali',     status:'Paid',    sigDataUrl:null, sigLabel:'A. Ali',     sigTime:'05 Jun 2026 11:30', date:'05 Jun 2026'},
+  {ref:'REQ-003', project:'Nairobi Field Ops', description:'Stationery purchase',amount:85000,  requester:'M. Wanjiku', status:'Pending', sigDataUrl:null, sigLabel:null,         sigTime:null,                date:'06 Jun 2026'},
+  {ref:'REQ-004', project:'Kisumu Training',   description:'Venue hire',         amount:390000, requester:'P. Otieno',  status:'Draft',   sigDataUrl:null, sigLabel:null,         sigTime:null,                date:'07 Jun 2026'},
+  {ref:'REQ-005', project:'Mombasa Survey',    description:'Accommodation',      amount:200000, requester:'A. Ali',     status:'Draft',   sigDataUrl:null, sigLabel:null,         sigTime:null,                date:'07 Jun 2026'},
+];
+
+// ── HELPERS ────────────────────────────────────────────────
+const fmt = n => n.toLocaleString();
+const fmtK = n => n >= 1000000 ? 'KES '+(n/1000000).toFixed(1)+'M' : n >= 1000 ? 'KES '+(n/1000).toFixed(0)+'K' : 'KES '+n;
+
+function projectNames() { return budgetStore.map(p => p.name); }
+
+function populateSelect(id, options, includeBlank) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = (includeBlank ? '<option value="">-- Select --</option>' : '') +
+    options.map(o => `<option value="${o}">${o}</option>`).join('');
+}
+
+function projectUtilised(name) {
+  return requestsStore.filter(r => r.project === name && r.status === 'Paid')
+    .reduce((s, r) => s + r.amount, 0);
+}
+
+// ── DATA-DRIVEN RENDERS ────────────────────────────────────
+
+function renderDashboard() {
+  const totalBudget = budgetStore.reduce((s,p) => s+p.totalBudget, 0);
+  const totalLoaded = budgetStore.reduce((s,p) => s+p.loaded, 0);
+  const totalUtil   = budgetStore.reduce((s,p) => s+projectUtilised(p.name), 0);
+  const balance     = totalLoaded - totalUtil;
+
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Budget</div><div class="stat-value teal">${fmtK(totalBudget)}</div><div class="stat-sub">${budgetStore.length} projects approved by SMT</div></div>
+    <div class="stat-card"><div class="stat-label">Money In</div><div class="stat-value teal">${fmtK(totalLoaded)}</div><div class="stat-sub">Loaded to platform</div></div>
+    <div class="stat-card"><div class="stat-label">Utilised</div><div class="stat-value purple">${fmtK(totalUtil)}</div><div class="stat-sub">via ${requestsStore.filter(r=>r.status==='Paid').length} paid requests</div></div>
+    <div class="stat-card"><div class="stat-label">Advance Balance</div><div class="stat-value gold">${fmtK(balance)}</div><div class="stat-sub">Pending reconciliation</div></div>`;
+
+  document.getElementById('dashProjCount').textContent = budgetStore.length + ' Active';
+  document.getElementById('dashProjTable').innerHTML = budgetStore.map(p => {
+    const util = projectUtilised(p.name);
+    const pct = p.loaded ? Math.round(util/p.loaded*100) : 0;
+    return `<tr>
+      <td class="font-600">${p.name}</td>
+      <td class="text-muted text-sm">${p.dept}</td>
+      <td class="currency">${fmt(p.totalBudget)}</td>
+      <td class="currency">${fmt(p.loaded)}</td>
+      <td><span style="color:var(--purple);font-weight:600">${fmt(util)}</span> <span class="text-muted text-sm">(${pct}%)</span></td>
+    </tr>`;}).join('');
+
+  // Recent payments (last 4 from requestsStore)
+  document.getElementById('dashPaymentsTable').innerHTML = [...requestsStore].slice(-5).reverse().map(r => {
+    const cls = {Paid:'badge-teal',Pending:'badge-gold',Draft:'badge-gray'}[r.status]||'badge-gray';
+    return `<tr><td>${r.description}</td><td class="text-muted text-sm">${r.project}</td><td class="currency">${fmt(r.amount)}</td><td><span class="badge ${cls}">${r.status}</span></td></tr>`;
+  }).join('');
+
+  // Progress bars
+  document.getElementById('dashProgress').innerHTML = budgetStore.map(p => {
+    const util = projectUtilised(p.name);
+    const pct = p.loaded ? Math.round(util/p.loaded*100) : 0;
+    return `<div>
+      <div class="flex justify-between mb-3">
+        <span class="font-600 text-sm">${p.name}</span>
+        <span class="text-sm text-muted">KES ${fmt(util)} utilised of ${fmt(p.loaded)} loaded &nbsp;·&nbsp; <strong>${pct}%</strong></span>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>`;}).join('');
+}
+
+function renderBudgetView() {
+  const totalBudget = budgetStore.reduce((s,p)=>s+p.totalBudget,0);
+  const totalLoaded = budgetStore.reduce((s,p)=>s+p.loaded,0);
+  const totalUtil   = budgetStore.reduce((s,p)=>s+projectUtilised(p.name),0);
+  const balance     = totalLoaded - totalUtil;
+
+  document.getElementById('budgetStatsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Approved Budget</div><div class="stat-value teal">${fmtK(totalBudget)}</div><div class="stat-sub">${budgetStore.length} SMT-approved projects</div></div>
+    <div class="stat-card"><div class="stat-label">Total Loaded</div><div class="stat-value teal">${fmtK(totalLoaded)}</div><div class="stat-sub">Posted as Money-In</div></div>
+    <div class="stat-card"><div class="stat-label">Total Utilised</div><div class="stat-value purple">${fmtK(totalUtil)}</div><div class="stat-sub">Paid requests</div></div>
+    <div class="stat-card"><div class="stat-label">Advance Balance</div><div class="stat-value gold">${fmtK(balance)}</div><div class="stat-sub">Unreconciled</div></div>`;
+
+  // Summary table
+  document.getElementById('budgetDetailBody').innerHTML = budgetStore.map(p => {
+    const util = projectUtilised(p.name);
+    const remaining = p.totalBudget - util;
+    const pct = Math.round(util/p.totalBudget*100);
+    const barColor = pct > 80 ? 'var(--danger)' : pct > 50 ? 'var(--gold)' : 'var(--teal-mid)';
+    return `<tr>
+      <td>
+        <div class="font-600">${p.name}</div>
+        <div class="text-sm text-muted">${p.id}</div>
+      </td>
+      <td class="text-muted text-sm">${p.dept}</td>
+      <td class="text-muted text-sm">${p.smtRef}</td>
+      <td class="currency font-600">${fmt(p.totalBudget)}</td>
+      <td class="currency">${fmt(p.loaded)}</td>
+      <td><span style="color:var(--purple);font-weight:600">${fmt(util)}</span></td>
+      <td style="color:${remaining < 0 ? 'var(--danger)' : 'var(--gold)'};font-weight:600">${fmt(remaining)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-wrap" style="width:60px;flex-shrink:0"><div class="progress-fill" style="width:${pct}%;background:${barColor}"></div></div>
+          <span class="text-sm" style="color:${barColor};font-weight:600">${pct}%</span>
+        </div>
+      </td>
+      <td><button class="btn btn-ghost btn-sm" onclick="toggleLineItems('lines-${p.id}')">Line Items ▾</button></td>
+    </tr>
+    <tr id="lines-${p.id}" style="display:none">
+      <td colspan="9" style="padding:0;background:var(--teal-pale)">
+        <table style="margin:0;border-radius:0">
+          <thead><tr style="background:var(--teal-light)">
+            <th style="padding-left:28px">Budget Line Item</th>
+            <th>Budgeted Amount</th>
+            <th>Requests Against Line</th>
+            <th>Remaining</th>
+          </tr></thead>
+          <tbody>${p.lineItems.map(li => {
+            const liUtil = requestsStore.filter(r=>r.project===p.name&&r.status==='Paid'&&r.description.toLowerCase().includes(li.category.split(' ')[0].toLowerCase())).reduce((s,r)=>s+r.amount,0);
+            const liRem  = li.budgetedAmount - liUtil;
+            return `<tr style="background:transparent">
+              <td style="padding-left:28px;font-size:13px">${li.category}</td>
+              <td class="currency text-sm">${fmt(li.budgetedAmount)}</td>
+              <td class="currency text-sm" style="color:var(--purple)">${fmt(liUtil)||'—'}</td>
+              <td class="currency text-sm" style="color:${liRem<0?'var(--danger)':'var(--teal)'}">${fmt(liRem)}</td>
+            </tr>`;}).join('')}
+          </tbody>
+        </table>
+      </td>
+    </tr>`;}).join('');
+
+  // Per-project line item summary cards (below the table)
+  document.getElementById('budgetLineCards').innerHTML = ''; // cleared; detail is inline now
+}
+
+function toggleLineItems(id) {
+  const row = document.getElementById(id);
+  row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+
+function renderReconciliation() {
+  const totalLoaded = budgetStore.reduce((s,p)=>s+p.loaded,0);
+  const totalPaid   = requestsStore.filter(r=>r.status==='Paid').reduce((s,r)=>s+r.amount,0);
+  const balance     = totalLoaded - totalPaid;
+
+  document.getElementById('reconStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Money-In</div><div class="stat-value teal">${fmtK(totalLoaded)}</div><div class="stat-sub">Loaded this cycle</div></div>
+    <div class="stat-card"><div class="stat-label">Total Payments Made</div><div class="stat-value purple">${fmtK(totalPaid)}</div><div class="stat-sub">Via approved requests</div></div>
+    <div class="stat-card"><div class="stat-label">Advance Balance</div><div class="stat-value gold">${fmtK(balance)}</div><div class="stat-sub">To be closed or carried over</div></div>`;
+
+  document.getElementById('reconTable').innerHTML = budgetStore.map(p => {
+    const util = projectUtilised(p.name);
+    const bal  = p.loaded - util;
+    return `<tr>
+      <td class="font-600">${p.name}</td>
+      <td class="text-muted text-sm">${p.dept}</td>
+      <td class="currency">${fmt(p.totalBudget)}</td>
+      <td class="currency">${fmt(p.loaded)}</td>
+      <td class="currency" style="color:var(--purple);font-weight:600">${fmt(util)}</td>
+      <td class="currency font-600" style="color:${bal<0?'var(--danger)':'var(--gold)'}">${fmt(bal)}</td>
+      <td><span class="badge ${p.closed?'badge-teal':'badge-gold'}">${p.closed?'Closed':'Open'}</span></td>
+    </tr>`;}).join('');
+
+  populateSelect('reconProjectSelect', projectNames(), true);
+}
+
+function populateAllDropdowns() {
+  const names = projectNames();
+  populateSelect('loadProjectSelect', names, false);
+  populateSelect('reqProjectSelect', names, false);
+  populateSelect('expProjectSelect', names, false);
+  // expense request refs
+  const refs = requestsStore.map(r=>'#'+r.ref);
+  populateSelect('expReqSelect', refs, false);
+}
+
+// ── PDF GENERATION ─────────────────────────────────────────
+async function downloadRequestsPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const pw = doc.internal.pageSize.getWidth();   // 297
+  const ph = doc.internal.pageSize.getHeight();  // 210
+  const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const TEAL   = [15, 110, 86];
+  const NAVY   = [13, 43, 30];
+  const PURPLE = [61, 47, 142];
+  const GOLD   = [200, 155, 42];
+  const LIGHT  = [232, 245, 240];
+  const MUTED  = [107, 127, 120];
+  const WHITE  = [255, 255, 255];
+  const BORDER = [212, 232, 223];
+
+  // ── Header bar ──
+  doc.setFillColor(...TEAL);
+  doc.rect(0, 0, pw, 20, 'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(14);
+  doc.setTextColor(...WHITE);
+  doc.text('MRV Money-In / Money-Out Platform', 14, 8.5);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(200, 230, 220);
+  doc.text('Payment Requests Report', 14, 14);
+  doc.text(`Generated: ${now}`, pw - 14, 14, {align:'right'});
+
+  // ── Summary boxes ──
+  const totals = requestsStore.reduce((a,r)=>({
+    total: a.total + r.amount,
+    paid:  a.paid  + (r.status==='Paid'?r.amount:0),
+    pend:  a.pend  + (r.status==='Pending'?r.amount:0),
+    draft: a.draft + (r.status==='Draft'?r.amount:0),
+  }),{total:0,paid:0,pend:0,draft:0});
+
+  const boxes = [
+    {label:'Total Requests',  value:`KES ${totals.total.toLocaleString()}`, color:TEAL},
+    {label:'Paid',            value:`KES ${totals.paid.toLocaleString()}`,  color:[30,150,100]},
+    {label:'Pending Approval',value:`KES ${totals.pend.toLocaleString()}`,  color:PURPLE},
+    {label:'Draft',           value:`KES ${totals.draft.toLocaleString()}`, color:GOLD},
+  ];
+  const bw = (pw - 28 - 12) / 4;
+  boxes.forEach((b, i) => {
+    const bx = 14 + i * (bw + 4);
+    doc.setFillColor(...LIGHT);
+    doc.roundedRect(bx, 23, bw, 14, 2, 2, 'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...MUTED);
+    doc.text(b.label.toUpperCase(), bx+4, 28.5);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...b.color);
+    doc.text(b.value, bx+4, 34.5);
+  });
+
+  // ── Column layout ──
+  // Columns: #, Project, Description, Amount, Requester, Date, Status, Signature
+  const COL_WIDTHS = [18, 45, 52, 28, 30, 22, 20, 62];  // sums ≈ 277, fits in 297-20 margin
+  const COL_X = COL_WIDTHS.reduce((acc, w, i) => { acc.push(i===0?14:(acc[i-1]+COL_WIDTHS[i-1])); return acc; }, []);
+  const HEADERS = ['Ref #','Project','Description','Amount (KES)','Requester','Date','Status','Authorised Signature'];
+  const ROW_H_BASE = 14;   // row height when no signature
+  const ROW_H_SIG  = 18;   // row height when signature present
+  const SIG_IMG_H  = 12;   // rendered image height in mm
+  const SIG_IMG_MAXW = 48; // max image width in mm
+
+  let y = 40;
+
+  // Header row
+  doc.setFillColor(...TEAL);
+  doc.rect(14, y, pw-28, 8, 'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(7);
+  doc.setTextColor(...WHITE);
+  HEADERS.forEach((h, i) => {
+    doc.text(h, COL_X[i]+2, y+5.2);
+  });
+  y += 8;
+
+  // Data rows
+  for (let ri = 0; ri < requestsStore.length; ri++) {
+    const r = requestsStore[ri];
+    const hasSig = !!r.sigDataUrl;
+    const rowH = hasSig ? ROW_H_SIG : ROW_H_BASE;
+
+    // check page overflow
+    if (y + rowH > ph - 14) {
+      doc.addPage();
+      y = 14;
+      // re-draw header on new page
+      doc.setFillColor(...TEAL);
+      doc.rect(14, y, pw-28, 8, 'F');
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(7);
+      doc.setTextColor(...WHITE);
+      HEADERS.forEach((h, i) => doc.text(h, COL_X[i]+2, y+5.2));
+      y += 8;
+    }
+
+    // Row background (alternating)
+    if (ri % 2 === 0) {
+      doc.setFillColor(248, 252, 250);
+      doc.rect(14, y, pw-28, rowH, 'F');
+    }
+
+    // Row border
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.2);
+    doc.rect(14, y, pw-28, rowH, 'S');
+
+    // Cell content
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7.5);
+
+    // Ref #
+    doc.setTextColor(...TEAL);
+    doc.setFont('helvetica','bold');
+    doc.text('#'+r.ref, COL_X[0]+2, y + rowH/2 + 1.5, {baseline:'middle'});
+
+    // Project
+    doc.setTextColor(...NAVY);
+    doc.setFont('helvetica','normal');
+    doc.text(r.project, COL_X[1]+2, y + rowH/2 + 1.5, {baseline:'middle', maxWidth: COL_WIDTHS[1]-4});
+
+    // Description
+    doc.text(r.description, COL_X[2]+2, y + rowH/2 + 1.5, {baseline:'middle', maxWidth: COL_WIDTHS[2]-4});
+
+    // Amount
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(...NAVY);
+    doc.text(r.amount.toLocaleString(), COL_X[3]+2, y + rowH/2 + 1.5, {baseline:'middle'});
+
+    // Requester
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(...NAVY);
+    doc.text(r.requester, COL_X[4]+2, y + rowH/2 + 1.5, {baseline:'middle'});
+
+    // Date
+    doc.setTextColor(...MUTED);
+    doc.text(r.date, COL_X[5]+2, y + rowH/2 + 1.5, {baseline:'middle'});
+
+    // Status badge
+    const statusColors = {
+      'Paid':    {fill:[232,245,240], text:TEAL},
+      'Pending': {fill:[238,236,250], text:PURPLE},
+      'Draft':   {fill:[238,240,238], text:MUTED},
+    };
+    const sc = statusColors[r.status] || statusColors['Draft'];
+    const badgeX = COL_X[6]+2, badgeY = y + rowH/2 - 2.5;
+    doc.setFillColor(...sc.fill);
+    doc.roundedRect(badgeX, badgeY, 14, 5, 1, 1, 'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(6);
+    doc.setTextColor(...sc.text);
+    doc.text(r.status, badgeX+7, badgeY+3.3, {align:'center'});
+
+    // Signature column
+    if (hasSig) {
+      try {
+        const imgY = y + (rowH - SIG_IMG_H)/2;
+        const imgX = COL_X[7]+2;
+        // draw a faint sig box
+        doc.setFillColor(248,252,250);
+        doc.setDrawColor(...BORDER);
+        doc.setLineWidth(0.3);
+        doc.roundedRect(imgX, imgY, SIG_IMG_MAXW, SIG_IMG_H, 1, 1, 'FD');
+
+        // Place image — detect format from dataUrl
+        const fmt = r.sigDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        doc.addImage(r.sigDataUrl, fmt, imgX+1, imgY+1, SIG_IMG_MAXW-2, SIG_IMG_H-2, undefined, 'FAST');
+
+        // Signed label
+        if (r.sigLabel) {
+          doc.setFontSize(5.5);
+          doc.setFont('helvetica','normal');
+          doc.setTextColor(...MUTED);
+          doc.text(r.sigLabel + (r.sigTime ? '  •  '+r.sigTime : ''), imgX + SIG_IMG_MAXW/2, y+rowH-1.5, {align:'center'});
+        }
+      } catch(e) {
+        doc.setFont('helvetica','italic');
+        doc.setFontSize(7);
+        doc.setTextColor(...TEAL);
+        doc.text('[Signature on file]', COL_X[7]+2, y + rowH/2 + 1.5, {baseline:'middle'});
+      }
+    } else {
+      doc.setFont('helvetica','italic');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...MUTED);
+      doc.text('Not yet signed', COL_X[7]+4, y + rowH/2 + 1.5, {baseline:'middle'});
+    }
+
+    // Vertical cell dividers
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.15);
+    COL_X.forEach((cx, ci) => {
+      if (ci > 0) doc.line(cx, y, cx, y+rowH);
+    });
+
+    y += rowH;
+  }
+
+  // ── Footer ──
+  const footerY = ph - 10;
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(14, footerY-4, pw-14, footerY-4);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...MUTED);
+  doc.text('MRV Platform — Confidential Payment Report', 14, footerY);
+  doc.text(`Page 1 of ${doc.getNumberOfPages()}`, pw-14, footerY, {align:'right'});
+  doc.text('Signatures are digitally applied via the MRV Platform and constitute authorised approval.', pw/2, footerY, {align:'center'});
+
+  doc.save(`MRV_Payment_Requests_${new Date().toISOString().slice(0,10)}.pdf`);
+  toast('PDF downloaded ✓');
+}
+
+// ── Navigation ─────────────────────────────────────────────
+function showView(id, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.aside-item').forEach(a => a.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  if (el && el.classList) el.classList.add('active');
+  if (id === 'signatures')     renderSavedSigs();
+  if (id === 'budgets')        renderBudgetView();
+  if (id === 'reconciliation') renderReconciliation();
+  if (id === 'dashboard')      renderDashboard();
+}
+
+// ── Modals ─────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModalOutside(e, id) { if (e.target.id === id) closeModal(id); }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Canvas Drawing ─────────────────────────────────────────
+function initCanvas(id) {
+  const canvas = document.getElementById(id);
+  if (!canvas || canvas._init) return;
+  canvas._init = true;
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#0D2B1E';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  let drawing = false, lastX = 0, lastY = 0;
+
+  function pos(e) {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / r.width;
+    const scaleY = canvas.height / r.height;
+    const src = e.touches ? e.touches[0] : e;
+    return [(src.clientX - r.left) * scaleX, (src.clientY - r.top) * scaleY];
+  }
+  function start(e) { e.preventDefault(); drawing = true; [lastX, lastY] = pos(e); ctx.beginPath(); ctx.moveTo(lastX, lastY); }
+  function move(e) {
+    if (!drawing) return; e.preventDefault();
+    const [x, y] = pos(e);
+    ctx.lineTo(x, y); ctx.stroke();
+    lastX = x; lastY = y;
+  }
+  function stop() { drawing = false; }
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', stop);
+  canvas.addEventListener('mouseleave', stop);
+  canvas.addEventListener('touchstart', start, {passive:false});
+  canvas.addEventListener('touchmove', move, {passive:false});
+  canvas.addEventListener('touchend', stop);
+}
+
+function clearCanvas(id) {
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function isCanvasBlank(id) {
+  const canvas = document.getElementById(id);
+  const data = canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
+  return !data.some(v => v !== 0);
+}
+
+// ── Tab switching ──────────────────────────────────────────
+function switchSigTab(btn, panelId) {
+  const parent = btn.closest('.sig-tabs');
+  parent.querySelectorAll('.sig-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const prefix = panelId.split('-')[0] + '-' + panelId.split('-')[1];
+  // find sibling panels
+  let el = parent.nextElementSibling;
+  while (el && el.classList.contains('sig-panel')) {
+    el.classList.remove('active');
+    el = el.nextElementSibling;
+  }
+  const target = document.getElementById(panelId);
+  if (target) {
+    target.classList.add('active');
+    // init canvases when revealed
+    if (panelId.includes('draw')) {
+      const c = target.querySelector('canvas');
+      if (c) { setTimeout(() => initCanvas(c.id), 50); }
+    }
+  }
+}
+
+// ── SAVED SIGNATURES ──────────────────────────────────────
+function renderSavedSigs() {
+  const grid = document.getElementById('savedSigsGrid');
+  const noMsg = document.getElementById('noSigMsg');
+  const count = document.getElementById('sigCount');
+  count.textContent = savedSigs.length + ' saved';
+  if (savedSigs.length === 0) { grid.innerHTML = ''; noMsg.style.display = ''; return; }
+  noMsg.style.display = 'none';
+  grid.innerHTML = savedSigs.map((s,i) => `
+    <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff;display:flex;align-items:center;gap:14px">
+      <img src="${s.dataUrl}" style="height:52px;object-fit:contain;max-width:160px;flex-shrink:0;border:1px solid var(--border);border-radius:8px;padding:4px;background:#fafaf8">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.label}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Added ${s.date}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="deleteSig(${i})" style="color:var(--danger);flex-shrink:0">Delete</button>
+    </div>`).join('');
+  // also refresh inline grids
+  refreshSigGrids();
+}
+
+function deleteSig(i) {
+  savedSigs.splice(i, 1);
+  persistSigsToStorage();
+  renderSavedSigs();
+  toast('Signature removed');
+}
+
+function refreshSigGrids() {
+  ['expSavedGrid','modalSavedGrid'].forEach(gridId => {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    if (savedSigs.length === 0) {
+      grid.innerHTML = '<p class="text-sm text-muted">No saved signatures yet.</p>';
+      return;
+    }
+    const context = gridId.startsWith('exp') ? 'exp' : 'modal';
+    grid.innerHTML = savedSigs.map((s,i) => `
+      <div class="sig-card" onclick="selectSavedSig(${i},'${context}',this)" id="${context}-sig-${i}">
+        <div class="sig-check">✓</div>
+        <img src="${s.dataUrl}" alt="${s.label}">
+        <div class="sig-name">${s.label}</div>
+      </div>`).join('') +
+      `<div class="sig-add-card" onclick="${context==='exp'?"showView('signatures',null)":"closeModal('signApproveModal');showView('signatures',null)"}">
+        <div class="sig-add-icon">+</div>
+        <div class="sig-add-text">Add signature</div>
+      </div>`;
+  });
+}
+
+function selectSavedSig(idx, context, el) {
+  const grid = el.closest('.sig-grid');
+  grid.querySelectorAll('.sig-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const sig = savedSigs[idx];
+  if (context === 'exp') {
+    pendingExpSig = sig.dataUrl;
+    applyExpSig(sig.dataUrl, sig.label);
+  } else {
+    pendingModalSig = sig.dataUrl;
+    applyModalSig(sig.dataUrl, sig.label);
+  }
+}
+
+// ── Save new sig (from My Signatures page) ────────────────
+function saveNewSig(mode) {
+  const label = document.getElementById('newSigLabel').value.trim() || 'My Signature';
+  let dataUrl = null;
+  if (mode === 'draw') {
+    if (isCanvasBlank('newCanvas')) { toast('Please draw your signature first'); return; }
+    dataUrl = document.getElementById('newCanvas').toDataURL();
+  } else {
+    dataUrl = document.getElementById('newPreviewImg').src;
+    if (!dataUrl || dataUrl === window.location.href) { toast('Please upload an image first'); return; }
+  }
+  const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  savedSigs.push({label, dataUrl, date: now, id: Date.now()});
+  persistSigsToStorage();
+  clearCanvas('newCanvas');
+  document.getElementById('newSigLabel').value = '';
+  clearUpload();
+  renderSavedSigs();
+  toast('Signature saved ✓');
+}
+
+function previewUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('newPreviewImg').src = ev.target.result;
+    document.getElementById('newUploadPreview').style.display = 'block';
+    document.getElementById('newUploadZone').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearUpload() {
+  document.getElementById('newPreviewImg').src = '';
+  document.getElementById('newUploadPreview').style.display = 'none';
+  document.getElementById('newUploadZone').style.display = 'block';
+  document.getElementById('newSigFile').value = '';
+}
+
+// ── Handle upload in inline contexts ──────────────────────
+function handleSigUpload(e, context) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    if (context === 'exp') { pendingExpSig = dataUrl; applyExpSig(dataUrl, 'Uploaded signature'); }
+    else { pendingModalSig = dataUrl; applyModalSig(dataUrl, 'Uploaded signature'); }
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Apply drawn sig ────────────────────────────────────────
+function applyDrawnSig(context) {
+  const canvasId = context === 'exp' ? 'expCanvas' : 'modalCanvas';
+  if (isCanvasBlank(canvasId)) { toast('Please draw your signature first'); return; }
+  const dataUrl = document.getElementById(canvasId).toDataURL();
+  if (context === 'exp') { pendingExpSig = dataUrl; applyExpSig(dataUrl, 'Handwritten'); }
+  else { pendingModalSig = dataUrl; applyModalSig(dataUrl, 'Handwritten'); }
+}
+
+// ── Expense signature ──────────────────────────────────────
+function applyExpSig(dataUrl, label) {
+  const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + ' — ' + new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('expSigImg').src = dataUrl;
+  document.getElementById('expSigName').textContent = label;
+  document.getElementById('expSigTime').textContent = now;
+  document.getElementById('expSigDisplay').style.display = 'flex';
+  document.getElementById('expSigWidget').style.display = 'none';
+}
+
+function clearExpSig() {
+  pendingExpSig = null;
+  document.getElementById('expSigDisplay').style.display = 'none';
+  document.getElementById('expSigWidget').style.display = 'block';
+}
+
+// ── Modal (Sign & Approve) signature ──────────────────────
+function applyModalSig(dataUrl, label) {
+  const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + ' — ' + new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('modalSigImg').src = dataUrl;
+  document.getElementById('modalSigName').textContent = label;
+  document.getElementById('modalSigTime').textContent = now;
+  document.getElementById('modalSigApplied').style.display = 'flex';
+  document.getElementById('modalSigWidget').style.display = 'none';
+  const btn = document.getElementById('confirmSignBtn');
+  btn.disabled = false; btn.style.opacity = '1';
+}
+
+function clearModalSig() {
+  pendingModalSig = null;
+  document.getElementById('modalSigApplied').style.display = 'none';
+  document.getElementById('modalSigWidget').style.display = 'block';
+  const btn = document.getElementById('confirmSignBtn');
+  btn.disabled = true; btn.style.opacity = '.5';
+}
+
+// ── Open Sign & Approve ────────────────────────────────────
+function openSignAndApprove(btn, ref, recipient) {
+  activeSignRowBtn = btn;
+  activeSignRef = ref;
+  clearModalSig();
+  document.getElementById('signModalSub').textContent = `Request #${ref} — Recipient: ${recipient}`;
+  refreshSigGrids();
+  openModal('signApproveModal');
+  setTimeout(() => initCanvas('modalCanvas'), 100);
+}
+
+function confirmSignAndApprove() {
+  if (!pendingModalSig) { toast('Please provide a signature first'); return; }
+  // persist sig into store
+  const sigLabel = document.getElementById('modalSigName').textContent || 'Officer';
+  const sigTime  = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const entry = requestsStore.find(r => r.ref === activeSignRef);
+  if (entry) {
+    entry.status     = 'Paid';
+    entry.sigDataUrl = pendingModalSig;
+    entry.sigLabel   = sigLabel;
+    entry.sigTime    = sigTime;
+  }
+  // update row in table
+  const row = activeSignRowBtn.closest('tr');
+  row.querySelector('.badge').className = 'badge badge-teal';
+  row.querySelector('.badge').textContent = 'Paid';
+  const ref = activeSignRef;
+  const amt = entry ? entry.amount : 0;
+  activeSignRowBtn.outerHTML = `<button class="btn btn-ghost btn-sm" onclick="showReceipt('${ref}','${amt}','${sigLabel}')">Receipt</button>`;
+  closeModal('signApproveModal');
+  renderDashboard();
+  toast('Payment approved & signed ✓');
+}
+
+// ── Request / expense helpers ──────────────────────────────
+function submitRequest() {
+  reqCounter++;
+  const project = document.getElementById('reqProjectSelect').value || '—';
+  const desc    = document.getElementById('rDesc').value || 'New expense';
+  const amount  = parseInt(document.getElementById('rAmount').value || 0);
+  const name    = document.getElementById('rName').value || '—';
+  const num     = 'REQ-00' + reqCounter;
+  const today   = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  requestsStore.push({ref:num, project, description:desc, amount, requester:name, status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today});
+  const tbody = document.getElementById('requestsBody');
+  const row   = document.createElement('tr');
+  row.innerHTML = `<td class="text-muted">#${num}</td><td>${project}</td><td>${desc}</td><td class="currency">${amount.toLocaleString()}</td><td>${name}</td><td><span class="badge badge-gray">Draft</span></td><td><button class="btn btn-secondary btn-sm" onclick="openSignAndApprove(this,'${num}','${name}')">Sign & Approve</button></td>`;
+  tbody.appendChild(row);
+  populateAllDropdowns();
+  closeModal('requestModal'); toast('Payment request submitted ✓');
+}
+
+function submitExpense() {
+  if (!pendingExpSig) { toast('Please provide a recipient signature before submitting'); return; }
+  const project = document.getElementById('expProjectSelect').value || '—';
+  const log = document.getElementById('expenseLog');
+  const row = document.createElement('tr');
+  const today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+  row.innerHTML = `<td>${today}</td><td>${project}</td><td class="currency">—</td><td><img src="${pendingExpSig}" style="height:28px;object-fit:contain;max-width:90px;vertical-align:middle;border:1px solid var(--border);border-radius:4px;padding:2px;background:#fff"> <span class="badge badge-teal" style="vertical-align:middle">✓ Signed</span></td>`;
+  log.appendChild(row);
+  clearExpSig();
+  toast('Expense submitted with signature ✓');
+}
+
+function loadFunds() {
+  const project = document.getElementById('loadProjectSelect').value;
+  const amt = parseInt(document.getElementById('loadAmount').value || 0);
+  // update budget store loaded amount
+  const entry = budgetStore.find(p => p.name === project);
+  if (entry) entry.loaded = Math.min(entry.loaded + amt, entry.totalBudget);
+  const row = document.createElement('tr');
+  const today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+  row.innerHTML = `<td>${project}</td><td class="currency">${amt.toLocaleString()}</td><td>${today}</td><td><span class="badge badge-teal">Posted</span></td>`;
+  document.getElementById('fundsLedger').appendChild(row);
+  toast('Funds posted as Money-In ✓');
+}
+
+function closeAdvance() {
+  const sel = document.getElementById('reconProjectSelect');
+  const name = sel ? sel.value : '';
+  if (!name) { toast('Please select a project to close'); return; }
+  const entry = budgetStore.find(p => p.name === name);
+  if (entry) entry.closed = true;
+  renderReconciliation();
+  toast(`${name} advance closed ✓`);
+}
+
+function showReceipt(ref, amount, signer) {
+  const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const entry = requestsStore.find(r => r.ref === ref);
+  const sigImg = entry && entry.sigDataUrl;
+  const sigLabel = (entry && entry.sigLabel) || signer || 'Digitally signed';
+  const sigLine = sigImg
+    ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+         <div class="text-muted text-sm" style="margin-bottom:4px;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Authorised by</div>
+         <img src="${sigImg}" style="height:44px;object-fit:contain;max-width:160px;display:block;margin-bottom:4px">
+         <div style="font-size:11px;color:var(--muted)">${sigLabel}${entry && entry.sigTime ? ' &nbsp;·&nbsp; '+entry.sigTime : ''}</div>
+       </div>`
+    : `<div class="flex justify-between"><span class="text-muted text-sm">Signed by</span><span>✓ ${sigLabel}</span></div>`;
+  document.getElementById('receiptBody').innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--teal)">MRV Platform</div>
+      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Official Payment Receipt</div>
+    </div>
+    <div style="background:var(--teal-pale);border-radius:10px;padding:16px 20px;display:grid;gap:10px">
+      <div class="flex justify-between"><span class="text-muted text-sm">Reference</span><strong>#${ref}</strong></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Date</span><span>${now}</span></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Amount (KES)</span><strong class="currency" style="font-size:18px;color:var(--teal)">${parseInt(amount||entry&&entry.amount||0).toLocaleString()}</strong></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Project</span><span>${entry ? entry.project : '—'}</span></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Description</span><span>${entry ? entry.description : '—'}</span></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Platform</span><span>MRV Money-In/Out</span></div>
+      ${sigLine}
+    </div>
+    <div style="margin-top:14px;font-size:11px;color:var(--muted);text-align:center">System-generated receipt — MRV Platform audit trail</div>`;
+  openModal('receiptModal');
+}
+
+// ── GOOGLE APPS SCRIPT INTEGRATION ────────────────────────
+
+// State
+let gsWebAppUrl  = localStorage.getItem('mrv_webapp_url') || '';
+let gsConnected  = !!gsWebAppUrl; // if URL is saved, treat as connected until proven otherwise
+let gsAutoSyncTimer= null;
+
+// Dummy — kept so old gapi script tags don't crash
+function gapiLoaded() {}
+
+// ── Connect / Disconnect ────────────────────────────────────
+async function connectWebApp() {
+  const url = document.getElementById('webAppUrl').value.trim();
+  if (!url || !url.includes('script.google.com')) {
+    toast('Please paste a valid Apps Script Web App URL'); return;
+  }
+  appendSyncLog('Testing connection…');
+  try {
+    const res = await gasCall({ action: 'ping' });
+    if (!res.ok) throw new Error(res.error || 'Unknown error');
+    gsWebAppUrl = url;
+    localStorage.setItem('mrv_webapp_url', url);
+    gsConnected = true;
+    document.getElementById('connStatusBadge').className = 'badge badge-teal';
+    document.getElementById('connStatusBadge').textContent = '✓ Connected';
+    document.getElementById('connSuccessMsg').textContent = res.message || 'Connected';
+    document.getElementById('connSuccessUrl').textContent = url;
+    document.getElementById('connSuccessBox').style.display = 'flex';
+    document.getElementById('disconnectBtn').style.display = '';
+    document.getElementById('syncControlCard').style.cssText = '';
+    updateSheetStatusPill(true);
+    appendSyncLog('✓ ' + (res.message || 'Connected'));
+    toast('Connected to Apps Script ✓');
+    // Push current data on first connect
+    await pushToSheets();
+  } catch(e) {
+    appendSyncLog('✗ Connection failed: ' + e.message);
+    toast('Connection failed — check the URL and try again');
+  }
+}
+
+function disconnectWebApp() {
+  gsConnected = false;
+  gsWebAppUrl = '';
+  localStorage.removeItem('mrv_webapp_url');
+  document.getElementById('connStatusBadge').className = 'badge badge-gray';
+  document.getElementById('connStatusBadge').textContent = 'Not connected';
+  document.getElementById('connSuccessBox').style.display = 'none';
+  document.getElementById('disconnectBtn').style.display = 'none';
+  document.getElementById('syncControlCard').style.cssText = 'opacity:.5;pointer-events:none';
+  document.getElementById('webAppUrl').value = '';
+  updateSheetStatusPill(false);
+  appendSyncLog('Disconnected.');
+  toast('Disconnected from Google Sheets');
+}
+
+// ── Core fetch wrapper ──────────────────────────────────────
+async function gasCall(payload) {
+  const url = gsWebAppUrl || document.getElementById('webAppUrl').value.trim();
+  if (!url) throw new Error('No Web App URL set');
+  // Apps Script requires GET for ping, POST for data
+  let resp;
+  if (payload.action === 'ping') {
+    resp = await fetch(url + '?action=ping', { redirect: 'follow' });
+  } else {
+    resp = await fetch(url, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain' }, // avoid CORS preflight
+      body: JSON.stringify(payload),
+    });
+  }
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  return await resp.json();
+}
+
+// ── Push all data to Sheets ─────────────────────────────────
+async function pushToSheets() {
+  if (!gsConnected) { toast('Please connect a Web App URL first'); return; }
+  appendSyncLog('Pushing data to Sheets…');
+  try {
+    // Build expense rows from DOM
+    const expRows = [];
+    document.querySelectorAll('#expenseLog tr').forEach(tr => {
+      const cells = [...tr.querySelectorAll('td')].map(td => td.textContent.trim().replace(/,/g,''));
+      if (cells.length >= 3) expRows.push({ date: cells[0], project: cells[1], amount: cells[2], signed: cells[3] || '' });
+    });
+
+    // Build fund rows from DOM
+    const fundRows = [];
+    document.querySelectorAll('#fundsLedger tr').forEach(tr => {
+      const cells = [...tr.querySelectorAll('td')].map(td => td.textContent.trim().replace(/,/g,''));
+      if (cells.length >= 3) fundRows.push({ project: cells[0], amount: cells[1], date: cells[2], status: cells[3] || 'Posted' });
+    });
+
+    const budgetRows = budgetStore.map(p => ({
+      id: p.id, name: p.name, dept: p.dept, smtRef: p.smtRef,
+      totalBudget: p.totalBudget, loaded: p.loaded, period: p.period,
+      closed: p.closed ? 'Yes' : 'No'
+    }));
+
+    const reqRows = requestsStore.map(r => ({
+      ref: r.ref, project: r.project, description: r.description,
+      amount: r.amount, requester: r.requester, status: r.status,
+      date: r.date, sigLabel: r.sigLabel || '', sigTime: r.sigTime || ''
+    }));
+
+    // Include saved signatures (strip dataUrl size warning: base64 can be large)
+    const sigRows = savedSigs.map(s => ({
+      id:      s.id,
+      label:   s.label,
+      date:    s.date,
+      dataUrl: s.dataUrl || ''
+    }));
+
+    const res = await gasCall({
+      action:     'pushAll',
+      requests:   reqRows,
+      budgets:    budgetRows,
+      funds:      fundRows,
+      expenses:   expRows,
+      signatures: sigRows,
+    });
+    if (!res.ok) throw new Error(res.error || 'Push failed');
+
+    const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    ['syncTimeRequests','syncTimeBudgets','syncTimeFunds','syncTimeExpenses','syncTimeSigs'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = now;
+    });
+    updateSheetStatusPill(true);
+    appendSyncLog(`✓ Pushed — ${reqRows.length} requests, ${budgetRows.length} budgets, ${fundRows.length} fund entries, ${expRows.length} expenses, ${sigRows.length} signatures.`);
+    toast('Synced to Google Sheets ✓');
+  } catch(e) {
+    appendSyncLog('✗ Push failed: ' + e.message);
+    toast('Push failed — see sync log');
+  }
+}
+
+// ── Pull data from Sheets ───────────────────────────────────
+async function pullFromSheets() {
+  if (!gsConnected) { toast('Please connect a Web App URL first'); return; }
+  appendSyncLog('Pulling from Sheets…');
+  try {
+    const res = await gasCall({ action: 'getAll' });
+    if (!res.ok) throw new Error(res.error || 'Pull failed');
+
+    // ── Requests ──
+    if (res.requests && res.requests.length > 0) {
+      // Map header-keyed objects → our store shape
+      const imported = res.requests.map(r => ({
+        ref:         String(r['Ref #'] || r['ref'] || ''),
+        project:     String(r['Project'] || r['project'] || ''),
+        description: String(r['Description'] || r['description'] || ''),
+        amount:      parseInt(r['Amount (KES)'] || r['amount']) || 0,
+        requester:   String(r['Requester'] || r['requester'] || ''),
+        status:      String(r['Status'] || r['status'] || 'Draft'),
+        date:        String(r['Date'] || r['date'] || ''),
+        sigLabel:    r['Signed By'] || r['sigLabel'] || null,
+        sigTime:     r['Sign Time'] || r['sigTime'] || null,
+        sigDataUrl:  null,
+      })).filter(r => r.ref);
+      if (imported.length > 0) {
+        requestsStore = imported;
+        const nums = imported.map(r => parseInt(r.ref.replace(/\D/g,'')) || 0);
+        reqCounter = Math.max(...nums, reqCounter);
+        rebuildRequestsTable();
+      }
+    }
+
+    // ── Budgets — update loaded & closed ──
+    if (res.budgets && res.budgets.length > 0) {
+      res.budgets.forEach(b => {
+        const id  = b['ID'] || b['id'];
+        const existing = budgetStore.find(p => p.id === id);
+        if (existing) {
+          existing.loaded = parseInt(b['Loaded'] || b['loaded']) || existing.loaded;
+          existing.closed = (b['Closed'] || b['closed']) === 'Yes';
+        }
+      });
+    }
+
+    // ── Funds ledger ──
+    if (res.funds && res.funds.length > 0) {
+      const tbody = document.getElementById('fundsLedger');
+      tbody.innerHTML = '';
+      res.funds.forEach(f => {
+        const project = f['Project'] || f['project'] || '';
+        const amount  = parseInt((f['Amount (KES)'] || f['amount'] || '0').toString().replace(/,/g,'')) || 0;
+        const date    = f['Date'] || f['date'] || '';
+        const status  = f['Status'] || f['status'] || 'Posted';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${project}</td><td class="currency">${amount.toLocaleString()}</td><td>${date}</td><td><span class="badge badge-teal">${status}</span></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    ['syncTimeRequests','syncTimeBudgets','syncTimeFunds','syncTimeExpenses'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = now;
+    });
+    // ── Users — update local cache ──
+    if (res.users && res.users.length > 0) {
+      usersStore = res.users;
+      persistUsersToStorage();
+      renderUsersTable();
+    }
+
+    // ── Signatures — restore from sheet ──
+    if (res.signatures && res.signatures.length > 0) {
+      // Merge: add any from sheet not already in localStorage (match by id)
+      let changed = false;
+      res.signatures.forEach(s => {
+        if (s.dataUrl && !savedSigs.find(x => String(x.id) === String(s.id))) {
+          savedSigs.push({ id: s.id, label: s.label || 'Signature', date: s.date || '', dataUrl: s.dataUrl });
+          changed = true;
+        }
+      });
+      if (changed) {
+        persistSigsToStorage();
+        refreshSigGrids();
+        appendSyncLog(`✓ Restored ${res.signatures.length} signature(s) from Sheets.`);
+      }
+    }
+
+    renderDashboard();
+    populateAllDropdowns();
+    updateSheetStatusPill(true);
+    appendSyncLog('✓ Pull complete at ' + now);
+    toast('Pulled latest data from Sheets ✓');
+  } catch(e) {
+    appendSyncLog('✗ Pull failed: ' + e.message);
+    toast('Pull failed — see sync log');
+  }
+}
+
+// ── Rebuild requests table from store ──────────────────────
+function rebuildRequestsTable() {
+  const tbody = document.getElementById('requestsBody');
+  tbody.innerHTML = requestsStore.map(r => {
+    const badgeCls  = { Paid:'badge-teal', Pending:'badge-gold', Draft:'badge-gray' }[r.status] || 'badge-gray';
+    const actionBtn = r.status === 'Paid'
+      ? `<button class="btn btn-ghost btn-sm" onclick="showReceipt('${r.ref}','${r.amount}','${r.sigLabel||r.requester}')">Receipt</button>`
+      : `<button class="btn btn-${r.status==='Pending'?'primary':'secondary'} btn-sm" onclick="openSignAndApprove(this,'${r.ref}','${r.requester}')">Sign & Approve</button>`;
+    return `<tr>
+      <td class="text-muted">#${r.ref}</td>
+      <td>${r.project}</td>
+      <td>${r.description}</td>
+      <td class="currency">${r.amount.toLocaleString()}</td>
+      <td>${r.requester}</td>
+      <td><span class="badge ${badgeCls}">${r.status}</span></td>
+      <td>${actionBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Auto-push after mutations ───────────────────────────────
+function gsPushIfConnected() {
+  if (gsConnected) {
+    clearTimeout(window._gsPushTimer);
+    window._gsPushTimer = setTimeout(() => pushToSheets(), 1500);
+  }
+}
+
+// ── Auto-sync timer ─────────────────────────────────────────
+function toggleAutoSync(on) {
+  clearInterval(gsAutoSyncTimer);
+  if (on && gsConnected) {
+    gsAutoSyncTimer = setInterval(() => pullFromSheets(), 60000);
+    appendSyncLog('Auto-sync enabled (every 60s).');
+  } else {
+    appendSyncLog('Auto-sync disabled.');
+  }
+}
+
+// ── Status pill ─────────────────────────────────────────────
+function updateSheetStatusPill(connected) {
+  const dot   = document.getElementById('sheetsStatusDot');
+  const label = document.getElementById('sheetsStatusLabel');
+  const badge = document.getElementById('sheetsSyncBadge');
+  if (connected) {
+    dot.style.background = '#4ade80';
+    label.textContent    = 'Sheets synced';
+    badge.style.display  = 'none';
+  } else {
+    dot.style.background = '#aaa';
+    label.textContent    = 'Not connected';
+    badge.style.display  = 'none';
+  }
+}
+
+// ── Sync log ────────────────────────────────────────────────
+function appendSyncLog(msg) {
+  const log = document.getElementById('syncLog');
+  if (!log) return;
+  const time = new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  log.innerHTML += `<div><span style="color:var(--teal)">${time}</span> ${msg}</div>`;
+  log.scrollTop  = log.scrollHeight;
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// AUTH SYSTEM — Simple & Synchronous
+// ══════════════════════════════════════════════════════════════
+
+let currentUser = null;
+// Users cached in localStorage so they survive refresh
+function loadUsersFromStorage() {
+  try { const s = localStorage.getItem('mrv_users'); return s ? JSON.parse(s) : []; } catch(e) { return []; }
+}
+function persistUsersToStorage() {
+  try { localStorage.setItem('mrv_users', JSON.stringify(usersStore)); } catch(e) {}
+}
+let usersStore = loadUsersFromStorage();
+const SESSION_KEY = 'mrv_session';
+
+// ── Simple SHA-256 hash ────────────────────────────────────────
+async function hashPassword(pass) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Show / hide login screen ───────────────────────────────────
+function showLoginScreen() {
+  const el = document.getElementById('loginScreen');
+  el.classList.remove('hidden');
+  setTimeout(() => { try { document.getElementById('loginEmail').focus(); } catch(e){} }, 150);
+}
+
+function hideLoginScreen() {
+  document.getElementById('loginScreen').classList.add('hidden');
+}
+
+// ── Called from the single DOMContentLoaded ────────────────────
+function bootAuth() {
+  try {
+    const raw  = localStorage.getItem(SESSION_KEY);
+    const sess = raw ? JSON.parse(raw) : null;
+    if (sess && sess.expires && sess.expires > Date.now() && sess.user) {
+      currentUser = sess.user;
+      applyRole(currentUser.role);
+      updateNavUser();
+      hideLoginScreen();
+      return;
+    }
+  } catch(e) {}
+  // No valid session — show login
+  showLoginScreen();
+}
+
+// ── Login ──────────────────────────────────────────────────────
+async function doLogin() {
+  const emailEl = document.getElementById('loginEmail');
+  const passEl  = document.getElementById('loginPassword');
+  const btn     = document.getElementById('loginBtn');
+  const err     = document.getElementById('loginError');
+
+  const email = (emailEl.value || '').trim().toLowerCase();
+  const pass  = (passEl.value  || '');
+
+  err.style.display = 'none';
+
+  if (!email || !pass) {
+    err.textContent = 'Please enter your email and password.';
+    err.style.display = 'block'; return;
+  }
+
+  btn.textContent = 'Signing in…'; btn.disabled = true;
+
+  try {
+    const hash = await hashPassword(pass);
+
+    // 1. Built-in fallback admin (always works, no Sheets needed)
+    if (email === 'admin@mrv.app') {
+      const adminHash = await hashPassword('admin123');
+      if (hash === adminHash) {
+        loginSuccess({ name:'Admin', email:'admin@mrv.app', role:'admin' });
+        btn.textContent = 'Sign In'; btn.disabled = false;
+        return;
+      }
+    }
+
+    // 2. Check local usersStore cache
+    let user = usersStore.find(u => (u.email||'').toLowerCase() === email && u.hash === hash);
+
+    // 3. Try Sheets if connected and not found locally
+    if (!user && gsWebAppUrl) {
+      try {
+        const res = await gasCall({ action: 'login', email, hash });
+        if (res.ok && res.user) user = res.user;
+      } catch(e) { /* offline — fall through */ }
+    }
+
+    if (user) {
+      loginSuccess(user);
+    } else {
+      err.textContent = 'Incorrect email or password.';
+      err.style.display = 'block';
+    }
+  } catch(e) {
+    err.textContent = 'Error: ' + e.message;
+    err.style.display = 'block';
+  }
+
+  btn.textContent = 'Sign In'; btn.disabled = false;
+}
+
+function loginSuccess(user) {
+  currentUser = { name: user.name, email: user.email, role: user.role };
+  localStorage.setItem(SESSION_KEY, JSON.stringify({
+    user: currentUser,
+    expires: Date.now() + 24 * 60 * 60 * 1000
+  }));
+  applyRole(currentUser.role);
+  updateNavUser();
+  hideLoginScreen();
+  if (gsWebAppUrl) pullUsersFromSheets().catch(()=>{});
+}
+
+// ── Logout ─────────────────────────────────────────────────────
+function doLogout() {
+  localStorage.removeItem(SESSION_KEY);
+  currentUser = null;
+  document.getElementById('loginEmail').value    = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  closeUserMenu();
+  showLoginScreen();
+}
+
+// ── Apply role to body class ────────────────────────────────────
+function applyRole(role) {
+  document.body.className = document.body.className.replace(/role-\S+/g,'').trim();
+  document.body.classList.add('role-' + (role || 'requester'));
+}
+
+// ── Update nav avatar ───────────────────────────────────────────
+function updateNavUser() {
+  if (!currentUser) return;
+  const initials = (currentUser.name || '?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  const el = document.getElementById('navUserInitials');
+  if (el) el.textContent = initials;
+  const nm = document.getElementById('menuUserName');  if (nm) nm.textContent = currentUser.name;
+  const em = document.getElementById('menuUserEmail'); if (em) em.textContent = currentUser.email;
+  const rb = document.getElementById('menuUserRole');
+  if (rb) rb.innerHTML = {
+    admin:     '<span class="login-role-badge role-admin">★ Admin</span>',
+    approver:  '<span class="login-role-badge role-approver">✓ Approver</span>',
+    requester: '<span class="login-role-badge role-requester">→ Requester</span>',
+  }[currentUser.role] || '';
+  const dot = document.getElementById('navRoleDot');
+  if (dot) dot.style.background = {admin:'#6D28D9',approver:'#059669',requester:'#2563EB'}[currentUser.role]||'#C89B2A';
+}
+
+// ── User menu ───────────────────────────────────────────────────
+function toggleUserMenu() {
+  const m = document.getElementById('userMenuDropdown');
+  if (m) m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+function closeUserMenu() {
+  const m = document.getElementById('userMenuDropdown');
+  if (m) m.style.display = 'none';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#navUserAvatar') && !e.target.closest('#userMenuDropdown')) closeUserMenu();
+});
+
+// ── showView role guard ─────────────────────────────────────────
+const _origShowView = showView;
+showView = function(id, el) {
+  if (!currentUser) return; // behind login screen, ignore
+  const approverOnly = ['funds'];
+  const adminOnly    = ['sheets','users'];
+  if (approverOnly.includes(id) && !['approver','admin'].includes(currentUser.role)) {
+    toast('Access denied — Approver role required'); return;
+  }
+  if (adminOnly.includes(id) && currentUser.role !== 'admin') {
+    toast('Access denied — Admin role required'); return;
+  }
+  _origShowView(id, el);
+};
+
+// ── Users management ────────────────────────────────────────────
+async function addUser() {
+  const name  = (document.getElementById('newUserName').value  || '').trim();
+  const email = (document.getElementById('newUserEmail').value || '').trim().toLowerCase();
+  const role  = document.getElementById('newUserRole').value;
+  const pass  = (document.getElementById('newUserPass').value  || '');
+  const pass2 = (document.getElementById('newUserPass2').value || '');
+  if (!name || !email || !pass) { toast('Please fill all fields'); return; }
+  if (pass !== pass2)           { toast('Passwords do not match'); return; }
+  if (pass.length < 6)          { toast('Password must be at least 6 characters'); return; }
+  if (usersStore.find(u => u.email === email)) { toast('Email already exists'); return; }
+  const hash = await hashPassword(pass);
+  const user = { id: Date.now(), name, email, role, hash, created: new Date().toLocaleDateString('en-GB') };
+  usersStore.push(user);
+  persistUsersToStorage();
+  ['newUserName','newUserEmail','newUserPass','newUserPass2'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  renderUsersTable();
+  await pushUsersToSheets();
+  toast('User added ✓');
+}
+
+async function deleteUser(id) {
+  const target = usersStore.find(u => u.id === id);
+  if (currentUser && target && currentUser.email === target.email) { toast("Can't delete your own account"); return; }
+  usersStore = usersStore.filter(u => u.id !== id);
+  persistUsersToStorage();
+  renderUsersTable();
+  await pushUsersToSheets();
+  toast('User removed');
+}
+
+function renderUsersTable() {
+  const tbody = document.getElementById('usersTableBody');
+  const count = document.getElementById('userCount');
+  if (!tbody) return;
+  if (count) count.textContent = usersStore.length + ' user' + (usersStore.length===1?'':'s');
+  const badge = r => ({'admin':'<span class="login-role-badge role-admin">Admin</span>','approver':'<span class="login-role-badge role-approver">Approver</span>','requester':'<span class="login-role-badge role-requester">Requester</span>'}[r]||r);
+  tbody.innerHTML = usersStore.length === 0
+    ? '<tr><td colspan="4" class="text-muted text-sm" style="padding:20px;text-align:center">No users yet</td></tr>'
+    : usersStore.map(u=>`<tr><td style="font-weight:500">${u.name}</td><td class="text-muted text-sm">${u.email}</td><td>${badge(u.role)}</td><td><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser(${u.id})">Remove</button></td></tr>`).join('');
+}
+
+async function pushUsersToSheets() {
+  if (!gsConnected || !gsWebAppUrl) return;
+  try { await gasCall({ action:'pushUsers', data:usersStore }); } catch(e) {}
+}
+
+async function pullUsersFromSheets() {
+  if (!gsWebAppUrl) return;
+  try {
+    const res = await gasCall({ action:'getUsers' });
+    if (res.ok && res.data) { usersStore = res.data; persistUsersToStorage(); renderUsersTable(); }
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════════
+// END AUTH SYSTEM
+// ══════════════════════════════════════════════════════════════
+
+// ── Single consolidated DOMContentLoaded ───────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Restore Web App URL and connected state
+  if (gsWebAppUrl) {
+    document.getElementById('webAppUrl').value = gsWebAppUrl;
+    // Restore the connected UI without re-pinging (user already tested this)
+    document.getElementById('connStatusBadge').className = 'badge badge-teal';
+    document.getElementById('connStatusBadge').textContent = '✓ Connected';
+    document.getElementById('connSuccessMsg').textContent = 'Reconnected from saved URL';
+    document.getElementById('connSuccessUrl').textContent = gsWebAppUrl;
+    document.getElementById('connSuccessBox').style.display = 'flex';
+    document.getElementById('disconnectBtn').style.display = '';
+    document.getElementById('syncControlCard').style.cssText = '';
+    updateSheetStatusPill(true);
+    // Pull fresh data silently in the background
+    setTimeout(() => pullFromSheets().catch(()=>{}), 1000);
+  }
+
+  // Seed demo signature if none saved
+  if (savedSigs.length === 0) {
+    const offscreen = document.createElement('canvas');
+    offscreen.width = 300; offscreen.height = 80;
+    const ctx = offscreen.getContext('2d');
+    ctx.strokeStyle = '#0D2B1E'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(20,50); ctx.bezierCurveTo(40,10,60,70,90,40);
+    ctx.bezierCurveTo(110,20,120,60,150,35);
+    ctx.bezierCurveTo(170,15,185,55,210,30);
+    ctx.moveTo(220,30); ctx.lineTo(260,30);
+    ctx.stroke();
+    const demoSig = offscreen.toDataURL();
+    savedSigs.push({label:'A. Omondi — Finance Officer', dataUrl: demoSig, date:'01 Jun 2026', id:1});
+    persistSigsToStorage();
+  }
+
+  // Attach demo sig to pre-seeded paid requests
+  const demoSig = savedSigs[0] ? savedSigs[0].dataUrl : null;
+  const r1 = requestsStore.find(r=>r.ref==='REQ-001');
+  const r2 = requestsStore.find(r=>r.ref==='REQ-002');
+  if (r1 && demoSig) { r1.sigDataUrl = demoSig; r1.sigLabel = savedSigs[0].label; }
+  if (r2 && demoSig) { r2.sigDataUrl = demoSig; r2.sigLabel = savedSigs[0].label; }
+
+  // Initial renders
+  renderDashboard();
+  populateAllDropdowns();
+  refreshSigGrids();
+
+  // Boot auth LAST — shows login screen or restores session
+  bootAuth();
+});
+</script>
+
+<script>
+// BULK SIGN & APPROVE
+var pendingBulkSig   = null;
+var pendingBulkLabel = '';
+
+function showBulkTab(tab) {
+  var s = (tab==='saved');
+  document.getElementById('bulkPanelSaved').style.display = s ? '' : 'none';
+  document.getElementById('bulkPanelDraw').style.display  = s ? 'none' : '';
+  document.getElementById('bulkTabSaved').style.background = s ? 'var(--teal)' : 'var(--teal-pale)';
+  document.getElementById('bulkTabSaved').style.color      = s ? '#fff' : 'var(--muted)';
+  document.getElementById('bulkTabDraw').style.background  = s ? 'var(--teal-pale)' : 'var(--teal)';
+  document.getElementById('bulkTabDraw').style.color       = s ? 'var(--muted)' : '#fff';
+  if (!s) setTimeout(function(){ initCanvas('bulkCanvas'); }, 80);
+}
+
+function openBulkApprove() {
+  pendingBulkSig = null; pendingBulkLabel = '';
+  var approvable = requestsStore.filter(function(r){ return r.status !== 'Paid'; });
+  var list = document.getElementById('bulkRequestList');
+  if (!approvable.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">All requests are already approved ✓</div>';
+  } else {
+    list.innerHTML = approvable.map(function(r){
+      return '<label style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer" onmouseenter="this.style.background=\'var(--teal-pale)\'" onmouseleave="this.style.background=\'\'"><input type="checkbox" class="bulk-chk" data-ref="'+r.ref+'" data-amount="'+r.amount+'" style="width:16px;height:16px;accent-color:var(--teal);flex-shrink:0" checked onchange="updateBulkCount()"><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">#'+r.ref+' — '+r.project+'</div><div style="font-size:11.5px;color:var(--muted)">'+r.description+' · '+r.requester+'</div></div><div style="font-family:\'DM Serif Display\',serif;font-size:13px;white-space:nowrap">KES '+r.amount.toLocaleString()+'</div><span class="badge '+(r.status==='Pending'?'badge-gold':'badge-gray')+'">'+r.status+'</span></label>';
+    }).join('');
+  }
+  var grid = document.getElementById('bulkSavedGrid');
+  if (!savedSigs || !savedSigs.length) {
+    grid.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">No saved signatures — use Draw tab or add in My Signatures.</p>';
+  } else {
+    grid.innerHTML = savedSigs.map(function(s,i){
+      return '<div class="sig-card" onclick="selectBulkSig('+i+',this)"><div class="sig-check">✓</div><img src="'+s.dataUrl+'" alt="'+s.label+'"><div class="sig-name">'+s.label+'</div></div>';
+    }).join('');
+  }
+  clearBulkSig(); showBulkTab('saved'); updateBulkCount();
+  openModal('bulkApproveModal');
+}
+
+function bulkSelectAll(v){ document.querySelectorAll('.bulk-chk').forEach(function(c){c.checked=v;}); updateBulkCount(); }
+
+function updateBulkCount(){
+  var boxes=Array.from(document.querySelectorAll('.bulk-chk:checked'));
+  var total=boxes.reduce(function(s,c){return s+(parseInt(c.dataset.amount)||0);},0);
+  document.getElementById('bulkSelectedCount').textContent=boxes.length;
+  document.getElementById('bulkSelectedTotal').textContent='KES '+total.toLocaleString();
+  updateBulkBtn();
+}
+
+function selectBulkSig(i,el){
+  document.querySelectorAll('#bulkSavedGrid .sig-card').forEach(function(c){c.classList.remove('selected');});
+  el.classList.add('selected');
+  pendingBulkSig=savedSigs[i].dataUrl; pendingBulkLabel=savedSigs[i].label;
+  showBulkSigApplied(pendingBulkSig,pendingBulkLabel);
+}
+
+function useBulkDrawnSig(){
+  if(isCanvasBlank('bulkCanvas')){toast('Please draw your signature first');return;}
+  pendingBulkSig=document.getElementById('bulkCanvas').toDataURL();
+  pendingBulkLabel=(currentUser?currentUser.name:'Approver');
+  showBulkSigApplied(pendingBulkSig,pendingBulkLabel);
+}
+
+function showBulkSigApplied(d,l){
+  document.getElementById('bulkSigImg').src=d;
+  document.getElementById('bulkSigName').textContent=l;
+  document.getElementById('bulkSigApplied').style.display='flex';
+  updateBulkBtn();
+}
+
+function clearBulkSig(){
+  pendingBulkSig=null; pendingBulkLabel='';
+  document.getElementById('bulkSigApplied').style.display='none';
+  document.querySelectorAll('#bulkSavedGrid .sig-card').forEach(function(c){c.classList.remove('selected');});
+  updateBulkBtn();
+}
+
+function updateBulkBtn(){
+  var n=document.querySelectorAll('.bulk-chk:checked').length;
+  var ok=(n>0&&!!pendingBulkSig);
+  var btn=document.getElementById('confirmBulkBtn');
+  btn.disabled=!ok; btn.style.opacity=ok?'1':'.5';
+  btn.textContent=ok?('Sign & Approve '+n+' Request'+(n===1?'':'s')+' →'):'Sign & Approve Selected';
+}
+
+function confirmBulkApprove(){
+  if(!pendingBulkSig){toast('Please select or draw a signature first');return;}
+  var checked=Array.from(document.querySelectorAll('.bulk-chk:checked'));
+  if(!checked.length){toast('No requests selected');return;}
+  var t=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  checked.forEach(function(chk){
+    var e=requestsStore.find(function(r){return r.ref===chk.dataset.ref;});
+    if(!e)return;
+    e.status='Paid'; e.sigDataUrl=pendingBulkSig; e.sigLabel=pendingBulkLabel; e.sigTime=t;
+  });
+  rebuildRequestsTable(); renderDashboard(); closeModal('bulkApproveModal');
+  if(typeof gsPushIfConnected==='function')gsPushIfConnected();
+  toast('✓ '+checked.length+' request'+(checked.length===1?'':'s')+' approved & signed');
+}
+</script>
+
+<!-- ── BULK SIGN & APPROVE MODAL ── -->
+<div id="bulkApproveModal" class="modal-overlay" onclick="closeModalOutside(event,'bulkApproveModal')">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div>
+        <strong>Sign &amp; Approve All Requests</strong>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Select requests and apply one signature to all</div>
+      </div>
+      <button class="close-btn" onclick="closeModal('bulkApproveModal')">×</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Request checklist -->
+      <div style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Requests to Approve</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="bulkSelectAll(true)">Select All</button>
+            <button class="btn btn-ghost btn-sm" onclick="bulkSelectAll(false)">Deselect All</button>
+          </div>
+        </div>
+        <div id="bulkRequestList" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:10px"></div>
+        <div style="margin-top:8px;font-size:12px;color:var(--muted)">
+          <span id="bulkSelectedCount">0</span> selected &middot; Total: <strong class="currency" id="bulkSelectedTotal">KES 0</strong>
+        </div>
+      </div>
+
+      <!-- Signature picker — tabs wired manually, no switchSigTab dependency -->
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Authorising Signature</div>
+
+        <!-- Tab buttons -->
+        <div style="display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px">
+          <button id="bulkTabSaved" onclick="showBulkTab('saved')"
+            style="flex:1;padding:9px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:var(--teal);color:#fff;font-family:'DM Sans',sans-serif">
+            💾 Saved Signatures
+          </button>
+          <button id="bulkTabDraw" onclick="showBulkTab('draw')"
+            style="flex:1;padding:9px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:var(--teal-pale);color:var(--muted);font-family:'DM Sans',sans-serif">
+            ✏️ Draw
+          </button>
+        </div>
+
+        <!-- Saved panel -->
+        <div id="bulkPanelSaved">
+          <div class="sig-grid" id="bulkSavedGrid"></div>
+        </div>
+
+        <!-- Draw panel -->
+        <div id="bulkPanelDraw" style="display:none">
+          <canvas id="bulkCanvas" style="width:100%;height:130px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none"></canvas>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-ghost btn-sm" onclick="clearCanvas('bulkCanvas')">Clear</button>
+            <button class="btn btn-secondary btn-sm" onclick="useBulkDrawnSig()">Use This Signature</button>
+          </div>
+        </div>
+
+        <!-- Applied sig confirmation -->
+        <div id="bulkSigApplied" style="display:none;margin-top:12px" class="sig-applied">
+          <img id="bulkSigImg" src="" style="height:44px;object-fit:contain;max-width:140px;border:1px solid var(--border);border-radius:6px;padding:3px">
+          <div class="sig-applied-info">
+            <div class="sig-applied-name" id="bulkSigName"></div>
+            <div class="sig-applied-time">Will be applied to all selected requests</div>
+          </div>
+          <span class="sig-stamp">✓ Ready</span>
+          <button class="btn btn-ghost btn-sm" onclick="clearBulkSig()" style="margin-left:8px">Change</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('bulkApproveModal')">Cancel</button>
+      <button class="btn btn-primary" id="confirmBulkBtn" onclick="confirmBulkApprove()" disabled style="opacity:.5">
+        Sign &amp; Approve Selected
+      </button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
