@@ -642,6 +642,9 @@
     <div style="text-align:center;margin-top:20px;font-size:11.5px;color:var(--muted);line-height:1.6">
       Accounts are managed by your organisation Admin.<br>Contact your Admin if you need access.
     </div>
+    <div style="text-align:center;margin-top:12px">
+      <button onclick="clearLoginCache()" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;font-family:inherit;opacity:.6">Having trouble? Clear local cache</button>
+    </div>
   </div>
 </div>
 
@@ -1080,8 +1083,9 @@
     <div class="alert alert-warn" id="usersNoTabWarning" style="display:none">
       ⚠️ <strong>Users sheet tab not found.</strong> Go to your Apps Script editor, select <code>setupSheets</code> and click Run, then redeploy. This creates the Users tab.
     </div>
-    <div class="alert alert-info" id="usersSheetOk" style="display:none">
-      ✓ Connected to Google Sheets. Users added here are available on all devices immediately.
+    <div class="alert alert-info" id="usersSheetOk" style="display:none;justify-content:space-between;align-items:center">
+      <span>✓ Connected to Google Sheets — users sync across all devices.</span>
+      <button class="btn btn-ghost btn-sm" onclick="clearUserCache()" style="white-space:nowrap;margin-left:12px">↺ Refresh list</button>
     </div>
     <div class="alert alert-warn">
       User accounts are stored in the <strong>Users</strong> tab of your Google Sheet. Add users below — they can log in from any device instantly.
@@ -2468,6 +2472,23 @@ async function doLogin() {
   btn.textContent = 'Sign In'; btn.disabled = false;
 }
 
+
+function clearLoginCache() {
+  localStorage.removeItem('mrv_users');
+  localStorage.removeItem('mrv_session');
+  usersStore = [];
+  // Re-pull users from Sheets if connected
+  if (gsWebAppUrl) {
+    pullUsersFromSheets().then(() => {
+      toast('Cache cleared — try signing in again');
+    }).catch(() => {
+      toast('Cache cleared');
+    });
+  } else {
+    toast('Cache cleared — try signing in again');
+  }
+}
+
 function loginSuccess(user) {
   currentUser = { name: user.name, email: user.email, role: user.role };
   localStorage.setItem(SESSION_KEY, JSON.stringify({
@@ -2553,7 +2574,7 @@ async function addUser() {
   if (!name || !email || !pass) { toast('Please fill all fields'); return; }
   if (pass !== pass2)           { toast('Passwords do not match'); return; }
   if (pass.length < 6)          { toast('Password must be at least 6 characters'); return; }
-  if (usersStore.find(u => u.email === email)) { toast('Email already exists'); return; }
+  if (usersStore.find(u => (u.email||'').toLowerCase() === email)) { toast('A user with that email already exists'); return; }
   const hash = await hashPassword(pass);
   const user = { id: Date.now(), name, email, role, hash, created: new Date().toLocaleDateString('en-GB') };
   usersStore.push(user);
@@ -2578,11 +2599,36 @@ function renderUsersTable() {
   const tbody = document.getElementById('usersTableBody');
   const count = document.getElementById('userCount');
   if (!tbody) return;
+
+  // Deduplicate by email in case localStorage had stale duplicates
+  const seen = new Set();
+  const unique = usersStore.filter(u => {
+    const key = (u.email||'').toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+  usersStore = unique;
+
   if (count) count.textContent = usersStore.length + ' user' + (usersStore.length===1?'':'s');
-  const badge = r => ({'admin':'<span class="login-role-badge role-admin">Admin</span>','approver':'<span class="login-role-badge role-approver">Approver</span>','requester':'<span class="login-role-badge role-requester">Requester</span>'}[r]||r);
-  tbody.innerHTML = usersStore.length === 0
-    ? '<tr><td colspan="4" class="text-muted text-sm" style="padding:20px;text-align:center">No users yet</td></tr>'
-    : usersStore.map(u=>`<tr><td style="font-weight:500">${u.name}</td><td class="text-muted text-sm">${u.email}</td><td>${badge(u.role)}</td><td><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser(${u.id})">Remove</button></td></tr>`).join('');
+
+  const badge = r => ({
+    admin:     '<span class="login-role-badge role-admin">Admin</span>',
+    approver:  '<span class="login-role-badge role-approver">Approver</span>',
+    requester: '<span class="login-role-badge role-requester">Requester</span>'
+  }[r] || r);
+
+  if (usersStore.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No users yet — add one using the form</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = usersStore.map(u => `
+    <tr>
+      <td style="font-weight:500;color:var(--ink)">${u.name || '—'}</td>
+      <td style="color:var(--muted);font-size:12.5px">${u.email || '—'}</td>
+      <td>${badge(u.role || 'requester')}</td>
+      <td><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser(${u.id})">Remove</button></td>
+    </tr>`).join('');
 }
 
 async function pushUsersToSheets() {
@@ -2591,31 +2637,43 @@ async function pushUsersToSheets() {
 }
 
 
+
+function clearUserCache() {
+  localStorage.removeItem('mrv_users');
+  usersStore = [];
+  renderUsersTable();
+  checkUsersSheetStatus(); // re-pull from Sheets
+  toast('User list refreshed from Sheets');
+}
 async function checkUsersSheetStatus() {
-  const warn    = document.getElementById('usersSheetWarning');
-  const noTab   = document.getElementById('usersNoTabWarning');
-  const ok      = document.getElementById('usersSheetOk');
+  const warn  = document.getElementById('usersSheetWarning');
+  const noTab = document.getElementById('usersNoTabWarning');
+  const ok    = document.getElementById('usersSheetOk');
   [warn, noTab, ok].forEach(el => { if(el) el.style.display = 'none'; });
 
   if (!gsWebAppUrl) {
     if (warn) warn.style.display = '';
+    // Still render whatever is in local cache
+    renderUsersTable();
     return;
   }
-  // Ping Sheets for users
+
+  // Always pull fresh from Sheets — source of truth
   try {
     const res = await gasCall({ action: 'getUsers' });
     if (res.ok) {
       if (ok) ok.style.display = '';
-      if (res.data && res.data.length > 0) {
-        usersStore = res.data;
-        persistUsersToStorage();
-        renderUsersTable();
-      }
+      // Replace local cache with Sheets data (Sheets is always authoritative)
+      usersStore = (res.data || []);
+      persistUsersToStorage();
+      renderUsersTable();
     } else {
       if (noTab) noTab.style.display = '';
+      renderUsersTable(); // render local cache as fallback
     }
   } catch(e) {
     if (noTab) noTab.style.display = '';
+    renderUsersTable(); // render local cache as fallback
   }
 }
 
