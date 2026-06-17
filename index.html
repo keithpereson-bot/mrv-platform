@@ -1074,8 +1074,17 @@
   <div id="view-users" class="view">
     <div class="page-header"><h1>Manage Users</h1><p>Add, edit, or remove platform users. Passwords are hashed — never stored in plain text.</p></div>
 
+    <div class="alert alert-warn" id="usersSheetWarning" style="display:none">
+      ⚠️ <strong>Google Sheets not connected.</strong> Users added here will only work on this device. Connect Google Sheets (Integration → Google Sheets) so all devices can log in.
+    </div>
+    <div class="alert alert-warn" id="usersNoTabWarning" style="display:none">
+      ⚠️ <strong>Users sheet tab not found.</strong> Go to your Apps Script editor, select <code>setupSheets</code> and click Run, then redeploy. This creates the Users tab.
+    </div>
+    <div class="alert alert-info" id="usersSheetOk" style="display:none">
+      ✓ Connected to Google Sheets. Users added here are available on all devices immediately.
+    </div>
     <div class="alert alert-warn">
-      ⚠️ User accounts are stored in the <strong>Users</strong> tab of your Google Sheet. Changes here push to Sheets immediately. To add a user, fill the form and click Add User.
+      User accounts are stored in the <strong>Users</strong> tab of your Google Sheet. Add users below — they can log in from any device instantly.
     </div>
 
     <div class="two-col" style="align-items:start">
@@ -2441,7 +2450,14 @@ async function doLogin() {
     if (user) {
       loginSuccess(user);
     } else {
-      err.textContent = 'Incorrect email or password.';
+      // Give a helpful hint if no users exist in Sheets yet
+      if (usersStore.length === 0 && !gsWebAppUrl) {
+        err.textContent = 'No users configured yet. Connect Google Sheets first, or use admin@mrv.app / admin123.';
+      } else if (usersStore.length === 0) {
+        err.textContent = 'No users found in Google Sheets. Ask your Admin to add your account under Manage Users.';
+      } else {
+        err.textContent = 'Incorrect email or password.';
+      }
       err.style.display = 'block';
     }
   } catch(e) {
@@ -2572,6 +2588,35 @@ function renderUsersTable() {
 async function pushUsersToSheets() {
   if (!gsConnected || !gsWebAppUrl) return;
   try { await gasCall({ action:'pushUsers', data:usersStore }); } catch(e) {}
+}
+
+
+async function checkUsersSheetStatus() {
+  const warn    = document.getElementById('usersSheetWarning');
+  const noTab   = document.getElementById('usersNoTabWarning');
+  const ok      = document.getElementById('usersSheetOk');
+  [warn, noTab, ok].forEach(el => { if(el) el.style.display = 'none'; });
+
+  if (!gsWebAppUrl) {
+    if (warn) warn.style.display = '';
+    return;
+  }
+  // Ping Sheets for users
+  try {
+    const res = await gasCall({ action: 'getUsers' });
+    if (res.ok) {
+      if (ok) ok.style.display = '';
+      if (res.data && res.data.length > 0) {
+        usersStore = res.data;
+        persistUsersToStorage();
+        renderUsersTable();
+      }
+    } else {
+      if (noTab) noTab.style.display = '';
+    }
+  } catch(e) {
+    if (noTab) noTab.style.display = '';
+  }
 }
 
 async function pullUsersFromSheets() {
