@@ -2440,23 +2440,32 @@ async function doLogin() {
       }
     }
 
-    // 2. Check local usersStore cache
-    let user = usersStore.find(u => (u.email||'').toLowerCase() === email && u.hash === hash);
-
-    // 3. Try Sheets if connected and not found locally
-    if (!user && gsWebAppUrl) {
+    // 2. Always pull fresh users from Sheets first (don't rely on stale cache)
+    if (gsWebAppUrl) {
       try {
-        const res = await gasCall({ action: 'login', email, hash });
-        if (res.ok && res.user) user = res.user;
-      } catch(e) { /* offline — fall through */ }
+        const fresh = await gasCall({ action: 'getUsers' });
+        if (fresh && fresh.ok && Array.isArray(fresh.data)) {
+          usersStore = fresh.data;
+          persistUsersToStorage();
+        }
+      } catch(e) { /* offline — use cached store */ }
     }
 
+    // 3. Match against fresh store (hash comparison)
+    const user = usersStore.find(u =>
+      (u.Email || u.email || '').toLowerCase() === email &&
+      (u.Hash  || u.hash  || '') === hash
+    );
+
     if (user) {
-      loginSuccess(user);
+      loginSuccess({
+        name:  user.Name  || user.name  || email,
+        email: user.Email || user.email || email,
+        role:  (user.Role || user.role  || 'requester').toLowerCase()
+      });
     } else {
-      // Give a helpful hint if no users exist in Sheets yet
-      if (usersStore.length === 0 && !gsWebAppUrl) {
-        err.textContent = 'No users configured yet. Connect Google Sheets first, or use admin@mrv.app / admin123.';
+      if (!gsWebAppUrl) {
+        err.textContent = 'Not connected to Google Sheets. Use admin@mrv.app / admin123, or connect Sheets first.';
       } else if (usersStore.length === 0) {
         err.textContent = 'No users found in Google Sheets. Ask your Admin to add your account under Manage Users.';
       } else {
@@ -2465,7 +2474,7 @@ async function doLogin() {
       err.style.display = 'block';
     }
   } catch(e) {
-    err.textContent = 'Error: ' + e.message;
+    err.textContent = 'Login error: ' + e.message;
     err.style.display = 'block';
   }
 
@@ -2632,8 +2641,12 @@ function renderUsersTable() {
 }
 
 async function pushUsersToSheets() {
-  if (!gsConnected || !gsWebAppUrl) return;
-  try { await gasCall({ action:'pushUsers', data:usersStore }); } catch(e) {}
+  if (!gsWebAppUrl) { console.warn('No Web App URL — users saved locally only'); return; }
+  try {
+    const res = await gasCall({ action:'pushUsers', data:usersStore });
+    if (res && res.ok) appendSyncLog('✓ Users pushed to Sheets (' + usersStore.length + ')');
+    else appendSyncLog('⚠ pushUsers: ' + JSON.stringify(res));
+  } catch(e) { appendSyncLog('✗ pushUsers error: ' + e.message); }
 }
 
 
@@ -2681,8 +2694,12 @@ async function pullUsersFromSheets() {
   if (!gsWebAppUrl) return;
   try {
     const res = await gasCall({ action:'getUsers' });
-    if (res.ok && res.data) { usersStore = res.data; persistUsersToStorage(); renderUsersTable(); }
-  } catch(e) {}
+    if (res && res.ok && Array.isArray(res.data)) {
+      usersStore = res.data;
+      persistUsersToStorage();
+      renderUsersTable();
+    }
+  } catch(e) { console.error('pullUsers:', e); }
 }
 
 // ══════════════════════════════════════════════════════════════
