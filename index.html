@@ -2278,6 +2278,12 @@ function confirmSignAndApprove() {
   activeSignRowBtn.outerHTML = `<button class="btn btn-ghost btn-sm" onclick="showReceipt('${ref}','${amt}','${sigLabel}')">Receipt</button>`;
   closeModal('signApproveModal');
   renderDashboard();
+  // Refresh budget view so actuals update immediately
+  if (document.getElementById('view-budgets').classList.contains('active')) {
+    renderBudgetView();
+  }
+  // Push to Sheets immediately after approval
+  gsPushIfConnected();
   toast('Payment approved & signed OK');
 }
 
