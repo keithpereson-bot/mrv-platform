@@ -2282,7 +2282,20 @@ function confirmSignAndApprove() {
   if (document.getElementById('view-budgets').classList.contains('active')) {
     renderBudgetView();
   }
-  // Push to Sheets immediately after approval
+  // Push JUST the delta for this approval (fast, additive across devices)
+  if (gsWebAppUrl && entry) {
+    const delta = [{
+      project:     entry.project     || '',
+      type:        entry.type        || '',
+      category:    entry.category    || '',
+      costSummary: entry.costSummary || '',
+      delta:       entry.amount,        // only the new approved amount
+    }];
+    gasCall({ action:'updateActuals', data: delta })
+      .then(function(r){ appendSyncLog('Actuals updated: ' + JSON.stringify(r)); })
+      .catch(function(e){ appendSyncLog('Actuals push failed: ' + e.message); });
+  }
+  // Also queue a full push for requests tab
   gsPushIfConnected();
   toast('Payment approved & signed OK');
 }
@@ -2611,14 +2624,17 @@ async function pushToSheets() {
       if (cells.length >= 3) fundRows.push({ project: cells[0], amount: cells[1], date: cells[2], status: cells[3] || 'Posted' });
     });
 
-    // Build actuals to update in the Budgets sheet (read-only sheet, only Actual column written)
+    // Build actuals: send FULL running total per line (sum of all Paid requests).
+    // AppScript receives this as 'actual' and writes it directly to the sheet.
+    // This is safe because we always recalculate from the full requestsStore.
     const actualsData = budgetLines.map(l => ({
       project:     l.project,
       type:        l.type,
       category:    l.category,
       costSummary: l.costSummary,
       actual:      getActualForLine(l.project, l.type, l.category, l.costSummary),
-    }));
+      delta:       null,  // null = overwrite mode (full recalc from local store)
+    })).filter(l => l.actual > 0);  // only send lines with actual spend
 
     const reqRows = requestsStore.map(r => ({
       ref:         r.ref,
@@ -3340,6 +3356,21 @@ function confirmBulkApprove(){
     e.status='Paid'; e.sigDataUrl=pendingBulkSig; e.sigLabel=pendingBulkLabel; e.sigTime=t;
   });
   rebuildRequestsTable(); renderDashboard(); closeModal('bulkApproveModal');
+  // Push delta for each approved line (additive, works across devices)
+  if(typeof gsWebAppUrl!=='undefined' && gsWebAppUrl) {
+    var dm={};
+    checked.forEach(function(chk){
+      var e=requestsStore.find(function(r){return r.ref===chk.dataset.ref;});
+      if(!e||!e.costSummary)return;
+      var k=(e.project||'')+'|'+(e.type||'')+'|'+(e.category||'')+'|'+(e.costSummary||'');
+      if(!dm[k]) dm[k]={project:e.project,type:e.type,category:e.category,costSummary:e.costSummary,delta:0};
+      dm[k].delta+=e.amount;
+    });
+    var dl=Object.values(dm);
+    if(dl.length) gasCall({action:'updateActuals',data:dl})
+      .then(function(r){appendSyncLog('Bulk actuals: '+JSON.stringify(r));})
+      .catch(function(e){appendSyncLog('Bulk actuals error: '+e.message);});
+  }
   if(typeof gsPushIfConnected==='function')gsPushIfConnected();
   toast('OK '+checked.length+' request'+(checked.length===1?'':'s')+' approved & signed');
 }
