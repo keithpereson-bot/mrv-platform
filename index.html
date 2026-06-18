@@ -8,7 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-  /* ── ENTERPRISE TOKEN SYSTEM ── */
+  /* -- ENTERPRISE TOKEN SYSTEM -- */
   :root {
     /* Navy-slate primary — authority, precision */
     --ink:        #0F1C2E;
@@ -70,7 +70,7 @@
     -webkit-font-smoothing:antialiased;
   }
 
-  /* ── TOPNAV ── */
+  /* -- TOPNAV -- */
   nav {
     background:var(--ink);
     color:#fff;
@@ -109,7 +109,7 @@
   }
   .nav-user:hover { background:rgba(200,135,42,.4); }
 
-  /* ── LAYOUT ── */
+  /* -- LAYOUT -- */
   .layout { display:flex;height:calc(100vh - 56px);overflow:hidden; }
 
   aside {
@@ -174,12 +174,12 @@
     letter-spacing:.03em;
   }
 
-  /* ── MAIN CONTENT ── */
+  /* -- MAIN CONTENT -- */
   main { flex:1;padding:28px 32px;overflow-y:auto;overflow-x:hidden;background:var(--surface);height:100%; }
   .view { display:none; }
   .view.active { display:block; }
 
-  /* ── PAGE HEADER ── */
+  /* -- PAGE HEADER -- */
   .page-header { margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border); }
   .page-header h1 {
     font-family:'Playfair Display',serif;
@@ -189,7 +189,7 @@
   }
   .page-header p { font-size:13px;color:var(--muted);font-weight:400; }
 
-  /* ── STAT CARDS ── */
+  /* -- STAT CARDS -- */
   .stats { display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px; }
   .stat-card {
     background:var(--card);
@@ -229,7 +229,7 @@
   .stat-value.gold, .stat-value.amber { color:var(--amber); }
   .stat-sub { font-size:11.5px;color:var(--muted);margin-top:6px;font-weight:400; }
 
-  /* ── CARDS ── */
+  /* -- CARDS -- */
   .card {
     background:var(--card);
     border:1px solid var(--border);
@@ -251,7 +251,7 @@
   }
   .card-body { padding:20px; }
 
-  /* ── BUTTONS ── */
+  /* -- BUTTONS -- */
   .btn {
     display:inline-flex;align-items:center;gap:6px;
     border-radius:6px;
@@ -294,7 +294,7 @@
     background:var(--amber);
   }
 
-  /* ── FORMS ── */
+  /* -- FORMS -- */
   label {
     display:block;
     font-size:11px;font-weight:600;
@@ -323,7 +323,7 @@
   .form-group { margin-bottom:16px; }
   .form-full { grid-column:1/-1; }
 
-  /* ── TABLES ── */
+  /* -- TABLES -- */
   table { width:100%;border-collapse:collapse; }
   th {
     font-size:10.5px;font-weight:700;
@@ -346,7 +346,7 @@
   tr:last-child td { border-bottom:none; }
   tr:hover td { background:var(--surface); }
 
-  /* ── BADGES ── */
+  /* -- BADGES -- */
   .badge {
     display:inline-flex;align-items:center;
     font-size:10.5px;font-weight:600;
@@ -359,7 +359,7 @@
   .badge-danger              { background:var(--danger-lt);color:var(--danger); }
   .badge-gray                { background:var(--surface-2);color:var(--muted); }
 
-  /* ── PROCESS BAR ── */
+  /* -- PROCESS BAR -- */
   .process-bar {
     display:flex;align-items:center;
     background:var(--card);border:1px solid var(--border);
@@ -382,11 +382,11 @@
   .ps-label.done { color:var(--success); }
   .ps-arrow { color:var(--border-mid);font-size:16px;padding:0 8px;flex-shrink:0; }
 
-  /* ── PROGRESS ── */
+  /* -- PROGRESS -- */
   .progress-wrap { background:var(--surface-2);border-radius:20px;height:6px;overflow:hidden; }
   .progress-fill { background:var(--amber);height:100%;border-radius:20px;transition:width .5s; }
 
-  /* ── ALERTS ── */
+  /* -- ALERTS -- */
   .alert {
     border-radius:var(--radius);padding:12px 16px;
     font-size:13px;margin-bottom:16px;
@@ -396,7 +396,7 @@
   .alert-info { background:var(--info-lt);color:var(--info);border:1px solid rgba(37,99,235,.2); }
   .alert-warn { background:var(--warn-lt);color:var(--warn);border:1px solid rgba(217,119,6,.2); }
 
-  /* ── UTILITIES ── */
+  /* -- UTILITIES -- */
   .flex { display:flex; } .items-center { align-items:center; }
   .justify-between { justify-content:space-between; }
   .gap-2 { gap:8px; } .gap-3 { gap:12px; }
@@ -405,7 +405,7 @@
   .two-col { display:grid;grid-template-columns:1fr 1fr;gap:20px; }
   .currency { font-family:'Playfair Display',serif;font-weight:600; }
 
-  /* ── MODALS ── */
+  /* -- MODALS -- */
   .modal-overlay {
     display:none;position:fixed;inset:0;
     background:rgba(10,18,30,.55);
@@ -445,7 +445,7 @@
   }
   .close-btn:hover { background:var(--surface-2);color:var(--ink); }
 
-  /* ── SIGNATURE SYSTEM ── */
+  /* -- SIGNATURE SYSTEM -- */
   .sig-tabs {
     display:flex;gap:0;
     border:1px solid var(--border);border-radius:var(--radius);
@@ -524,7 +524,7 @@
   }
   .upload-zone:hover { border-color:var(--ink-mid);background:var(--surface);color:var(--ink); }
 
-  /* ── TOAST ── */
+  /* -- TOAST -- */
   #toast {
     position:fixed;bottom:24px;right:24px;
     background:var(--ink);color:#fff;
@@ -539,7 +539,7 @@
   }
   #toast.show { opacity:1;transform:translateY(0); }
 
-  /* ── LOGIN SCREEN ── */
+  /* -- LOGIN SCREEN -- */
   #loginScreen {
     position:fixed;inset:0;z-index:9999;
     background:linear-gradient(135deg, var(--ink) 0%, #1a2d47 60%, #0d1f35 100%);
@@ -597,29 +597,29 @@
   .role-requester{ background:var(--surface-2);color:var(--muted); }
 
 
-  /* ── ICONS ── */
+  /* -- ICONS -- */
   .icon { display:inline-flex;align-items:center;justify-content:center;flex-shrink:0; }
   .icon svg { display:block; }
   .aside-icon { width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.75; }
   .aside-item.active .aside-icon { opacity:1; }
   .aside-item:hover .aside-icon { opacity:1; }
   .btn-icon { display:inline-flex;align-items:center;gap:6px; }
-  /* ── ROLE-BASED VISIBILITY ── */
+  /* -- ROLE-BASED VISIBILITY -- */
   body.role-requester .admin-only,
   body.role-requester .approver-only,
   body.role-approver  .admin-only { display:none !important; }
 
-  /* ── SCROLLBAR ── */
+  /* -- SCROLLBAR -- */
   ::-webkit-scrollbar { width:5px;height:5px; }
   ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:var(--border-mid);border-radius:3px; }
   ::-webkit-scrollbar-thumb:hover { background:var(--muted); }
 
-  /* ════════════════════════════════════════════════════════
+  /* ========================================================
      RESPONSIVE — Mobile & Tablet
-     ════════════════════════════════════════════════════════ */
+     ======================================================== */
 
-  /* ── Mobile bottom nav bar ── */
+  /* -- Mobile bottom nav bar -- */
   #mobileNav {
     display:none;
     position:fixed;
@@ -655,7 +655,7 @@
   .mob-nav-item.active { color:var(--amber); }
   .mob-nav-item.active svg { stroke:var(--amber); }
 
-  /* ── Sidebar overlay (slide-in on mobile) ── */
+  /* -- Sidebar overlay (slide-in on mobile) -- */
   #sidebarOverlay {
     display:none;
     position:fixed;inset:0;
@@ -665,7 +665,7 @@
   }
   #sidebarOverlay.open { display:block; }
 
-  /* ── Hamburger button ── */
+  /* -- Hamburger button -- */
   #menuToggle {
     display:none;
     background:none;border:none;
@@ -676,7 +676,7 @@
   }
   #menuToggle:hover { background:rgba(255,255,255,.1); }
 
-  /* ── Tablet breakpoint (≤1024px) ── */
+  /* -- Tablet breakpoint (≤1024px) -- */
   @media (max-width: 1024px) {
     aside { width:200px; }
     main  { padding:20px 20px; }
@@ -684,7 +684,7 @@
     .two-col { grid-template-columns:1fr; }
   }
 
-  /* ── Mobile breakpoint (≤768px) ── */
+  /* -- Mobile breakpoint (≤768px) -- */
   @media (max-width: 768px) {
     /* Nav */
     nav { padding:0 14px; height:52px; }
@@ -784,7 +784,7 @@
     .login-box { padding:28px 22px; }
   }
 
-  /* ── Small mobile (≤480px) ── */
+  /* -- Small mobile (≤480px) -- */
   @media (max-width: 480px) {
     .stats { grid-template-columns:1fr 1fr; gap:8px; }
     .stat-value { font-size:20px; }
@@ -797,7 +797,7 @@
 </head>
 <body>
 
-<!-- ── LOGIN SCREEN ── -->
+<!-- -- LOGIN SCREEN -- -->
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-wordmark">
@@ -827,7 +827,7 @@
   </div>
 </div>
 
-<!-- ── USER MENU DROPDOWN ── -->
+<!-- -- USER MENU DROPDOWN -- -->
 <div id="userMenuDropdown" style="display:none;position:fixed;top:60px;right:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:500">
   <div style="padding:10px 12px;border-bottom:1px solid var(--border);margin-bottom:4px">
     <div style="font-weight:600;font-size:13px" id="menuUserName">—</div>
@@ -885,7 +885,7 @@
 
 <main>
 
-  <!-- ── DASHBOARD ── -->
+  <!-- -- DASHBOARD -- -->
   <div id="view-dashboard" class="view active">
     <div class="page-header"><h1>Dashboard</h1><p>Monthly cycle overview — June 2026</p></div>
     <div class="process-bar">
@@ -918,7 +918,7 @@
     </div>
   </div>
 
-  <!-- ── STEP 1: APPROVED BUDGETS ── -->
+  <!-- -- STEP 1: APPROVED BUDGETS -- -->
   <div id="view-budgets" class="view">
     <div class="page-header"><h1>Approved Budgets</h1><p>SMT-approved project budgets for June 2026 — read-only. All downstream data is linked to these budgets.</p></div>
     <div id="budgetStatsRow" class="stats" style="grid-template-columns:repeat(4,1fr)"></div>
@@ -938,7 +938,7 @@
     <div id="budgetLineCards"></div>
   </div>
 
-  <!-- ── STEPS 2 & 3: LOAD FUNDS ── -->
+  <!-- -- STEPS 2 & 3: LOAD FUNDS -- -->
   <div id="view-funds" class="view">
     <div class="page-header"><h1>Load & Post Funds</h1><p>Steps 2 & 3 — Consolidate cash requirements and post as Money-In</p></div>
     <div class="two-col">
@@ -967,7 +967,7 @@
     </div>
   </div>
 
-  <!-- ── STEP 4: REQUESTS ── -->
+  <!-- -- STEP 4: REQUESTS -- -->
   <div id="view-requests" class="view">
     <div class="page-header"><h1>Funds Utilization — System Requests</h1><p>Step 4 — Payments are made only against approved requests. MRV Officers & Coordinators process.</p></div>
     <div class="alert alert-warn">⚠️ Controlled access: Only MRV Officers and Coordinators may approve and process payments.</div>
@@ -986,7 +986,7 @@
     </div>
   </div>
 
-  <!-- ── STEP 5: WEEKLY EXPENSING ── -->
+  <!-- -- STEP 5: WEEKLY EXPENSING -- -->
   <div id="view-expenses" class="view">
     <div class="page-header"><h1>Weekly Expensing</h1><p>Step 5 — Upload receipts and supporting documents. Recipient signs digitally.</p></div>
     <div class="two-col">
@@ -1057,7 +1057,7 @@
     </div>
   </div>
 
-  <!-- ── STEP 6: RECONCILIATION ── -->
+  <!-- -- STEP 6: RECONCILIATION -- -->
   <div id="view-reconciliation" class="view">
     <div class="page-header"><h1>Monthly Reconciliation</h1><p>Step 6 — Reconcile balance vs expenditures and close the advance for the month</p></div>
     <div id="reconStats" class="stats" style="grid-template-columns:repeat(3,1fr)"></div>
@@ -1081,7 +1081,7 @@
       </div>
     </div>
   </div>
-  <!-- ── TRANSACTIONS ── -->
+  <!-- -- TRANSACTIONS -- -->
   <div id="view-transactions" class="view">
     <div class="page-header"><h1>Transaction Audit Trail</h1><p>Complete log of all Money-In and Money-Out events with digital signatures</p></div>
     <div class="card">
@@ -1098,7 +1098,7 @@
     </div>
   </div>
 
-  <!-- ── MY SIGNATURES ── -->
+  <!-- -- MY SIGNATURES -- -->
   <div id="view-signatures" class="view">
     <div class="page-header"><h1>My Signatures</h1><p>Save your signature once — draw, upload a photo, or both. Hit Sign to apply instantly on any document.</p></div>
     <div class="two-col">
@@ -1147,7 +1147,7 @@
       </div>
     </div>
   </div>
-  <!-- ── GOOGLE SHEETS / APPS SCRIPT INTEGRATION ── -->
+  <!-- -- GOOGLE SHEETS / APPS SCRIPT INTEGRATION -- -->
   <div id="view-sheets" class="view">
     <div class="page-header"><h1>Google Sheets Integration</h1><p>Connect via Google Apps Script — no OAuth setup, no Cloud Console, completely free.</p></div>
 
@@ -1254,7 +1254,7 @@
     </div>
   </div>
 
-  <!-- ── USERS (Admin only) ── -->
+  <!-- -- USERS (Admin only) -- -->
   <div id="view-users" class="view">
     <div class="page-header"><h1>Manage Users</h1><p>Add, edit, or remove platform users. Passwords are hashed — never stored in plain text.</p></div>
 
@@ -1314,7 +1314,7 @@
 </main>
 </div>
 
-<!-- ── MODALS ── -->
+<!-- -- MODALS -- -->
 
 <!-- Request Modal -->
 <div id="requestModal" class="modal-overlay" onclick="closeModalOutside(event,'requestModal')">
@@ -1409,9 +1409,9 @@
 <div id="toast"></div>
 
 <script>
-// ── MASTER BUDGET STORE (SMT-approved, read-only) ─────────────────────────
+// -- MASTER BUDGET STORE (SMT-approved, read-only) -------------------------
 // Each project: {id, name, dept, smtRef, totalBudget, period, lineItems:[{category, budgetedAmount}], loaded, closed}
-// ── BUDGET LINE ITEMS ──────────────────────────────────────
+// -- BUDGET LINE ITEMS --------------------------------------
 // Each row matches a line in the Google Sheet:
 // project, type, year, month, dept, country, costItem,
 // unitOfMeasure, category, costSummary, budgetedAmount, currency, actual
@@ -1434,7 +1434,7 @@ let budgetLines = [
   { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Miscellaneous',                            unitOfMeasure:'Miscellaneous', category:'Miscellaneous', costSummary:'Miscellaneous',  budgetedAmount:76380,  currency:'KES', actual:0 },
 ];
 
-// ── Legacy compat: budgetStore derived from budgetLines ──────
+// -- Legacy compat: budgetStore derived from budgetLines ------
 // Groups lines by project+type for dashboard/recon views
 function buildBudgetStore() {
   const map = {};
@@ -1454,7 +1454,7 @@ function buildBudgetStore() {
 }
 let budgetStore = buildBudgetStore();
 
-// ── Line-item helpers ────────────────────────────────────────
+// -- Line-item helpers ----------------------------------------
 function getProjects()    { return [...new Set(budgetLines.map(l => l.project))]; }
 function getTypes(proj)   { return [...new Set(budgetLines.filter(l => l.project === proj).map(l => l.type))]; }
 function getCategories(proj, type) { return [...new Set(budgetLines.filter(l => l.project === proj && l.type === type).map(l => l.category))]; }
@@ -1475,7 +1475,7 @@ function getActualForLine(proj, type, cat, summary) {
     .reduce((s, r) => s + r.amount, 0);
 }
 
-// ── State ──────────────────────────────────────────────────
+// -- State --------------------------------------------------
 // Signatures persist in localStorage so you never re-upload
 function loadSigsFromStorage() {
   try { const s = localStorage.getItem('mrv_saved_signatures'); return s ? JSON.parse(s) : []; }
@@ -1491,7 +1491,7 @@ let activeSignRef = '';
 let pendingModalSig = null;
 let pendingExpSig = null;
 
-// Central requests store — each request maps to a budget line
+// Central requests store -- each request maps to a budget line
 let requestsStore = [
   { ref:'REQ-001', project:'GS5642', type:'Usage', category:'Field', costSummary:'Transport', costItem:'Enumerator Field Transport', description:'Field transport June', amount:120000, requester:'J. Kamau', status:'Paid',    sigDataUrl:null, sigLabel:'J. Kamau', sigTime:'04 Jun 2026 09:14', date:'04 Jun 2026' },
   { ref:'REQ-002', project:'GS5642', type:'KPT',   category:'Field', costSummary:'Stipend',   costItem:'Enumerator Stipend',          description:'Enumerator stipends',  amount:150000, requester:'A. Ali',   status:'Paid',    sigDataUrl:null, sigLabel:'A. Ali',   sigTime:'05 Jun 2026 11:30', date:'05 Jun 2026' },
@@ -1500,7 +1500,7 @@ let requestsStore = [
   { ref:'REQ-005', project:'GS5642', type:'KPT',   category:'Field', costSummary:'Accommodation', costItem:'Coordinator spot checks accommodation', description:'Spot check accommodation', amount:16000, requester:'A. Ali', status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:'07 Jun 2026' },
 ];
 
-// ── HELPERS ────────────────────────────────────────────────
+// -- HELPERS ------------------------------------------------
 const fmt = n => n.toLocaleString();
 const fmtK = n => n >= 1000000 ? 'KES '+(n/1000000).toFixed(1)+'M' : n >= 1000 ? 'KES '+(n/1000).toFixed(0)+'K' : 'KES '+n;
 
@@ -1518,7 +1518,7 @@ function projectUtilised(name) {
     .reduce((s, r) => s + r.amount, 0);
 }
 
-// ── DATA-DRIVEN RENDERS ────────────────────────────────────
+// -- DATA-DRIVEN RENDERS ------------------------------------
 
 function renderDashboard() {
   const totalBudget = budgetStore.reduce((s,p) => s+p.totalBudget, 0);
@@ -1557,7 +1557,7 @@ function renderDashboard() {
     return `<div>
       <div class="flex justify-between mb-3">
         <span class="font-600 text-sm">${p.name}</span>
-        <span class="text-sm text-muted">KES ${fmt(util)} utilised of ${fmt(p.loaded)} loaded &nbsp;·&nbsp; <strong>${pct}%</strong></span>
+        <span class="text-sm text-muted">KES ${fmt(util)} utilised of ${fmt(p.loaded)} loaded &nbsp;.&nbsp; <strong>${pct}%</strong></span>
       </div>
       <div class="progress-wrap"><div class="progress-fill" style="width:${pct}%"></div></div>
     </div>`;}).join('');
@@ -1582,7 +1582,7 @@ function renderBudgetView() {
     const pct    = total ? Math.round(actual/total*100) : 0;
     return `<tr style="background:var(--surface);font-weight:600">
       <td colspan="5" style="padding:10px 16px;font-size:12.5px;color:var(--ink-mid)">
-        ${g.project} · <span style="color:var(--amber)">${g.type}</span> · ${g.dept} · ${g.country} · ${g.month} ${g.year}
+        ${g.project} . <span style="color:var(--amber)">${g.type}</span> . ${g.dept} . ${g.country} . ${g.month} ${g.year}
       </td>
       <td class="currency" style="padding:10px 16px;text-align:right">KES ${total.toLocaleString()}</td>
       <td class="currency" style="padding:10px 16px;text-align:right;color:var(--success)">KES ${actual.toLocaleString()}</td>
@@ -1620,22 +1620,6 @@ function renderBudgetView() {
       </tr>`;
     }).join('');
   }).join('');
-}
-&r.description.toLowerCase().includes(li.category.split(' ')[0].toLowerCase())).reduce((s,r)=>s+r.amount,0);
-            const liRem  = li.budgetedAmount - liUtil;
-            return `<tr style="background:transparent">
-              <td style="padding-left:28px;font-size:13px">${li.category}</td>
-              <td class="currency text-sm">${fmt(li.budgetedAmount)}</td>
-              <td class="currency text-sm" style="color:var(--purple)">${fmt(liUtil)||'—'}</td>
-              <td class="currency text-sm" style="color:${liRem<0?'var(--danger)':'var(--teal)'}">${fmt(liRem)}</td>
-            </tr>`;}).join('')}
-          </tbody>
-        </table>
-      </td>
-    </tr>`;}).join('');
-
-  // Per-project line item summary cards (below the table)
-  document.getElementById('budgetLineCards').innerHTML = ''; // cleared; detail is inline now
 }
 
 function toggleLineItems(id) {
@@ -1681,7 +1665,7 @@ function populateAllDropdowns() {
   populateSelect('reconProjectSelect', names, true);
 }
 
-// ── PDF GENERATION ─────────────────────────────────────────
+// -- PDF GENERATION -----------------------------------------
 async function downloadRequestsPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -1697,7 +1681,7 @@ async function downloadRequestsPDF() {
   const WHITE  = [255, 255, 255];
   const BORDER = [212, 232, 223];
 
-  // ── Header bar ──
+  // -- Header bar --
   doc.setFillColor(...TEAL);
   doc.rect(0, 0, pw, 20, 'F');
   doc.setFont('helvetica','bold');
@@ -1710,7 +1694,7 @@ async function downloadRequestsPDF() {
   doc.text('Payment Requests Report', 14, 14);
   doc.text(`Generated: ${now}`, pw - 14, 14, {align:'right'});
 
-  // ── Summary boxes ──
+  // -- Summary boxes --
   const totals = requestsStore.reduce((a,r)=>({
     total: a.total + r.amount,
     paid:  a.paid  + (r.status==='Paid'?r.amount:0),
@@ -1739,7 +1723,7 @@ async function downloadRequestsPDF() {
     doc.text(b.value, bx+4, 34.5);
   });
 
-  // ── Column layout ──
+  // -- Column layout --
   // Columns: #, Project, Description, Amount, Requester, Date, Status, Signature
   const COL_WIDTHS = [18, 45, 52, 28, 30, 22, 20, 62];  // sums ≈ 277, fits in 297-20 margin
   const COL_X = COL_WIDTHS.reduce((acc, w, i) => { acc.push(i===0?14:(acc[i-1]+COL_WIDTHS[i-1])); return acc; }, []);
@@ -1850,7 +1834,7 @@ async function downloadRequestsPDF() {
         doc.setLineWidth(0.3);
         doc.roundedRect(imgX, imgY, SIG_IMG_MAXW, SIG_IMG_H, 1, 1, 'FD');
 
-        // Place image — detect format from dataUrl
+        // Place image -- detect format from dataUrl
         const fmt = r.sigDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
         doc.addImage(r.sigDataUrl, fmt, imgX+1, imgY+1, SIG_IMG_MAXW-2, SIG_IMG_H-2, undefined, 'FAST');
 
@@ -1884,7 +1868,7 @@ async function downloadRequestsPDF() {
     y += rowH;
   }
 
-  // ── Footer ──
+  // -- Footer --
   const footerY = ph - 10;
   doc.setDrawColor(...BORDER);
   doc.setLineWidth(0.3);
@@ -1892,7 +1876,7 @@ async function downloadRequestsPDF() {
   doc.setFont('helvetica','normal');
   doc.setFontSize(7);
   doc.setTextColor(...MUTED);
-  doc.text('MRV Platform — Confidential Payment Report', 14, footerY);
+  doc.text('MRV Platform -- Confidential Payment Report', 14, footerY);
   doc.text(`Page 1 of ${doc.getNumberOfPages()}`, pw-14, footerY, {align:'right'});
   doc.text('Signatures are digitally applied via the MRV Platform and constitute authorised approval.', pw/2, footerY, {align:'center'});
 
@@ -1900,7 +1884,7 @@ async function downloadRequestsPDF() {
   toast('PDF downloaded ✓');
 }
 
-// ── Navigation ─────────────────────────────────────────────
+// -- Navigation ---------------------------------------------
 function showView(id, el) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.aside-item').forEach(a => a.classList.remove('active'));
@@ -1912,7 +1896,7 @@ function showView(id, el) {
   if (id === 'dashboard')      renderDashboard();
 }
 
-// ── Modals ─────────────────────────────────────────────────
+// -- Modals -------------------------------------------------
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function closeModalOutside(e, id) { if (e.target.id === id) closeModal(id); }
@@ -1923,7 +1907,7 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-// ── Canvas Drawing ─────────────────────────────────────────
+// -- Canvas Drawing -----------------------------------------
 function initCanvas(id) {
   const canvas = document.getElementById(id);
   if (!canvas || canvas._init) return;
@@ -1972,7 +1956,7 @@ function isCanvasBlank(id) {
   return !data.some(v => v !== 0);
 }
 
-// ── Tab switching ──────────────────────────────────────────
+// -- Tab switching ------------------------------------------
 function switchSigTab(btn, panelId) {
   const parent = btn.closest('.sig-tabs');
   parent.querySelectorAll('.sig-tab').forEach(t => t.classList.remove('active'));
@@ -1995,7 +1979,7 @@ function switchSigTab(btn, panelId) {
   }
 }
 
-// ── SAVED SIGNATURES ──────────────────────────────────────
+// -- SAVED SIGNATURES --------------------------------------
 function renderSavedSigs() {
   const grid = document.getElementById('savedSigsGrid');
   const noMsg = document.getElementById('noSigMsg');
@@ -2059,7 +2043,7 @@ function selectSavedSig(idx, context, el) {
   }
 }
 
-// ── Save new sig (from My Signatures page) ────────────────
+// -- Save new sig (from My Signatures page) ----------------
 function saveNewSig(mode) {
   const label = document.getElementById('newSigLabel').value.trim() || 'My Signature';
   let dataUrl = null;
@@ -2099,7 +2083,7 @@ function clearUpload() {
   document.getElementById('newSigFile').value = '';
 }
 
-// ── Handle upload in inline contexts ──────────────────────
+// -- Handle upload in inline contexts ----------------------
 function handleSigUpload(e, context) {
   const file = e.target.files[0];
   if (!file) return;
@@ -2112,7 +2096,7 @@ function handleSigUpload(e, context) {
   reader.readAsDataURL(file);
 }
 
-// ── Apply drawn sig ────────────────────────────────────────
+// -- Apply drawn sig ----------------------------------------
 function applyDrawnSig(context) {
   const canvasId = context === 'exp' ? 'expCanvas' : 'modalCanvas';
   if (isCanvasBlank(canvasId)) { toast('Please draw your signature first'); return; }
@@ -2121,9 +2105,9 @@ function applyDrawnSig(context) {
   else { pendingModalSig = dataUrl; applyModalSig(dataUrl, 'Handwritten'); }
 }
 
-// ── Expense signature ──────────────────────────────────────
+// -- Expense signature --------------------------------------
 function applyExpSig(dataUrl, label) {
-  const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + ' — ' + new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + ' -- ' + new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
   document.getElementById('expSigImg').src = dataUrl;
   document.getElementById('expSigName').textContent = label;
   document.getElementById('expSigTime').textContent = now;
@@ -2137,9 +2121,9 @@ function clearExpSig() {
   document.getElementById('expSigWidget').style.display = 'block';
 }
 
-// ── Modal (Sign & Approve) signature ──────────────────────
+// -- Modal (Sign & Approve) signature ----------------------
 function applyModalSig(dataUrl, label) {
-  const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + ' — ' + new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + ' -- ' + new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
   document.getElementById('modalSigImg').src = dataUrl;
   document.getElementById('modalSigName').textContent = label;
   document.getElementById('modalSigTime').textContent = now;
@@ -2157,12 +2141,12 @@ function clearModalSig() {
   btn.disabled = true; btn.style.opacity = '.5';
 }
 
-// ── Open Sign & Approve ────────────────────────────────────
+// -- Open Sign & Approve ------------------------------------
 function openSignAndApprove(btn, ref, recipient) {
   activeSignRowBtn = btn;
   activeSignRef = ref;
   clearModalSig();
-  document.getElementById('signModalSub').textContent = `Request #${ref} — Recipient: ${recipient}`;
+  document.getElementById('signModalSub').textContent = `Request #${ref} -- Recipient: ${recipient}`;
   refreshSigGrids();
   openModal('signApproveModal');
   setTimeout(() => initCanvas('modalCanvas'), 100);
@@ -2192,17 +2176,17 @@ function confirmSignAndApprove() {
   toast('Payment approved & signed ✓');
 }
 
-// ── Request / expense helpers ──────────────────────────────
-// ── Cascading request form logic ────────────────────────────
+// -- Request / expense helpers ------------------------------
+// -- Cascading request form logic ----------------------------
 let _reqSelProject = '', _reqSelType = '', _reqSelCategory = '', _reqSelSummary = '', _reqSelItem = '';
 
 function openNewRequestModal() {
   _reqSelProject = ''; _reqSelType = ''; _reqSelCategory = ''; _reqSelSummary = '';
   // Populate projects
   const projSel = document.getElementById('reqProject');
-  projSel.innerHTML = '<option value="">— Select Project —</option>' +
+  projSel.innerHTML = '<option value="">-- Select Project --</option>' +
     getProjects().map(p => `<option value="${p}">${p}</option>`).join('');
-  document.getElementById('reqType').innerHTML = '<option value="">— Select Type —</option>';
+  document.getElementById('reqType').innerHTML = '<option value="">-- Select Type --</option>';
   document.getElementById('reqType').disabled = true;
   document.getElementById('reqCatGroup').style.display = 'none';
   document.getElementById('reqLineGroup').style.display = 'none';
@@ -2219,7 +2203,7 @@ function onReqProjectChange() {
   _reqSelProject = document.getElementById('reqProject').value;
   _reqSelType = ''; _reqSelCategory = ''; _reqSelSummary = '';
   const typeSel = document.getElementById('reqType');
-  typeSel.innerHTML = '<option value="">— Select Type —</option>' +
+  typeSel.innerHTML = '<option value="">-- Select Type --</option>' +
     getTypes(_reqSelProject).map(t => `<option value="${t}">${t}</option>`).join('');
   typeSel.disabled = !_reqSelProject;
   document.getElementById('reqCatGroup').style.display = 'none';
@@ -2304,7 +2288,7 @@ function selectReqLine(summary, costItem, budgeted, el) {
   const actual  = getActualForLine(_reqSelProject, _reqSelType, _reqSelCategory, summary);
   const remain  = budgeted - actual;
   document.getElementById('rAmountHint').innerHTML =
-    `Budget: <strong>KES ${budgeted.toLocaleString()}</strong> · Spent: KES ${actual.toLocaleString()} · <strong style="color:${remain<0?'var(--danger)':'var(--success)'}">Remaining: KES ${remain.toLocaleString()}</strong>`;
+    `Budget: <strong>KES ${budgeted.toLocaleString()}</strong> . Spent: KES ${actual.toLocaleString()} . <strong style="color:${remain<0?'var(--danger)':'var(--success)'}">Remaining: KES ${remain.toLocaleString()}</strong>`;
   document.getElementById('reqDetailsGroup').style.display = '';
   document.getElementById('submitReqBtn').disabled = false;
   document.getElementById('submitReqBtn').style.opacity = '1';
@@ -2318,7 +2302,7 @@ function validateReqAmount() {
   const remain = line.budgetedAmount - getActualForLine(_reqSelProject, _reqSelType, _reqSelCategory, _reqSelSummary);
   const btn = document.getElementById('submitReqBtn');
   if (amt > remain) {
-    document.getElementById('rAmountHint').innerHTML += ' — <span style="color:var(--danger)">⚠ Exceeds remaining budget</span>';
+    document.getElementById('rAmountHint').innerHTML += ' -- <span style="color:var(--danger)">⚠ Exceeds remaining budget</span>';
     btn.style.background = 'var(--danger)';
   } else {
     btn.style.background = '';
@@ -2345,7 +2329,7 @@ function submitRequest() {
     category: _reqSelCategory,
     costSummary: _reqSelSummary,
     costItem: _reqSelItem,
-    description: desc || (_reqSelCategory + ' — ' + _reqSelSummary),
+    description: desc || (_reqSelCategory + ' -- ' + _reqSelSummary),
     amount, requester: name,
     status: 'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today
   };
@@ -2359,11 +2343,11 @@ function submitRequest() {
 
 function submitExpense() {
   if (!pendingExpSig) { toast('Please provide a recipient signature before submitting'); return; }
-  const project = document.getElementById('expProjectSelect').value || '—';
+  const project = document.getElementById('expProjectSelect').value || '--';
   const log = document.getElementById('expenseLog');
   const row = document.createElement('tr');
   const today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
-  row.innerHTML = `<td>${today}</td><td>${project}</td><td class="currency">—</td><td><img src="${pendingExpSig}" style="height:28px;object-fit:contain;max-width:90px;vertical-align:middle;border:1px solid var(--border);border-radius:4px;padding:2px;background:#fff"> <span class="badge badge-teal" style="vertical-align:middle">✓ Signed</span></td>`;
+  row.innerHTML = `<td>${today}</td><td>${project}</td><td class="currency">--</td><td><img src="${pendingExpSig}" style="height:28px;object-fit:contain;max-width:90px;vertical-align:middle;border:1px solid var(--border);border-radius:4px;padding:2px;background:#fff"> <span class="badge badge-teal" style="vertical-align:middle">✓ Signed</span></td>`;
   log.appendChild(row);
   clearExpSig();
   toast('Expense submitted with signature ✓');
@@ -2401,7 +2385,7 @@ function showReceipt(ref, amount, signer) {
     ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
          <div class="text-muted text-sm" style="margin-bottom:4px;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Authorised by</div>
          <img src="${sigImg}" style="height:44px;object-fit:contain;max-width:160px;display:block;margin-bottom:4px">
-         <div style="font-size:11px;color:var(--muted)">${sigLabel}${entry && entry.sigTime ? ' &nbsp;·&nbsp; '+entry.sigTime : ''}</div>
+         <div style="font-size:11px;color:var(--muted)">${sigLabel}${entry && entry.sigTime ? ' &nbsp;.&nbsp; '+entry.sigTime : ''}</div>
        </div>`
     : `<div class="flex justify-between"><span class="text-muted text-sm">Signed by</span><span>✓ ${sigLabel}</span></div>`;
   document.getElementById('receiptBody').innerHTML = `
@@ -2413,32 +2397,32 @@ function showReceipt(ref, amount, signer) {
       <div class="flex justify-between"><span class="text-muted text-sm">Reference</span><strong>#${ref}</strong></div>
       <div class="flex justify-between"><span class="text-muted text-sm">Date</span><span>${now}</span></div>
       <div class="flex justify-between"><span class="text-muted text-sm">Amount (KES)</span><strong class="currency" style="font-size:18px;color:var(--teal)">${parseInt(amount||entry&&entry.amount||0).toLocaleString()}</strong></div>
-      <div class="flex justify-between"><span class="text-muted text-sm">Project</span><span>${entry ? entry.project : '—'}</span></div>
-      <div class="flex justify-between"><span class="text-muted text-sm">Description</span><span>${entry ? entry.description : '—'}</span></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Project</span><span>${entry ? entry.project : '--'}</span></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Description</span><span>${entry ? entry.description : '--'}</span></div>
       <div class="flex justify-between"><span class="text-muted text-sm">Platform</span><span>MRV Money-In/Out</span></div>
       ${sigLine}
     </div>
-    <div style="margin-top:14px;font-size:11px;color:var(--muted);text-align:center">System-generated receipt — MRV Platform audit trail</div>`;
+    <div style="margin-top:14px;font-size:11px;color:var(--muted);text-align:center">System-generated receipt -- MRV Platform audit trail</div>`;
   openModal('receiptModal');
 }
 
-// ── GOOGLE APPS SCRIPT INTEGRATION ────────────────────────
+// -- GOOGLE APPS SCRIPT INTEGRATION ------------------------
 
 // State
 let gsWebAppUrl  = localStorage.getItem('mrv_webapp_url') || '';
 let gsConnected  = !!gsWebAppUrl; // if URL is saved, treat as connected until proven otherwise
 let gsAutoSyncTimer= null;
 
-// Dummy — kept so old gapi script tags don't crash
+// Dummy -- kept so old gapi script tags don't crash
 function gapiLoaded() {}
 
-// ── Connect / Disconnect ────────────────────────────────────
+// -- Connect / Disconnect ------------------------------------
 async function connectWebApp() {
   const url = document.getElementById('webAppUrl').value.trim();
   if (!url || !url.includes('script.google.com')) {
     toast('Please paste a valid Apps Script Web App URL'); return;
   }
-  appendSyncLog('Testing connection…');
+  appendSyncLog('Testing connection...');
   try {
     const res = await gasCall({ action: 'ping' });
     if (!res.ok) throw new Error(res.error || 'Unknown error');
@@ -2459,7 +2443,7 @@ async function connectWebApp() {
     await pushToSheets();
   } catch(e) {
     appendSyncLog('✗ Connection failed: ' + e.message);
-    toast('Connection failed — check the URL and try again');
+    toast('Connection failed -- check the URL and try again');
   }
 }
 
@@ -2478,7 +2462,7 @@ function disconnectWebApp() {
   toast('Disconnected from Google Sheets');
 }
 
-// ── Core fetch wrapper ──────────────────────────────────────
+// -- Core fetch wrapper --------------------------------------
 async function gasCall(payload) {
   const url = gsWebAppUrl || document.getElementById('webAppUrl').value.trim();
   if (!url) throw new Error('No Web App URL set');
@@ -2498,10 +2482,10 @@ async function gasCall(payload) {
   return await resp.json();
 }
 
-// ── Push all data to Sheets ─────────────────────────────────
+// -- Push all data to Sheets ---------------------------------
 async function pushToSheets() {
   if (!gsConnected) { toast('Please connect a Web App URL first'); return; }
-  appendSyncLog('Pushing data to Sheets…');
+  appendSyncLog('Pushing data to Sheets...');
   try {
     // Build expense rows from DOM
     const expRows = [];
@@ -2574,23 +2558,23 @@ async function pushToSheets() {
       if (el) el.textContent = now;
     });
     updateSheetStatusPill(true);
-    appendSyncLog(`✓ Pushed — ${reqRows.length} requests, ${budgetRows.length} budgets, ${fundRows.length} fund entries, ${expRows.length} expenses, ${sigRows.length} signatures.`);
+    appendSyncLog(`✓ Pushed -- ${reqRows.length} requests, ${budgetRows.length} budgets, ${fundRows.length} fund entries, ${expRows.length} expenses, ${sigRows.length} signatures.`);
     toast('Synced to Google Sheets ✓');
   } catch(e) {
     appendSyncLog('✗ Push failed: ' + e.message);
-    toast('Push failed — see sync log');
+    toast('Push failed -- see sync log');
   }
 }
 
-// ── Pull data from Sheets ───────────────────────────────────
+// -- Pull data from Sheets -----------------------------------
 async function pullFromSheets() {
   if (!gsConnected) { toast('Please connect a Web App URL first'); return; }
-  appendSyncLog('Pulling from Sheets…');
+  appendSyncLog('Pulling from Sheets...');
   try {
     const res = await gasCall({ action: 'getAll' });
     if (!res.ok) throw new Error(res.error || 'Pull failed');
 
-    // ── Requests ──
+    // -- Requests --
     if (res.requests && res.requests.length > 0) {
       // Map header-keyed objects → our store shape
       const imported = res.requests.map(r => ({
@@ -2613,7 +2597,7 @@ async function pullFromSheets() {
       }
     }
 
-    // ── Budgets — restore line items from Sheets ──
+    // -- Budgets -- restore line items from Sheets --
     if (res.budgets && res.budgets.length > 0) {
       const fromSheet = res.budgets.map(b => ({
         project:       String(b.project       || b['Project']        || ''),
@@ -2636,7 +2620,7 @@ async function pullFromSheets() {
       }
     }
 
-    // ── Funds ledger ──
+    // -- Funds ledger --
     if (res.funds && res.funds.length > 0) {
       const tbody = document.getElementById('fundsLedger');
       tbody.innerHTML = '';
@@ -2656,14 +2640,14 @@ async function pullFromSheets() {
       const el = document.getElementById(id);
       if (el) el.textContent = now;
     });
-    // ── Users — update local cache ──
+    // -- Users -- update local cache --
     if (res.users && res.users.length > 0) {
       usersStore = res.users;
       persistUsersToStorage();
       renderUsersTable();
     }
 
-    // ── Signatures — restore from sheet ──
+    // -- Signatures -- restore from sheet --
     if (res.signatures && res.signatures.length > 0) {
       // Merge: add any from sheet not already in localStorage (match by id)
       let changed = false;
@@ -2687,11 +2671,11 @@ async function pullFromSheets() {
     toast('Pulled latest data from Sheets ✓');
   } catch(e) {
     appendSyncLog('✗ Pull failed: ' + e.message);
-    toast('Pull failed — see sync log');
+    toast('Pull failed -- see sync log');
   }
 }
 
-// ── Rebuild requests table from store ──────────────────────
+// -- Rebuild requests table from store ----------------------
 function rebuildRequestsTable() {
   const tbody = document.getElementById('requestsBody');
   tbody.innerHTML = requestsStore.map(r => {
@@ -2702,9 +2686,9 @@ function rebuildRequestsTable() {
     return `<tr>
       <td>#${r.ref}</td>
       <td style="font-weight:500">${r.project}</td>
-      <td><span class="badge badge-gray">${r.type||'—'}</span></td>
-      <td>${r.category||'—'}</td>
-      <td style="color:var(--muted);font-size:12px">${r.costSummary||r.description||'—'}</td>
+      <td><span class="badge badge-gray">${r.type||'--'}</span></td>
+      <td>${r.category||'--'}</td>
+      <td style="color:var(--muted);font-size:12px">${r.costSummary||r.description||'--'}</td>
       <td class="currency">${r.amount.toLocaleString()}</td>
       <td>${r.requester}</td>
       <td><span class="badge ${badgeCls}">${r.status}</span></td>
@@ -2713,7 +2697,7 @@ function rebuildRequestsTable() {
   }).join('');
 }
 
-// ── Auto-push after mutations ───────────────────────────────
+// -- Auto-push after mutations -------------------------------
 function gsPushIfConnected() {
   if (gsConnected) {
     clearTimeout(window._gsPushTimer);
@@ -2721,7 +2705,7 @@ function gsPushIfConnected() {
   }
 }
 
-// ── Auto-sync timer ─────────────────────────────────────────
+// -- Auto-sync timer -----------------------------------------
 function toggleAutoSync(on) {
   clearInterval(gsAutoSyncTimer);
   if (on && gsConnected) {
@@ -2732,7 +2716,7 @@ function toggleAutoSync(on) {
   }
 }
 
-// ── Status pill ─────────────────────────────────────────────
+// -- Status pill ---------------------------------------------
 function updateSheetStatusPill(connected) {
   const dot   = document.getElementById('sheetsStatusDot');
   const label = document.getElementById('sheetsStatusLabel');
@@ -2748,7 +2732,7 @@ function updateSheetStatusPill(connected) {
   }
 }
 
-// ── Sync log ────────────────────────────────────────────────
+// -- Sync log ------------------------------------------------
 function appendSyncLog(msg) {
   const log = document.getElementById('syncLog');
   if (!log) return;
@@ -2758,9 +2742,9 @@ function appendSyncLog(msg) {
 }
 
 
-// ══════════════════════════════════════════════════════════════
-// AUTH SYSTEM — Simple & Synchronous
-// ══════════════════════════════════════════════════════════════
+// ==============================================================
+// AUTH SYSTEM -- Simple & Synchronous
+// ==============================================================
 
 let currentUser = null;
 // Users cached in localStorage so they survive refresh
@@ -2773,13 +2757,13 @@ function persistUsersToStorage() {
 let usersStore = loadUsersFromStorage();
 const SESSION_KEY = 'mrv_session';
 
-// ── Simple SHA-256 hash ────────────────────────────────────────
+// -- Simple SHA-256 hash ----------------------------------------
 async function hashPassword(pass) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
-// ── Show / hide login screen ───────────────────────────────────
+// -- Show / hide login screen -----------------------------------
 function showLoginScreen() {
   const el = document.getElementById('loginScreen');
   el.classList.remove('hidden');
@@ -2790,7 +2774,7 @@ function hideLoginScreen() {
   document.getElementById('loginScreen').classList.add('hidden');
 }
 
-// ── Called from the single DOMContentLoaded ────────────────────
+// -- Called from the single DOMContentLoaded --------------------
 function bootAuth() {
   try {
     const raw  = localStorage.getItem(SESSION_KEY);
@@ -2803,11 +2787,11 @@ function bootAuth() {
       return;
     }
   } catch(e) {}
-  // No valid session — show login
+  // No valid session -- show login
   showLoginScreen();
 }
 
-// ── Login ──────────────────────────────────────────────────────
+// -- Login ------------------------------------------------------
 async function doLogin() {
   const emailEl = document.getElementById('loginEmail');
   const passEl  = document.getElementById('loginPassword');
@@ -2824,7 +2808,7 @@ async function doLogin() {
     err.style.display = 'block'; return;
   }
 
-  btn.textContent = 'Signing in…'; btn.disabled = true;
+  btn.textContent = 'Signing in...'; btn.disabled = true;
 
   try {
     const hash = await hashPassword(pass);
@@ -2847,7 +2831,7 @@ async function doLogin() {
           usersStore = fresh.data;
           persistUsersToStorage();
         }
-      } catch(e) { /* offline — use cached store */ }
+      } catch(e) { /* offline -- use cached store */ }
     }
 
     // 3. Match against fresh store (hash comparison)
@@ -2888,12 +2872,12 @@ function clearLoginCache() {
   // Re-pull users from Sheets if connected
   if (gsWebAppUrl) {
     pullUsersFromSheets().then(() => {
-      toast('Cache cleared — try signing in again');
+      toast('Cache cleared -- try signing in again');
     }).catch(() => {
       toast('Cache cleared');
     });
   } else {
-    toast('Cache cleared — try signing in again');
+    toast('Cache cleared -- try signing in again');
   }
 }
 
@@ -2909,7 +2893,7 @@ function loginSuccess(user) {
   if (gsWebAppUrl) pullUsersFromSheets().catch(()=>{});
 }
 
-// ── Logout ─────────────────────────────────────────────────────
+// -- Logout -----------------------------------------------------
 function doLogout() {
   localStorage.removeItem(SESSION_KEY);
   currentUser = null;
@@ -2920,13 +2904,13 @@ function doLogout() {
   showLoginScreen();
 }
 
-// ── Apply role to body class ────────────────────────────────────
+// -- Apply role to body class ------------------------------------
 function applyRole(role) {
   document.body.className = document.body.className.replace(/role-\S+/g,'').trim();
   document.body.classList.add('role-' + (role || 'requester'));
 }
 
-// ── Update nav avatar ───────────────────────────────────────────
+// -- Update nav avatar -------------------------------------------
 function updateNavUser() {
   if (!currentUser) return;
   const initials = (currentUser.name || '?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
@@ -2944,7 +2928,7 @@ function updateNavUser() {
   if (dot) dot.style.background = {admin:'#6D28D9',approver:'#059669',requester:'#2563EB'}[currentUser.role]||'#C89B2A';
 }
 
-// ── User menu ───────────────────────────────────────────────────
+// -- User menu ---------------------------------------------------
 function toggleUserMenu() {
   const m = document.getElementById('userMenuDropdown');
   if (m) m.style.display = m.style.display === 'none' ? 'block' : 'none';
@@ -2957,22 +2941,22 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#navUserAvatar') && !e.target.closest('#userMenuDropdown')) closeUserMenu();
 });
 
-// ── showView role guard ─────────────────────────────────────────
+// -- showView role guard -----------------------------------------
 const _origShowView = showView;
 showView = function(id, el) {
   if (!currentUser) return; // behind login screen, ignore
   const approverOnly = ['funds'];
   const adminOnly    = ['sheets','users'];
   if (approverOnly.includes(id) && !['approver','admin'].includes(currentUser.role)) {
-    toast('Access denied — Approver role required'); return;
+    toast('Access denied -- Approver role required'); return;
   }
   if (adminOnly.includes(id) && currentUser.role !== 'admin') {
-    toast('Access denied — Admin role required'); return;
+    toast('Access denied -- Admin role required'); return;
   }
   _origShowView(id, el);
 };
 
-// ── Users management ────────────────────────────────────────────
+// -- Users management --------------------------------------------
 async function addUser() {
   const name  = (document.getElementById('newUserName').value  || '').trim();
   const email = (document.getElementById('newUserEmail').value || '').trim().toLowerCase();
@@ -3026,21 +3010,21 @@ function renderUsersTable() {
   }[r] || r);
 
   if (usersStore.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No users yet — add one using the form</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No users yet -- add one using the form</td></tr>';
     return;
   }
 
   tbody.innerHTML = usersStore.map(u => `
     <tr>
-      <td style="font-weight:500;color:var(--ink)">${u.name || '—'}</td>
-      <td style="color:var(--muted);font-size:12.5px">${u.email || '—'}</td>
+      <td style="font-weight:500;color:var(--ink)">${u.name || '--'}</td>
+      <td style="color:var(--muted);font-size:12.5px">${u.email || '--'}</td>
       <td>${badge(u.role || 'requester')}</td>
       <td><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser(${u.id})">Remove</button></td>
     </tr>`).join('');
 }
 
 async function pushUsersToSheets() {
-  if (!gsWebAppUrl) { console.warn('No Web App URL — users saved locally only'); return; }
+  if (!gsWebAppUrl) { console.warn('No Web App URL -- users saved locally only'); return; }
   try {
     const res = await gasCall({ action:'pushUsers', data:usersStore });
     if (res && res.ok) appendSyncLog('✓ Users pushed to Sheets (' + usersStore.length + ')');
@@ -3070,7 +3054,7 @@ async function checkUsersSheetStatus() {
     return;
   }
 
-  // Always pull fresh from Sheets — source of truth
+  // Always pull fresh from Sheets -- source of truth
   try {
     const res = await gasCall({ action: 'getUsers' });
     if (res.ok) {
@@ -3101,11 +3085,11 @@ async function pullUsersFromSheets() {
   } catch(e) { console.error('pullUsers:', e); }
 }
 
-// ══════════════════════════════════════════════════════════════
+// ==============================================================
 // END AUTH SYSTEM
-// ══════════════════════════════════════════════════════════════
+// ==============================================================
 
-// ── Single consolidated DOMContentLoaded ───────────────────
+// -- Single consolidated DOMContentLoaded -------------------
 document.addEventListener('DOMContentLoaded', () => {
   // Restore Web App URL and connected state
   if (gsWebAppUrl) {
@@ -3136,7 +3120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.moveTo(220,30); ctx.lineTo(260,30);
     ctx.stroke();
     const demoSig = offscreen.toDataURL();
-    savedSigs.push({label:'A. Omondi — Finance Officer', dataUrl: demoSig, date:'01 Jun 2026', id:1});
+    savedSigs.push({label:'A. Omondi -- Finance Officer', dataUrl: demoSig, date:'01 Jun 2026', id:1});
     persistSigsToStorage();
   }
 
@@ -3153,7 +3137,7 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshSigGrids();
 
   wrapTables();
-  // Boot auth LAST — shows login screen or restores session
+  // Boot auth LAST -- shows login screen or restores session
   bootAuth();
 });
 </script>
@@ -3182,12 +3166,12 @@ function openBulkApprove() {
     list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">All requests are already approved ✓</div>';
   } else {
     list.innerHTML = approvable.map(function(r){
-      return '<label style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer" onmouseenter="this.style.background=\'var(--teal-pale)\'" onmouseleave="this.style.background=\'\'"><input type="checkbox" class="bulk-chk" data-ref="'+r.ref+'" data-amount="'+r.amount+'" style="width:16px;height:16px;accent-color:var(--teal);flex-shrink:0" checked onchange="updateBulkCount()"><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">#'+r.ref+' — '+r.project+'</div><div style="font-size:11.5px;color:var(--muted)">'+r.description+' · '+r.requester+'</div></div><div style="font-family:\'DM Serif Display\',serif;font-size:13px;white-space:nowrap">KES '+r.amount.toLocaleString()+'</div><span class="badge '+(r.status==='Pending'?'badge-gold':'badge-gray')+'">'+r.status+'</span></label>';
+      return '<label style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer" onmouseenter="this.style.background=\'var(--teal-pale)\'" onmouseleave="this.style.background=\'\'"><input type="checkbox" class="bulk-chk" data-ref="'+r.ref+'" data-amount="'+r.amount+'" style="width:16px;height:16px;accent-color:var(--teal);flex-shrink:0" checked onchange="updateBulkCount()"><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">#'+r.ref+' -- '+r.project+'</div><div style="font-size:11.5px;color:var(--muted)">'+r.description+' . '+r.requester+'</div></div><div style="font-family:\'DM Serif Display\',serif;font-size:13px;white-space:nowrap">KES '+r.amount.toLocaleString()+'</div><span class="badge '+(r.status==='Pending'?'badge-gold':'badge-gray')+'">'+r.status+'</span></label>';
     }).join('');
   }
   var grid = document.getElementById('bulkSavedGrid');
   if (!savedSigs || !savedSigs.length) {
-    grid.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">No saved signatures — use Draw tab or add in My Signatures.</p>';
+    grid.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">No saved signatures -- use Draw tab or add in My Signatures.</p>';
   } else {
     grid.innerHTML = savedSigs.map(function(s,i){
       return '<div class="sig-card" onclick="selectBulkSig('+i+',this)"><div class="sig-check">✓</div><img src="'+s.dataUrl+'" alt="'+s.label+'"><div class="sig-name">'+s.label+'</div></div>';
@@ -3258,9 +3242,9 @@ function confirmBulkApprove(){
   toast('✓ '+checked.length+' request'+(checked.length===1?'':'s')+' approved & signed');
 }
 
-// ══════════════════════════════════════════════════════════════
+// ==============================================================
 // RESPONSIVE / MOBILE
-// ══════════════════════════════════════════════════════════════
+// ==============================================================
 
 function toggleSidebar() {
   const aside   = document.querySelector('aside');
@@ -3303,12 +3287,12 @@ function wrapTables() {
 // Run on load
 // wrapTables called from main DOMContentLoaded below
 
-// ══════════════════════════════════════════════════════════════
+// ==============================================================
 // END RESPONSIVE
-// ══════════════════════════════════════════════════════════════
+// ==============================================================
 </script>
 
-<!-- ── BULK SIGN & APPROVE MODAL ── -->
+<!-- -- BULK SIGN & APPROVE MODAL -- -->
 <div id="bulkApproveModal" class="modal-overlay" onclick="closeModalOutside(event,'bulkApproveModal')">
   <div class="modal modal-wide">
     <div class="modal-header">
@@ -3387,7 +3371,7 @@ function wrapTables() {
   </div>
 </div>
 
-<!-- ── MOBILE BOTTOM NAV ── -->
+<!-- -- MOBILE BOTTOM NAV -- -->
 <nav id="mobileNav">
   <div class="mob-nav-item active" id="mob-dashboard" onclick="showView('dashboard',null);setMobActive('mob-dashboard')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
