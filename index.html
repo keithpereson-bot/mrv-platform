@@ -1318,20 +1318,67 @@
 
 <!-- Request Modal -->
 <div id="requestModal" class="modal-overlay" onclick="closeModalOutside(event,'requestModal')">
-  <div class="modal">
-    <div class="modal-header"><strong>New Payment Request</strong><button class="close-btn" onclick="closeModal('requestModal')">×</button></div>
-    <div class="modal-body">
-      <div class="form-group"><label>Project</label><select id="reqProjectSelect"></select></div>
-      <div class="form-group"><label>Description</label><input id="rDesc" type="text" placeholder="What is this payment for?"></div>
-      <div class="form-grid">
-        <div class="form-group"><label>Amount (KES)</label><input id="rAmount" type="number" placeholder="0"></div>
-        <div class="form-group"><label>Requester Name</label><input id="rName" type="text" placeholder="Your name"></div>
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div>
+        <strong>New Payment Request</strong>
+        <div id="reqStepHint" style="font-size:12px;color:var(--muted);margin-top:2px">Step 1 -- Select project and type</div>
       </div>
-      <div class="form-group"><label>Supporting Notes</label><textarea rows="2" placeholder="Additional context..."></textarea></div>
+      <button class="close-btn" onclick="closeModal('requestModal')">x</button>
+    </div>
+    <div class="modal-body" style="display:grid;gap:14px">
+
+      <!-- Row 1: Project + Type -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group" style="margin:0">
+          <label>Project</label>
+          <select id="reqProject" onchange="onReqProjectChange()">
+            <option value="">-- Select --</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Type</label>
+          <select id="reqType" onchange="onReqTypeChange()" disabled>
+            <option value="">-- Select --</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Row 2: Category buttons -->
+      <div id="reqCatRow" style="display:none">
+        <label style="margin-bottom:8px">Category (Form)</label>
+        <div id="reqCatBtns" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+
+      <!-- Row 3: Budget line picker -->
+      <div id="reqLineRow" style="display:none">
+        <label style="margin-bottom:8px">Budget Line -- select cost summary</label>
+        <div id="reqLineList" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff"></div>
+      </div>
+
+      <!-- Row 4: Amount + name + notes -->
+      <div id="reqDetailsRow" style="display:none;border-top:1px solid var(--border);padding-top:14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div class="form-group" style="margin:0">
+            <label>Amount (KES)</label>
+            <input id="rAmount" type="number" placeholder="0" oninput="checkReqReady()">
+            <div id="rBudgetHint" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Requester Name</label>
+            <input id="rName" type="text" placeholder="Full name">
+          </div>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Notes</label>
+          <input id="rDesc" type="text" placeholder="Additional context">
+        </div>
+      </div>
+
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('requestModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="submitRequest()">Submit Request</button>
+      <button class="btn btn-primary" id="submitReqBtn" onclick="submitRequest()" disabled style="opacity:.5">Submit Request</button>
     </div>
   </div>
 </div>
@@ -1557,69 +1604,194 @@ function renderDashboard() {
     return `<div>
       <div class="flex justify-between mb-3">
         <span class="font-600 text-sm">${p.name}</span>
-        <span class="text-sm text-muted">KES ${fmt(util)} utilised of ${fmt(p.loaded)} loaded &nbsp;.&nbsp; <strong>${pct}%</strong></span>
+        <span class="text-sm text-muted">KES ${fmt(util)} utilised of ${fmt(p.loaded)} loaded  .  <strong>${pct}%</strong></span>
       </div>
       <div class="progress-wrap"><div class="progress-fill" style="width:${pct}%"></div></div>
     </div>`;}).join('');
 }
 
 function renderBudgetView() {
-  // Group lines by project+type
-  const groups = {};
-  budgetLines.forEach(l => {
-    const key = l.project + '||' + l.type;
-    if (!groups[key]) groups[key] = { project:l.project, type:l.type, dept:l.dept, country:l.country, month:l.month, year:l.year, lines:[] };
+  // Pull fresh from Sheets if connected (budgets are manually entered there)
+  if (gsWebAppUrl && gsConnected) {
+    pullBudgetLinesFromSheets();
+  }
+
+  // Group by project+type
+  var groups = {};
+  budgetLines.forEach(function(l) {
+    var key = l.project+'||'+l.type;
+    if (!groups[key]) groups[key] = {
+      project:l.project, type:l.type, dept:l.dept,
+      country:l.country, month:l.month, year:l.year, lines:[]
+    };
     groups[key].lines.push(l);
   });
 
-  const summary = document.getElementById('budgetDetailBody');
-  if (!summary) return;
+  var tbody = document.getElementById('budgetDetailBody');
+  tbody.innerHTML = '';
 
-  summary.innerHTML = Object.values(groups).map(g => {
-    const total  = g.lines.reduce((s,l) => s+l.budgetedAmount, 0);
-    const actual = g.lines.reduce((s,l) => s+getActualForLine(g.project, g.type, l.category, l.costSummary), 0);
-    const remain = total - actual;
-    const pct    = total ? Math.round(actual/total*100) : 0;
-    return `<tr style="background:var(--surface);font-weight:600">
-      <td colspan="5" style="padding:10px 16px;font-size:12.5px;color:var(--ink-mid)">
-        ${g.project} . <span style="color:var(--amber)">${g.type}</span> . ${g.dept} . ${g.country} . ${g.month} ${g.year}
-      </td>
-      <td class="currency" style="padding:10px 16px;text-align:right">KES ${total.toLocaleString()}</td>
-      <td class="currency" style="padding:10px 16px;text-align:right;color:var(--success)">KES ${actual.toLocaleString()}</td>
-      <td class="currency" style="padding:10px 16px;text-align:right;color:${remain<0?'var(--danger)':'var(--ink)'}">KES ${remain.toLocaleString()}</td>
-      <td style="padding:10px 16px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div style="flex:1;height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden">
-            <div style="width:${Math.min(100,pct)}%;height:100%;background:${pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--success)'}"></div>
-          </div>
-          <span style="font-size:11px;color:var(--muted);white-space:nowrap">${pct}%</span>
-        </div>
-      </td>
-    </tr>` +
-    g.lines.map(l => {
-      const act = getActualForLine(g.project, g.type, l.category, l.costSummary);
-      const rem = l.budgetedAmount - act;
-      const p   = l.budgetedAmount ? Math.round(act/l.budgetedAmount*100) : 0;
-      return `<tr>
-        <td style="padding:9px 16px 9px 28px;font-size:12px;color:var(--muted)">${l.category}</td>
-        <td style="padding:9px 16px;font-size:12.5px">${l.costSummary}</td>
-        <td style="padding:9px 16px;font-size:12px;color:var(--muted)">${l.costItem}</td>
-        <td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">${l.unitOfMeasure}</td>
-        <td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">${l.currency}</td>
-        <td class="currency" style="padding:9px 16px;text-align:right;font-size:12.5px">${l.budgetedAmount.toLocaleString()}</td>
-        <td class="currency" style="padding:9px 16px;text-align:right;font-size:12.5px;color:var(--success)">${act.toLocaleString()}</td>
-        <td class="currency" style="padding:9px 16px;text-align:right;font-size:12.5px;color:${rem<0?'var(--danger)':'inherit'}">${rem.toLocaleString()}</td>
-        <td style="padding:9px 16px">
-          <div style="display:flex;align-items:center;gap:6px">
-            <div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">
-              <div style="width:${Math.min(100,p)}%;height:100%;background:${p>85?'var(--danger)':p>60?'var(--warn)':'var(--teal)'}"></div>
-            </div>
-            <span style="font-size:10px;color:var(--muted)">${p}%</span>
-          </div>
-        </td>
-      </tr>`;
+  Object.values(groups).forEach(function(g, gi) {
+    var gid   = 'bgrp-'+gi;
+    var total  = g.lines.reduce(function(s,l){ return s+l.budgetedAmount; }, 0);
+    var actual = g.lines.reduce(function(s,l){ return s+getActualForLine(g.project,g.type,l.category,l.costSummary); }, 0);
+    var remain = total - actual;
+    var pct    = total ? Math.round(actual/total*100) : 0;
+    var pcolor = pct>85 ? 'var(--danger)' : pct>60 ? 'var(--warn)' : 'var(--success)';
+
+    // Group header row (clickable, collapsible)
+    var hdr = document.createElement('tr');
+    hdr.style.cssText = 'background:var(--ink);color:#fff;cursor:pointer;user-select:none';
+    hdr.onclick = function(){ toggleBudgetGroup(gid); };
+    hdr.innerHTML =
+      '<td colspan="5" style="padding:11px 16px;font-weight:600;font-size:13px">'
+        +'<span id="'+gid+'-arrow" style="margin-right:8px;display:inline-block;transition:transform .2s">&#9660;</span>'
+        +'<span style="color:var(--amber)">'+g.project+'</span>'
+        +'  &#183;  '+g.type
+        +'  &#183;  <span style="opacity:.7;font-size:11.5px">'+g.dept+'  &#183;  '+g.country+'  &#183;  '+g.month+' '+g.year+'</span>'
+      +'</td>'
+      +'<td style="padding:11px 16px;text-align:right;font-family:'Playfair Display',serif">'+total.toLocaleString()+'</td>'
+      +'<td style="padding:11px 16px;text-align:right;color:#86efac;font-family:'Playfair Display',serif">'+actual.toLocaleString()+'</td>'
+      +'<td style="padding:11px 16px;text-align:right;color:'+(remain<0?'#fca5a5':'#fff')+';font-family:'Playfair Display',serif">'+remain.toLocaleString()+'</td>'
+      +'<td style="padding:11px 16px">'
+        +'<div style="display:flex;align-items:center;gap:8px">'
+          +'<div style="flex:1;height:5px;background:rgba(255,255,255,.2);border-radius:3px;overflow:hidden">'
+            +'<div style="width:'+Math.min(100,pct)+'%;height:100%;background:'+pcolor+'"></div>'
+          +'</div>'
+          +'<span style="font-size:11px;white-space:nowrap">'+pct+'%</span>'
+        +'</div>'
+      +'</td>';
+    tbody.appendChild(hdr);
+
+    // Line item rows (collapsed by default)
+    var grpBody = document.createElement('tbody');
+    grpBody.id = gid;
+    grpBody.style.display = 'none';
+
+    g.lines.forEach(function(l) {
+      var act  = getActualForLine(g.project,g.type,l.category,l.costSummary);
+      var rem  = l.budgetedAmount - act;
+      var p    = l.budgetedAmount ? Math.min(100,Math.round(act/l.budgetedAmount*100)) : 0;
+      var pc   = p>85?'var(--danger)':p>60?'var(--warn)':'var(--teal)';
+      var tr   = document.createElement('tr');
+      tr.innerHTML =
+        '<td style="padding:9px 16px 9px 30px;font-size:12px;color:var(--muted)">'+l.category+'</td>'
+        +'<td style="padding:9px 16px;font-size:12.5px;font-weight:500">'+l.costSummary+'</td>'
+        +'<td style="padding:9px 16px;font-size:12px;color:var(--muted)">'+l.costItem+'</td>'
+        +'<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">'+l.unitOfMeasure+'</td>'
+        +'<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">'+l.currency+'</td>'
+        +'<td style="padding:9px 16px;text-align:right;font-family:'Playfair Display',serif;font-size:12.5px">'+l.budgetedAmount.toLocaleString()+'</td>'
+        +'<td style="padding:9px 16px;text-align:right;font-family:'Playfair Display',serif;font-size:12.5px;color:var(--success)">'+act.toLocaleString()+'</td>'
+        +'<td style="padding:9px 16px;text-align:right;font-family:'Playfair Display',serif;font-size:12.5px;color:'+(rem<0?'var(--danger)':'inherit')+'">'+rem.toLocaleString()+'</td>'
+        +'<td style="padding:9px 16px">'
+          +'<div style="display:flex;align-items:center;gap:6px">'
+            +'<div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">'
+              +'<div style="width:'+p+'%;height:100%;background:'+pc+'"></div>'
+            +'</div>'
+            +'<span style="font-size:10px;color:var(--muted)">'+p+'%</span>'
+          +'</div>'
+        +'</td>';
+      grpBody.appendChild(tr);
+    });
+    tbody.parentNode.insertBefore(grpBody, tbody.nextSibling);
+    tbody.appendChild(hdr); // re-append to keep order -- actually use the proper structure
+  });
+
+  // Fix: rebuild properly using a single tbody
+  tbody.innerHTML = '';
+  Object.values(groups).forEach(function(g, gi) {
+    var gid    = 'bg'+gi;
+    var total  = g.lines.reduce(function(s,l){ return s+l.budgetedAmount; }, 0);
+    var actual = g.lines.reduce(function(s,l){ return s+getActualForLine(g.project,g.type,l.category,l.costSummary); }, 0);
+    var remain = total - actual;
+    var pct    = total ? Math.round(actual/total*100) : 0;
+    var pc     = pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--success)';
+
+    // Header row
+    var hdHtml =
+      '<tr style="background:var(--ink);color:#fff;cursor:pointer;user-select:none" onclick="toggleBudgetGroup(''+gid+'')">'
+        +'<td colspan="5" style="padding:11px 16px;font-weight:600;font-size:13px">'
+          +'<span id="'+gid+'-arr" style="margin-right:8px;font-size:11px">&#9660;</span>'
+          +'<span style="color:var(--amber)">'+g.project+'</span>'
+          +' · '+g.type
+          +' · <span style="opacity:.65;font-size:11.5px;font-weight:400">'+g.dept+' · '+g.country+' · '+g.month+' '+g.year+'</span>'
+        +'</td>'
+        +'<td style="padding:11px 16px;text-align:right;font-family:'Playfair Display',serif">'+total.toLocaleString()+'</td>'
+        +'<td style="padding:11px 16px;text-align:right;color:#86efac;font-family:'Playfair Display',serif">'+actual.toLocaleString()+'</td>'
+        +'<td style="padding:11px 16px;text-align:right;color:'+(remain<0?'#fca5a5':'#d1fae5')+';font-family:'Playfair Display',serif">'+remain.toLocaleString()+'</td>'
+        +'<td style="padding:11px 16px">'
+          +'<div style="display:flex;align-items:center;gap:6px">'
+            +'<div style="flex:1;height:5px;background:rgba(255,255,255,.2);border-radius:3px;overflow:hidden">'
+              +'<div style="width:'+Math.min(100,pct)+'%;height:100%;background:'+pc+'"></div>'
+            +'</div>'
+            +'<span style="font-size:11px">'+pct+'%</span>'
+          +'</div>'
+        +'</td>'
+      +'</tr>';
+
+    // Detail rows (hidden by default)
+    var detailRows = g.lines.map(function(l){
+      var a = getActualForLine(g.project,g.type,l.category,l.costSummary);
+      var r = l.budgetedAmount - a;
+      var p = l.budgetedAmount ? Math.min(100,Math.round(a/l.budgetedAmount*100)) : 0;
+      var c = p>85?'var(--danger)':p>60?'var(--warn)':'var(--teal)';
+      return '<tr class="budgetLine-'+gid+'" style="display:none">'
+        +'<td style="padding:9px 16px 9px 30px;font-size:12px;color:var(--muted)">'+l.category+'</td>'
+        +'<td style="padding:9px 16px;font-weight:500">'+l.costSummary+'</td>'
+        +'<td style="padding:9px 16px;font-size:12px;color:var(--muted)">'+l.costItem+'</td>'
+        +'<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">'+l.unitOfMeasure+'</td>'
+        +'<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">'+l.currency+'</td>'
+        +'<td style="padding:9px 16px;text-align:right;font-family:'Playfair Display',serif">'+l.budgetedAmount.toLocaleString()+'</td>'
+        +'<td style="padding:9px 16px;text-align:right;font-family:'Playfair Display',serif;color:var(--success)">'+a.toLocaleString()+'</td>'
+        +'<td style="padding:9px 16px;text-align:right;font-family:'Playfair Display',serif;color:'+(r<0?'var(--danger)':'inherit')+'">'+r.toLocaleString()+'</td>'
+        +'<td style="padding:9px 16px">'
+          +'<div style="display:flex;align-items:center;gap:6px">'
+            +'<div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">'
+              +'<div style="width:'+p+'%;height:100%;background:'+c+'"></div>'
+            +'</div>'
+            +'<span style="font-size:10px;color:var(--muted)">'+p+'%</span>'
+          +'</div>'
+        +'</td>'
+      +'</tr>';
     }).join('');
-  }).join('');
+
+    tbody.insertAdjacentHTML('beforeend', hdHtml + detailRows);
+  });
+}
+
+function toggleBudgetGroup(gid) {
+  var rows = document.querySelectorAll('.budgetLine-'+gid);
+  var arr  = document.getElementById(gid+'-arr');
+  var open = rows.length && rows[0].style.display !== 'none';
+  rows.forEach(function(r){ r.style.display = open ? 'none' : ''; });
+  if (arr) arr.innerHTML = open ? '&#9658;' : '&#9660;';
+}
+
+// Pull budget lines from Sheets (Budgets tab is read-only -- manually entered)
+async function pullBudgetLinesFromSheets() {
+  if (!gsWebAppUrl) return;
+  try {
+    var res = await gasCall({ action:'getBudgets' });
+    if (res && res.ok && res.data && res.data.length > 0) {
+      budgetLines = res.data.map(function(r){
+        return {
+          project:       String(r['Project']        || r.project        || ''),
+          type:          String(r['Type']            || r.type           || ''),
+          year:          parseInt(r['Year']          || r.year)          || 2026,
+          month:         String(r['Month']           || r.month          || ''),
+          dept:          String(r['Department']      || r.dept           || ''),
+          country:       String(r['Country']         || r.country        || ''),
+          costItem:      String(r['Cost Item']       || r.costItem       || ''),
+          unitOfMeasure: String(r['Unit of Measure'] || r.unitOfMeasure  || ''),
+          category:      String(r['Category']        || r.category       || ''),
+          costSummary:   String(r['Cost Summary']    || r.costSummary    || ''),
+          budgetedAmount:parseFloat(r['Amount']      || r.budgetedAmount || 0),
+          currency:      String(r['Currency']        || r.currency       || 'KES'),
+          actual:        0,
+        };
+      }).filter(function(l){ return l.project && l.category; });
+      budgetStore = buildBudgetStore();
+    }
+  } catch(e) { console.error('pullBudgetLines:', e); }
 }
 
 function toggleLineItems(id) {
@@ -2177,168 +2349,157 @@ function confirmSignAndApprove() {
 }
 
 // -- Request / expense helpers ------------------------------
-// -- Cascading request form logic ----------------------------
-let _reqSelProject = '', _reqSelType = '', _reqSelCategory = '', _reqSelSummary = '', _reqSelItem = '';
+// ========================================================
+// REQUEST FORM -- cascading: Project > Type > Category > Line > Amount
+// ========================================================
+var _rProject='', _rType='', _rCategory='', _rSummary='', _rCostItem='';
 
 function openNewRequestModal() {
-  _reqSelProject = ''; _reqSelType = ''; _reqSelCategory = ''; _reqSelSummary = '';
-  // Populate projects
-  const projSel = document.getElementById('reqProject');
-  projSel.innerHTML = '<option value="">-- Select Project --</option>' +
-    getProjects().map(p => `<option value="${p}">${p}</option>`).join('');
-  document.getElementById('reqType').innerHTML = '<option value="">-- Select Type --</option>';
+  _rProject=''; _rType=''; _rCategory=''; _rSummary=''; _rCostItem='';
+  var ps = document.getElementById('reqProject');
+  ps.innerHTML = '<option value="">-- Select --</option>' +
+    getProjects().map(function(p){ return '<option>'+p+'</option>'; }).join('');
+  document.getElementById('reqType').innerHTML = '<option value="">-- Select --</option>';
   document.getElementById('reqType').disabled = true;
-  document.getElementById('reqCatGroup').style.display = 'none';
-  document.getElementById('reqLineGroup').style.display = 'none';
-  document.getElementById('reqDetailsGroup').style.display = 'none';
-  document.getElementById('submitReqBtn').disabled = true;
-  document.getElementById('submitReqBtn').style.opacity = '.5';
+  document.getElementById('reqCatRow').style.display    = 'none';
+  document.getElementById('reqLineRow').style.display   = 'none';
+  document.getElementById('reqDetailsRow').style.display = 'none';
   document.getElementById('rAmount').value = '';
   document.getElementById('rName').value = currentUser ? currentUser.name : '';
   document.getElementById('rDesc').value = '';
+  document.getElementById('submitReqBtn').disabled = true;
+  document.getElementById('submitReqBtn').style.opacity = '.5';
+  document.getElementById('reqStepHint').textContent = 'Step 1 -- Select project and type';
   openModal('requestModal');
 }
 
 function onReqProjectChange() {
-  _reqSelProject = document.getElementById('reqProject').value;
-  _reqSelType = ''; _reqSelCategory = ''; _reqSelSummary = '';
-  const typeSel = document.getElementById('reqType');
-  typeSel.innerHTML = '<option value="">-- Select Type --</option>' +
-    getTypes(_reqSelProject).map(t => `<option value="${t}">${t}</option>`).join('');
-  typeSel.disabled = !_reqSelProject;
-  document.getElementById('reqCatGroup').style.display = 'none';
-  document.getElementById('reqLineGroup').style.display = 'none';
-  document.getElementById('reqDetailsGroup').style.display = 'none';
+  _rProject = document.getElementById('reqProject').value;
+  _rType=''; _rCategory=''; _rSummary='';
+  var ts = document.getElementById('reqType');
+  ts.innerHTML = '<option value="">-- Select --</option>' +
+    getTypes(_rProject).map(function(t){ return '<option>'+t+'</option>'; }).join('');
+  ts.disabled = !_rProject;
+  document.getElementById('reqCatRow').style.display    = 'none';
+  document.getElementById('reqLineRow').style.display   = 'none';
+  document.getElementById('reqDetailsRow').style.display = 'none';
 }
 
 function onReqTypeChange() {
-  _reqSelType = document.getElementById('reqType').value;
-  _reqSelCategory = ''; _reqSelSummary = '';
-  if (!_reqSelType) return;
-  const cats = getCategories(_reqSelProject, _reqSelType);
-  const btns = document.getElementById('reqCategoryBtns');
-  btns.innerHTML = cats.map(c => `
-    <button onclick="selectReqCategory('${c}', this)"
-      style="padding:7px 14px;border-radius:6px;border:1.5px solid var(--border);
-             background:var(--surface);color:var(--ink-mid);font-family:inherit;
-             font-size:12.5px;font-weight:500;cursor:pointer;transition:all .15s"
-      onmouseover="this.style.borderColor='var(--amber)'"
-      onmouseout="if(!this.classList.contains('active'))this.style.borderColor='var(--border)'"
-    >${c} Form</button>`).join('');
-  document.getElementById('reqCatGroup').style.display = '';
-  document.getElementById('reqLineGroup').style.display = 'none';
-  document.getElementById('reqDetailsGroup').style.display = 'none';
+  _rType = document.getElementById('reqType').value;
+  _rCategory=''; _rSummary='';
+  if (!_rType) return;
+  var cats = getCategories(_rProject, _rType);
+  document.getElementById('reqCatBtns').innerHTML = cats.map(function(c){
+    return '<button onclick="selectReqCat(''+c+'',this)" style="'
+      +'padding:7px 16px;border-radius:6px;border:1.5px solid var(--border);'
+      +'background:var(--surface);color:var(--ink);font-family:inherit;'
+      +'font-size:13px;cursor:pointer;transition:all .15s">'
+      +c+'</button>';
+  }).join('');
+  document.getElementById('reqCatRow').style.display     = '';
+  document.getElementById('reqLineRow').style.display    = 'none';
+  document.getElementById('reqDetailsRow').style.display = 'none';
+  document.getElementById('reqStepHint').textContent = 'Step 2 -- Pick a category';
 }
 
-function selectReqCategory(cat, btn) {
-  _reqSelCategory = cat; _reqSelSummary = '';
-  document.querySelectorAll('#reqCategoryBtns button').forEach(b => {
+function selectReqCat(cat, btn) {
+  _rCategory = cat; _rSummary='';
+  document.querySelectorAll('#reqCatBtns button').forEach(function(b){
     b.style.background = 'var(--surface)';
     b.style.borderColor = 'var(--border)';
-    b.style.color = 'var(--ink-mid)';
-    b.classList.remove('active');
+    b.style.color = 'var(--ink)';
   });
-  btn.style.background = 'var(--amber)';
-  btn.style.borderColor = 'var(--amber)';
+  btn.style.background = 'var(--ink)';
+  btn.style.borderColor = 'var(--ink)';
   btn.style.color = '#fff';
-  btn.classList.add('active');
 
-  const lines = getCostSummaries(_reqSelProject, _reqSelType, cat);
-  const container = document.getElementById('reqLineItems');
-  container.innerHTML = lines.map((l,i) => {
-    const actual = getActualForLine(_reqSelProject, _reqSelType, cat, l.costSummary);
-    const remain = l.budgetedAmount - actual;
-    const pct    = Math.min(100, Math.round(actual / l.budgetedAmount * 100)) || 0;
-    return `<div onclick="selectReqLine('${l.costSummary}','${l.costItem}',${l.budgetedAmount},this)"
-      style="padding:12px 14px;cursor:pointer;border-bottom:${i < lines.length-1 ? '1px solid var(--border)' : 'none'};
-             transition:background .12s;display:flex;justify-content:space-between;align-items:center;gap:12px"
-      onmouseover="this.style.background='var(--surface)'"
-      onmouseout="if(!this.dataset.sel)this.style.background=''">
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:13px;color:var(--ink)">${l.costSummary}</div>
-        <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${l.costItem}</div>
-        <div style="margin-top:6px;display:flex;align-items:center;gap:8px">
-          <div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">
-            <div style="width:${pct}%;height:100%;background:${pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--success)'}"></div>
-          </div>
-          <span style="font-size:10.5px;color:var(--muted);white-space:nowrap">${pct}% used</span>
-        </div>
-      </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div style="font-family:'Playfair Display',serif;font-size:13.5px;font-weight:600;color:var(--ink)">KES ${l.budgetedAmount.toLocaleString()}</div>
-        <div style="font-size:11px;color:${remain < 0 ? 'var(--danger)' : 'var(--muted)'}">KES ${remain.toLocaleString()} remaining</div>
-      </div>
-    </div>`;
+  var lines = getCostSummaries(_rProject, _rType, cat);
+  document.getElementById('reqLineList').innerHTML = lines.map(function(l, i){
+    var act = getActualForLine(_rProject, _rType, cat, l.costSummary);
+    var rem = l.budgetedAmount - act;
+    var pct = l.budgetedAmount ? Math.min(100, Math.round(act/l.budgetedAmount*100)) : 0;
+    var color = pct>85 ? 'var(--danger)' : pct>60 ? 'var(--warn)' : 'var(--success)';
+    var border = i < lines.length-1 ? 'border-bottom:1px solid var(--border)' : '';
+    return '<div onclick="selectReqLine(''+l.costSummary+'',''+l.costItem+'','+l.budgetedAmount+',this)" '
+      +'style="display:flex;justify-content:space-between;align-items:center;gap:12px;'
+      +'padding:12px 14px;cursor:pointer;transition:background .12s;'+border+'" '
+      +'onmouseover="if(!this.dataset.sel)this.style.background='var(--surface)'" '
+      +'onmouseout="if(!this.dataset.sel)this.style.background=''">'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-weight:600;font-size:13px">'+l.costSummary+'</div>'
+        +'<div style="font-size:11.5px;color:var(--muted);margin-top:2px">'+l.costItem+'</div>'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-top:6px">'
+          +'<div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">'
+            +'<div style="width:'+pct+'%;height:100%;background:'+color+'"></div>'
+          +'</div>'
+          +'<span style="font-size:10.5px;color:var(--muted);white-space:nowrap">'+pct+'% used</span>'
+        +'</div>'
+      +'</div>'
+      +'<div style="text-align:right;flex-shrink:0">'
+        +'<div style="font-family:'Playfair Display',serif;font-size:13px;font-weight:600">KES '+l.budgetedAmount.toLocaleString()+'</div>'
+        +'<div style="font-size:11px;color:'+(rem<0?'var(--danger)':'var(--muted)')+'">'+rem.toLocaleString()+' rem.</div>'
+      +'</div>'
+    +'</div>';
   }).join('');
 
-  document.getElementById('reqLineGroup').style.display = '';
-  document.getElementById('reqDetailsGroup').style.display = 'none';
+  document.getElementById('reqLineRow').style.display    = '';
+  document.getElementById('reqDetailsRow').style.display = 'none';
+  document.getElementById('reqStepHint').textContent = 'Step 3 -- Select budget line';
 }
 
 function selectReqLine(summary, costItem, budgeted, el) {
-  _reqSelSummary = summary; _reqSelItem = costItem;
-  // Highlight selected line
-  document.querySelectorAll('#reqLineItems > div').forEach(d => {
-    d.style.background = '';
-    d.dataset.sel = '';
+  _rSummary = summary; _rCostItem = costItem;
+  document.querySelectorAll('#reqLineList > div').forEach(function(d){
+    d.style.background=''; d.dataset.sel='';
   });
   el.style.background = 'var(--amber-lt)';
   el.dataset.sel = '1';
-
-  const actual  = getActualForLine(_reqSelProject, _reqSelType, _reqSelCategory, summary);
-  const remain  = budgeted - actual;
-  document.getElementById('rAmountHint').innerHTML =
-    `Budget: <strong>KES ${budgeted.toLocaleString()}</strong> . Spent: KES ${actual.toLocaleString()} . <strong style="color:${remain<0?'var(--danger)':'var(--success)'}">Remaining: KES ${remain.toLocaleString()}</strong>`;
-  document.getElementById('reqDetailsGroup').style.display = '';
-  document.getElementById('submitReqBtn').disabled = false;
-  document.getElementById('submitReqBtn').style.opacity = '1';
+  var act = getActualForLine(_rProject, _rType, _rCategory, summary);
+  var rem = budgeted - act;
+  document.getElementById('rBudgetHint').innerHTML =
+    'Budget: <strong>KES '+budgeted.toLocaleString()+'</strong>'
+    +'  |  Spent: KES '+act.toLocaleString()
+    +'  |  <strong style="color:'+(rem<0?'var(--danger)':'var(--success)')
+    +'">Remaining: KES '+rem.toLocaleString()+'</strong>';
+  document.getElementById('reqDetailsRow').style.display = '';
+  document.getElementById('reqStepHint').textContent = 'Step 4 -- Enter amount and submit';
   document.getElementById('rAmount').focus();
+  checkReqReady();
 }
 
-function validateReqAmount() {
-  const amt = parseInt(document.getElementById('rAmount').value || 0);
-  const line = getBudgetLine(_reqSelProject, _reqSelType, _reqSelCategory, _reqSelSummary);
-  if (!line) return;
-  const remain = line.budgetedAmount - getActualForLine(_reqSelProject, _reqSelType, _reqSelCategory, _reqSelSummary);
-  const btn = document.getElementById('submitReqBtn');
-  if (amt > remain) {
-    document.getElementById('rAmountHint').innerHTML += ' -- <span style="color:var(--danger)">⚠ Exceeds remaining budget</span>';
-    btn.style.background = 'var(--danger)';
-  } else {
-    btn.style.background = '';
-  }
+function checkReqReady() {
+  var amt  = parseInt(document.getElementById('rAmount').value||0);
+  var name = (document.getElementById('rName').value||'').trim();
+  var ok   = _rProject && _rType && _rCategory && _rSummary && amt>0 && name;
+  var btn  = document.getElementById('submitReqBtn');
+  btn.disabled     = !ok;
+  btn.style.opacity = ok ? '1' : '.5';
 }
 
 function submitRequest() {
-  const amount = parseInt(document.getElementById('rAmount').value || 0);
-  const name   = (document.getElementById('rName').value || '').trim();
-  const desc   = (document.getElementById('rDesc').value || '').trim();
-
-  if (!_reqSelProject || !_reqSelType || !_reqSelCategory || !_reqSelSummary) { toast('Please complete all selections'); return; }
-  if (!amount || amount <= 0) { toast('Please enter an amount'); return; }
+  var amount = parseInt(document.getElementById('rAmount').value||0);
+  var name   = (document.getElementById('rName').value||'').trim();
+  var desc   = (document.getElementById('rDesc').value||'').trim();
+  if (!_rProject||!_rType||!_rCategory||!_rSummary) { toast('Please complete all selections'); return; }
+  if (!amount||amount<=0) { toast('Please enter a valid amount'); return; }
   if (!name) { toast('Please enter requester name'); return; }
-
   reqCounter++;
-  const num   = 'REQ-' + String(reqCounter).padStart(3,'0');
-  const today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-
-  const newReq = {
-    ref: num,
-    project: _reqSelProject,
-    type: _reqSelType,
-    category: _reqSelCategory,
-    costSummary: _reqSelSummary,
-    costItem: _reqSelItem,
-    description: desc || (_reqSelCategory + ' -- ' + _reqSelSummary),
-    amount, requester: name,
-    status: 'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today
-  };
-  requestsStore.push(newReq);
+  var num   = 'REQ-'+String(reqCounter).padStart(3,'0');
+  var today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  requestsStore.push({
+    ref:num, project:_rProject, type:_rType,
+    category:_rCategory, costSummary:_rSummary, costItem:_rCostItem,
+    description: desc||(_rCategory+' -- '+_rSummary),
+    amount:amount, requester:name,
+    status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today
+  });
   rebuildRequestsTable();
+  renderDashboard();
   populateAllDropdowns();
   closeModal('requestModal');
-  gsPushIfConnected();
-  toast('Request submitted ✓');
+  if(typeof gsPushIfConnected==='function') gsPushIfConnected();
+  toast('Request submitted -- REQ-'+String(reqCounter).padStart(3,'0'));
 }
 
 function submitExpense() {
@@ -2385,7 +2546,7 @@ function showReceipt(ref, amount, signer) {
     ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
          <div class="text-muted text-sm" style="margin-bottom:4px;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Authorised by</div>
          <img src="${sigImg}" style="height:44px;object-fit:contain;max-width:160px;display:block;margin-bottom:4px">
-         <div style="font-size:11px;color:var(--muted)">${sigLabel}${entry && entry.sigTime ? ' &nbsp;.&nbsp; '+entry.sigTime : ''}</div>
+         <div style="font-size:11px;color:var(--muted)">${sigLabel}${entry && entry.sigTime ? '  .  '+entry.sigTime : ''}</div>
        </div>`
     : `<div class="flex justify-between"><span class="text-muted text-sm">Signed by</span><span>✓ ${sigLabel}</span></div>`;
   document.getElementById('receiptBody').innerHTML = `
@@ -2501,21 +2662,13 @@ async function pushToSheets() {
       if (cells.length >= 3) fundRows.push({ project: cells[0], amount: cells[1], date: cells[2], status: cells[3] || 'Posted' });
     });
 
-    // Push budget lines (one row per line item)
-    const budgetRows = budgetLines.map(l => ({
-      project:         l.project,
-      type:            l.type,
-      year:            l.year,
-      month:           l.month,
-      dept:            l.dept,
-      country:         l.country,
-      costItem:        l.costItem,
-      unitOfMeasure:   l.unitOfMeasure,
-      category:        l.category,
-      costSummary:     l.costSummary,
-      budgetedAmount:  l.budgetedAmount,
-      currency:        l.currency,
-      actual:          getActualForLine(l.project, l.type, l.category, l.costSummary),
+    // Build actuals to update in the Budgets sheet (read-only sheet, only Actual column written)
+    const actualsData = budgetLines.map(l => ({
+      project:     l.project,
+      type:        l.type,
+      category:    l.category,
+      costSummary: l.costSummary,
+      actual:      getActualForLine(l.project, l.type, l.category, l.costSummary),
     }));
 
     const reqRows = requestsStore.map(r => ({
@@ -2545,7 +2698,7 @@ async function pushToSheets() {
     const res = await gasCall({
       action:     'pushAll',
       requests:   reqRows,
-      budgets:    budgetRows,
+      actuals:    actualsData,
       funds:      fundRows,
       expenses:   expRows,
       signatures: sigRows,
@@ -2558,7 +2711,7 @@ async function pushToSheets() {
       if (el) el.textContent = now;
     });
     updateSheetStatusPill(true);
-    appendSyncLog(`✓ Pushed -- ${reqRows.length} requests, ${budgetRows.length} budgets, ${fundRows.length} fund entries, ${expRows.length} expenses, ${sigRows.length} signatures.`);
+    appendSyncLog(`✓ Pushed -- ${reqRows.length} requests, actuals updated, ${fundRows.length} fund entries, ${expRows.length} expenses, ${sigRows.length} signatures.`);
     toast('Synced to Google Sheets ✓');
   } catch(e) {
     appendSyncLog('✗ Push failed: ' + e.message);
@@ -3166,7 +3319,7 @@ function openBulkApprove() {
     list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">All requests are already approved ✓</div>';
   } else {
     list.innerHTML = approvable.map(function(r){
-      return '<label style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer" onmouseenter="this.style.background=\'var(--teal-pale)\'" onmouseleave="this.style.background=\'\'"><input type="checkbox" class="bulk-chk" data-ref="'+r.ref+'" data-amount="'+r.amount+'" style="width:16px;height:16px;accent-color:var(--teal);flex-shrink:0" checked onchange="updateBulkCount()"><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">#'+r.ref+' -- '+r.project+'</div><div style="font-size:11.5px;color:var(--muted)">'+r.description+' . '+r.requester+'</div></div><div style="font-family:\'DM Serif Display\',serif;font-size:13px;white-space:nowrap">KES '+r.amount.toLocaleString()+'</div><span class="badge '+(r.status==='Pending'?'badge-gold':'badge-gray')+'">'+r.status+'</span></label>';
+      return '<label style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer" onmouseenter="this.style.background=\'var(--teal-pale)\'" onmouseleave="this.style.background=\'\'"><input type="checkbox" class="bulk-chk" data-ref="'+r.ref+'" data-amount="'+r.amount+'" style="width:16px;height:16px;accent-color:var(--teal);flex-shrink:0" checked onchange="updateBulkCount()"><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">#'+r.ref+' -- '+r.project+'</div><div style="font-size:11.5px;color:var(--muted)">'+r.description+' . '+r.requester+'</div></div><div style="font-family:DM Serif Display,serif;font-size:13px;white-space:nowrap">KES '+r.amount.toLocaleString()+'</div><span class="badge '+(r.status==='Pending'?'badge-gold':'badge-gray')+'">'+r.status+'</span></label>';
     }).join('');
   }
   var grid = document.getElementById('bulkSavedGrid');
@@ -3297,7 +3450,7 @@ function wrapTables() {
   <div class="modal modal-wide">
     <div class="modal-header">
       <div>
-        <strong>Sign &amp; Approve All Requests</strong>
+        <strong>Sign & Approve All Requests</strong>
         <div style="font-size:12px;color:var(--muted);margin-top:2px">Select requests and apply one signature to all</div>
       </div>
       <button class="close-btn" onclick="closeModal('bulkApproveModal')">×</button>
@@ -3315,7 +3468,7 @@ function wrapTables() {
         </div>
         <div id="bulkRequestList" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:10px"></div>
         <div style="margin-top:8px;font-size:12px;color:var(--muted)">
-          <span id="bulkSelectedCount">0</span> selected &middot; Total: <strong class="currency" id="bulkSelectedTotal">KES 0</strong>
+          <span id="bulkSelectedCount">0</span> selected · Total: <strong class="currency" id="bulkSelectedTotal">KES 0</strong>
         </div>
       </div>
 
@@ -3365,7 +3518,7 @@ function wrapTables() {
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('bulkApproveModal')">Cancel</button>
       <button class="btn btn-primary" id="confirmBulkBtn" onclick="confirmBulkApprove()" disabled style="opacity:.5">
-        Sign &amp; Approve Selected
+        Sign & Approve Selected
       </button>
     </div>
   </div>
