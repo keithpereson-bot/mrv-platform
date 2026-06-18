@@ -929,7 +929,7 @@
       </div>
       <div class="card-body" style="padding:0">
         <table>
-          <thead><tr><th>Project</th><th>Department</th><th>SMT Approval Ref</th><th>Total Budget</th><th>Loaded (Money-In)</th><th>Utilised</th><th>Remaining</th><th>% Used</th><th>Detail</th></tr></thead>
+          <thead><tr><th>Category</th><th>Cost Summary</th><th>Cost Item</th><th>Unit</th><th>CCY</th><th style="text-align:right">Budgeted (KES)</th><th style="text-align:right">Actual (KES)</th><th style="text-align:right">Remaining</th><th>Utilisation</th></tr></thead>
           <tbody id="budgetDetailBody"></tbody>
         </table>
       </div>
@@ -972,7 +972,7 @@
     <div class="page-header"><h1>Funds Utilization — System Requests</h1><p>Step 4 — Payments are made only against approved requests. MRV Officers & Coordinators process.</p></div>
     <div class="alert alert-warn">⚠️ Controlled access: Only MRV Officers and Coordinators may approve and process payments.</div>
     <div class="card">
-      <div class="card-header"><div class="card-title">Payment Requests</div><div class="flex gap-2"><button class="btn btn-secondary btn-sm" onclick="downloadRequestsPDF()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download PDF</button><button class="btn btn-secondary btn-sm" onclick="openBulkApprove()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M20 19.5v.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8.5L18 5.5"/><path d="M15 2v4h4"/><path d="m13.5 15.5 3-3-1.5-1.5-3 3 1.5 1.5z"/><path d="m9 21 1.5-1.5-1.5-1.5L7.5 19.5 9 21z"/></svg> Sign All</button><button class="btn btn-primary btn-sm" onclick="openModal('requestModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New Request</button></div></div>
+      <div class="card-header"><div class="card-title">Payment Requests</div><div class="flex gap-2"><button class="btn btn-secondary btn-sm" onclick="downloadRequestsPDF()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download PDF</button><button class="btn btn-secondary btn-sm" onclick="openBulkApprove()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M20 19.5v.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8.5L18 5.5"/><path d="M15 2v4h4"/><path d="m13.5 15.5 3-3-1.5-1.5-3 3 1.5 1.5z"/><path d="m9 21 1.5-1.5-1.5-1.5L7.5 19.5 9 21z"/></svg> Sign All</button><button class="btn btn-primary btn-sm" onclick="openNewRequestModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New Request</button></div></div>
       <div class="card-body" style="padding:0">
         <table><thead><tr><th>Request #</th><th>Project</th><th>Description</th><th>Amount</th><th>Requester</th><th>Status</th><th>Action</th></tr></thead>
         <tbody id="requestsBody">
@@ -1411,45 +1411,69 @@
 <script>
 // ── MASTER BUDGET STORE (SMT-approved, read-only) ─────────────────────────
 // Each project: {id, name, dept, smtRef, totalBudget, period, lineItems:[{category, budgetedAmount}], loaded, closed}
-const budgetStore = [
-  {
-    id: 'NBO-001', name: 'Nairobi Field Ops', dept: 'Field Operations',
-    smtRef: 'SMT/2026/06/001', totalBudget: 1800000, period: 'June 2026',
-    loaded: 1800000, closed: false,
-    lineItems: [
-      {category:'Staff Field Allowances',   budgetedAmount: 700000},
-      {category:'Transport & Fuel',         budgetedAmount: 350000},
-      {category:'Accommodation',            budgetedAmount: 300000},
-      {category:'Stationery & Supplies',    budgetedAmount: 200000},
-      {category:'Communication',            budgetedAmount: 150000},
-      {category:'Miscellaneous',            budgetedAmount: 100000},
-    ]
-  },
-  {
-    id: 'MSA-001', name: 'Mombasa Survey', dept: 'Research & Data',
-    smtRef: 'SMT/2026/06/002', totalBudget: 1200000, period: 'June 2026',
-    loaded: 1200000, closed: false,
-    lineItems: [
-      {category:'Survey Team Allowances',   budgetedAmount: 480000},
-      {category:'Transport & Logistics',    budgetedAmount: 320000},
-      {category:'Accommodation',            budgetedAmount: 200000},
-      {category:'Data Collection Tools',    budgetedAmount: 120000},
-      {category:'Miscellaneous',            budgetedAmount: 80000},
-    ]
-  },
-  {
-    id: 'KSM-001', name: 'Kisumu Training', dept: 'Capacity Building',
-    smtRef: 'SMT/2026/06/003', totalBudget: 1200000, period: 'June 2026',
-    loaded: 800000, closed: false,
-    lineItems: [
-      {category:'Trainer Fees',             budgetedAmount: 400000},
-      {category:'Venue Hire',               budgetedAmount: 300000},
-      {category:'Participant Allowances',   budgetedAmount: 250000},
-      {category:'Materials & Printing',     budgetedAmount: 150000},
-      {category:'Catering',                 budgetedAmount: 100000},
-    ]
-  },
+// ── BUDGET LINE ITEMS ──────────────────────────────────────
+// Each row matches a line in the Google Sheet:
+// project, type, year, month, dept, country, costItem,
+// unitOfMeasure, category, costSummary, budgetedAmount, currency, actual
+let budgetLines = [
+  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Training Transport',          unitOfMeasure:'Enumerator', category:'Training',       costSummary:'Transport',       budgetedAmount:40000,  currency:'KES', actual:0 },
+  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Training Venue',               unitOfMeasure:'Enumerator', category:'Training',       costSummary:'Venue Hire',      budgetedAmount:20000,  currency:'KES', actual:0 },
+  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Training Accommodation',        unitOfMeasure:'Enumerator', category:'Training',       costSummary:'Accommodation',   budgetedAmount:20000,  currency:'KES', actual:0 },
+  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Field Transport',               unitOfMeasure:'Enumerator', category:'Field',          costSummary:'Transport',       budgetedAmount:202500, currency:'KES', actual:0 },
+  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Field Airtime',                 unitOfMeasure:'Enumerator', category:'Field',          costSummary:'Airtime',         budgetedAmount:11250,  currency:'KES', actual:0 },
+  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Stipend',                       unitOfMeasure:'Enumerator', category:'Field',          costSummary:'Stipend',         budgetedAmount:168750, currency:'KES', actual:0 },
+  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Refresher training airtime',               unitOfMeasure:'Enumerator', category:'Training',       costSummary:'Airtime',         budgetedAmount:1000,   currency:'KES', actual:0 },
+  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Miscellaneous',                            unitOfMeasure:'Miscellaneous', category:'Miscellaneous', costSummary:'Miscellaneous',  budgetedAmount:46250,  currency:'KES', actual:0 },
+  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Field Transport Usage',         unitOfMeasure:'Enumerator', category:'Field',          costSummary:'Transport',       budgetedAmount:356400, currency:'KES', actual:0 },
+  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Field Airtime',                 unitOfMeasure:'Enumerator', category:'Field',          costSummary:'Airtime',         budgetedAmount:19800,  currency:'KES', actual:0 },
+  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Stipend',                       unitOfMeasure:'Enumerator', category:'Field',          costSummary:'Stipend',         budgetedAmount:297000, currency:'KES', actual:0 },
+  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Household fuels',                          unitOfMeasure:'Household',  category:'Field',          costSummary:'Cooking Fuel',    budgetedAmount:39600,  currency:'KES', actual:0 },
+  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Coordinator spot checks transport',        unitOfMeasure:'Coordinator', category:'Field',         costSummary:'Transport',       budgetedAmount:20000,  currency:'KES', actual:0 },
+  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Coordinator spot checks accommodation',    unitOfMeasure:'Coordinator', category:'Field',         costSummary:'Accommodation',   budgetedAmount:16000,  currency:'KES', actual:0 },
+  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Coordinator spot checks per diem',         unitOfMeasure:'Coordinator', category:'Field',         costSummary:'Per diem',        budgetedAmount:15000,  currency:'KES', actual:0 },
+  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Miscellaneous',                            unitOfMeasure:'Miscellaneous', category:'Miscellaneous', costSummary:'Miscellaneous',  budgetedAmount:76380,  currency:'KES', actual:0 },
 ];
+
+// ── Legacy compat: budgetStore derived from budgetLines ──────
+// Groups lines by project+type for dashboard/recon views
+function buildBudgetStore() {
+  const map = {};
+  budgetLines.forEach(l => {
+    const key = l.project + '-' + l.type;
+    if (!map[key]) map[key] = {
+      id: key, name: l.project + ' (' + l.type + ')', dept: l.dept,
+      smtRef: l.project, totalBudget: 0, loaded: 0,
+      period: l.month + ' ' + l.year, closed: false,
+      lineItems: [], country: l.country
+    };
+    map[key].totalBudget += l.budgetedAmount;
+    map[key].loaded       = map[key].totalBudget; // assume fully loaded
+    map[key].lineItems.push({ category: l.category, costSummary: l.costSummary, budgetedAmount: l.budgetedAmount });
+  });
+  return Object.values(map);
+}
+let budgetStore = buildBudgetStore();
+
+// ── Line-item helpers ────────────────────────────────────────
+function getProjects()    { return [...new Set(budgetLines.map(l => l.project))]; }
+function getTypes(proj)   { return [...new Set(budgetLines.filter(l => l.project === proj).map(l => l.type))]; }
+function getCategories(proj, type) { return [...new Set(budgetLines.filter(l => l.project === proj && l.type === type).map(l => l.category))]; }
+function getCostSummaries(proj, type, cat) {
+  return budgetLines.filter(l => l.project === proj && l.type === type && l.category === cat)
+    .map(l => ({ costSummary: l.costSummary, costItem: l.costItem, budgetedAmount: l.budgetedAmount }));
+}
+function getBudgetLine(proj, type, cat, summary) {
+  return budgetLines.find(l => l.project === proj && l.type === type && l.category === cat && l.costSummary === summary);
+}
+function getBudgetedAmount(proj, type, cat, summary) {
+  const line = getBudgetLine(proj, type, cat, summary);
+  return line ? line.budgetedAmount : 0;
+}
+function getActualForLine(proj, type, cat, summary) {
+  return requestsStore
+    .filter(r => r.project === proj && r.type === type && r.category === cat && r.costSummary === summary && r.status === 'Paid')
+    .reduce((s, r) => s + r.amount, 0);
+}
 
 // ── State ──────────────────────────────────────────────────
 // Signatures persist in localStorage so you never re-upload
@@ -1467,13 +1491,13 @@ let activeSignRef = '';
 let pendingModalSig = null;
 let pendingExpSig = null;
 
-// Central requests store
+// Central requests store — each request maps to a budget line
 let requestsStore = [
-  {ref:'REQ-001', project:'Nairobi Field Ops', description:'Field allowances',   amount:450000, requester:'J. Kamau',   status:'Paid',    sigDataUrl:null, sigLabel:'J. Kamau',   sigTime:'04 Jun 2026 09:14', date:'04 Jun 2026'},
-  {ref:'REQ-002', project:'Mombasa Survey',    description:'Transport costs',    amount:320000, requester:'A. Ali',     status:'Paid',    sigDataUrl:null, sigLabel:'A. Ali',     sigTime:'05 Jun 2026 11:30', date:'05 Jun 2026'},
-  {ref:'REQ-003', project:'Nairobi Field Ops', description:'Stationery purchase',amount:85000,  requester:'M. Wanjiku', status:'Pending', sigDataUrl:null, sigLabel:null,         sigTime:null,                date:'06 Jun 2026'},
-  {ref:'REQ-004', project:'Kisumu Training',   description:'Venue hire',         amount:390000, requester:'P. Otieno',  status:'Draft',   sigDataUrl:null, sigLabel:null,         sigTime:null,                date:'07 Jun 2026'},
-  {ref:'REQ-005', project:'Mombasa Survey',    description:'Accommodation',      amount:200000, requester:'A. Ali',     status:'Draft',   sigDataUrl:null, sigLabel:null,         sigTime:null,                date:'07 Jun 2026'},
+  { ref:'REQ-001', project:'GS5642', type:'Usage', category:'Field', costSummary:'Transport', costItem:'Enumerator Field Transport', description:'Field transport June', amount:120000, requester:'J. Kamau', status:'Paid',    sigDataUrl:null, sigLabel:'J. Kamau', sigTime:'04 Jun 2026 09:14', date:'04 Jun 2026' },
+  { ref:'REQ-002', project:'GS5642', type:'KPT',   category:'Field', costSummary:'Stipend',   costItem:'Enumerator Stipend',          description:'Enumerator stipends',  amount:150000, requester:'A. Ali',   status:'Paid',    sigDataUrl:null, sigLabel:'A. Ali',   sigTime:'05 Jun 2026 11:30', date:'05 Jun 2026' },
+  { ref:'REQ-003', project:'GS5642', type:'Usage', category:'Training', costSummary:'Venue Hire', costItem:'Enumerator Training Venue', description:'Training venue deposit', amount:20000, requester:'M. Wanjiku', status:'Pending', sigDataUrl:null, sigLabel:null, sigTime:null, date:'06 Jun 2026' },
+  { ref:'REQ-004', project:'GS5642', type:'KPT',   category:'Field', costSummary:'Transport', costItem:'Enumerator Field Transport Usage', description:'Field ops transport', amount:80000, requester:'P. Otieno', status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:'07 Jun 2026' },
+  { ref:'REQ-005', project:'GS5642', type:'KPT',   category:'Field', costSummary:'Accommodation', costItem:'Coordinator spot checks accommodation', description:'Spot check accommodation', amount:16000, requester:'A. Ali', status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:'07 Jun 2026' },
 ];
 
 // ── HELPERS ────────────────────────────────────────────────
@@ -1540,53 +1564,64 @@ function renderDashboard() {
 }
 
 function renderBudgetView() {
-  const totalBudget = budgetStore.reduce((s,p)=>s+p.totalBudget,0);
-  const totalLoaded = budgetStore.reduce((s,p)=>s+p.loaded,0);
-  const totalUtil   = budgetStore.reduce((s,p)=>s+projectUtilised(p.name),0);
-  const balance     = totalLoaded - totalUtil;
+  // Group lines by project+type
+  const groups = {};
+  budgetLines.forEach(l => {
+    const key = l.project + '||' + l.type;
+    if (!groups[key]) groups[key] = { project:l.project, type:l.type, dept:l.dept, country:l.country, month:l.month, year:l.year, lines:[] };
+    groups[key].lines.push(l);
+  });
 
-  document.getElementById('budgetStatsRow').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Total Approved Budget</div><div class="stat-value teal">${fmtK(totalBudget)}</div><div class="stat-sub">${budgetStore.length} SMT-approved projects</div></div>
-    <div class="stat-card"><div class="stat-label">Total Loaded</div><div class="stat-value teal">${fmtK(totalLoaded)}</div><div class="stat-sub">Posted as Money-In</div></div>
-    <div class="stat-card"><div class="stat-label">Total Utilised</div><div class="stat-value purple">${fmtK(totalUtil)}</div><div class="stat-sub">Paid requests</div></div>
-    <div class="stat-card"><div class="stat-label">Advance Balance</div><div class="stat-value gold">${fmtK(balance)}</div><div class="stat-sub">Unreconciled</div></div>`;
+  const summary = document.getElementById('budgetDetailBody');
+  if (!summary) return;
 
-  // Summary table
-  document.getElementById('budgetDetailBody').innerHTML = budgetStore.map(p => {
-    const util = projectUtilised(p.name);
-    const remaining = p.totalBudget - util;
-    const pct = Math.round(util/p.totalBudget*100);
-    const barColor = pct > 80 ? 'var(--danger)' : pct > 50 ? 'var(--gold)' : 'var(--teal-mid)';
-    return `<tr>
-      <td>
-        <div class="font-600">${p.name}</div>
-        <div class="text-sm text-muted">${p.id}</div>
+  summary.innerHTML = Object.values(groups).map(g => {
+    const total  = g.lines.reduce((s,l) => s+l.budgetedAmount, 0);
+    const actual = g.lines.reduce((s,l) => s+getActualForLine(g.project, g.type, l.category, l.costSummary), 0);
+    const remain = total - actual;
+    const pct    = total ? Math.round(actual/total*100) : 0;
+    return `<tr style="background:var(--surface);font-weight:600">
+      <td colspan="5" style="padding:10px 16px;font-size:12.5px;color:var(--ink-mid)">
+        ${g.project} · <span style="color:var(--amber)">${g.type}</span> · ${g.dept} · ${g.country} · ${g.month} ${g.year}
       </td>
-      <td class="text-muted text-sm">${p.dept}</td>
-      <td class="text-muted text-sm">${p.smtRef}</td>
-      <td class="currency font-600">${fmt(p.totalBudget)}</td>
-      <td class="currency">${fmt(p.loaded)}</td>
-      <td><span style="color:var(--purple);font-weight:600">${fmt(util)}</span></td>
-      <td style="color:${remaining < 0 ? 'var(--danger)' : 'var(--gold)'};font-weight:600">${fmt(remaining)}</td>
-      <td>
+      <td class="currency" style="padding:10px 16px;text-align:right">KES ${total.toLocaleString()}</td>
+      <td class="currency" style="padding:10px 16px;text-align:right;color:var(--success)">KES ${actual.toLocaleString()}</td>
+      <td class="currency" style="padding:10px 16px;text-align:right;color:${remain<0?'var(--danger)':'var(--ink)'}">KES ${remain.toLocaleString()}</td>
+      <td style="padding:10px 16px">
         <div style="display:flex;align-items:center;gap:8px">
-          <div class="progress-wrap" style="width:60px;flex-shrink:0"><div class="progress-fill" style="width:${pct}%;background:${barColor}"></div></div>
-          <span class="text-sm" style="color:${barColor};font-weight:600">${pct}%</span>
+          <div style="flex:1;height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden">
+            <div style="width:${Math.min(100,pct)}%;height:100%;background:${pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--success)'}"></div>
+          </div>
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap">${pct}%</span>
         </div>
       </td>
-      <td><button class="btn btn-ghost btn-sm" onclick="toggleLineItems('lines-${p.id}')">Line Items ▾</button></td>
-    </tr>
-    <tr id="lines-${p.id}" style="display:none">
-      <td colspan="9" style="padding:0;background:var(--teal-pale)">
-        <table style="margin:0;border-radius:0">
-          <thead><tr style="background:var(--teal-light)">
-            <th style="padding-left:28px">Budget Line Item</th>
-            <th>Budgeted Amount</th>
-            <th>Requests Against Line</th>
-            <th>Remaining</th>
-          </tr></thead>
-          <tbody>${p.lineItems.map(li => {
-            const liUtil = requestsStore.filter(r=>r.project===p.name&&r.status==='Paid'&&r.description.toLowerCase().includes(li.category.split(' ')[0].toLowerCase())).reduce((s,r)=>s+r.amount,0);
+    </tr>` +
+    g.lines.map(l => {
+      const act = getActualForLine(g.project, g.type, l.category, l.costSummary);
+      const rem = l.budgetedAmount - act;
+      const p   = l.budgetedAmount ? Math.round(act/l.budgetedAmount*100) : 0;
+      return `<tr>
+        <td style="padding:9px 16px 9px 28px;font-size:12px;color:var(--muted)">${l.category}</td>
+        <td style="padding:9px 16px;font-size:12.5px">${l.costSummary}</td>
+        <td style="padding:9px 16px;font-size:12px;color:var(--muted)">${l.costItem}</td>
+        <td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">${l.unitOfMeasure}</td>
+        <td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">${l.currency}</td>
+        <td class="currency" style="padding:9px 16px;text-align:right;font-size:12.5px">${l.budgetedAmount.toLocaleString()}</td>
+        <td class="currency" style="padding:9px 16px;text-align:right;font-size:12.5px;color:var(--success)">${act.toLocaleString()}</td>
+        <td class="currency" style="padding:9px 16px;text-align:right;font-size:12.5px;color:${rem<0?'var(--danger)':'inherit'}">${rem.toLocaleString()}</td>
+        <td style="padding:9px 16px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">
+              <div style="width:${Math.min(100,p)}%;height:100%;background:${p>85?'var(--danger)':p>60?'var(--warn)':'var(--teal)'}"></div>
+            </div>
+            <span style="font-size:10px;color:var(--muted)">${p}%</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }).join('');
+}
+&r.description.toLowerCase().includes(li.category.split(' ')[0].toLowerCase())).reduce((s,r)=>s+r.amount,0);
             const liRem  = li.budgetedAmount - liUtil;
             return `<tr style="background:transparent">
               <td style="padding-left:28px;font-size:13px">${li.category}</td>
@@ -2156,21 +2191,168 @@ function confirmSignAndApprove() {
 }
 
 // ── Request / expense helpers ──────────────────────────────
+// ── Cascading request form logic ────────────────────────────
+let _reqSelProject = '', _reqSelType = '', _reqSelCategory = '', _reqSelSummary = '', _reqSelItem = '';
+
+function openNewRequestModal() {
+  _reqSelProject = ''; _reqSelType = ''; _reqSelCategory = ''; _reqSelSummary = '';
+  // Populate projects
+  const projSel = document.getElementById('reqProject');
+  projSel.innerHTML = '<option value="">— Select Project —</option>' +
+    getProjects().map(p => `<option value="${p}">${p}</option>`).join('');
+  document.getElementById('reqType').innerHTML = '<option value="">— Select Type —</option>';
+  document.getElementById('reqType').disabled = true;
+  document.getElementById('reqCatGroup').style.display = 'none';
+  document.getElementById('reqLineGroup').style.display = 'none';
+  document.getElementById('reqDetailsGroup').style.display = 'none';
+  document.getElementById('submitReqBtn').disabled = true;
+  document.getElementById('submitReqBtn').style.opacity = '.5';
+  document.getElementById('rAmount').value = '';
+  document.getElementById('rName').value = currentUser ? currentUser.name : '';
+  document.getElementById('rDesc').value = '';
+  openModal('requestModal');
+}
+
+function onReqProjectChange() {
+  _reqSelProject = document.getElementById('reqProject').value;
+  _reqSelType = ''; _reqSelCategory = ''; _reqSelSummary = '';
+  const typeSel = document.getElementById('reqType');
+  typeSel.innerHTML = '<option value="">— Select Type —</option>' +
+    getTypes(_reqSelProject).map(t => `<option value="${t}">${t}</option>`).join('');
+  typeSel.disabled = !_reqSelProject;
+  document.getElementById('reqCatGroup').style.display = 'none';
+  document.getElementById('reqLineGroup').style.display = 'none';
+  document.getElementById('reqDetailsGroup').style.display = 'none';
+}
+
+function onReqTypeChange() {
+  _reqSelType = document.getElementById('reqType').value;
+  _reqSelCategory = ''; _reqSelSummary = '';
+  if (!_reqSelType) return;
+  const cats = getCategories(_reqSelProject, _reqSelType);
+  const btns = document.getElementById('reqCategoryBtns');
+  btns.innerHTML = cats.map(c => `
+    <button onclick="selectReqCategory('${c}', this)"
+      style="padding:7px 14px;border-radius:6px;border:1.5px solid var(--border);
+             background:var(--surface);color:var(--ink-mid);font-family:inherit;
+             font-size:12.5px;font-weight:500;cursor:pointer;transition:all .15s"
+      onmouseover="this.style.borderColor='var(--amber)'"
+      onmouseout="if(!this.classList.contains('active'))this.style.borderColor='var(--border)'"
+    >${c} Form</button>`).join('');
+  document.getElementById('reqCatGroup').style.display = '';
+  document.getElementById('reqLineGroup').style.display = 'none';
+  document.getElementById('reqDetailsGroup').style.display = 'none';
+}
+
+function selectReqCategory(cat, btn) {
+  _reqSelCategory = cat; _reqSelSummary = '';
+  document.querySelectorAll('#reqCategoryBtns button').forEach(b => {
+    b.style.background = 'var(--surface)';
+    b.style.borderColor = 'var(--border)';
+    b.style.color = 'var(--ink-mid)';
+    b.classList.remove('active');
+  });
+  btn.style.background = 'var(--amber)';
+  btn.style.borderColor = 'var(--amber)';
+  btn.style.color = '#fff';
+  btn.classList.add('active');
+
+  const lines = getCostSummaries(_reqSelProject, _reqSelType, cat);
+  const container = document.getElementById('reqLineItems');
+  container.innerHTML = lines.map((l,i) => {
+    const actual = getActualForLine(_reqSelProject, _reqSelType, cat, l.costSummary);
+    const remain = l.budgetedAmount - actual;
+    const pct    = Math.min(100, Math.round(actual / l.budgetedAmount * 100)) || 0;
+    return `<div onclick="selectReqLine('${l.costSummary}','${l.costItem}',${l.budgetedAmount},this)"
+      style="padding:12px 14px;cursor:pointer;border-bottom:${i < lines.length-1 ? '1px solid var(--border)' : 'none'};
+             transition:background .12s;display:flex;justify-content:space-between;align-items:center;gap:12px"
+      onmouseover="this.style.background='var(--surface)'"
+      onmouseout="if(!this.dataset.sel)this.style.background=''">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px;color:var(--ink)">${l.costSummary}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${l.costItem}</div>
+        <div style="margin-top:6px;display:flex;align-items:center;gap:8px">
+          <div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--success)'}"></div>
+          </div>
+          <span style="font-size:10.5px;color:var(--muted);white-space:nowrap">${pct}% used</span>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-family:'Playfair Display',serif;font-size:13.5px;font-weight:600;color:var(--ink)">KES ${l.budgetedAmount.toLocaleString()}</div>
+        <div style="font-size:11px;color:${remain < 0 ? 'var(--danger)' : 'var(--muted)'}">KES ${remain.toLocaleString()} remaining</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('reqLineGroup').style.display = '';
+  document.getElementById('reqDetailsGroup').style.display = 'none';
+}
+
+function selectReqLine(summary, costItem, budgeted, el) {
+  _reqSelSummary = summary; _reqSelItem = costItem;
+  // Highlight selected line
+  document.querySelectorAll('#reqLineItems > div').forEach(d => {
+    d.style.background = '';
+    d.dataset.sel = '';
+  });
+  el.style.background = 'var(--amber-lt)';
+  el.dataset.sel = '1';
+
+  const actual  = getActualForLine(_reqSelProject, _reqSelType, _reqSelCategory, summary);
+  const remain  = budgeted - actual;
+  document.getElementById('rAmountHint').innerHTML =
+    `Budget: <strong>KES ${budgeted.toLocaleString()}</strong> · Spent: KES ${actual.toLocaleString()} · <strong style="color:${remain<0?'var(--danger)':'var(--success)'}">Remaining: KES ${remain.toLocaleString()}</strong>`;
+  document.getElementById('reqDetailsGroup').style.display = '';
+  document.getElementById('submitReqBtn').disabled = false;
+  document.getElementById('submitReqBtn').style.opacity = '1';
+  document.getElementById('rAmount').focus();
+}
+
+function validateReqAmount() {
+  const amt = parseInt(document.getElementById('rAmount').value || 0);
+  const line = getBudgetLine(_reqSelProject, _reqSelType, _reqSelCategory, _reqSelSummary);
+  if (!line) return;
+  const remain = line.budgetedAmount - getActualForLine(_reqSelProject, _reqSelType, _reqSelCategory, _reqSelSummary);
+  const btn = document.getElementById('submitReqBtn');
+  if (amt > remain) {
+    document.getElementById('rAmountHint').innerHTML += ' — <span style="color:var(--danger)">⚠ Exceeds remaining budget</span>';
+    btn.style.background = 'var(--danger)';
+  } else {
+    btn.style.background = '';
+  }
+}
+
 function submitRequest() {
+  const amount = parseInt(document.getElementById('rAmount').value || 0);
+  const name   = (document.getElementById('rName').value || '').trim();
+  const desc   = (document.getElementById('rDesc').value || '').trim();
+
+  if (!_reqSelProject || !_reqSelType || !_reqSelCategory || !_reqSelSummary) { toast('Please complete all selections'); return; }
+  if (!amount || amount <= 0) { toast('Please enter an amount'); return; }
+  if (!name) { toast('Please enter requester name'); return; }
+
   reqCounter++;
-  const project = document.getElementById('reqProjectSelect').value || '—';
-  const desc    = document.getElementById('rDesc').value || 'New expense';
-  const amount  = parseInt(document.getElementById('rAmount').value || 0);
-  const name    = document.getElementById('rName').value || '—';
-  const num     = 'REQ-00' + reqCounter;
-  const today   = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  requestsStore.push({ref:num, project, description:desc, amount, requester:name, status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today});
-  const tbody = document.getElementById('requestsBody');
-  const row   = document.createElement('tr');
-  row.innerHTML = `<td class="text-muted">#${num}</td><td>${project}</td><td>${desc}</td><td class="currency">${amount.toLocaleString()}</td><td>${name}</td><td><span class="badge badge-gray">Draft</span></td><td><button class="btn btn-secondary btn-sm" onclick="openSignAndApprove(this,'${num}','${name}')">Sign & Approve</button></td>`;
-  tbody.appendChild(row);
+  const num   = 'REQ-' + String(reqCounter).padStart(3,'0');
+  const today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+
+  const newReq = {
+    ref: num,
+    project: _reqSelProject,
+    type: _reqSelType,
+    category: _reqSelCategory,
+    costSummary: _reqSelSummary,
+    costItem: _reqSelItem,
+    description: desc || (_reqSelCategory + ' — ' + _reqSelSummary),
+    amount, requester: name,
+    status: 'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today
+  };
+  requestsStore.push(newReq);
+  rebuildRequestsTable();
   populateAllDropdowns();
-  closeModal('requestModal'); toast('Payment request submitted ✓');
+  closeModal('requestModal');
+  gsPushIfConnected();
+  toast('Request submitted ✓');
 }
 
 function submitExpense() {
@@ -2333,16 +2515,37 @@ async function pushToSheets() {
       if (cells.length >= 3) fundRows.push({ project: cells[0], amount: cells[1], date: cells[2], status: cells[3] || 'Posted' });
     });
 
-    const budgetRows = budgetStore.map(p => ({
-      id: p.id, name: p.name, dept: p.dept, smtRef: p.smtRef,
-      totalBudget: p.totalBudget, loaded: p.loaded, period: p.period,
-      closed: p.closed ? 'Yes' : 'No'
+    // Push budget lines (one row per line item)
+    const budgetRows = budgetLines.map(l => ({
+      project:         l.project,
+      type:            l.type,
+      year:            l.year,
+      month:           l.month,
+      dept:            l.dept,
+      country:         l.country,
+      costItem:        l.costItem,
+      unitOfMeasure:   l.unitOfMeasure,
+      category:        l.category,
+      costSummary:     l.costSummary,
+      budgetedAmount:  l.budgetedAmount,
+      currency:        l.currency,
+      actual:          getActualForLine(l.project, l.type, l.category, l.costSummary),
     }));
 
     const reqRows = requestsStore.map(r => ({
-      ref: r.ref, project: r.project, description: r.description,
-      amount: r.amount, requester: r.requester, status: r.status,
-      date: r.date, sigLabel: r.sigLabel || '', sigTime: r.sigTime || ''
+      ref:         r.ref,
+      project:     r.project,
+      type:        r.type        || '',
+      category:    r.category    || '',
+      costSummary: r.costSummary || '',
+      costItem:    r.costItem    || '',
+      description: r.description || '',
+      amount:      r.amount,
+      requester:   r.requester,
+      status:      r.status,
+      date:        r.date,
+      sigLabel:    r.sigLabel || '',
+      sigTime:     r.sigTime  || '',
     }));
 
     // Include saved signatures (strip dataUrl size warning: base64 can be large)
@@ -2408,16 +2611,27 @@ async function pullFromSheets() {
       }
     }
 
-    // ── Budgets — update loaded & closed ──
+    // ── Budgets — restore line items from Sheets ──
     if (res.budgets && res.budgets.length > 0) {
-      res.budgets.forEach(b => {
-        const id  = b['ID'] || b['id'];
-        const existing = budgetStore.find(p => p.id === id);
-        if (existing) {
-          existing.loaded = parseInt(b['Loaded'] || b['loaded']) || existing.loaded;
-          existing.closed = (b['Closed'] || b['closed']) === 'Yes';
-        }
-      });
+      const fromSheet = res.budgets.map(b => ({
+        project:       String(b.project       || b['Project']        || ''),
+        type:          String(b.type          || b['Type']           || ''),
+        year:          parseInt(b.year        || b['Year'])          || 2026,
+        month:         String(b.month         || b['Month']          || ''),
+        dept:          String(b.dept          || b['Department']     || ''),
+        country:       String(b.country       || b['Country']        || ''),
+        costItem:      String(b.costItem      || b['Cost Item']      || ''),
+        unitOfMeasure: String(b.unitOfMeasure || b['Unit of Measure']|| ''),
+        category:      String(b.category      || b['Category']       || ''),
+        costSummary:   String(b.costSummary   || b['Cost Summary']   || ''),
+        budgetedAmount:parseFloat(b.budgetedAmount || b['Amount']    || 0),
+        currency:      String(b.currency      || b['Currency']       || 'KES'),
+        actual:        0,
+      })).filter(l => l.project && l.category);
+      if (fromSheet.length > 0) {
+        budgetLines = fromSheet;
+        budgetStore = buildBudgetStore();
+      }
     }
 
     // ── Funds ledger ──
@@ -2484,9 +2698,11 @@ function rebuildRequestsTable() {
       ? `<button class="btn btn-ghost btn-sm" onclick="showReceipt('${r.ref}','${r.amount}','${r.sigLabel||r.requester}')">Receipt</button>`
       : `<button class="btn btn-${r.status==='Pending'?'primary':'secondary'} btn-sm" onclick="openSignAndApprove(this,'${r.ref}','${r.requester}')">Sign & Approve</button>`;
     return `<tr>
-      <td class="text-muted">#${r.ref}</td>
-      <td>${r.project}</td>
-      <td>${r.description}</td>
+      <td>#${r.ref}</td>
+      <td style="font-weight:500">${r.project}</td>
+      <td><span class="badge badge-gray">${r.type||'—'}</span></td>
+      <td>${r.category||'—'}</td>
+      <td style="color:var(--muted);font-size:12px">${r.costSummary||r.description||'—'}</td>
       <td class="currency">${r.amount.toLocaleString()}</td>
       <td>${r.requester}</td>
       <td><span class="badge ${badgeCls}">${r.status}</span></td>
