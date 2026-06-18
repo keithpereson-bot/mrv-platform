@@ -1670,13 +1670,15 @@ function renderReconciliation() {
 }
 
 function populateAllDropdowns() {
-  const names = projectNames();
+  // Project names for load funds and expense forms
+  const names = getProjects();
   populateSelect('loadProjectSelect', names, false);
-  populateSelect('reqProjectSelect', names, false);
   populateSelect('expProjectSelect', names, false);
   // expense request refs
   const refs = requestsStore.map(r=>'#'+r.ref);
   populateSelect('expReqSelect', refs, false);
+  // recon dropdown
+  populateSelect('reconProjectSelect', names, true);
 }
 
 // ── PDF GENERATION ─────────────────────────────────────────
@@ -3150,6 +3152,7 @@ document.addEventListener('DOMContentLoaded', () => {
   populateAllDropdowns();
   refreshSigGrids();
 
+  wrapTables();
   // Boot auth LAST — shows login screen or restores session
   bootAuth();
 });
@@ -3295,28 +3298,10 @@ function wrapTables() {
   });
 }
 
-// Sync mobile bottom nav with showView
-const _origShowViewMob = showView;
-showView = function(id, el) {
-  _origShowViewMob(id, el);
-  // Sync mobile bottom nav highlight
-  const map = {
-    dashboard:'mob-dashboard', requests:'mob-requests',
-    funds:'mob-funds', reconciliation:'mob-reconciliation'
-  };
-  if (map[id]) {
-    document.querySelectorAll('.mob-nav-item').forEach(e => e.classList.remove('active'));
-    const mob = document.getElementById(map[id]);
-    if (mob) mob.classList.add('active');
-  }
-  // Auto-close sidebar on mobile after nav
-  if (window.innerWidth <= 768) closeSidebar();
-};
+// Mobile nav sync is handled inside the auth showView override below
 
 // Run on load
-document.addEventListener('DOMContentLoaded', () => {
-  wrapTables();
-});
+// wrapTables called from main DOMContentLoaded below
 
 // ══════════════════════════════════════════════════════════════
 // END RESPONSIVE
