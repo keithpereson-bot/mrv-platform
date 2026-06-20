@@ -2359,6 +2359,8 @@ function onReqTypeChange() {
 
 function selectReqCat(cat, btn) {
   _rCategory = cat; _rSummary = '';
+
+  // Highlight selected category button
   document.querySelectorAll('#reqCatBtns button').forEach(function(b) {
     b.style.background = 'var(--surface)';
     b.style.borderColor = 'var(--border)';
@@ -2371,22 +2373,39 @@ function selectReqCat(cat, btn) {
   var lines = getCostSummaries(_rProject, _rType, cat);
   var container = document.getElementById('reqLineList');
   container.innerHTML = '';
-  lines.forEach(function(l, i) {
-    var act = getActualForLine(_rProject, _rType, cat, l.costSummary);
-    var rem = l.budgetedAmount - act;
-    var pct = l.budgetedAmount ? Math.min(100, Math.round(act / l.budgetedAmount * 100)) : 0;
+
+  lines.forEach(function(line) {
+    // Capture all four keys explicitly in this scope -- fixes closure bug
+    var proj    = _rProject;
+    var type    = _rType;
+    var catKey  = cat;          // exact category this button belongs to
+    var summary = line.costSummary;
+    var item    = line.costItem;
+    var budgeted= line.budgetedAmount;
+
+    // Re-read actuals live so remaining balance is always current
+    var act   = getActualForLine(proj, type, catKey, summary);
+    var rem   = budgeted - act;
+    var pct   = budgeted ? Math.min(100, Math.round(act / budgeted * 100)) : 0;
     var color = pct > 85 ? 'var(--danger)' : pct > 60 ? 'var(--warn)' : 'var(--success)';
 
     var div = document.createElement('div');
-    div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;transition:background .12s' + (i < lines.length - 1 ? ';border-bottom:1px solid var(--border)' : '');
+    div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;'
+      + 'gap:12px;padding:13px 16px;cursor:pointer;transition:background .1s;'
+      + 'border-bottom:1px solid var(--border)';
     div.addEventListener('mouseenter', function() { if (!div.dataset.sel) div.style.background = 'var(--surface)'; });
     div.addEventListener('mouseleave', function() { if (!div.dataset.sel) div.style.background = ''; });
-    div.addEventListener('click', function() { selectReqLine(l.costSummary, l.costItem, l.budgetedAmount, div); });
+
+    // Click captures proj/type/catKey/summary/item/budgeted in this iteration's scope
+    div.addEventListener('click', function() {
+      selectReqLine(proj, type, catKey, summary, item, budgeted, div);
+    });
 
     var left = document.createElement('div');
     left.style.cssText = 'flex:1;min-width:0';
-    left.innerHTML = '<div style="font-weight:600;font-size:13px">' + l.costSummary + '</div>'
-      + '<div style="font-size:11.5px;color:var(--muted);margin-top:2px">' + l.costItem + '</div>'
+    left.innerHTML =
+      '<div style="font-weight:600;font-size:13px;color:var(--ink)">' + summary + '</div>'
+      + '<div style="font-size:11.5px;color:var(--muted);margin-top:2px">' + item + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px;margin-top:6px">'
         + '<div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">'
           + '<div style="width:' + pct + '%;height:100%;background:' + color + '"></div>'
@@ -2396,34 +2415,46 @@ function selectReqCat(cat, btn) {
 
     var right = document.createElement('div');
     right.style.cssText = 'text-align:right;flex-shrink:0';
-    right.innerHTML = '<div class="js-currency" style="font-size:13px">KES ' + l.budgetedAmount.toLocaleString() + '</div>'
-      + '<div style="font-size:11px;color:' + (rem < 0 ? 'var(--danger)' : 'var(--muted)') + '">' + rem.toLocaleString() + ' rem.</div>';
+    right.innerHTML =
+      '<div class="js-currency" style="font-size:13px">KES ' + budgeted.toLocaleString() + '</div>'
+      + '<div style="font-size:11px;color:' + (rem < 0 ? 'var(--danger)' : 'var(--muted)') + '">'
+        + (rem < 0 ? '-' : '') + 'KES ' + Math.abs(rem).toLocaleString() + ' rem.</div>';
 
     div.appendChild(left);
     div.appendChild(right);
     container.appendChild(div);
   });
 
+  // Remove bottom border from last item
+  if (container.lastChild) container.lastChild.style.borderBottom = 'none';
+
   document.getElementById('reqLineRow').style.display = '';
   document.getElementById('reqDetailsRow').style.display = 'none';
-  document.getElementById('reqStepHint').textContent = 'Step 3 -- Select budget line';
+  document.getElementById('reqStepHint').textContent = 'Step 3 -- Select the budget line';
 }
 
 
-function selectReqLine(summary, costItem, budgeted, el) {
-  _rSummary = summary; _rCostItem = costItem;
+function selectReqLine(proj, type, cat, summary, costItem, budgeted, el) {
+  // Store ALL FOUR matching keys so the request maps to exactly the right budget line
+  _rProject  = proj;
+  _rType     = type;
+  _rCategory = cat;
+  _rSummary  = summary;
+  _rCostItem = costItem;
+
   document.querySelectorAll('#reqLineList > div').forEach(function(d){
     d.style.background=''; d.dataset.sel='';
   });
   el.style.background = 'var(--amber-lt)';
   el.dataset.sel = '1';
-  var act = getActualForLine(_rProject, _rType, _rCategory, summary);
+
+  var act = getActualForLine(proj, type, cat, summary);
   var rem = budgeted - act;
   document.getElementById('rBudgetHint').innerHTML =
-    'Budget: <strong>KES '+budgeted.toLocaleString()+'</strong>'
-    +'  |  Spent: KES '+act.toLocaleString()
-    +'  |  <strong style="color:'+(rem<0?'var(--danger)':'var(--success)')
-    +'">Remaining: KES '+rem.toLocaleString()+'</strong>';
+    'Budgeted: <strong>KES '+budgeted.toLocaleString()+'</strong>'
+    +'  |  Spent: <span style="color:var(--success)">KES '+act.toLocaleString()+'</span>'
+    +'  |  Remaining: <strong style="color:'+(rem<0?'var(--danger)':'var(--ink)')
+    +'">'+(rem<0?'OVERRUN ':'')+' KES '+Math.abs(rem).toLocaleString()+'</strong>';
   document.getElementById('reqDetailsRow').style.display = '';
   document.getElementById('reqStepHint').textContent = 'Step 4 -- Enter amount and submit';
   document.getElementById('rAmount').focus();
