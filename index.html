@@ -3560,7 +3560,6 @@ function hideLoginScreen() {
 
 // -- Called from the single DOMContentLoaded --------------------
 function bootAuth() {
-  // Always clear ghost sessions (blank email = old auto-login artifact)
   try {
     const raw  = localStorage.getItem(SESSION_KEY);
     const sess = raw ? JSON.parse(raw) : null;
@@ -3571,6 +3570,7 @@ function bootAuth() {
       applyRole(currentUser.role);
       updateNavUser();
       hideLoginScreen();
+      afterLogin(); // load data and render
       return;
     }
   } catch(e) {}
@@ -3678,15 +3678,7 @@ function loginSuccess(user) {
   applyRole(currentUser.role);
   updateNavUser();
   hideLoginScreen();
-  // Pull fresh data immediately after login
-  if (gsWebAppUrl) {
-    pullFromSheets().catch(function(){});
-    pullBudgetLinesFromSheets().catch(function(){});
-  }
-  // Redirect requesters straight to requests tab
-  if (currentUser.role === 'requester') {
-    showView('requests', null);
-  }
+  afterLogin(); // load data and render
 }
 
 // -- Logout -----------------------------------------------------
@@ -3959,15 +3951,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     persistSigsToStorage();
   }
 
-  // Restore Sheets UI state -- mark connected if URL saved
+  wrapTables();
+
+  // ── AUTH FIRST: check session before showing anything ──────
+  // bootAuth shows login screen if no valid session.
+  // All data loading happens AFTER login via afterLogin().
+  bootAuth();
+});
+
+// Called by loginSuccess() after a successful sign-in
+async function afterLogin() {
+  // Restore Sheets UI state
   if (gsWebAppUrl) {
-    gsConnected = true;  // URL already tested previously
+    gsConnected = true;
     const urlEl = document.getElementById('webAppUrl');
     if (urlEl) urlEl.value = gsWebAppUrl;
     const badge = document.getElementById('connStatusBadge');
     if (badge) { badge.className = 'badge badge-teal'; badge.textContent = 'Connected'; }
-    const msgEl = document.getElementById('connSuccessMsg');
-    if (msgEl) msgEl.textContent = 'Connected to Google Sheets';
     const urlDisplay = document.getElementById('connSuccessUrl');
     if (urlDisplay) urlDisplay.textContent = gsWebAppUrl;
     const box = document.getElementById('connSuccessBox');
@@ -3979,38 +3979,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateSheetStatusPill(true);
   }
 
-  // ── PULL FROM SHEETS BEFORE FIRST RENDER ──────────────────
-  // This ensures the app always shows what the Sheet has,
-  // even after a code update on GitHub.
+  // Pull live data from Sheets
   if (gsWebAppUrl) {
     try {
       appendSyncLog('Loading data from Google Sheets...');
-      await pullFromSheets();          // requests, funds, expenses, sigs, users
-      await pullBudgetLinesFromSheets(); // budgets (read-only, source of truth)
-      reqCounter = calcReqCounter();   // recalculate after pull
+      await pullFromSheets();
+      await pullBudgetLinesFromSheets();
+      reqCounter = calcReqCounter();
     } catch(e) {
-      appendSyncLog('Initial pull failed: ' + e.message + ' -- using cached data');
+      appendSyncLog('Initial pull failed: ' + e.message);
     }
   }
 
-  // Initial renders (now with live Sheet data)
+  // Render everything
   renderDashboard();
   rebuildRequestsTable();
   populateAllDropdowns();
   refreshSigGrids();
-  wrapTables();
 
-  // Start auto-sync (always on, 10s, survives refresh)
+  // Start auto-sync
   if (gsWebAppUrl) {
-    // Check auto-sync checkbox UI
     var chk = document.getElementById('autoSyncToggle');
     if (chk) chk.checked = true;
     startAutoSync();
   }
 
-  // Boot auth LAST
-  bootAuth();
-});
+  // Route to correct starting view based on role
+  if (currentUser.role === 'requester') {
+    showView('requests', null);
+  } else {
+    showView('dashboard', null);
+  }
+}
 
 // ============================================================
 // REQUEST DELETION
