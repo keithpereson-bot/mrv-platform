@@ -1770,6 +1770,167 @@ function populateAllDropdowns() {
 }
 
 
+// ============================================================
+// APPROVED BUDGETS VIEW
+// Pulls from Google Sheet (source of truth), displays collapsible
+// groups with live actuals calculated from requestsStore.
+// ============================================================
+
+async function renderBudgetView() {
+  var tbody = document.getElementById('budgetDetailBody');
+  if (!tbody) return;
+
+  // Show loading state
+  tbody.innerHTML = '<tr><td colspan="9" style="padding:20px;text-align:center;color:var(--muted)">Loading budget data...</td></tr>';
+
+  // Pull fresh from Sheets if connected (Sheets is the source of truth)
+  if (gsWebAppUrl) {
+    await pullBudgetLinesFromSheets();
+  }
+
+  if (!budgetLines || budgetLines.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">'
+      + 'No budget lines found. Connect Google Sheets and ensure your Budgets tab has data.'
+      + '</td></tr>';
+    return;
+  }
+
+  // Group by Project + Type
+  var groups = {};
+  var groupOrder = [];
+  budgetLines.forEach(function(l) {
+    var k = l.project + '||' + l.type;
+    if (!groups[k]) {
+      groups[k] = { project:l.project, type:l.type, dept:l.dept, country:l.country, month:l.month, year:l.year, lines:[] };
+      groupOrder.push(k);
+    }
+    groups[k].lines.push(l);
+  });
+
+  tbody.innerHTML = '';
+
+  groupOrder.forEach(function(k, gi) {
+    var g      = groups[k];
+    var gid    = 'bg' + gi;
+    var total  = g.lines.reduce(function(s,l){ return s + (parseFloat(l.budgetedAmount)||0); }, 0);
+    var actual = g.lines.reduce(function(s,l){ return s + getActualForLine(g.project, g.type, l.category, l.costSummary); }, 0);
+    var remain = total - actual;
+    var pct    = total ? Math.round(actual / total * 100) : 0;
+    var pc     = pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--success)';
+
+    // Group header row
+    var htr = document.createElement('tr');
+    htr.style.cssText = 'background:var(--ink);color:#fff;cursor:pointer;user-select:none';
+    htr.addEventListener('click', (function(id){ return function(){ toggleBudgetGroup(id); }; })(gid));
+    htr.innerHTML =
+      '<td colspan="5" style="padding:11px 16px;font-weight:600;font-size:13px">'
+        + '<span id="' + gid + '-arr" style="margin-right:8px;font-size:10px;display:inline-block">&#9658;</span>'
+        + '<span style="color:var(--amber)">' + g.project + '</span>'
+        + ' &middot; ' + g.type
+        + ' &middot; <span style="opacity:.6;font-size:11.5px;font-weight:400">' + (g.dept||'') + ' &middot; ' + (g.country||'') + ' &middot; ' + (g.month||'') + ' ' + (g.year||'') + '</span>'
+      + '</td>'
+      + '<td style="padding:11px 16px;text-align:right;font-weight:700">' + fmt(total) + '</td>'
+      + '<td style="padding:11px 16px;text-align:right;color:#86efac;font-weight:700">' + fmt(actual) + '</td>'
+      + '<td style="padding:11px 16px;text-align:right;color:' + (remain<0?'#fca5a5':'#d1fae5') + ';font-weight:700">' + fmt(remain) + '</td>'
+      + '<td style="padding:11px 16px">'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+          + '<div style="flex:1;height:5px;background:rgba(255,255,255,.2);border-radius:3px;overflow:hidden">'
+            + '<div style="width:' + Math.min(100,pct) + '%;height:100%;background:' + pc + '"></div>'
+          + '</div>'
+          + '<span style="font-size:11px;white-space:nowrap">' + pct + '%</span>'
+        + '</div>'
+      + '</td>';
+    tbody.appendChild(htr);
+
+    // Detail rows (collapsed by default, expand on click)
+    g.lines.forEach(function(l) {
+      var a  = getActualForLine(g.project, g.type, l.category, l.costSummary);
+      var r  = (parseFloat(l.budgetedAmount)||0) - a;
+      var p  = l.budgetedAmount ? Math.min(100, Math.round(a / l.budgetedAmount * 100)) : 0;
+      var c  = p>85?'var(--danger)':p>60?'var(--warn)':'var(--teal)';
+      var rc = r < 0 ? 'var(--danger)' : 'inherit';
+
+      var dtr = document.createElement('tr');
+      dtr.className = 'budgetLine-' + gid;
+      dtr.style.display = 'none';
+      dtr.innerHTML =
+        '<td style="padding:9px 16px 9px 30px;font-size:12px;color:var(--muted)">' + (l.category||'') + '</td>'
+        + '<td style="padding:9px 16px;font-weight:500;font-size:13px">' + (l.costSummary||'') + '</td>'
+        + '<td style="padding:9px 16px;font-size:12px;color:var(--muted)">' + (l.costItem||'') + '</td>'
+        + '<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">' + (l.unitOfMeasure||'') + '</td>'
+        + '<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">' + (l.currency||'KES') + '</td>'
+        + '<td style="padding:9px 16px;text-align:right;font-weight:600">' + fmt(parseFloat(l.budgetedAmount)||0) + '</td>'
+        + '<td style="padding:9px 16px;text-align:right;color:var(--success);font-weight:600">' + fmt(a) + '</td>'
+        + '<td style="padding:9px 16px;text-align:right;color:' + rc + ';font-weight:600">' + fmt(r) + '</td>'
+        + '<td style="padding:9px 16px">'
+          + '<div style="display:flex;align-items:center;gap:6px">'
+            + '<div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">'
+              + '<div style="width:' + p + '%;height:100%;background:' + c + '"></div>'
+            + '</div>'
+            + '<span style="font-size:10px;color:var(--muted)">' + p + '%</span>'
+          + '</div>'
+        + '</td>';
+      tbody.appendChild(dtr);
+    });
+  });
+}
+
+function toggleBudgetGroup(gid) {
+  var rows = document.querySelectorAll('.budgetLine-' + gid);
+  var arr  = document.getElementById(gid + '-arr');
+  var open = rows.length && rows[0].style.display !== 'none';
+  rows.forEach(function(r) { r.style.display = open ? 'none' : ''; });
+  if (arr) arr.innerHTML = open ? '&#9658;' : '&#9660;';
+}
+
+// Pull budget lines from Google Sheet (READ ONLY -- never written by app)
+// Maps EXACTLY to your sheet column names as shown in the image:
+// Project | Type | Year | Month | Department | Country | Cost Item |
+// Unit of Measure | Category | Cost Summary | Amount | Currency
+async function pullBudgetLinesFromSheets() {
+  if (!gsWebAppUrl) return;
+  try {
+    var res = await gasCall({ action: 'getBudgets' });
+    if (!res || !res.ok || !res.data || res.data.length === 0) {
+      appendSyncLog('Budgets: no data returned from Sheets (check tab name is "Budgets")');
+      return;
+    }
+    appendSyncLog('Budgets: received ' + res.data.length + ' rows from Sheets');
+
+    var mapped = res.data.map(function(r) {
+      // r keys are exactly the sheet column headers (returned by sheetToObjects)
+      return {
+        project:       String(r['Project']          || r['project']          || '').trim(),
+        type:          String(r['Type']              || r['type']             || '').trim(),
+        year:          parseInt(r['Year']            || r['year'])            || 0,
+        month:         String(r['Month']             || r['month']            || '').trim(),
+        dept:          String(r['Department']        || r['dept']             || r['Dept'] || '').trim(),
+        country:       String(r['Country']           || r['country']          || '').trim(),
+        costItem:      String(r['Cost Item']         || r['costItem']         || r['CostItem'] || '').trim(),
+        unitOfMeasure: String(r['Unit of Measure']   || r['unitOfMeasure']    || r['Unit'] || '').trim(),
+        category:      String(r['Category']          || r['category']         || '').trim(),
+        costSummary:   String(r['Cost Summary']      || r['costSummary']      || r['CostSummary'] || '').trim(),
+        budgetedAmount:parseFloat(r['Amount']        || r['budgetedAmount']   || r['Budget'] || 0) || 0,
+        currency:      String(r['Currency']          || r['currency']         || 'KES').trim(),
+      };
+    }).filter(function(l) {
+      return l.project && l.category && l.costSummary;
+    });
+
+    if (mapped.length === 0) {
+      appendSyncLog('Budgets: rows found but none had Project + Category + Cost Summary -- check column headers match exactly');
+      return;
+    }
+
+    budgetLines = mapped;
+    budgetStore = buildBudgetStore();
+    appendSyncLog('Budgets: loaded ' + mapped.length + ' lines from ' + getProjects().length + ' project(s)');
+  } catch(e) {
+    appendSyncLog('Budgets pull error: ' + e.message);
+  }
+}
+
+
 // -- PDF GENERATION -----------------------------------------
 async function downloadRequestsPDF() {
   const { jsPDF } = window.jspdf;
@@ -2746,26 +2907,29 @@ async function pullFromSheets() {
       }
     }
 
-    // -- Budgets -- restore line items from Sheets --
+    // -- Budgets -- handled separately by pullBudgetLinesFromSheets()
+    // (getAll also returns budgets but we use the dedicated function for correct mapping)
     if (res.budgets && res.budgets.length > 0) {
-      const fromSheet = res.budgets.map(b => ({
-        project:       String(b.project       || b['Project']        || ''),
-        type:          String(b.type          || b['Type']           || ''),
-        year:          parseInt(b.year        || b['Year'])          || 2026,
-        month:         String(b.month         || b['Month']          || ''),
-        dept:          String(b.dept          || b['Department']     || ''),
-        country:       String(b.country       || b['Country']        || ''),
-        costItem:      String(b.costItem      || b['Cost Item']      || ''),
-        unitOfMeasure: String(b.unitOfMeasure || b['Unit of Measure']|| ''),
-        category:      String(b.category      || b['Category']       || ''),
-        costSummary:   String(b.costSummary   || b['Cost Summary']   || ''),
-        budgetedAmount:parseFloat(b.budgetedAmount || b['Amount']    || 0),
-        currency:      String(b.currency      || b['Currency']       || 'KES'),
-        actual:        0,
-      })).filter(l => l.project && l.category);
-      if (fromSheet.length > 0) {
-        budgetLines = fromSheet;
+      var mapped = res.budgets.map(function(b) {
+        return {
+          project:       String(b['Project']        || b.project        || '').trim(),
+          type:          String(b['Type']            || b.type           || '').trim(),
+          year:          parseInt(b['Year']          || b.year)          || 0,
+          month:         String(b['Month']           || b.month          || '').trim(),
+          dept:          String(b['Department']      || b.dept           || '').trim(),
+          country:       String(b['Country']         || b.country        || '').trim(),
+          costItem:      String(b['Cost Item']       || b.costItem       || '').trim(),
+          unitOfMeasure: String(b['Unit of Measure'] || b.unitOfMeasure  || '').trim(),
+          category:      String(b['Category']        || b.category       || '').trim(),
+          costSummary:   String(b['Cost Summary']    || b.costSummary    || '').trim(),
+          budgetedAmount:parseFloat(b['Amount']      || b.budgetedAmount || 0) || 0,
+          currency:      String(b['Currency']        || b.currency       || 'KES').trim(),
+        };
+      }).filter(function(l){ return l.project && l.category && l.costSummary; });
+      if (mapped.length > 0) {
+        budgetLines = mapped;
         budgetStore = buildBudgetStore();
+        appendSyncLog('Budgets: mapped ' + mapped.length + ' lines');
       }
     }
 
