@@ -1878,41 +1878,83 @@ async function pullBudgetLinesFromSheets() {
   try {
     var res = await gasCall({ action: 'getBudgets' });
     if (!res || !res.ok || !res.data || res.data.length === 0) {
-      appendSyncLog('Budgets: no data returned from Sheets (check tab name is "Budgets")');
+      appendSyncLog('Budgets: no data from Sheets -- check "Budgets" tab name and column headers');
       return;
     }
     appendSyncLog('Budgets: received ' + res.data.length + ' rows from Sheets');
 
+    // Map Sheets rows to app format
+    // Sheets is the master -- this REPLACES budgetLines entirely
+    // so deletions/edits in Sheets are immediately reflected
     var mapped = res.data.map(function(r) {
-      // r keys are exactly the sheet column headers (returned by sheetToObjects)
       return {
-        project:       String(r['Project']          || r['project']          || '').trim(),
-        type:          String(r['Type']              || r['type']             || '').trim(),
-        year:          parseInt(r['Year']            || r['year'])            || 0,
-        month:         String(r['Month']             || r['month']            || '').trim(),
-        dept:          String(r['Department']        || r['dept']             || r['Dept'] || '').trim(),
-        country:       String(r['Country']           || r['country']          || '').trim(),
-        costItem:      String(r['Cost Item']         || r['costItem']         || r['CostItem'] || '').trim(),
-        unitOfMeasure: String(r['Unit of Measure']   || r['unitOfMeasure']    || r['Unit'] || '').trim(),
-        category:      String(r['Category']          || r['category']         || '').trim(),
-        costSummary:   String(r['Cost Summary']      || r['costSummary']      || r['CostSummary'] || '').trim(),
-        budgetedAmount:parseFloat(r['Amount']        || r['budgetedAmount']   || r['Budget'] || 0) || 0,
-        currency:      String(r['Currency']          || r['currency']         || 'KES').trim(),
+        project:        String(r['Project']         || '').trim(),
+        type:           String(r['Type']            || '').trim(),
+        year:           parseInt(r['Year'])          || 0,
+        month:          String(r['Month']           || '').trim(),
+        dept:           String(r['Department']      || '').trim(),
+        country:        String(r['Country']         || '').trim(),
+        costItem:       String(r['Cost Item']       || '').trim(),
+        unitOfMeasure:  String(r['Unit of Measure'] || '').trim(),
+        category:       String(r['Category']        || '').trim(),
+        costSummary:    String(r['Cost Summary']    || '').trim(),
+        budgetedAmount: parseFloat(r['Amount'])     || 0,
+        currency:       String(r['Currency']        || 'KES').trim(),
+        // Read current Actual from Sheet so we can compare
+        sheetActual:    parseFloat(r['Actual'])     || 0,
       };
     }).filter(function(l) {
       return l.project && l.category && l.costSummary;
     });
 
     if (mapped.length === 0) {
-      appendSyncLog('Budgets: rows found but none had Project + Category + Cost Summary -- check column headers match exactly');
+      appendSyncLog('Budgets: no valid rows -- ensure headers: Project, Type, Category, Cost Summary, Amount, Actual');
       return;
     }
 
+    // REPLACE budgetLines with exactly what Sheets has
     budgetLines = mapped;
     budgetStore = buildBudgetStore();
-    appendSyncLog('Budgets: loaded ' + mapped.length + ' lines from ' + getProjects().length + ' project(s)');
+    appendSyncLog('Budgets: loaded ' + mapped.length + ' lines across ' + getProjects().length + ' project(s)');
+
+    // RECONCILE: check if app actuals match Sheet actuals
+    // If mismatch, push corrections to Sheet
+    var corrections = [];
+    mapped.forEach(function(l) {
+      var appActual   = getActualForLine(l.project, l.type, l.category, l.costSummary);
+      var sheetActual = l.sheetActual || 0;
+      if (appActual !== sheetActual) {
+        corrections.push({
+          project:     l.project,
+          type:        l.type,
+          category:    l.category,
+          costSummary: l.costSummary,
+          actual:      appActual,   // overwrite with app's calculated value
+          delta:       null,        // null = overwrite mode
+        });
+      }
+    });
+
+    if (corrections.length > 0) {
+      appendSyncLog('Budgets: ' + corrections.length + ' actuals mismatch -- correcting Sheet...');
+      try {
+        var cr = await gasCall({ action: 'updateActuals', data: corrections });
+        appendSyncLog('Budgets: corrected ' + (cr.updated || 0) + ' lines in Sheet');
+      } catch(e) {
+        appendSyncLog('Budgets: correction push failed: ' + e.message);
+      }
+    } else {
+      appendSyncLog('Budgets: actuals in sync with Sheet');
+    }
+
+    // Refresh all views with latest data
+    renderDashboard();
+    rebuildRequestsTable();
+    populateAllDropdowns();
+
   } catch(e) {
     appendSyncLog('Budgets pull error: ' + e.message);
+    console.error('pullBudgetLinesFromSheets:', e);
   }
 }
 
