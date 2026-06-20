@@ -2953,9 +2953,14 @@ function showReceipt(ref, amount, signer) {
 
 // -- GOOGLE APPS SCRIPT INTEGRATION ------------------------
 
-// State
-let gsWebAppUrl  = localStorage.getItem('mrv_webapp_url') || '';
-let gsConnected  = !!gsWebAppUrl; // if URL is saved, treat as connected until proven otherwise
+// ── HARDCODED WEB APP URL ─────────────────────────────────────
+// Every user on every device connects to the same Sheets backend.
+// Paste your Apps Script Web App URL below and deploy to GitHub.
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzypR73qMiXKqG1duukgSWegArxip4n5V9d4dqGlu-KLud6s2hg6sVWQjsi6Kb1_Y4/exec';
+
+// State -- always use hardcoded URL so all devices share the same data
+let gsWebAppUrl  = HARDCODED_WEB_APP_URL || localStorage.getItem('mrv_webapp_url') || '';
+let gsConnected  = !!gsWebAppUrl;
 let gsAutoSyncTimer= null;
 
 // Dummy -- kept so old gapi script tags don't crash
