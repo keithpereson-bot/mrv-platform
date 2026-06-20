@@ -1401,11 +1401,18 @@
           <div class="form-group"><label>Email</label><input id="newUserEmail" type="email" placeholder="alice@example.com"></div>
           <div class="form-group">
             <label>Role</label>
-            <select id="newUserRole">
-              <option value="requester">Requester -- submit requests only</option>
-              <option value="approver">Approver -- approve & load funds</option>
-              <option value="admin">Admin -- full access</option>
+            <select id="newUserRole" onchange="toggleCountryField()">
+              <option value="requester">Requester -- country-limited requests only</option>
+              <option value="approver">Approver -- all countries, approve & load funds</option>
+              <option value="admin">Admin -- full access, all countries</option>
             </select>
+          </div>
+          <div class="form-group" id="countryFieldGroup">
+            <label>Country Access <span style="color:var(--muted);font-weight:400">(Requesters only)</span></label>
+            <select id="newUserCountry">
+              <option value="">-- All Countries (no restriction) --</option>
+            </select>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:5px">Requesters can only submit requests for their assigned country's projects.</div>
           </div>
           <div class="form-group"><label>Password</label><input id="newUserPass" type="password" placeholder="Min 6 characters"></div>
           <div class="form-group"><label>Confirm Password</label><input id="newUserPass2" type="password" placeholder="Repeat password"></div>
@@ -1421,7 +1428,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Country</th><th></th></tr></thead>
             <tbody id="usersTableBody">
               <tr><td colspan="4" class="text-muted text-sm" style="padding:20px;text-align:center">No users yet -- add one to get started</td></tr>
             </tbody>
@@ -1606,9 +1613,32 @@ function buildBudgetStore() {
 let budgetStore = [];
 
 // Line-item helpers
-function getProjects() { return [...new Set(budgetLines.map(function(l){ return l.project; }))]; }
-function getTypes(proj) { return [...new Set(budgetLines.filter(function(l){ return l.project===proj; }).map(function(l){ return l.type; }))]; }
-function getCategories(proj, type) { return [...new Set(budgetLines.filter(function(l){ return l.project===proj && l.type===type; }).map(function(l){ return l.category; }))]; }
+// Returns the country restriction for the current user (null = no restriction)
+function getUserCountry() {
+  if (!currentUser || !currentUser.country) return null;
+  return currentUser.country.trim() || null;
+}
+
+function getProjects() {
+  var c = getUserCountry();
+  return [...new Set(budgetLines
+    .filter(function(l){ return !c || l.country === c; })
+    .map(function(l){ return l.project; }))];
+}
+
+function getTypes(proj) {
+  var c = getUserCountry();
+  return [...new Set(budgetLines
+    .filter(function(l){ return l.project===proj && (!c || l.country===c); })
+    .map(function(l){ return l.type; }))];
+}
+
+function getCategories(proj, type) {
+  var c = getUserCountry();
+  return [...new Set(budgetLines
+    .filter(function(l){ return l.project===proj && l.type===type && (!c || l.country===c); })
+    .map(function(l){ return l.category; }))];
+}
 function getCostSummaries(proj, type, cat) {
   return budgetLines.filter(function(l){ return l.project===proj && l.type===type && l.category===cat; })
     .map(function(l){ return { costSummary: l.costSummary, costItem: l.costItem, budgetedAmount: l.budgetedAmount }; });
@@ -2956,7 +2986,7 @@ function showReceipt(ref, amount, signer) {
 // ── HARDCODED WEB APP URL ─────────────────────────────────────
 // Every user on every device connects to the same Sheets backend.
 // Paste your Apps Script Web App URL below and deploy to GitHub.
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzypR73qMiXKqG1duukgSWegArxip4n5V9d4dqGlu-KLud6s2hg6sVWQjsi6Kb1_Y4/exec';
+const HARDCODED_WEB_APP_URL = 'YOUR_WEB_APP_URL_HERE';
 
 // State -- always use hardcoded URL so all devices share the same data
 let gsWebAppUrl  = HARDCODED_WEB_APP_URL || localStorage.getItem('mrv_webapp_url') || '';
@@ -3497,7 +3527,7 @@ function bootAuth() {
 
   // Default: if no saved user, set as admin so all features work
   if (!currentUser) {
-    currentUser = { name: 'User', email: '', role: 'admin' };
+    currentUser = { name: 'User', email: '', role: 'admin', country: '' };
   }
 
   applyRole(currentUser.role);
@@ -3556,9 +3586,10 @@ async function doLogin() {
 
     if (user) {
       loginSuccess({
-        name:  user.Name  || user.name  || email,
-        email: user.Email || user.email || email,
-        role:  (user.Role || user.role  || 'requester').toLowerCase()
+        name:    user.Name    || user.name    || email,
+        email:   user.Email   || user.email   || email,
+        role:    (user.Role   || user.role    || 'requester').toLowerCase(),
+        country: user.Country || user.country || ''
       });
     } else {
       if (!gsWebAppUrl) {
@@ -3596,7 +3627,7 @@ function clearLoginCache() {
 }
 
 function loginSuccess(user) {
-  currentUser = { name: user.name, email: user.email, role: user.role };
+  currentUser = { name: user.name, email: user.email, role: user.role, country: user.country || '' };
   localStorage.setItem(SESSION_KEY, JSON.stringify({
     user: currentUser,
     expires: Date.now() + 24 * 60 * 60 * 1000
@@ -3661,7 +3692,7 @@ showView = function(id, el) {
   // No login required -- all views open
 
   _origShowView(id, el);
-  if (id === 'users') checkUsersSheetStatus();
+  if (id === 'users') onUsersViewOpen();
   // Sync mobile bottom nav
   var mobMap = { dashboard:'mob-dashboard', requests:'mob-requests', funds:'mob-funds', reconciliation:'mob-reconciliation' };
   if (mobMap[id]) {
@@ -3674,24 +3705,39 @@ showView = function(id, el) {
 
 
 // -- Users management --------------------------------------------
+function toggleCountryField() {
+  var role = document.getElementById('newUserRole').value;
+  var grp  = document.getElementById('countryFieldGroup');
+  if (grp) grp.style.display = role === 'requester' ? '' : 'none';
+}
+
+function populateCountryDropdown() {
+  var sel = document.getElementById('newUserCountry');
+  if (!sel) return;
+  var countries = [...new Set(budgetLines.map(function(l){ return l.country; }).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">-- All Countries (no restriction) --</option>'
+    + countries.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+}
+
 async function addUser() {
-  const name  = (document.getElementById('newUserName').value  || '').trim();
-  const email = (document.getElementById('newUserEmail').value || '').trim().toLowerCase();
-  const role  = document.getElementById('newUserRole').value;
-  const pass  = (document.getElementById('newUserPass').value  || '');
-  const pass2 = (document.getElementById('newUserPass2').value || '');
+  const name    = (document.getElementById('newUserName').value    || '').trim();
+  const email   = (document.getElementById('newUserEmail').value   || '').trim().toLowerCase();
+  const role    = document.getElementById('newUserRole').value;
+  const country = role === 'requester' ? (document.getElementById('newUserCountry').value || '') : '';
+  const pass    = (document.getElementById('newUserPass').value    || '');
+  const pass2   = (document.getElementById('newUserPass2').value   || '');
   if (!name || !email || !pass) { toast('Please fill all fields'); return; }
   if (pass !== pass2)           { toast('Passwords do not match'); return; }
   if (pass.length < 6)          { toast('Password must be at least 6 characters'); return; }
   if (usersStore.find(u => (u.email||'').toLowerCase() === email)) { toast('A user with that email already exists'); return; }
   const hash = await hashPassword(pass);
-  const user = { id: Date.now(), name, email, role, hash, created: new Date().toLocaleDateString('en-GB') };
+  const user = { id: Date.now(), name, email, role, country, hash, created: new Date().toLocaleDateString('en-GB') };
   usersStore.push(user);
   persistUsersToStorage();
   ['newUserName','newUserEmail','newUserPass','newUserPass2'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   renderUsersTable();
   await pushUsersToSheets();
-  toast('User added OK');
+  toast('User added -- ' + (country ? 'restricted to ' + country : 'all countries'));
 }
 
 async function deleteUser(id) {
@@ -3727,17 +3773,20 @@ function renderUsersTable() {
   }[r] || r);
 
   if (usersStore.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No users yet -- add one using the form</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No users yet -- add one using the form</td></tr>';
     return;
   }
 
-  tbody.innerHTML = usersStore.map(u => `
-    <tr>
-      <td style="font-weight:500;color:var(--ink)">${u.name || '--'}</td>
-      <td style="color:var(--muted);font-size:12.5px">${u.email || '--'}</td>
-      <td>${badge(u.role || 'requester')}</td>
-      <td><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser(${u.id})">Remove</button></td>
-    </tr>`).join('');
+  tbody.innerHTML = usersStore.map(function(u) {
+    var country = u.country ? u.country : '<span style="color:var(--muted);font-style:italic">All</span>';
+    return '<tr>'
+      + '<td style="font-weight:500;color:var(--ink)">'+(u.name||'--')+'</td>'
+      + '<td style="color:var(--muted);font-size:12.5px">'+(u.email||'--')+'</td>'
+      + '<td>'+badge(u.role||'requester')+'</td>'
+      + '<td style="font-size:12px">'+country+'</td>'
+      + '<td><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser('+u.id+')">Remove</button></td>'
+      + '</tr>';
+  }).join('');
 }
 
 async function pushUsersToSheets() {
@@ -3758,6 +3807,13 @@ function clearUserCache() {
   checkUsersSheetStatus(); // re-pull from Sheets
   toast('User list refreshed from Sheets');
 }
+// Populate country dropdown when opening Users view
+function onUsersViewOpen() {
+  populateCountryDropdown();
+  toggleCountryField();
+  checkUsersSheetStatus();
+}
+
 async function checkUsersSheetStatus() {
   const warn  = document.getElementById('usersSheetWarning');
   const noTab = document.getElementById('usersNoTabWarning');
