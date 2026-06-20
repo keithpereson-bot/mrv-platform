@@ -1027,7 +1027,7 @@
             <tr><td>Mombasa Survey</td><td class="currency">1,200,000</td><td>01 Jun</td><td><span class="badge badge-teal">Posted</span></td></tr>
             <tr><td>Kisumu Training</td><td class="currency">800,000</td><td>03 Jun</td><td><span class="badge badge-teal">Posted</span></td></tr>
           </tbody></table>
-          <div style="padding:14px 16px;font-size:13px;color:var(--teal);font-weight:600;border-top:1px solid var(--border);">Total Money-In: <span class="currency" id="totalIn">KES 3,800,000</span></div>
+          <div style="padding:14px 16px;font-size:13px;color:var(--teal);font-weight:600;border-top:1px solid var(--border);">Total Money-In: <span class="currency" id="totalIn">0</span></div>
         </div>
       </div>
     </div>
@@ -1116,7 +1116,7 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">Paid Requests</div>
-          <span class="badge badge-teal" id="paidTotal">KES 0</span>
+          <span class="badge badge-teal" id="paidTotal">0</span>
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
@@ -1196,7 +1196,7 @@
             <tr><td>03 Jun</td><td>Mombasa Survey</td><td class="currency">180,000</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
             <tr><td>05 Jun</td><td>Nairobi Field Ops</td><td class="currency">130,000</td><td><span class="badge badge-gold">Pending</span></td></tr>
           </tbody></table>
-          <div style="padding:14px 16px;font-size:13px;color:var(--purple);font-weight:600;border-top:1px solid var(--border);">Total Expensed: <span class="currency">KES 630,000</span></div>
+          <div style="padding:14px 16px;font-size:13px;color:var(--purple);font-weight:600;border-top:1px solid var(--border);">Total Expensed: <span class="currency">0</span></div>
         </div>
       </div>
     </div>
@@ -1853,8 +1853,8 @@ function renderDashboard() {
       +'<td class="font-600">'+g.project+'</td>'
       +'<td><span class="badge badge-gray">'+g.type+'</span></td>'
       +'<td class="text-muted text-sm">'+g.dept+' &middot; '+g.country+'</td>'
-      +'<td class="currency">'+fmt(budg)+'</td>'
-      +'<td class="currency" style="color:var(--purple);font-weight:600">'+fmt(util)+'</td>'
+      +'<td class="currency">'+getCurrency(g.project,g.type)+' '+fmt(budg)+'</td>'
+      +'<td class="currency" style="color:var(--purple);font-weight:600">'+getCurrency(g.project,g.type)+' '+fmt(util)+'</td>'
       +'<td><div style="display:flex;align-items:center;gap:8px">'
         +'<div style="width:80px;height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden">'
           +'<div style="width:'+pct+'%;height:100%;background:'+pc+'"></div>'
@@ -1873,7 +1873,7 @@ function renderDashboard() {
       +'<td class="text-muted text-sm">#'+r.ref+'</td>'
       +'<td>'+r.project+(r.type?' ('+r.type+')':'')+'</td>'
       +'<td class="text-muted text-sm">'+label+'</td>'
-      +'<td class="currency">'+fmt(r.amount)+'</td>'
+      +'<td class="currency">'+getCurrency(r.project,r.type)+' '+fmt(r.amount)+'</td>'
       +'<td><span class="badge '+cls+'">'+r.status+'</span></td>'
     +'</tr>';
   }).join('');
@@ -1887,7 +1887,7 @@ function renderDashboard() {
     return '<div style="margin-bottom:14px">'
       +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">'
         +'<span class="font-600 text-sm">'+g.project+' ('+g.type+')</span>'
-        +'<span class="text-sm text-muted">KES '+fmt(util)+' of '+fmt(budg)+' &nbsp; <strong>'+pct+'%</strong></span>'
+        +'<span class="text-sm text-muted">'+getCurrency(g.project,g.type)+' '+fmt(util)+' of '+fmt(budg)+' &nbsp; <strong>'+pct+'%</strong></span>'
       +'</div>'
       +'<div class="progress-wrap"><div class="progress-fill" style="width:'+pct+'%;background:'+pc+'"></div></div>'
     +'</div>';
@@ -1930,8 +1930,8 @@ function renderReconciliation() {
       +'<td class="font-600">'+g.project+'</td>'
       +'<td><span class="badge badge-gray">'+g.type+'</span></td>'
       +'<td class="text-muted text-sm">'+g.dept+'</td>'
-      +'<td class="currency">'+fmt(budg)+'</td>'
-      +'<td class="currency" style="color:var(--purple);font-weight:600">'+fmt(util)+'</td>'
+      +'<td class="currency">'+getCurrency(g.project,g.type)+' '+fmt(budg)+'</td>'
+      +'<td class="currency" style="color:var(--purple);font-weight:600">'+getCurrency(g.project,g.type)+' '+fmt(util)+'</td>'
       +'<td class="currency font-600" style="color:'+( bal<0?'var(--danger)':'var(--success)')+'">'+fmt(bal)+'</td>'
       +'<td><span class="badge '+(pct>=100?'badge-danger':pct>60?'badge-gold':'badge-teal')+'">'+pct+'%</span></td>'
     +'</tr>';
@@ -2203,10 +2203,10 @@ async function downloadRequestsPDF() {
   }),{total:0,paid:0,pend:0,draft:0});
 
   const boxes = [
-    {label:'Total Requests',  value:`KES ${totals.total.toLocaleString()}`, color:TEAL},
-    {label:'Paid',            value:`KES ${totals.paid.toLocaleString()}`,  color:[30,150,100]},
-    {label:'Pending Approval',value:`KES ${totals.pend.toLocaleString()}`,  color:PURPLE},
-    {label:'Draft',           value:`KES ${totals.draft.toLocaleString()}`, color:GOLD},
+    {label:'Total Requests',  value:`${getDefaultCurrency()} ${totals.total.toLocaleString()}`, color:TEAL},
+    {label:'Paid',            value:`${getDefaultCurrency()} ${totals.paid.toLocaleString()}`,  color:[30,150,100]},
+    {label:'Pending Approval',value:`${getDefaultCurrency()} ${totals.pend.toLocaleString()}`,  color:PURPLE},
+    {label:'Draft',           value:`${getDefaultCurrency()} ${totals.draft.toLocaleString()}`, color:GOLD},
   ];
   const bw = (pw - 28 - 12) / 4;
   boxes.forEach((b, i) => {
@@ -2806,9 +2806,9 @@ function selectReqCat(cat, btn) {
     var right = document.createElement('div');
     right.style.cssText = 'text-align:right;flex-shrink:0';
     right.innerHTML =
-      '<div class="js-currency" style="font-size:13px">KES ' + budgeted.toLocaleString() + '</div>'
+      '<div class="js-currency" style="font-size:13px">' + getCurrency(proj,type) + ' ' + budgeted.toLocaleString() + '</div>'
       + '<div style="font-size:11px;color:' + (rem < 0 ? 'var(--danger)' : 'var(--muted)') + '">'
-        + (rem < 0 ? '-' : '') + 'KES ' + Math.abs(rem).toLocaleString() + ' rem.</div>';
+        + (rem < 0 ? '-' : '') + getCurrency(proj, type) + ' ' + Math.abs(rem).toLocaleString() + ' rem.</div>';
 
     div.appendChild(left);
     div.appendChild(right);
@@ -2844,7 +2844,7 @@ function selectReqLine(proj, type, cat, summary, costItem, budgeted, el) {
     'Budgeted: <strong>'+getCurrency(proj,type)+' '+budgeted.toLocaleString()+'</strong>'
     +'  |  Spent: <span style="color:var(--success)">'+getCurrency(proj,type)+' '+act.toLocaleString()+'</span>'
     +'  |  Remaining: <strong style="color:'+(rem<0?'var(--danger)':'var(--ink)')
-    +'">'+(rem<0?'OVERRUN ':'')+' KES '+Math.abs(rem).toLocaleString()+'</strong>';
+    +'">'+(rem<0?'OVERRUN ':'')+getCurrency(proj,type)+' '+Math.abs(rem).toLocaleString()+'</strong>';
   document.getElementById('reqDetailsRow').style.display = '';
   document.getElementById('reqStepHint').textContent = 'Step 4 -- Enter amount and submit';
   document.getElementById('rAmount').focus();
@@ -3300,7 +3300,7 @@ function rebuildRequestsTable() {
 
   // Paid total
   var paidAmt = paid.reduce(function(s,r){ return s+(parseFloat(r.amount)||0); },0);
-  var pt = document.getElementById('paidTotal'); if(pt) pt.textContent = 'KES '+fmt(paidAmt);
+  var pt = document.getElementById('paidTotal'); if(pt) pt.textContent = getDefaultCurrency()+' '+fmt(paidAmt);
 
   var delBtn = function(ref) {
     return canDelete
@@ -3895,7 +3895,7 @@ function promptDeleteRequest(ref) {
     + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Ref</div><div style="font-weight:600">#' + r.ref + '</div></div>'
     + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Status</div><div><span class="badge ' + ({Paid:'badge-teal',Pending:'badge-gold',Draft:'badge-gray'}[r.status]||'badge-gray') + '">' + r.status + '</span></div></div>'
     + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Project / Type</div><div>' + r.project + ' (' + (r.type||'--') + ')</div></div>'
-    + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Amount</div><div style="font-family:Playfair Display,serif;font-weight:600;color:var(--danger)">KES ' + (r.amount||0).toLocaleString() + '</div></div>'
+    + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Amount</div><div style="font-family:Playfair Display,serif;font-weight:600;color:var(--danger)">' + getCurrency(r.project,r.type) + ' ' + (r.amount||0).toLocaleString() + '</div></div>'
     + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Category / Line</div><div>' + (r.category||'--') + ' / ' + (r.costSummary||'--') + '</div></div>'
     + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Requester</div><div>' + (r.requester||'--') + '</div></div>'
     + '</div>';
@@ -3985,7 +3985,7 @@ function updateBulkCount(){
   var boxes=Array.from(document.querySelectorAll('.bulk-chk:checked'));
   var total=boxes.reduce(function(s,c){return s+(parseInt(c.dataset.amount)||0);},0);
   document.getElementById('bulkSelectedCount').textContent=boxes.length;
-  document.getElementById('bulkSelectedTotal').textContent='KES '+total.toLocaleString();
+  document.getElementById('bulkSelectedTotal').textContent=getDefaultCurrency()+' '+total.toLocaleString();
   updateBulkBtn();
 }
 
@@ -4114,7 +4114,7 @@ function wrapTables() {
         </div>
         <div id="bulkRequestList" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:10px"></div>
         <div style="margin-top:8px;font-size:12px;color:var(--muted)">
-          <span id="bulkSelectedCount">0</span> selected . Total: <strong class="currency" id="bulkSelectedTotal">KES 0</strong>
+          <span id="bulkSelectedCount">0</span> selected &middot; Total: <strong class="currency" id="bulkSelectedTotal">0</strong>
         </div>
       </div>
 
