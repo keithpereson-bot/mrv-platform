@@ -1462,65 +1462,51 @@
 // Each row matches a line in the Google Sheet:
 // project, type, year, month, dept, country, costItem,
 // unitOfMeasure, category, costSummary, budgetedAmount, currency, actual
-let budgetLines = [
-  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Training Transport',          unitOfMeasure:'Enumerator', category:'Training',       costSummary:'Transport',       budgetedAmount:40000,  currency:'KES', actual:0 },
-  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Training Venue',               unitOfMeasure:'Enumerator', category:'Training',       costSummary:'Venue Hire',      budgetedAmount:20000,  currency:'KES', actual:0 },
-  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Training Accommodation',        unitOfMeasure:'Enumerator', category:'Training',       costSummary:'Accommodation',   budgetedAmount:20000,  currency:'KES', actual:0 },
-  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Field Transport',               unitOfMeasure:'Enumerator', category:'Field',          costSummary:'Transport',       budgetedAmount:202500, currency:'KES', actual:0 },
-  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Field Airtime',                 unitOfMeasure:'Enumerator', category:'Field',          costSummary:'Airtime',         budgetedAmount:11250,  currency:'KES', actual:0 },
-  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Stipend',                       unitOfMeasure:'Enumerator', category:'Field',          costSummary:'Stipend',         budgetedAmount:168750, currency:'KES', actual:0 },
-  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Refresher training airtime',               unitOfMeasure:'Enumerator', category:'Training',       costSummary:'Airtime',         budgetedAmount:1000,   currency:'KES', actual:0 },
-  { project:'GS5642', type:'Usage', year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Miscellaneous',                            unitOfMeasure:'Miscellaneous', category:'Miscellaneous', costSummary:'Miscellaneous',  budgetedAmount:46250,  currency:'KES', actual:0 },
-  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Field Transport Usage',         unitOfMeasure:'Enumerator', category:'Field',          costSummary:'Transport',       budgetedAmount:356400, currency:'KES', actual:0 },
-  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Field Airtime',                 unitOfMeasure:'Enumerator', category:'Field',          costSummary:'Airtime',         budgetedAmount:19800,  currency:'KES', actual:0 },
-  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Enumerator Stipend',                       unitOfMeasure:'Enumerator', category:'Field',          costSummary:'Stipend',         budgetedAmount:297000, currency:'KES', actual:0 },
-  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Household fuels',                          unitOfMeasure:'Household',  category:'Field',          costSummary:'Cooking Fuel',    budgetedAmount:39600,  currency:'KES', actual:0 },
-  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Coordinator spot checks transport',        unitOfMeasure:'Coordinator', category:'Field',         costSummary:'Transport',       budgetedAmount:20000,  currency:'KES', actual:0 },
-  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Coordinator spot checks accommodation',    unitOfMeasure:'Coordinator', category:'Field',         costSummary:'Accommodation',   budgetedAmount:16000,  currency:'KES', actual:0 },
-  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Coordinator spot checks per diem',         unitOfMeasure:'Coordinator', category:'Field',         costSummary:'Per diem',        budgetedAmount:15000,  currency:'KES', actual:0 },
-  { project:'GS5642', type:'KPT',   year:2026, month:'May', dept:'MRV E/W AFRICA', country:'Kenya', costItem:'Miscellaneous',                            unitOfMeasure:'Miscellaneous', category:'Miscellaneous', costSummary:'Miscellaneous',  budgetedAmount:76380,  currency:'KES', actual:0 },
-];
+// budgetLines: populated from Google Sheets on load (read-only)
+// Empty on first load -- filled by pullBudgetLinesFromSheets()
+let budgetLines = [];
 
-// -- Legacy compat: budgetStore derived from budgetLines ------
-// Groups lines by project+type for dashboard/recon views
+// budgetStore derived from budgetLines (for legacy compat)
 function buildBudgetStore() {
-  const map = {};
-  budgetLines.forEach(l => {
-    const key = l.project + '-' + l.type;
+  var map = {};
+  budgetLines.forEach(function(l) {
+    var key = l.project + '-' + l.type;
     if (!map[key]) map[key] = {
-      id: key, name: l.project + ' (' + l.type + ')', dept: l.dept,
-      smtRef: l.project, totalBudget: 0, loaded: 0,
-      period: l.month + ' ' + l.year, closed: false,
+      id: key, name: l.project + ' (' + l.type + ')',
+      dept: l.dept, smtRef: l.project, totalBudget: 0, loaded: 0,
+      period: (l.month||'') + ' ' + (l.year||''), closed: false,
       lineItems: [], country: l.country
     };
-    map[key].totalBudget += l.budgetedAmount;
-    map[key].loaded       = map[key].totalBudget; // assume fully loaded
+    map[key].totalBudget += (parseFloat(l.budgetedAmount)||0);
+    map[key].loaded       =  map[key].totalBudget;
     map[key].lineItems.push({ category: l.category, costSummary: l.costSummary, budgetedAmount: l.budgetedAmount });
   });
   return Object.values(map);
 }
-let budgetStore = buildBudgetStore();
+let budgetStore = [];
 
-// -- Line-item helpers ----------------------------------------
-function getProjects()    { return [...new Set(budgetLines.map(l => l.project))]; }
-function getTypes(proj)   { return [...new Set(budgetLines.filter(l => l.project === proj).map(l => l.type))]; }
-function getCategories(proj, type) { return [...new Set(budgetLines.filter(l => l.project === proj && l.type === type).map(l => l.category))]; }
+// Line-item helpers
+function getProjects() { return [...new Set(budgetLines.map(function(l){ return l.project; }))]; }
+function getTypes(proj) { return [...new Set(budgetLines.filter(function(l){ return l.project===proj; }).map(function(l){ return l.type; }))]; }
+function getCategories(proj, type) { return [...new Set(budgetLines.filter(function(l){ return l.project===proj && l.type===type; }).map(function(l){ return l.category; }))]; }
 function getCostSummaries(proj, type, cat) {
-  return budgetLines.filter(l => l.project === proj && l.type === type && l.category === cat)
-    .map(l => ({ costSummary: l.costSummary, costItem: l.costItem, budgetedAmount: l.budgetedAmount }));
+  return budgetLines.filter(function(l){ return l.project===proj && l.type===type && l.category===cat; })
+    .map(function(l){ return { costSummary: l.costSummary, costItem: l.costItem, budgetedAmount: l.budgetedAmount }; });
 }
 function getBudgetLine(proj, type, cat, summary) {
-  return budgetLines.find(l => l.project === proj && l.type === type && l.category === cat && l.costSummary === summary);
+  return budgetLines.find(function(l){ return l.project===proj && l.type===type && l.category===cat && l.costSummary===summary; });
 }
 function getBudgetedAmount(proj, type, cat, summary) {
-  const line = getBudgetLine(proj, type, cat, summary);
-  return line ? line.budgetedAmount : 0;
+  var line = getBudgetLine(proj, type, cat, summary);
+  return line ? (parseFloat(line.budgetedAmount)||0) : 0;
 }
+// THE ONE TRUE getActualForLine -- matches all 4 keys against Paid requests
 function getActualForLine(proj, type, cat, summary) {
   return requestsStore
-    .filter(r => r.project === proj && r.type === type && r.category === cat && r.costSummary === summary && r.status === 'Paid')
-    .reduce((s, r) => s + r.amount, 0);
+    .filter(function(r){ return r.status==='Paid' && r.project===proj && r.type===type && r.category===cat && r.costSummary===summary; })
+    .reduce(function(s,r){ return s + (parseFloat(r.amount)||0); }, 0);
 }
+
 
 // -- State --------------------------------------------------
 // Signatures persist in localStorage so you never re-upload
@@ -1582,16 +1568,7 @@ function totalActuals(proj, type) {
     .reduce((s, r) => s + r.amount, 0);
 }
 
-// Actuals for a specific line (project + type + category + costSummary)
-function getActualForLine(proj, type, cat, summary) {
-  return requestsStore
-    .filter(r => r.status === 'Paid'
-      && r.project     === proj
-      && r.type        === type
-      && r.category    === cat
-      && r.costSummary === summary)
-    .reduce((s, r) => s + r.amount, 0);
-}
+// getActualForLine defined above in data block
 
 // Total funds loaded (from fundsLedger DOM or stored fundsStore)
 function totalLoaded() {
@@ -2810,7 +2787,7 @@ async function gasCall(payload) {
 
 // -- Push all data to Sheets ---------------------------------
 async function pushToSheets() {
-  if (!gsConnected) { toast('Please connect a Web App URL first'); return; }
+  if (!gsWebAppUrl) { toast('Please connect a Web App URL first'); return; }
   appendSyncLog('Pushing data to Sheets...');
   try {
     // Build expense rows from DOM
@@ -2889,31 +2866,34 @@ async function pushToSheets() {
 
 // -- Pull data from Sheets -----------------------------------
 async function pullFromSheets() {
-  if (!gsConnected) { toast('Please connect a Web App URL first'); return; }
+  if (!gsWebAppUrl) { toast('Please connect a Web App URL first'); return; }
   appendSyncLog('Pulling from Sheets...');
   try {
     const res = await gasCall({ action: 'getAll' });
     if (!res.ok) throw new Error(res.error || 'Pull failed');
 
-    // -- Requests --
+    // -- Requests -- map ALL fields including type/category/costSummary
     if (res.requests && res.requests.length > 0) {
-      // Map header-keyed objects -> our store shape
       const imported = res.requests.map(r => ({
-        ref:         String(r['Ref #'] || r['ref'] || ''),
-        project:     String(r['Project'] || r['project'] || ''),
-        description: String(r['Description'] || r['description'] || ''),
-        amount:      parseInt(r['Amount (KES)'] || r['amount']) || 0,
-        requester:   String(r['Requester'] || r['requester'] || ''),
-        status:      String(r['Status'] || r['status'] || 'Draft'),
-        date:        String(r['Date'] || r['date'] || ''),
-        sigLabel:    r['Signed By'] || r['sigLabel'] || null,
-        sigTime:     r['Sign Time'] || r['sigTime'] || null,
+        ref:         String(r['Ref #']        || r.ref         || '').trim(),
+        project:     String(r['Project']      || r.project     || '').trim(),
+        type:        String(r['Type']         || r.type        || '').trim(),
+        category:    String(r['Category']     || r.category    || '').trim(),
+        costSummary: String(r['Cost Summary'] || r.costSummary || '').trim(),
+        costItem:    String(r['Cost Item']    || r.costItem    || '').trim(),
+        description: String(r['Description']  || r.description || '').trim(),
+        amount:      parseFloat(r['Amount (KES)'] || r.amount) || 0,
+        requester:   String(r['Requester']    || r.requester   || '').trim(),
+        status:      String(r['Status']       || r.status      || 'Draft').trim(),
+        date:        String(r['Date']         || r.date        || '').trim(),
+        sigLabel:    r['Signed By']  || r.sigLabel || null,
+        sigTime:     r['Sign Time']  || r.sigTime  || null,
         sigDataUrl:  null,
       })).filter(r => r.ref);
       if (imported.length > 0) {
         requestsStore = imported;
         reqCounter = calcReqCounter();
-        persistRequestsToStorage();  // cache for offline use
+        persistRequestsToStorage();
         rebuildRequestsTable();
       }
     }
@@ -3433,8 +3413,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     persistSigsToStorage();
   }
 
-  // Restore Sheets UI state
+  // Restore Sheets UI state -- mark connected if URL saved
   if (gsWebAppUrl) {
+    gsConnected = true;  // URL already tested previously
     const urlEl = document.getElementById('webAppUrl');
     if (urlEl) urlEl.value = gsWebAppUrl;
     const badge = document.getElementById('connStatusBadge');
