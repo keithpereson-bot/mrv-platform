@@ -1501,9 +1501,16 @@ function getBudgetedAmount(proj, type, cat, summary) {
   return line ? (parseFloat(line.budgetedAmount)||0) : 0;
 }
 // THE ONE TRUE getActualForLine -- matches all 4 keys against Paid requests
-function getActualForLine(proj, type, cat, summary) {
+function getActualForLine(proj, type, cat, summary, costItem) {
   return requestsStore
-    .filter(function(r){ return r.status==='Paid' && r.project===proj && r.type===type && r.category===cat && r.costSummary===summary; })
+    .filter(function(r){
+      return r.status==='Paid'
+        && r.project     === proj
+        && r.type        === type
+        && r.category    === cat
+        && r.costSummary === summary
+        && (!costItem || !r.costItem || r.costItem === costItem);
+    })
     .reduce(function(s,r){ return s + (parseFloat(r.amount)||0); }, 0);
 }
 
@@ -1799,7 +1806,7 @@ async function renderBudgetView() {
     var g      = groups[k];
     var gid    = 'bg' + gi;
     var total  = g.lines.reduce(function(s,l){ return s + (parseFloat(l.budgetedAmount)||0); }, 0);
-    var actual = g.lines.reduce(function(s,l){ return s + getActualForLine(g.project, g.type, l.category, l.costSummary); }, 0);
+    var actual = g.lines.reduce(function(s,l){ return s + getActualForLine(g.project, g.type, l.category, l.costSummary, l.costItem); }, 0);
     var remain = total - actual;
     var pct    = total ? Math.round(actual / total * 100) : 0;
     var pc     = pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--success)';
@@ -1830,7 +1837,7 @@ async function renderBudgetView() {
 
     // Detail rows (collapsed by default, expand on click)
     g.lines.forEach(function(l) {
-      var a  = getActualForLine(g.project, g.type, l.category, l.costSummary);
+      var a  = getActualForLine(g.project, g.type, l.category, l.costSummary, l.costItem);
       var r  = (parseFloat(l.budgetedAmount)||0) - a;
       var p  = l.budgetedAmount ? Math.min(100, Math.round(a / l.budgetedAmount * 100)) : 0;
       var c  = p>85?'var(--danger)':p>60?'var(--warn)':'var(--teal)';
@@ -1921,7 +1928,7 @@ async function pullBudgetLinesFromSheets() {
     // If mismatch, push corrections to Sheet
     var corrections = [];
     mapped.forEach(function(l) {
-      var appActual   = getActualForLine(l.project, l.type, l.category, l.costSummary);
+      var appActual   = getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem);
       var sheetActual = l.sheetActual || 0;
       if (appActual !== sheetActual) {
         corrections.push({
@@ -1929,8 +1936,9 @@ async function pullBudgetLinesFromSheets() {
           type:        l.type,
           category:    l.category,
           costSummary: l.costSummary,
-          actual:      appActual,   // overwrite with app's calculated value
-          delta:       null,        // null = overwrite mode
+          costItem:    l.costItem,   // needed for unique matching
+          actual:      appActual,
+          delta:       null,
         });
       }
     });
@@ -2479,7 +2487,8 @@ function confirmSignAndApprove() {
       type:        entry.type        || '',
       category:    entry.category    || '',
       costSummary: entry.costSummary || '',
-      delta:       entry.amount,        // only the new approved amount
+      costItem:    entry.costItem    || '',  // tiebreaker
+      delta:       entry.amount,
     }];
     gasCall({ action:'updateActuals', data: delta })
       .then(function(r){ appendSyncLog('Actuals updated: ' + JSON.stringify(r)); })
@@ -2574,7 +2583,7 @@ function selectReqCat(cat, btn) {
     var budgeted= line.budgetedAmount;
 
     // Re-read actuals live so remaining balance is always current
-    var act   = getActualForLine(proj, type, catKey, summary);
+    var act   = getActualForLine(proj, type, catKey, summary, item);
     var rem   = budgeted - act;
     var pct   = budgeted ? Math.min(100, Math.round(act / budgeted * 100)) : 0;
     var color = pct > 85 ? 'var(--danger)' : pct > 60 ? 'var(--warn)' : 'var(--success)';
@@ -2638,7 +2647,7 @@ function selectReqLine(proj, type, cat, summary, costItem, budgeted, el) {
   el.style.background = 'var(--amber-lt)';
   el.dataset.sel = '1';
 
-  var act = getActualForLine(proj, type, cat, summary);
+  var act = getActualForLine(proj, type, cat, summary, costItem);
   var rem = budgeted - act;
   document.getElementById('rBudgetHint').innerHTML =
     'Budgeted: <strong>KES '+budgeted.toLocaleString()+'</strong>'
@@ -2854,9 +2863,10 @@ async function pushToSheets() {
       type:        l.type,
       category:    l.category,
       costSummary: l.costSummary,
-      actual:      getActualForLine(l.project, l.type, l.category, l.costSummary),
-      delta:       null,  // null = overwrite mode (full recalc from local store)
-    })).filter(l => l.actual > 0);  // only send lines with actual spend
+      costItem:    l.costItem,   // tiebreaker for non-unique category+summary
+      actual:      getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem),
+      delta:       null,
+    })).filter(l => l.actual > 0);
 
     const reqRows = requestsStore.map(r => ({
       ref:         r.ref,
@@ -3605,6 +3615,7 @@ function confirmBulkApprove(){
       if(!e||!e.costSummary)return;
       var k=(e.project||'')+'|'+(e.type||'')+'|'+(e.category||'')+'|'+(e.costSummary||'');
       if(!dm[k]) dm[k]={project:e.project,type:e.type,category:e.category,costSummary:e.costSummary,delta:0};
+      dm[k].costItem = e.costItem||'';
       dm[k].delta+=e.amount;
     });
     var dl=Object.values(dm);
