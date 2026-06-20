@@ -971,11 +971,11 @@
     <div class="two-col">
       <div class="card">
         <div class="card-header"><div class="card-title">Approved Projects</div><span class="badge badge-teal" id="dashProjCount"></span></div>
-        <div class="card-body" style="padding:0"><table><thead><tr><th>Project</th><th>Type</th><th>Dept / Country</th><th>Budgeted (KES)</th><th>Utilised (KES)</th><th>Usage</th></tr></thead><tbody id="dashProjTable"></tbody></table></div>
+        <div class="card-body" style="padding:0"><table><thead><tr><th>Project</th><th>Type</th><th>Dept / Country</th><th>Budgeted</th><th>Utilised (KES)</th><th>Usage</th></tr></thead><tbody id="dashProjTable"></tbody></table></div>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Recent Payments</div><span class="badge badge-purple">This Month</span></div>
-        <div class="card-body" style="padding:0"><table><thead><tr><th>Ref</th><th>Project</th><th>Category / Line</th><th>Amount (KES)</th><th>Status</th></tr></thead><tbody id="dashPaymentsTable"></tbody></table></div>
+        <div class="card-body" style="padding:0"><table><thead><tr><th>Ref</th><th>Project</th><th>Category / Line</th><th>Amount</th><th>Status</th></tr></thead><tbody id="dashPaymentsTable"></tbody></table></div>
       </div>
     </div>
     <div class="card">
@@ -995,7 +995,7 @@
       </div>
       <div class="card-body" style="padding:0">
         <table>
-          <thead><tr><th>Category</th><th>Cost Summary</th><th>Cost Item</th><th>Unit</th><th>CCY</th><th style="text-align:right">Budgeted (KES)</th><th style="text-align:right">Actual (KES)</th><th style="text-align:right">Remaining</th><th>Utilisation</th></tr></thead>
+          <thead><tr><th>Category</th><th>Cost Summary</th><th>Cost Item</th><th>Unit</th><th>CCY</th><th style="text-align:right">Budgeted</th><th style="text-align:right">Actual (KES)</th><th style="text-align:right">Remaining</th><th>Utilisation</th></tr></thead>
           <tbody id="budgetDetailBody"></tbody>
         </table>
       </div>
@@ -1086,7 +1086,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount (KES)</th><th>Requester</th><th>Date</th><th>Action</th></tr></thead>
+            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Date</th><th>Action</th></tr></thead>
             <tbody id="bodyDrafts"></tbody></table>
           </div>
         </div>
@@ -1104,7 +1104,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount (KES)</th><th>Requester</th><th>Approved</th><th>Action</th></tr></thead>
+            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Approved</th><th>Action</th></tr></thead>
             <tbody id="bodyQueue"></tbody></table>
           </div>
         </div>
@@ -1120,7 +1120,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount (KES)</th><th>Requester</th><th>Signed By</th><th>Paid Date</th><th>Action</th></tr></thead>
+            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Signed By</th><th>Paid Date</th><th>Action</th></tr></thead>
             <tbody id="bodyPaid"></tbody></table>
           </div>
         </div>
@@ -1209,7 +1209,7 @@
     <div class="card">
       <div class="card-header"><div class="card-title">Reconciliation Summary -- June 2026</div><button class="btn btn-secondary btn-sm" onclick="toast('PDF report downloaded!')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export PDF</button></div>
       <div class="card-body" style="padding:0">
-        <table><thead><tr><th>Project</th><th>Type</th><th>Dept</th><th>Budgeted (KES)</th><th>Paid Out (KES)</th><th>Remaining (KES)</th><th>Usage</th></tr></thead>
+        <table><thead><tr><th>Project</th><th>Type</th><th>Dept</th><th>Budgeted</th><th>Paid Out</th><th>Remaining (KES)</th><th>Usage</th></tr></thead>
         <tbody id="reconTable"></tbody></table>
       </div>
     </div>
@@ -1219,7 +1219,7 @@
         <div class="alert alert-warn">!️ Closing the advance will mark this cycle as complete and carry any unspent balance forward.</div>
         <div class="form-grid">
           <div class="form-group"><label>Select Project to Close</label><select id="reconProjectSelect"></select></div>
-          <div class="form-group"><label>Carry-over / Return Amount (KES)</label><input type="number" placeholder="0"></div>
+          <div class="form-group"><label>Carry-over / Return Amount</label><input type="number" placeholder="0"></div>
           <div class="form-group form-full"><label>Reconciliation Notes</label><textarea rows="2" placeholder="Notes on closing balance..."></textarea></div>
         </div>
         <button class="btn btn-primary" onclick="closeAdvance()">Close & Reconcile -></button>
@@ -1505,7 +1505,7 @@
       <div id="reqDetailsRow" style="display:none;border-top:1px solid var(--border);padding-top:14px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
           <div class="form-group" style="margin:0">
-            <label>Amount (KES)</label>
+            <label>Amount</label>
             <input id="rAmount" type="number" placeholder="0" oninput="checkReqReady()">
             <div id="rBudgetHint" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
           </div>
@@ -1705,8 +1705,43 @@ let pendingExpSig = null;
 
 
 // -- HELPERS ------------------------------------------------
-const fmt = n => n.toLocaleString();
-const fmtK = n => n >= 1000000 ? 'KES '+(n/1000000).toFixed(1)+'M' : n >= 1000 ? 'KES '+(n/1000).toFixed(0)+'K' : 'KES '+n;
+// Currency from budget lines (Sheets). Falls back to KES.
+function getDefaultCurrency() {
+  if (budgetLines && budgetLines.length > 0) {
+    return String(budgetLines[0].currency || 'KES').trim();
+  }
+  return 'KES';
+}
+
+// Get currency for a specific project+type combination
+function getCurrency(project, type) {
+  if (!budgetLines || !budgetLines.length) return 'KES';
+  var line = budgetLines.find(function(l) {
+    return (!project || l.project === project) && (!type || l.type === type);
+  });
+  return line ? String(line.currency || 'KES').trim() : getDefaultCurrency();
+}
+
+// Format number with currency symbol
+const fmt = function(n, ccy) {
+  var c = ccy || getDefaultCurrency();
+  return (n||0).toLocaleString();  // bare number; currency label added by caller
+};
+
+const fmtC = function(n, ccy) {
+  var c = ccy || getDefaultCurrency();
+  var abs = Math.abs(n||0);
+  return c + ' ' + (n||0).toLocaleString();
+};
+
+const fmtK = function(n, ccy) {
+  var c = ccy || getDefaultCurrency();
+  var abs = Math.abs(n||0);
+  var sign = n < 0 ? '-' : '';
+  if (abs >= 1000000) return sign + c + ' ' + (abs/1000000).toFixed(1) + 'M';
+  if (abs >= 1000)    return sign + c + ' ' + (abs/1000).toFixed(0) + 'K';
+  return sign + c + ' ' + abs.toLocaleString();
+};
 
 // ============================================================
 // CORE CALCULATION LAYER
@@ -1794,16 +1829,16 @@ function renderDashboard() {
   // Stats
   document.getElementById('dashStats').innerHTML =
     '<div class="stat-card"><div class="stat-label">Total Budget</div>'
-      +'<div class="stat-value teal">'+fmtK(budgeted)+'</div>'
+      +'<div class="stat-value teal">'+fmtK(budgeted, getDefaultCurrency())+'</div>'
       +'<div class="stat-sub">'+budgetLines.length+' budget lines across '+getProjects().length+' project(s)</div></div>'
     +'<div class="stat-card"><div class="stat-label">Money In (Loaded)</div>'
-      +'<div class="stat-value teal">'+fmtK(loaded)+'</div>'
+      +'<div class="stat-value teal">'+fmtK(loaded,   getDefaultCurrency())+'</div>'
       +'<div class="stat-sub">Available for disbursement</div></div>'
     +'<div class="stat-card"><div class="stat-label">Utilised</div>'
-      +'<div class="stat-value purple">'+fmtK(utilised)+'</div>'
+      +'<div class="stat-value purple">'+fmtK(utilised, getDefaultCurrency())+'</div>'
       +'<div class="stat-sub">via '+counts.paid+' approved request'+(counts.paid===1?'':'s')+'</div></div>'
     +'<div class="stat-card"><div class="stat-label">Advance Balance</div>'
-      +'<div class="stat-value gold">'+fmtK(balance)+'</div>'
+      +'<div class="stat-value gold">'+fmtK(balance,  getDefaultCurrency())+'</div>'
       +'<div class="stat-sub">'+counts.approved+' in queue, '+counts.pending+' draft</div></div>';
 
   // Project summary table (one row per project+type group)
@@ -1872,16 +1907,16 @@ function renderReconciliation() {
 
   document.getElementById('reconStats').innerHTML =
     '<div class="stat-card"><div class="stat-label">Total Budget</div>'
-      +'<div class="stat-value teal">'+fmtK(budgeted)+'</div>'
+      +'<div class="stat-value teal">'+fmtK(budgeted, getDefaultCurrency())+'</div>'
       +'<div class="stat-sub">SMT approved across all projects</div></div>'
     +'<div class="stat-card"><div class="stat-label">Money Loaded</div>'
-      +'<div class="stat-value teal">'+fmtK(loaded)+'</div>'
+      +'<div class="stat-value teal">'+fmtK(loaded,   getDefaultCurrency())+'</div>'
       +'<div class="stat-sub">Disbursed to field wallets</div></div>'
     +'<div class="stat-card"><div class="stat-label">Total Paid Out</div>'
-      +'<div class="stat-value purple">'+fmtK(utilised)+'</div>'
+      +'<div class="stat-value purple">'+fmtK(utilised, getDefaultCurrency())+'</div>'
       +'<div class="stat-sub">'+paidReqs.length+' approved requests</div></div>'
     +'<div class="stat-card"><div class="stat-label">Advance Balance</div>'
-      +'<div class="stat-value gold" style="color:'+( balance<0?'var(--danger)':'')+'">'+fmtK(balance)+'</div>'
+      +'<div class="stat-value gold" style="color:'+( balance<0?'var(--danger)':'')+'">'+fmtK(balance,  getDefaultCurrency())+'</div>'
       +'<div class="stat-sub">'+pendReqs.length+' pending / draft</div></div>';
 
   // Reconciliation table: one row per project+type group
@@ -1982,9 +2017,9 @@ function renderBudgetView() {
           + (g.month   ? ' &nbsp;&middot;&nbsp; ' + g.month + ' ' + (g.year||'') : '')
         + '</span>'
       + '</td>'
-      + '<td style="padding:12px 16px;text-align:right;font-weight:700;color:#fff;font-family:Playfair Display,serif">' + fmt(total) + '</td>'
-      + '<td style="padding:12px 16px;text-align:right;font-weight:700;color:#86efac;font-family:Playfair Display,serif">' + fmt(actual) + '</td>'
-      + '<td style="padding:12px 16px;text-align:right;font-weight:700;font-family:Playfair Display,serif;color:' + (remain<0?'#fca5a5':'#bfdbfe') + '">' + fmt(remain) + '</td>'
+      + '<td style="padding:12px 16px;text-align:right;font-weight:700;color:#fff;font-family:Playfair Display,serif">' + (g.lines[0]&&g.lines[0].currency||'KES') + ' ' + fmt(total) + '</td>'
+      + '<td style="padding:12px 16px;text-align:right;font-weight:700;color:#86efac;font-family:Playfair Display,serif">' + (g.lines[0]&&g.lines[0].currency||'KES') + ' ' + fmt(actual) + '</td>'
+      + '<td style="padding:12px 16px;text-align:right;font-weight:700;font-family:Playfair Display,serif;color:' + (remain<0?'#fca5a5':'#bfdbfe') + '">' + (g.lines[0]&&g.lines[0].currency||'KES') + ' ' + fmt(remain) + '</td>'
       + '<td style="padding:12px 16px">'
         + '<div style="display:flex;align-items:center;gap:8px">'
           + '<div style="flex:1;height:5px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden">'
@@ -2011,9 +2046,9 @@ function renderBudgetView() {
         + '<td style="padding:9px 16px;font-size:12px;color:var(--muted)">' + (l.costItem||'') + '</td>'
         + '<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">' + (l.unitOfMeasure||'') + '</td>'
         + '<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">' + (l.currency||'KES') + '</td>'
-        + '<td style="padding:9px 16px;text-align:right;font-weight:600;font-family:Playfair Display,serif">' + fmt(parseFloat(l.budgetedAmount)||0) + '</td>'
-        + '<td style="padding:9px 16px;text-align:right;font-weight:600;color:var(--success);font-family:Playfair Display,serif">' + fmt(a) + '</td>'
-        + '<td style="padding:9px 16px;text-align:right;font-weight:600;font-family:Playfair Display,serif;color:' + (r<0?'var(--danger)':'inherit') + '">' + fmt(r) + '</td>'
+        + '<td style="padding:9px 16px;text-align:right;font-weight:600;font-family:Playfair Display,serif">' + (l.currency||'KES') + ' ' + fmt(parseFloat(l.budgetedAmount)||0) + '</td>'
+        + '<td style="padding:9px 16px;text-align:right;font-weight:600;color:var(--success);font-family:Playfair Display,serif">' + (l.currency||'KES') + ' ' + fmt(a) + '</td>'
+        + '<td style="padding:9px 16px;text-align:right;font-weight:600;font-family:Playfair Display,serif;color:' + (r<0?'var(--danger)':'inherit') + '">' + (l.currency||'KES') + ' ' + fmt(r) + '</td>'
         + '<td style="padding:9px 16px">'
           + '<div style="display:flex;align-items:center;gap:6px">'
             + '<div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">'
@@ -2192,7 +2227,7 @@ async function downloadRequestsPDF() {
   // Columns: #, Project, Description, Amount, Requester, Date, Status, Signature
   const COL_WIDTHS = [18, 45, 52, 28, 30, 22, 20, 62];  // sums ~ 277, fits in 297-20 margin
   const COL_X = COL_WIDTHS.reduce((acc, w, i) => { acc.push(i===0?14:(acc[i-1]+COL_WIDTHS[i-1])); return acc; }, []);
-  const HEADERS = ['Ref #','Project','Description','Amount (KES)','Requester','Date','Status','Authorised Signature'];
+  const HEADERS = ['Ref #','Project','Description','Amount','Requester','Date','Status','Authorised Signature'];
   const ROW_H_BASE = 14;   // row height when no signature
   const ROW_H_SIG  = 18;   // row height when signature present
   const SIG_IMG_H  = 12;   // rendered image height in mm
@@ -2806,8 +2841,8 @@ function selectReqLine(proj, type, cat, summary, costItem, budgeted, el) {
   var act = getActualForLine(proj, type, cat, summary, costItem);
   var rem = budgeted - act;
   document.getElementById('rBudgetHint').innerHTML =
-    'Budgeted: <strong>KES '+budgeted.toLocaleString()+'</strong>'
-    +'  |  Spent: <span style="color:var(--success)">KES '+act.toLocaleString()+'</span>'
+    'Budgeted: <strong>'+getCurrency(proj,type)+' '+budgeted.toLocaleString()+'</strong>'
+    +'  |  Spent: <span style="color:var(--success)">'+getCurrency(proj,type)+' '+act.toLocaleString()+'</span>'
     +'  |  Remaining: <strong style="color:'+(rem<0?'var(--danger)':'var(--ink)')
     +'">'+(rem<0?'OVERRUN ':'')+' KES '+Math.abs(rem).toLocaleString()+'</strong>';
   document.getElementById('reqDetailsRow').style.display = '';
@@ -2904,7 +2939,7 @@ function showReceipt(ref, amount, signer) {
     <div style="background:var(--teal-pale);border-radius:10px;padding:16px 20px;display:grid;gap:10px">
       <div class="flex justify-between"><span class="text-muted text-sm">Reference</span><strong>#${ref}</strong></div>
       <div class="flex justify-between"><span class="text-muted text-sm">Date</span><span>${now}</span></div>
-      <div class="flex justify-between"><span class="text-muted text-sm">Amount (KES)</span><strong class="currency" style="font-size:18px;color:var(--teal)">${parseInt(amount||entry&&entry.amount||0).toLocaleString()}</strong></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Amount</span><strong class="currency" style="font-size:18px;color:var(--teal)">${parseInt(amount||entry&&entry.amount||0).toLocaleString()}</strong></div>
       <div class="flex justify-between"><span class="text-muted text-sm">Project</span><span>${entry ? entry.project : '--'}</span></div>
       <div class="flex justify-between"><span class="text-muted text-sm">Description</span><span>${entry ? entry.description : '--'}</span></div>
       <div class="flex justify-between"><span class="text-muted text-sm">Platform</span><span>MRV Money-In/Out</span></div>
@@ -3112,7 +3147,7 @@ async function pullFromSheets() {
         costSummary: String(r['Cost Summary'] || r.costSummary || '').trim(),
         costItem:    String(r['Cost Item']    || r.costItem    || '').trim(),
         description: String(r['Description']  || r.description || '').trim(),
-        amount:      parseFloat(r['Amount (KES)'] || r.amount) || 0,
+        amount:      parseFloat(r['Amount'] || r.amount) || 0,
         requester:   String(r['Requester']    || r.requester   || '').trim(),
         status:      String(r['Status']       || r.status      || 'Draft').trim(),
         date:        String(r['Date']         || r.date        || '').trim(),
@@ -3162,7 +3197,7 @@ async function pullFromSheets() {
       tbody.innerHTML = '';
       res.funds.forEach(f => {
         const project = f['Project'] || f['project'] || '';
-        const amount  = parseInt((f['Amount (KES)'] || f['amount'] || '0').toString().replace(/,/g,'')) || 0;
+        const amount  = parseInt((f['Amount'] || f['amount'] || '0').toString().replace(/,/g,'')) || 0;
         const date    = f['Date'] || f['date'] || '';
         const status  = f['Status'] || f['status'] || 'Posted';
         const tr = document.createElement('tr');
@@ -3194,7 +3229,7 @@ async function pullFromSheets() {
           costSummary:  String(r['Cost Summary'] || r.costSummary  || ''),
           costItem:     String(r['Cost Item']    || r.costItem     || ''),
           description:  String(r['Description']  || r.description  || ''),
-          amount:       parseFloat(r['Amount (KES)'] || r.amount)  || 0,
+          amount:       parseFloat(r['Amount'] || r.amount)  || 0,
           requester:    String(r['Requester']    || r.requester    || ''),
           status:       String(r['Status']       || r.status       || ''),
           date:         String(r['Date']         || r.date         || ''),
@@ -3281,7 +3316,7 @@ function rebuildRequestsTable() {
       +'<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
       +'<td>'+(r.category||'--')+'</td>'
       +'<td style="color:var(--muted);font-size:12px">'+(r.costSummary||r.description||'--')+'</td>'
-      +'<td class="currency" style="font-weight:600">'+fmt(r.amount||0)+'</td>'
+      +'<td class="currency" style="font-weight:600">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
       +'<td>'+(r.requester||'')+'</td>'
       + extra;
   };
@@ -3356,13 +3391,26 @@ function syncAfterChange() {
 function gsPushIfConnected() { syncAfterChange(); }
 
 // -- Auto-sync timer -----------------------------------------
-function toggleAutoSync(on) {
+// Auto-sync: always on, 10s interval, survives page refresh
+var AUTO_SYNC_INTERVAL = 10000; // 10 seconds
+
+function startAutoSync() {
   clearInterval(gsAutoSyncTimer);
-  if (on && gsConnected) {
-    gsAutoSyncTimer = setInterval(() => pullFromSheets(), 60000);
-    appendSyncLog('Auto-sync enabled (every 60s).');
-  } else {
-    appendSyncLog('Auto-sync disabled.');
+  if (!gsWebAppUrl) return;
+  gsAutoSyncTimer = setInterval(function() {
+    pullFromSheets().catch(function(){});
+    // Reset budget pull flag so budget view refreshes too
+    window._budgetPulled = false;
+  }, AUTO_SYNC_INTERVAL);
+  appendSyncLog('Auto-sync active (every 10s)');
+}
+
+function toggleAutoSync(on) {
+  // Kept for UI compatibility but auto-sync is always on when connected
+  if (on) startAutoSync();
+  else {
+    clearInterval(gsAutoSyncTimer);
+    appendSyncLog('Auto-sync paused');
   }
 }
 
@@ -3594,17 +3642,33 @@ document.addEventListener('click', e => {
 // -- showView role guard -----------------------------------------
 const _origShowView = showView;
 showView = function(id, el) {
-  if (!currentUser) return; // behind login screen, ignore
-  const approverOnly = ['funds'];
-  const adminOnly    = ['sheets','users'];
-  if (approverOnly.includes(id) && !['approver','admin'].includes(currentUser.role)) {
-    toast('Access denied -- Approver role required'); return;
+  // Public read-only views -- visible without login
+  var publicViews = ['dashboard', 'budgets', 'reconciliation', 'transactions'];
+  if (!currentUser && !publicViews.includes(id)) return;
+
+  if (currentUser) {
+    var approverOnly = ['funds'];
+    var adminOnly    = ['sheets','users'];
+    if (approverOnly.includes(id) && !['approver','admin'].includes(currentUser.role)) {
+      toast('Access denied -- Approver role required'); return;
+    }
+    if (adminOnly.includes(id) && currentUser.role !== 'admin') {
+      toast('Access denied -- Admin role required'); return;
+    }
   }
-  if (adminOnly.includes(id) && currentUser.role !== 'admin') {
-    toast('Access denied -- Admin role required'); return;
-  }
+
   _origShowView(id, el);
+  if (id === 'users') checkUsersSheetStatus();
+  // Sync mobile bottom nav
+  var mobMap = { dashboard:'mob-dashboard', requests:'mob-requests', funds:'mob-funds', reconciliation:'mob-reconciliation' };
+  if (mobMap[id]) {
+    document.querySelectorAll('.mob-nav-item').forEach(function(e){ e.classList.remove('active'); });
+    var mob = document.getElementById(mobMap[id]);
+    if (mob) mob.classList.add('active');
+  }
+  if (window.innerWidth <= 768) closeSidebar();
 };
+
 
 // -- Users management --------------------------------------------
 async function addUser() {
@@ -3799,6 +3863,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   populateAllDropdowns();
   refreshSigGrids();
   wrapTables();
+
+  // Start auto-sync (always on, 10s, survives refresh)
+  if (gsWebAppUrl) {
+    // Check auto-sync checkbox UI
+    var chk = document.getElementById('autoSyncToggle');
+    if (chk) chk.checked = true;
+    startAutoSync();
+  }
 
   // Boot auth LAST
   bootAuth();
