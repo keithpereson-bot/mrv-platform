@@ -2456,47 +2456,36 @@ function openSignAndApprove(btn, ref, recipient) {
 
 function confirmSignAndApprove() {
   if (!pendingModalSig) { toast('Please provide a signature first'); return; }
-  // persist sig into store
+
   const sigLabel = document.getElementById('modalSigName').textContent || 'Officer';
-  const sigTime  = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const sigTime  = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+                 + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
   const entry = requestsStore.find(r => r.ref === activeSignRef);
-  if (entry) {
-    entry.status     = 'Paid';
-    entry.sigDataUrl = pendingModalSig;
-    entry.sigLabel   = sigLabel;
-    entry.sigTime    = sigTime;
-  }
-  // update row in table
+  if (!entry) { toast('Request not found'); return; }
+
+  // 1. Update in-memory store
+  entry.status     = 'Paid';
+  entry.sigDataUrl = pendingModalSig;
+  entry.sigLabel   = sigLabel;
+  entry.sigTime    = sigTime;
+
+  // 2. Update the table row directly
   const row = activeSignRowBtn.closest('tr');
-  row.querySelector('.badge').className = 'badge badge-teal';
+  row.querySelector('.badge').className  = 'badge badge-teal';
   row.querySelector('.badge').textContent = 'Paid';
   const ref = activeSignRef;
-  const amt = entry ? entry.amount : 0;
-  activeSignRowBtn.outerHTML = `<button class="btn btn-ghost btn-sm" onclick="showReceipt('${ref}','${amt}','${sigLabel}')">Receipt</button>`;
+  const amt = entry.amount;
+  activeSignRowBtn.outerHTML = '<button class="btn btn-ghost btn-sm" onclick="showReceipt(\'' + ref + '\',\'' + amt + '\',\'' + sigLabel + '\')">Receipt</button>';
+
   closeModal('signApproveModal');
-  persistRequestsToStorage();   // keep localStorage in sync
-  renderDashboard();
-  // Refresh budget view so actuals update immediately
-  if (document.getElementById('view-budgets').classList.contains('active')) {
-    renderBudgetView();
-  }
-  // Push JUST the delta for this approval (fast, additive across devices)
-  if (gsWebAppUrl && entry) {
-    const delta = [{
-      project:     entry.project     || '',
-      type:        entry.type        || '',
-      category:    entry.category    || '',
-      costSummary: entry.costSummary || '',
-      costItem:    entry.costItem    || '',  // tiebreaker
-      delta:       entry.amount,
-    }];
-    gasCall({ action:'updateActuals', data: delta })
-      .then(function(r){ appendSyncLog('Actuals updated: ' + JSON.stringify(r)); })
-      .catch(function(e){ appendSyncLog('Actuals push failed: ' + e.message); });
-  }
-  // Also queue a full push for requests tab
-  gsPushIfConnected();
-  toast('Payment approved & signed OK');
+
+  // 3. Persist to localStorage
+  persistRequestsToStorage();
+
+  // 4. Refresh all views + push to Sheets
+  syncAfterChange();
+
+  toast('Approved & signed');
 }
 
 // -- Request / expense helpers ------------------------------
@@ -2686,12 +2675,10 @@ function submitRequest() {
     amount:amount, requester:name,
     status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today
   });
-  rebuildRequestsTable();
-  persistRequestsToStorage();   // keep localStorage in sync
-  renderDashboard();
+  persistRequestsToStorage();
   populateAllDropdowns();
   closeModal('requestModal');
-  if(typeof gsPushIfConnected==='function') gsPushIfConnected();
+  syncAfterChange();
   toast('Request submitted -- REQ-'+String(reqCounter).padStart(3,'0'));
 }
 
@@ -2838,59 +2825,60 @@ async function gasCall(payload) {
 
 // -- Push all data to Sheets ---------------------------------
 async function pushToSheets() {
-  if (!gsWebAppUrl) { toast('Please connect a Web App URL first'); return; }
-  appendSyncLog('Pushing data to Sheets...');
+  if (!gsWebAppUrl) { toast('Connect Google Sheets first'); return; }
+  appendSyncLog('Pushing to Sheets...');
   try {
-    // Build expense rows from DOM
-    const expRows = [];
-    document.querySelectorAll('#expenseLog tr').forEach(tr => {
-      const cells = [...tr.querySelectorAll('td')].map(td => td.textContent.trim().replace(/,/g,''));
-      if (cells.length >= 3) expRows.push({ date: cells[0], project: cells[1], amount: cells[2], signed: cells[3] || '' });
+    // Requests
+    const reqRows = requestsStore.map(function(r) {
+      return {
+        ref:         r.ref         || '',
+        project:     r.project     || '',
+        type:        r.type        || '',
+        category:    r.category    || '',
+        costSummary: r.costSummary || '',
+        costItem:    r.costItem    || '',
+        description: r.description || '',
+        amount:      r.amount      || 0,
+        requester:   r.requester   || '',
+        status:      r.status      || '',
+        date:        r.date        || '',
+        sigLabel:    r.sigLabel    || '',
+        sigTime:     r.sigTime     || '',
+      };
     });
 
-    // Build fund rows from DOM
+    // Actuals -- full running total per line (OVERWRITE, not additive)
+    // Calculated fresh from requestsStore so always accurate
+    const actualsData = budgetLines.map(function(l) {
+      return {
+        project:     l.project,
+        type:        l.type,
+        category:    l.category,
+        costSummary: l.costSummary,
+        costItem:    l.costItem,
+        actual:      getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem),
+        delta:       null,   // null = overwrite mode in AppScript
+      };
+    });
+
+    // Funds from DOM
     const fundRows = [];
-    document.querySelectorAll('#fundsLedger tr').forEach(tr => {
-      const cells = [...tr.querySelectorAll('td')].map(td => td.textContent.trim().replace(/,/g,''));
-      if (cells.length >= 3) fundRows.push({ project: cells[0], amount: cells[1], date: cells[2], status: cells[3] || 'Posted' });
+    document.querySelectorAll('#fundsLedger tr').forEach(function(tr) {
+      const cells = [...tr.querySelectorAll('td')].map(function(td){ return td.textContent.trim().replace(/,/g,''); });
+      if (cells.length >= 3) fundRows.push({ project:cells[0], amount:cells[1], date:cells[2], status:cells[3]||'Posted' });
     });
 
-    // Build actuals: send FULL running total per line (sum of all Paid requests).
-    // AppScript receives this as 'actual' and writes it directly to the sheet.
-    // This is safe because we always recalculate from the full requestsStore.
-    const actualsData = budgetLines.map(l => ({
-      project:     l.project,
-      type:        l.type,
-      category:    l.category,
-      costSummary: l.costSummary,
-      costItem:    l.costItem,   // tiebreaker for non-unique category+summary
-      actual:      getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem),
-      delta:       null,
-    })).filter(l => l.actual > 0);
+    // Expenses from DOM
+    const expRows = [];
+    document.querySelectorAll('#expenseLog tr').forEach(function(tr) {
+      const cells = [...tr.querySelectorAll('td')].map(function(td){ return td.textContent.trim().replace(/,/g,''); });
+      if (cells.length >= 3) expRows.push({ date:cells[0], project:cells[1], amount:cells[2], signed:cells[3]||'' });
+    });
 
-    const reqRows = requestsStore.map(r => ({
-      ref:         r.ref,
-      project:     r.project,
-      type:        r.type        || '',
-      category:    r.category    || '',
-      costSummary: r.costSummary || '',
-      costItem:    r.costItem    || '',
-      description: r.description || '',
-      amount:      r.amount,
-      requester:   r.requester,
-      status:      r.status,
-      date:        r.date,
-      sigLabel:    r.sigLabel || '',
-      sigTime:     r.sigTime  || '',
-    }));
-
-    // Include saved signatures (strip dataUrl size warning: base64 can be large)
-    const sigRows = savedSigs.map(s => ({
-      id:      s.id,
-      label:   s.label,
-      date:    s.date,
-      dataUrl: s.dataUrl || ''
-    }));
+    // Signatures
+    const sigRows = savedSigs.map(function(s) {
+      return { id:s.id, label:s.label, date:s.date, dataUrl:s.dataUrl||'' };
+    });
 
     const res = await gasCall({
       action:     'pushAll',
@@ -2900,19 +2888,19 @@ async function pushToSheets() {
       expenses:   expRows,
       signatures: sigRows,
     });
+
     if (!res.ok) throw new Error(res.error || 'Push failed');
 
-    const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    ['syncTimeRequests','syncTimeBudgets','syncTimeFunds','syncTimeExpenses','syncTimeSigs'].forEach(id => {
+    const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    ['syncTimeRequests','syncTimeBudgets','syncTimeFunds','syncTimeExpenses','syncTimeSigs'].forEach(function(id) {
       const el = document.getElementById(id);
       if (el) el.textContent = now;
     });
     updateSheetStatusPill(true);
-    appendSyncLog(`OK Pushed -- ${reqRows.length} requests, actuals updated, ${fundRows.length} fund entries, ${expRows.length} expenses, ${sigRows.length} signatures.`);
-    toast('Synced to Google Sheets OK');
+    appendSyncLog('Pushed: ' + reqRows.length + ' requests, ' + actualsData.filter(function(a){return a.actual>0;}).length + ' actuals, ' + fundRows.length + ' funds');
   } catch(e) {
-    appendSyncLog('X Push failed: ' + e.message);
-    toast('Push failed -- see sync log');
+    appendSyncLog('Push failed: ' + e.message);
+    toast('Push failed');
   }
 }
 
@@ -3054,12 +3042,25 @@ function rebuildRequestsTable() {
 }
 
 // -- Auto-push after mutations -------------------------------
-function gsPushIfConnected() {
-  if (gsConnected) {
+// Called after any data mutation.
+// Updates all views immediately then pushes to Sheets.
+function syncAfterChange() {
+  // 1. Refresh all views with current in-memory data
+  renderDashboard();
+  rebuildRequestsTable();
+  if (document.getElementById('view-budgets') &&
+      document.getElementById('view-budgets').classList.contains('active')) {
+    renderBudgetView();
+  }
+  // 2. Push to Sheets (debounced 800ms)
+  if (gsWebAppUrl) {
     clearTimeout(window._gsPushTimer);
-    window._gsPushTimer = setTimeout(() => pushToSheets(), 1500);
+    window._gsPushTimer = setTimeout(function() { pushToSheets(); }, 800);
   }
 }
+
+// Legacy alias
+function gsPushIfConnected() { syncAfterChange(); }
 
 // -- Auto-sync timer -----------------------------------------
 function toggleAutoSync(on) {
@@ -3606,25 +3607,10 @@ function confirmBulkApprove(){
     if(!e)return;
     e.status='Paid'; e.sigDataUrl=pendingBulkSig; e.sigLabel=pendingBulkLabel; e.sigTime=t;
   });
-  rebuildRequestsTable(); renderDashboard(); closeModal('bulkApproveModal');
-  // Push delta for each approved line (additive, works across devices)
-  if(typeof gsWebAppUrl!=='undefined' && gsWebAppUrl) {
-    var dm={};
-    checked.forEach(function(chk){
-      var e=requestsStore.find(function(r){return r.ref===chk.dataset.ref;});
-      if(!e||!e.costSummary)return;
-      var k=(e.project||'')+'|'+(e.type||'')+'|'+(e.category||'')+'|'+(e.costSummary||'');
-      if(!dm[k]) dm[k]={project:e.project,type:e.type,category:e.category,costSummary:e.costSummary,delta:0};
-      dm[k].costItem = e.costItem||'';
-      dm[k].delta+=e.amount;
-    });
-    var dl=Object.values(dm);
-    if(dl.length) gasCall({action:'updateActuals',data:dl})
-      .then(function(r){appendSyncLog('Bulk actuals: '+JSON.stringify(r));})
-      .catch(function(e){appendSyncLog('Bulk actuals error: '+e.message);});
-  }
-  if(typeof gsPushIfConnected==='function')gsPushIfConnected();
-  toast('OK '+checked.length+' request'+(checked.length===1?'':'s')+' approved & signed');
+  persistRequestsToStorage();
+  closeModal('bulkApproveModal');
+  syncAfterChange();
+  toast('Approved: '+checked.length+' request'+(checked.length===1?'':'s'));
 }
 
 // ==============================================================
