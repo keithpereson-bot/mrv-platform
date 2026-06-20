@@ -2661,7 +2661,11 @@ function approveRequest(ref) {
   entry.approvedAt = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
                    + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
   persistRequestsToStorage();
-  syncAfterChange();
+  // Rebuild table immediately so user sees the move right away
+  rebuildRequestsTable();
+  renderDashboard();
+  // Push to Sheets immediately (no debounce) so auto-sync doesn't revert it
+  if (gsWebAppUrl) pushToSheets();
   toast('Approved -- moved to Payment Queue');
 }
 
@@ -2683,10 +2687,11 @@ function confirmSignAndApprove() {
 
   closeModal('signApproveModal');
   persistRequestsToStorage();
-
-  // syncAfterChange pushes full actuals recalc (only Paid requests count)
-  syncAfterChange();
-
+  // Rebuild immediately so user sees the move
+  rebuildRequestsTable();
+  renderDashboard();
+  // Push to Sheets immediately (no debounce) so auto-sync doesn't revert it
+  if (gsWebAppUrl) pushToSheets();
   toast('Payment confirmed & signed');
 }
 
@@ -3028,6 +3033,7 @@ async function gasCall(payload) {
 // -- Push all data to Sheets ---------------------------------
 async function pushToSheets() {
   if (!gsWebAppUrl) { toast('Connect Google Sheets first'); return; }
+  window._pushInProgress = true;
   appendSyncLog('Pushing to Sheets...');
   try {
     // Requests
@@ -3126,6 +3132,8 @@ async function pushToSheets() {
   } catch(e) {
     appendSyncLog('Push failed: ' + e.message);
     toast('Push failed');
+  } finally {
+    window._pushInProgress = false;
   }
 }
 
@@ -3138,7 +3146,8 @@ async function pullFromSheets() {
     if (!res.ok) throw new Error(res.error || 'Pull failed');
 
     // -- Requests -- map ALL fields including type/category/costSummary
-    if (res.requests && res.requests.length > 0) {
+    // Skip if a push is in progress (prevents auto-sync reverting local changes)
+    if (res.requests && res.requests.length > 0 && !window._pushInProgress) {
       const imported = res.requests.map(r => ({
         ref:         String(r['Ref #']        || r.ref         || '').trim(),
         project:     String(r['Project']      || r.project     || '').trim(),
