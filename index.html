@@ -2654,19 +2654,35 @@ function openSignAndApprove(btn, ref, recipient) {
 
 // Step 1: Approve request (Draft/Pending -> Approved, moves to Payment Queue)
 function approveRequest(ref) {
-  var entry = requestsStore.find(function(r){ return r.ref===ref; });
-  if (!entry) return;
-  entry.status     = 'Approved';
-  entry.approvedBy = currentUser ? currentUser.name : 'Officer';
-  entry.approvedAt = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-                   + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  // Find and mutate the entry
+  var found = false;
+  for (var i = 0; i < requestsStore.length; i++) {
+    if (requestsStore[i].ref === ref) {
+      requestsStore[i].status     = 'Approved';
+      requestsStore[i].approvedBy = currentUser ? currentUser.name : 'Officer';
+      requestsStore[i].approvedAt = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+                                  + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      found = true;
+      break;
+    }
+  }
+  if (!found) { toast('Request not found: ' + ref); return; }
+
+  // Persist and redraw immediately
   persistRequestsToStorage();
-  // Rebuild table immediately so user sees the move right away
   rebuildRequestsTable();
   renderDashboard();
-  // Push to Sheets immediately (no debounce) so auto-sync doesn't revert it
-  if (gsWebAppUrl) pushToSheets();
-  toast('Approved -- moved to Payment Queue');
+
+  // Push to Sheets -- pause auto-sync until push completes
+  clearInterval(gsAutoSyncTimer);
+  if (gsWebAppUrl) {
+    pushToSheets().then(function() {
+      startAutoSync(); // restart after push completes
+    }).catch(function() {
+      startAutoSync();
+    });
+  }
+  toast('Request approved');
 }
 
 // Step 2: Mark as Paid (Approved -> Paid, actuals update NOW)
@@ -2687,11 +2703,17 @@ function confirmSignAndApprove() {
 
   closeModal('signApproveModal');
   persistRequestsToStorage();
-  // Rebuild immediately so user sees the move
   rebuildRequestsTable();
   renderDashboard();
-  // Push to Sheets immediately (no debounce) so auto-sync doesn't revert it
-  if (gsWebAppUrl) pushToSheets();
+  // Pause auto-sync, push, then restart
+  clearInterval(gsAutoSyncTimer);
+  if (gsWebAppUrl) {
+    pushToSheets().then(function() {
+      startAutoSync();
+    }).catch(function() {
+      startAutoSync();
+    });
+  }
   toast('Payment confirmed & signed');
 }
 
@@ -4046,8 +4068,13 @@ function confirmBulkApprove(){
   });
   persistRequestsToStorage();
   closeModal('bulkApproveModal');
-  syncAfterChange();
-  toast('Approved: '+checked.length+' request'+(checked.length===1?'':'s'));
+  rebuildRequestsTable();
+  renderDashboard();
+  clearInterval(gsAutoSyncTimer);
+  if (gsWebAppUrl) {
+    pushToSheets().then(function() { startAutoSync(); }).catch(function() { startAutoSync(); });
+  }
+  toast('Paid: '+checked.length+' request'+(checked.length===1?'':'s'));
 }
 
 // ==============================================================
