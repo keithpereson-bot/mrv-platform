@@ -969,21 +969,79 @@
 
   <!-- -- STEP 4: REQUESTS -- -->
   <div id="view-requests" class="view">
-    <div class="page-header"><h1>Funds Utilization -- System Requests</h1><p>Step 4 -- Payments are made only against approved requests. MRV Officers & Coordinators process.</p></div>
-    <div class="alert alert-warn">!️ Controlled access: Only MRV Officers and Coordinators may approve and process payments.</div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">Payment Requests</div><div class="flex gap-2"><button class="btn btn-secondary btn-sm" onclick="downloadRequestsPDF()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download PDF</button><button class="btn btn-secondary btn-sm" onclick="openBulkApprove()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M20 19.5v.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8.5L18 5.5"/><path d="M15 2v4h4"/><path d="m13.5 15.5 3-3-1.5-1.5-3 3 1.5 1.5z"/><path d="m9 21 1.5-1.5-1.5-1.5L7.5 19.5 9 21z"/></svg> Sign All</button><button class="btn btn-primary btn-sm" onclick="openNewRequestModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New Request</button></div></div>
-      <div class="card-body" style="padding:0">
-        <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount (KES)</th><th>Requester</th><th>Status</th><th>Action</th></tr></thead>
-        <tbody id="requestsBody">
+    <div class="page-header">
+      <h1>System Requests</h1>
+      <p>Submit requests, approve for payment queue, then mark as paid once funds are disbursed.</p>
+    </div>
 
-          <tr><td class="text-muted">#REQ-002</td><td>Mombasa Survey</td><td>Transport costs</td><td class="currency">320,000</td><td>A. Ali</td><td><span class="badge badge-teal">Paid</span></td><td><button class="btn btn-ghost btn-sm" onclick="showReceipt('REQ-002','320000','A. Ali')">Receipt</button></td></tr>
-          <tr><td class="text-muted">#REQ-003</td><td>Nairobi Field Ops</td><td>Stationery purchase</td><td class="currency">85,000</td><td>M. Wanjiku</td><td><span class="badge badge-gold">Pending</span></td><td><button class="btn btn-primary btn-sm" onclick="openSignAndApprove(this,'REQ-003','M. Wanjiku')">Sign & Approve</button></td></tr>
-          <tr><td class="text-muted">#REQ-004</td><td>Kisumu Training</td><td>Venue hire</td><td class="currency">390,000</td><td>P. Otieno</td><td><span class="badge badge-gray">Draft</span></td><td><button class="btn btn-secondary btn-sm" onclick="openSignAndApprove(this,'REQ-004','P. Otieno')">Sign & Approve</button></td></tr>
-          <tr><td class="text-muted">#REQ-005</td><td>Mombasa Survey</td><td>Accommodation</td><td class="currency">200,000</td><td>A. Ali</td><td><span class="badge badge-gray">Draft</span></td><td><button class="btn btn-secondary btn-sm" onclick="openSignAndApprove(this,'REQ-005','A. Ali')">Sign & Approve</button></td></tr>
-        </tbody></table>
+    <!-- Tab bar -->
+    <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px">
+      <button class="req-tab active" id="tab-drafts" onclick="switchReqTab('drafts')">
+        Requests <span class="req-tab-badge" id="badge-drafts">0</span>
+      </button>
+      <button class="req-tab" id="tab-queue" onclick="switchReqTab('queue')">
+        Payment Queue <span class="req-tab-badge" id="badge-queue">0</span>
+      </button>
+      <button class="req-tab" id="tab-paid" onclick="switchReqTab('paid')">
+        Paid Requests <span class="req-tab-badge" id="badge-paid">0</span>
+      </button>
+    </div>
+
+    <!-- Tab: Requests (Draft / Pending) -->
+    <div id="reqpanel-drafts" class="req-panel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Requests</div>
+          <div class="flex gap-2">
+            <button class="btn btn-secondary btn-sm" onclick="downloadRequestsPDF()">Download PDF</button>
+            <button class="btn btn-primary btn-sm" onclick="openNewRequestModal()">+ New Request</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="table-scroll">
+            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount (KES)</th><th>Requester</th><th>Date</th><th>Action</th></tr></thead>
+            <tbody id="bodyDrafts"></tbody></table>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Tab: Payment Queue (Approved) -->
+    <div id="reqpanel-queue" class="req-panel" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Payment Queue</div>
+          <div class="flex gap-2">
+            <button class="btn btn-secondary btn-sm" onclick="openBulkApprove()">Mark All Paid</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="table-scroll">
+            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount (KES)</th><th>Requester</th><th>Approved</th><th>Action</th></tr></thead>
+            <tbody id="bodyQueue"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Paid Requests -->
+    <div id="reqpanel-paid" class="req-panel" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Paid Requests</div>
+          <span class="badge badge-teal" id="paidTotal">KES 0</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="table-scroll">
+            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount (KES)</th><th>Requester</th><th>Signed By</th><th>Paid Date</th><th>Action</th></tr></thead>
+            <tbody id="bodyPaid"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- hidden legacy tbody for compatibility -->
+    <tbody id="requestsBody" style="display:none"></tbody>
   </div>
 
   <!-- -- STEP 5: WEEKLY EXPENSING -- -->
@@ -1388,7 +1446,7 @@
   <div class="modal modal-wide">
     <div class="modal-header">
       <div>
-        <strong>Sign & Approve Payment</strong>
+        <strong>Mark as Paid</strong>
         <div id="signModalSub" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
       </div>
       <button class="close-btn" onclick="closeModal('signApproveModal')">×</button>
@@ -1436,7 +1494,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('signApproveModal')">Cancel</button>
-      <button class="btn btn-primary" id="confirmSignBtn" onclick="confirmSignAndApprove()" disabled style="opacity:.5">Confirm & Approve -></button>
+      <button class="btn btn-primary" id="confirmSignBtn" onclick="confirmSignAndApprove()" disabled style="opacity:.5">Confirm Payment & Sign</button>
     </div>
   </div>
 </div>
@@ -1603,13 +1661,13 @@ function totalLoaded() {
 
 // Count of paid / pending / draft requests
 function reqCounts() {
-  var paid = 0, pending = 0, draft = 0;
+  var paid = 0, approved = 0, pending = 0;
   requestsStore.forEach(function(r) {
-    if (r.status === 'Paid')    paid++;
-    else if (r.status === 'Pending') pending++;
-    else draft++;
+    if      (r.status === 'Paid')     paid++;
+    else if (r.status === 'Approved') approved++;
+    else                              pending++;
   });
-  return { paid:paid, pending:pending, draft:draft };
+  return { paid:paid, approved:approved, pending:pending, total:requestsStore.length };
 }
 
 // Unique project+type groups
@@ -1659,7 +1717,7 @@ function renderDashboard() {
       +'<div class="stat-sub">via '+counts.paid+' approved request'+(counts.paid===1?'':'s')+'</div></div>'
     +'<div class="stat-card"><div class="stat-label">Advance Balance</div>'
       +'<div class="stat-value gold">'+fmtK(balance)+'</div>'
-      +'<div class="stat-sub">'+(counts.pending+counts.draft)+' request(s) pending approval</div></div>';
+      +'<div class="stat-sub">'+counts.approved+' in queue, '+counts.pending+' draft</div></div>';
 
   // Project summary table (one row per project+type group)
   var groups = getProjectGroups();
@@ -2472,38 +2530,46 @@ function openSignAndApprove(btn, ref, recipient) {
   setTimeout(() => initCanvas('modalCanvas'), 100);
 }
 
+// Step 1: Approve request (Draft/Pending -> Approved, moves to Payment Queue)
+function approveRequest(ref) {
+  var entry = requestsStore.find(function(r){ return r.ref===ref; });
+  if (!entry) return;
+  entry.status     = 'Approved';
+  entry.approvedBy = currentUser ? currentUser.name : 'Officer';
+  entry.approvedAt = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+                   + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  persistRequestsToStorage();
+  syncAfterChange();
+  // Switch to queue tab to show where it went
+  switchReqTab('queue');
+  toast('Request approved -- moved to Payment Queue');
+}
+
+// Step 2: Mark as Paid (Approved -> Paid, actuals update NOW)
 function confirmSignAndApprove() {
   if (!pendingModalSig) { toast('Please provide a signature first'); return; }
 
-  const sigLabel = document.getElementById('modalSigName').textContent || 'Officer';
-  const sigTime  = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-                 + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  const entry = requestsStore.find(r => r.ref === activeSignRef);
+  var sigLabel = document.getElementById('modalSigName').textContent || 'Officer';
+  var sigTime  = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+               + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  var entry = requestsStore.find(function(r){ return r.ref===activeSignRef; });
   if (!entry) { toast('Request not found'); return; }
 
-  // 1. Update in-memory store
+  // Move to Paid -- THIS is when actuals update
   entry.status     = 'Paid';
   entry.sigDataUrl = pendingModalSig;
   entry.sigLabel   = sigLabel;
   entry.sigTime    = sigTime;
 
-  // 2. Update the table row directly
-  const row = activeSignRowBtn.closest('tr');
-  row.querySelector('.badge').className  = 'badge badge-teal';
-  row.querySelector('.badge').textContent = 'Paid';
-  const ref = activeSignRef;
-  const amt = entry.amount;
-  activeSignRowBtn.outerHTML = '<button class="btn btn-ghost btn-sm" onclick="showReceipt(\'' + ref + '\',\'' + amt + '\',\'' + sigLabel + '\')">Receipt</button>';
-
   closeModal('signApproveModal');
-
-  // 3. Persist to localStorage
   persistRequestsToStorage();
 
-  // 4. Refresh all views + push to Sheets
+  // syncAfterChange pushes full actuals recalc (only Paid requests count)
   syncAfterChange();
 
-  toast('Approved & signed');
+  // Switch to paid tab
+  switchReqTab('paid');
+  toast('Payment confirmed & signed');
 }
 
 // -- Request / expense helpers ------------------------------
@@ -2862,6 +2928,8 @@ async function pushToSheets() {
         date:        r.date        || '',
         sigLabel:    r.sigLabel    || '',
         sigTime:     r.sigTime     || '',
+        approvedBy:  r.approvedBy  || '',
+        approvedAt:  r.approvedAt  || '',
       };
     });
 
@@ -2965,8 +3033,10 @@ async function pullFromSheets() {
         requester:   String(r['Requester']    || r.requester   || '').trim(),
         status:      String(r['Status']       || r.status      || 'Draft').trim(),
         date:        String(r['Date']         || r.date        || '').trim(),
-        sigLabel:    r['Signed By']  || r.sigLabel || null,
-        sigTime:     r['Sign Time']  || r.sigTime  || null,
+        sigLabel:    r['Signed By']  || r.sigLabel  || null,
+        sigTime:     r['Sign Time']  || r.sigTime   || null,
+        approvedBy:  r['Approved By']|| r.approvedBy|| null,
+        approvedAt:  r['Approved At']|| r.approvedAt|| null,
         sigDataUrl:  null,
       })).filter(r => r.ref);
       if (imported.length > 0) {
@@ -3084,33 +3154,102 @@ async function pullFromSheets() {
   }
 }
 
-// -- Rebuild requests table from store ----------------------
-function rebuildRequestsTable() {
-  const tbody = document.getElementById('requestsBody');
-  const canDelete = currentUser && (currentUser.role === 'admin' || currentUser.role === 'approver');
-  tbody.innerHTML = requestsStore.map(r => {
-    const badgeCls  = { Paid:'badge-teal', Pending:'badge-gold', Draft:'badge-gray' }[r.status] || 'badge-gray';
-    const actionBtn = r.status === 'Paid'
-      ? `<button class="btn btn-ghost btn-sm" onclick="showReceipt('${r.ref}','${r.amount}','${r.sigLabel||r.requester}')">Receipt</button>`
-      : `<button class="btn btn-${r.status==='Pending'?'primary':'secondary'} btn-sm" onclick="openSignAndApprove(this,'${r.ref}','${r.requester}')">Sign & Approve</button>`;
-    const deleteBtn = canDelete
-      ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger);padding:5px 8px" onclick="promptDeleteRequest('${r.ref}')" title="Delete request">
-           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-         </button>`
-      : '';
-    return `<tr>
-      <td>#${r.ref}</td>
-      <td style="font-weight:500">${r.project}</td>
-      <td><span class="badge badge-gray">${r.type||'--'}</span></td>
-      <td>${r.category||'--'}</td>
-      <td style="color:var(--muted);font-size:12px">${r.costSummary||r.description||'--'}</td>
-      <td class="currency">${r.amount.toLocaleString()}</td>
-      <td>${r.requester}</td>
-      <td><span class="badge ${badgeCls}">${r.status}</span></td>
-      <td style="display:flex;gap:4px;align-items:center">${actionBtn}${deleteBtn}</td>
-    </tr>`;
-  }).join('');
+// -- Rebuild request tabs (3-tab system) ---------------------
+// Statuses: Draft/Pending -> Approved -> Paid
+// Actuals only update when status moves to Paid
+
+function switchReqTab(tab) {
+  document.querySelectorAll('.req-tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.req-panel').forEach(function(p){ p.style.display='none'; });
+  var btn = document.getElementById('tab-'+tab);
+  var panel = document.getElementById('reqpanel-'+tab);
+  if (btn) btn.classList.add('active');
+  if (panel) panel.style.display='';
 }
+
+function rebuildRequestsTable() {
+  var canApprove = currentUser && (currentUser.role==='approver'||currentUser.role==='admin');
+  var canDelete  = currentUser && (currentUser.role==='approver'||currentUser.role==='admin');
+
+  var drafts   = requestsStore.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; });
+  var queue    = requestsStore.filter(function(r){ return r.status==='Approved'; });
+  var paid     = requestsStore.filter(function(r){ return r.status==='Paid'; });
+
+  // Update tab badges
+  var bd = document.getElementById('badge-drafts'); if(bd) bd.textContent = drafts.length;
+  var bq = document.getElementById('badge-queue');  if(bq) bq.textContent = queue.length;
+  var bp = document.getElementById('badge-paid');   if(bp) bp.textContent = paid.length;
+
+  // Paid total
+  var paidAmt = paid.reduce(function(s,r){ return s+(parseFloat(r.amount)||0); },0);
+  var pt = document.getElementById('paidTotal'); if(pt) pt.textContent = 'KES '+fmt(paidAmt);
+
+  var delBtn = function(ref) {
+    return canDelete
+      ? '<button class="btn btn-ghost btn-sm" style="color:var(--danger);padding:5px 8px" data-delref="'+ref+'" onclick="promptDeleteRequest(this.dataset.delref)" title="Delete">'
+        +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>'
+        +'</button>'
+      : '';
+  };
+
+  var cols = function(r, extra) {
+    return '<td style="font-family:JetBrains Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
+      +'<td style="font-weight:500">'+r.project+'</td>'
+      +'<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
+      +'<td>'+(r.category||'--')+'</td>'
+      +'<td style="color:var(--muted);font-size:12px">'+(r.costSummary||r.description||'--')+'</td>'
+      +'<td class="currency" style="font-weight:600">'+fmt(r.amount||0)+'</td>'
+      +'<td>'+(r.requester||'')+'</td>'
+      + extra;
+  };
+
+  // ── Tab 1: Drafts/Pending ──
+  var bd_el = document.getElementById('bodyDrafts');
+  if (bd_el) bd_el.innerHTML = drafts.length===0
+    ? '<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">No pending requests</td></tr>'
+    : drafts.map(function(r) {
+        var approveBtn = canApprove
+          ? '<button class="btn btn-primary btn-sm" data-aref="'+r.ref+'" onclick="approveRequest(this.dataset.aref)">Approve</button>'
+          : '<span class="badge badge-gray">Awaiting approval</span>';
+        return '<tr>'
+          + cols(r, '<td>'+(r.date||'--')+'</td>')
+          + '<td style="display:flex;gap:4px;align-items:center">'+approveBtn+delBtn(r.ref)+'</td>'
+          +'</tr>';
+      }).join('');
+
+  // ── Tab 2: Payment Queue (Approved) ──
+  var bq_el = document.getElementById('bodyQueue');
+  if (bq_el) bq_el.innerHTML = queue.length===0
+    ? '<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">Payment queue is empty</td></tr>'
+    : queue.map(function(r) {
+        var payBtn = canApprove
+          ? '<button class="btn btn-amber btn-sm" data-mref="'+r.ref+'" data-mreq="'+r.requester+'" onclick="openSignAndApprove(this,this.dataset.mref,this.dataset.mreq)">Mark Paid</button>'
+          : '<span class="badge badge-gold">Awaiting payment</span>';
+        return '<tr>'
+          + cols(r, '<td style="color:var(--muted);font-size:12px">'+(r.approvedAt||r.date||'--')+'</td>')
+          + '<td style="display:flex;gap:4px;align-items:center">'+payBtn+delBtn(r.ref)+'</td>'
+          +'</tr>';
+      }).join('');
+
+  // ── Tab 3: Paid ──
+  var bp_el = document.getElementById('bodyPaid');
+  if (bp_el) bp_el.innerHTML = paid.length===0
+    ? '<tr><td colspan="10" style="padding:24px;text-align:center;color:var(--muted)">No paid requests yet</td></tr>'
+    : paid.map(function(r) {
+        return '<tr>'
+          + cols(r, '<td>'+(r.requester||'')+'</td><td style="color:var(--success);font-size:12px;font-weight:500">'+(r.sigLabel||'--')+'</td><td style="color:var(--muted);font-size:12px">'+(r.sigTime||r.date||'--')+'</td>')
+          + '<td style="display:flex;gap:4px;align-items:center">'
+            +'<button class="btn btn-ghost btn-sm" data-rref="'+r.ref+'" data-ramt="'+r.amount+'" data-rlab="'+(r.sigLabel||r.requester)+'" onclick="showReceipt(this.dataset.rref,this.dataset.ramt,this.dataset.rlab)">Receipt</button>'
+            +delBtn(r.ref)
+          +'</td>'
+          +'</tr>';
+      }).join('');
+
+  // Keep legacy tbody in sync for PDF etc
+  var leg = document.getElementById('requestsBody');
+  if (leg) leg.innerHTML = requestsStore.map(function(r) { return '<tr><td>'+r.ref+'</td></tr>'; }).join('');
+}
+
 
 // -- Auto-push after mutations -------------------------------
 // Called after any data mutation.
@@ -3664,10 +3803,10 @@ function showBulkTab(tab) {
 
 function openBulkApprove() {
   pendingBulkSig = null; pendingBulkLabel = '';
-  var approvable = requestsStore.filter(function(r){ return r.status !== 'Paid'; });
+  var approvable = requestsStore.filter(function(r){ return r.status === 'Approved'; });
   var list = document.getElementById('bulkRequestList');
   if (!approvable.length) {
-    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">All requests are already approved OK</div>';
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No requests in Payment Queue</div>';
   } else {
     list.innerHTML = approvable.map(function(r){
       return '<label style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer" onmouseenter="this.style.background=\'var(--teal-pale)\'" onmouseleave="this.style.background=\'\'"><input type="checkbox" class="bulk-chk" data-ref="'+r.ref+'" data-amount="'+r.amount+'" style="width:16px;height:16px;accent-color:var(--teal);flex-shrink:0" checked onchange="updateBulkCount()"><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">#'+r.ref+' -- '+r.project+'</div><div style="font-size:11.5px;color:var(--muted)">'+r.description+' . '+r.requester+'</div></div><div style="font-family:DM Serif Display,serif;font-size:13px;white-space:nowrap">KES '+r.amount.toLocaleString()+'</div><span class="badge '+(r.status==='Pending'?'badge-gold':'badge-gray')+'">'+r.status+'</span></label>';
