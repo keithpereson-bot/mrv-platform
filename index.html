@@ -462,6 +462,11 @@
     .req-tab { padding: 12px 14px; }
   }
 
+  /* -- ROLE VISIBILITY -- */
+  body.role-requester [data-role-required="admin"],
+  body.role-requester [data-role-required="approver"],
+  body.role-approver  [data-role-required="admin"] { display:none !important; }
+
   /* -- UTILITIES -- */
   .flex { display:flex; } .items-center { align-items:center; }
   .justify-between { justify-content:space-between; }
@@ -617,7 +622,6 @@
     content:'';position:absolute;inset:0;
     background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
-  #loginScreen { display:none !important; }
   #loginScreen.hidden { opacity:0;pointer-events:none;visibility:hidden; }
 
   .login-box {
@@ -865,7 +869,28 @@
 <body>
 
 <!-- -- LOGIN SCREEN -- -->
-<!-- login screen removed -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-wordmark">
+      <div class="wordmark-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <span>MRV Platform</span>
+    </div>
+    <h2 style="font-size:20px;font-weight:700;margin:0 0 4px;color:var(--ink)">Sign In</h2>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 24px">Access is restricted to authorised users only.</p>
+    <div class="form-group">
+      <label>Email</label>
+      <input id="loginEmail" type="email" placeholder="you@organisation.com" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input id="loginPassword" type="password" placeholder="--------" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password">
+    </div>
+    <div id="loginError" style="display:none;color:var(--danger);font-size:12.5px;margin-bottom:12px;padding:10px 12px;background:#fef2f2;border-radius:7px;border:1px solid #fecaca"></div>
+    <button class="btn btn-primary" style="width:100%;padding:11px;font-size:13.5px;border-radius:7px;justify-content:center" onclick="doLogin()" id="loginBtn">Sign In</button>
+    <div style="margin-top:16px;text-align:center">
+      <button onclick="clearLoginCache()" style="background:none;border:none;font-size:11.5px;color:var(--muted);cursor:pointer;font-family:inherit">Having trouble? Clear local cache</button>
+    </div>
+  </div>
 </div>
 
 <!-- -- USER MENU DROPDOWN -- -->
@@ -910,7 +935,7 @@
   <div class="aside-section">Cycle</div>
   <div class="aside-item active" onclick="showView('dashboard',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Dashboard</div>
   <div class="aside-item" onclick="showView('budgets',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>Approved Budgets</div>
-  <div class="aside-item approver-only" onclick="showView('funds',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span>Load Funds</div>
+  <div class="aside-item approver-only" onclick="showView('funds',this)" data-role-required="admin"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span>Load Funds</div>
   <div class="aside-item" onclick="showView('requests',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg></span>System Requests <span class="aside-badge">5</span></div>
   <div class="aside-item" onclick="showView('expenses',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Weekly Expensing</div>
   <div class="aside-item" onclick="showView('reconciliation',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>Reconciliation</div>
@@ -2986,7 +3011,7 @@ function showReceipt(ref, amount, signer) {
 // ── HARDCODED WEB APP URL ─────────────────────────────────────
 // Every user on every device connects to the same Sheets backend.
 // Paste your Apps Script Web App URL below and deploy to GitHub.
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyB3hP8oyTe_tPTitJW9tWoJAYhwVavZ13PBNUj92U0YtQ59-Z4NUhjcsb_aDc-sA/exec';
+const HARDCODED_WEB_APP_URL = 'YOUR_WEB_APP_URL_HERE';
 
 // State -- always use hardcoded URL so all devices share the same data
 let gsWebAppUrl  = HARDCODED_WEB_APP_URL || localStorage.getItem('mrv_webapp_url') || '';
@@ -3327,12 +3352,24 @@ function switchReqTab(tab) {
 }
 
 function rebuildRequestsTable() {
-  var canApprove = true;
-  var canDelete  = true;
+  var role       = currentUser ? (currentUser.role||'requester') : 'requester';
+  var userCtry   = currentUser ? (currentUser.country||'') : '';
+  // Approvers can approve only their country's requests (or all if no country set)
+  var canApprove = role === 'admin' || role === 'approver';
+  // Requesters can only delete their own drafts
+  var canDelete  = role === 'admin' || role === 'approver';
 
-  var drafts   = requestsStore.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; });
-  var queue    = requestsStore.filter(function(r){ return r.status==='Approved'; });
-  var paid     = requestsStore.filter(function(r){ return r.status==='Paid'; });
+  // Country filter: requesters see only their country; approvers see their country (or all if blank)
+  var ctryFilter = function(r) {
+    if (!userCtry) return true;          // no restriction
+    return (r.project && budgetLines.some(function(l){
+      return l.project === r.project && l.type === r.type && l.country === userCtry;
+    }));
+  };
+  var allFiltered = requestsStore.filter(ctryFilter);
+  var drafts   = allFiltered.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; });
+  var queue    = allFiltered.filter(function(r){ return r.status==='Approved'; });
+  var paid     = allFiltered.filter(function(r){ return r.status==='Paid'; });
 
   // Update tab badges
   var bd = document.getElementById('badge-drafts'); if(bd) bd.textContent = drafts.length;
@@ -3515,24 +3552,20 @@ function hideLoginScreen() {
 
 // -- Called from the single DOMContentLoaded --------------------
 function bootAuth() {
-  // Login removed -- all users get full access automatically
-  // Check if a saved session exists (from when login was active)
+  // Restore session if valid
   try {
     const raw  = localStorage.getItem(SESSION_KEY);
     const sess = raw ? JSON.parse(raw) : null;
-    if (sess && sess.user) {
+    if (sess && sess.expires && sess.expires > Date.now() && sess.user) {
       currentUser = sess.user;
+      applyRole(currentUser.role);
+      updateNavUser();
+      hideLoginScreen();
+      return;
     }
   } catch(e) {}
-
-  // Default: if no saved user, set as admin so all features work
-  if (!currentUser) {
-    currentUser = { name: 'User', email: '', role: 'admin', country: '' };
-  }
-
-  applyRole(currentUser.role);
-  updateNavUser();
-  hideLoginScreen();
+  // No valid session -- show login
+  showLoginScreen();
 }
 
 // -- Login ------------------------------------------------------
@@ -3635,7 +3668,15 @@ function loginSuccess(user) {
   applyRole(currentUser.role);
   updateNavUser();
   hideLoginScreen();
-  if (gsWebAppUrl) pullUsersFromSheets().catch(()=>{});
+  // Pull fresh data immediately after login
+  if (gsWebAppUrl) {
+    pullFromSheets().catch(function(){});
+    pullBudgetLinesFromSheets().catch(function(){});
+  }
+  // Redirect requesters straight to requests tab
+  if (currentUser.role === 'requester') {
+    showView('requests', null);
+  }
 }
 
 // -- Logout -----------------------------------------------------
@@ -3689,11 +3730,36 @@ document.addEventListener('click', e => {
 // -- showView role guard -----------------------------------------
 const _origShowView = showView;
 showView = function(id, el) {
-  // No login required -- all views open
+  if (!currentUser) return;
+
+  var role    = currentUser.role    || 'requester';
+  var country = currentUser.country || '';
+
+  // Requester: only requests view
+  if (role === 'requester') {
+    if (id !== 'requests') {
+      toast('Access restricted -- contact Admin for other sections');
+      return;
+    }
+  }
+
+  // Approver: no funds, no admin, no sheets
+  if (role === 'approver') {
+    var blocked = ['funds','sheets','users'];
+    if (blocked.includes(id)) {
+      toast('Access restricted -- Approvers cannot access this section');
+      return;
+    }
+  }
+
+  // Admin only for sheets + users
+  if (['sheets','users'].includes(id) && role !== 'admin') {
+    toast('Admin access required');
+    return;
+  }
 
   _origShowView(id, el);
   if (id === 'users') onUsersViewOpen();
-  // Sync mobile bottom nav
   var mobMap = { dashboard:'mob-dashboard', requests:'mob-requests', funds:'mob-funds', reconciliation:'mob-reconciliation' };
   if (mobMap[id]) {
     document.querySelectorAll('.mob-nav-item').forEach(function(e){ e.classList.remove('active'); });
@@ -3702,6 +3768,7 @@ showView = function(id, el) {
   }
   if (window.innerWidth <= 768) closeSidebar();
 };
+
 
 
 // -- Users management --------------------------------------------
