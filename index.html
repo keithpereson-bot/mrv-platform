@@ -1525,7 +1525,7 @@ function persistSigsToStorage() {
   try { localStorage.setItem('mrv_saved_signatures', JSON.stringify(savedSigs)); } catch(e) {}
 }
 let savedSigs = loadSigsFromStorage();
-// Central requests store -- Sheets is source of truth, localStorage is cache
+// Requests store -- Sheets is source of truth, localStorage is cache
 function loadRequestsFromStorage() {
   try { var s = localStorage.getItem('mrv_requests'); return s ? JSON.parse(s) : []; }
   catch(e) { return []; }
@@ -1534,6 +1534,16 @@ function persistRequestsToStorage() {
   try { localStorage.setItem('mrv_requests', JSON.stringify(requestsStore)); } catch(e) {}
 }
 let requestsStore = loadRequestsFromStorage();
+
+// Deleted requests -- archived, never shown in main list
+function loadDeletedFromStorage() {
+  try { var s = localStorage.getItem('mrv_deleted'); return s ? JSON.parse(s) : []; }
+  catch(e) { return []; }
+}
+function persistDeletedToStorage() {
+  try { localStorage.setItem('mrv_deleted', JSON.stringify(deletedStore)); } catch(e) {}
+}
+let deletedStore = loadDeletedFromStorage();
 
 // reqCounter always derived from current store (declared AFTER requestsStore)
 function calcReqCounter() {
@@ -2880,6 +2890,26 @@ async function pushToSheets() {
       return { id:s.id, label:s.label, date:s.date, dataUrl:s.dataUrl||'' };
     });
 
+    // Deleted requests (archived)
+    const deletedRows = deletedStore.map(function(r) {
+      return {
+        ref:          r.ref         || '',
+        project:      r.project     || '',
+        type:         r.type        || '',
+        category:     r.category    || '',
+        costSummary:  r.costSummary || '',
+        costItem:     r.costItem    || '',
+        description:  r.description || '',
+        amount:       r.amount      || 0,
+        requester:    r.requester   || '',
+        status:       r.status      || '',
+        date:         r.date        || '',
+        deletedBy:    r.deletedBy   || '',
+        deletedAt:    r.deletedAt   || '',
+        deleteReason: r.deleteReason|| '',
+      };
+    });
+
     const res = await gasCall({
       action:     'pushAll',
       requests:   reqRows,
@@ -2887,6 +2917,7 @@ async function pushToSheets() {
       funds:      fundRows,
       expenses:   expRows,
       signatures: sigRows,
+      deleted:    deletedRows,
     });
 
     if (!res.ok) throw new Error(res.error || 'Push failed');
@@ -2991,6 +3022,32 @@ async function pullFromSheets() {
       renderUsersTable();
     }
 
+    // -- Deleted requests -- restore from sheet --
+    if (res.deleted && res.deleted.length > 0) {
+      var mappedDeleted = res.deleted.map(function(r) {
+        return {
+          ref:          String(r['Ref #']        || r.ref          || ''),
+          project:      String(r['Project']      || r.project      || ''),
+          type:         String(r['Type']         || r.type         || ''),
+          category:     String(r['Category']     || r.category     || ''),
+          costSummary:  String(r['Cost Summary'] || r.costSummary  || ''),
+          costItem:     String(r['Cost Item']    || r.costItem     || ''),
+          description:  String(r['Description']  || r.description  || ''),
+          amount:       parseFloat(r['Amount (KES)'] || r.amount)  || 0,
+          requester:    String(r['Requester']    || r.requester    || ''),
+          status:       String(r['Status']       || r.status       || ''),
+          date:         String(r['Date']         || r.date         || ''),
+          deletedBy:    String(r['Deleted By']   || r.deletedBy    || ''),
+          deletedAt:    String(r['Deleted At']   || r.deletedAt    || ''),
+          deleteReason: String(r['Reason']       || r.deleteReason || ''),
+        };
+      }).filter(function(r){ return r.ref; });
+      if (mappedDeleted.length > 0) {
+        deletedStore = mappedDeleted;
+        persistDeletedToStorage();
+      }
+    }
+
     // -- Signatures -- restore from sheet --
     if (res.signatures && res.signatures.length > 0) {
       // Merge: add any from sheet not already in localStorage (match by id)
@@ -3022,11 +3079,17 @@ async function pullFromSheets() {
 // -- Rebuild requests table from store ----------------------
 function rebuildRequestsTable() {
   const tbody = document.getElementById('requestsBody');
+  const canDelete = currentUser && (currentUser.role === 'admin' || currentUser.role === 'approver');
   tbody.innerHTML = requestsStore.map(r => {
     const badgeCls  = { Paid:'badge-teal', Pending:'badge-gold', Draft:'badge-gray' }[r.status] || 'badge-gray';
     const actionBtn = r.status === 'Paid'
       ? `<button class="btn btn-ghost btn-sm" onclick="showReceipt('${r.ref}','${r.amount}','${r.sigLabel||r.requester}')">Receipt</button>`
       : `<button class="btn btn-${r.status==='Pending'?'primary':'secondary'} btn-sm" onclick="openSignAndApprove(this,'${r.ref}','${r.requester}')">Sign & Approve</button>`;
+    const deleteBtn = canDelete
+      ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger);padding:5px 8px" onclick="promptDeleteRequest('${r.ref}')" title="Delete request">
+           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+         </button>`
+      : '';
     return `<tr>
       <td>#${r.ref}</td>
       <td style="font-weight:500">${r.project}</td>
@@ -3036,7 +3099,7 @@ function rebuildRequestsTable() {
       <td class="currency">${r.amount.toLocaleString()}</td>
       <td>${r.requester}</td>
       <td><span class="badge ${badgeCls}">${r.status}</span></td>
-      <td>${actionBtn}</td>
+      <td style="display:flex;gap:4px;align-items:center">${actionBtn}${deleteBtn}</td>
     </tr>`;
   }).join('');
 }
@@ -3510,6 +3573,69 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Boot auth LAST
   bootAuth();
 });
+
+// ============================================================
+// REQUEST DELETION
+// Deleted requests are archived to localStorage + Deleted sheet tab.
+// Requests sheet and actuals are updated immediately.
+// ============================================================
+
+var _pendingDeleteRef = null;
+
+function promptDeleteRequest(ref) {
+  var r = requestsStore.find(function(x){ return x.ref === ref; });
+  if (!r) return;
+  _pendingDeleteRef = ref;
+
+  var detail = document.getElementById('deleteReqDetail');
+  detail.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
+    + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Ref</div><div style="font-weight:600">#' + r.ref + '</div></div>'
+    + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Status</div><div><span class="badge ' + ({Paid:'badge-teal',Pending:'badge-gold',Draft:'badge-gray'}[r.status]||'badge-gray') + '">' + r.status + '</span></div></div>'
+    + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Project / Type</div><div>' + r.project + ' (' + (r.type||'--') + ')</div></div>'
+    + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Amount</div><div style="font-family:Playfair Display,serif;font-weight:600;color:var(--danger)">KES ' + (r.amount||0).toLocaleString() + '</div></div>'
+    + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Category / Line</div><div>' + (r.category||'--') + ' / ' + (r.costSummary||'--') + '</div></div>'
+    + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Requester</div><div>' + (r.requester||'--') + '</div></div>'
+    + '</div>';
+
+  document.getElementById('deleteReqSubtitle').textContent = 'Request will be archived. Actuals and Sheets will update.';
+  document.getElementById('deleteReqReason').value = '';
+  openModal('deleteReqModal');
+}
+
+function confirmDeleteRequest() {
+  if (!_pendingDeleteRef) return;
+  var reason = (document.getElementById('deleteReqReason').value || '').trim();
+  if (!reason) { toast('Please enter a reason for deletion'); return; }
+
+  var idx = requestsStore.findIndex(function(r){ return r.ref === _pendingDeleteRef; });
+  if (idx === -1) { closeModal('deleteReqModal'); return; }
+
+  // Archive the request
+  var deleted = requestsStore[idx];
+  deleted.deletedBy     = currentUser ? currentUser.name : 'Unknown';
+  deleted.deletedAt     = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+                        + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  deleted.deleteReason  = reason;
+
+  deletedStore.push(Object.assign({}, deleted));
+  persistDeletedToStorage();
+
+  // Remove from active requests
+  requestsStore.splice(idx, 1);
+  persistRequestsToStorage();
+
+  _pendingDeleteRef = null;
+  closeModal('deleteReqModal');
+
+  // Refresh everything + push to Sheets
+  syncAfterChange();
+  toast('Request archived');
+}
+// ============================================================
+// END REQUEST DELETION
+// ============================================================
+
 </script>
 
 <script>
@@ -3765,6 +3891,31 @@ function wrapTables() {
     <span>More</span>
   </div>
 </nav>
+
+
+<!-- Delete Request Modal -->
+<div id="deleteReqModal" class="modal-overlay" onclick="closeModalOutside(event,'deleteReqModal')">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div>
+        <strong style="color:var(--danger)">Delete Request</strong>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px" id="deleteReqSubtitle">This action archives the request</div>
+      </div>
+      <button class="close-btn" onclick="closeModal('deleteReqModal')">x</button>
+    </div>
+    <div class="modal-body">
+      <div id="deleteReqDetail" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px"></div>
+      <div class="form-group" style="margin:0">
+        <label>Reason for deletion</label>
+        <input id="deleteReqReason" type="text" placeholder="e.g. Duplicate entry, incorrect amount...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('deleteReqModal')">Cancel</button>
+      <button class="btn btn-primary" style="background:var(--danger);border-color:var(--danger)" onclick="confirmDeleteRequest()">Delete & Archive</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
