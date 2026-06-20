@@ -3147,7 +3147,7 @@ async function pullFromSheets() {
         costSummary: String(r['Cost Summary'] || r.costSummary || '').trim(),
         costItem:    String(r['Cost Item']    || r.costItem    || '').trim(),
         description: String(r['Description']  || r.description || '').trim(),
-        amount:      parseFloat(r['Amount'] || r.amount) || 0,
+        amount:      parseFloat(r['Amount (KES)'] || r['Amount'] || r.amount) || 0,
         requester:   String(r['Requester']    || r.requester   || '').trim(),
         status:      String(r['Status']       || r.status      || 'Draft').trim(),
         date:        String(r['Date']         || r.date        || '').trim(),
