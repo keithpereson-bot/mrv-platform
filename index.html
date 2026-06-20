@@ -396,6 +396,72 @@
   .alert-info { background:var(--info-lt);color:var(--info);border:1px solid rgba(37,99,235,.2); }
   .alert-warn { background:var(--warn-lt);color:var(--warn);border:1px solid rgba(217,119,6,.2); }
 
+
+  /* ── REQUEST 3-TAB SYSTEM ── */
+  .req-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .req-tab {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    text-align: left;
+    transition: all .15s;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  .req-tab::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--border);
+    transition: background .15s;
+  }
+  .req-tab:hover { border-color: var(--border-mid); box-shadow: var(--shadow); }
+  .req-tab.active { border-color: var(--amber); box-shadow: var(--shadow); }
+  .req-tab.active::before { background: var(--amber); }
+  .req-tab-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all .15s;
+  }
+  .req-tab.active .req-tab-icon { background: var(--amber); }
+  .req-tab.active .req-tab-icon svg { stroke: #fff; }
+  .req-tab-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 2px; }
+  .req-tab.active .req-tab-label { color: var(--amber); }
+  .req-tab-title { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .req-tab-badge {
+    margin-left: auto;
+    min-width: 24px; height: 24px;
+    border-radius: 12px;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 7px;
+    flex-shrink: 0;
+  }
+  .req-tab.active .req-tab-badge { background: var(--amber); color: #fff; }
+
+  @media (max-width: 768px) {
+    .req-tabs { grid-template-columns: 1fr; gap: 8px; }
+    .req-tab { padding: 12px 14px; }
+  }
+
   /* -- UTILITIES -- */
   .flex { display:flex; } .items-center { align-items:center; }
   .justify-between { justify-content:space-between; }
@@ -975,15 +1041,36 @@
     </div>
 
     <!-- Tab bar -->
-    <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px">
+    <div class="req-tabs">
       <button class="req-tab active" id="tab-drafts" onclick="switchReqTab('drafts')">
-        Requests <span class="req-tab-badge" id="badge-drafts">0</span>
+        <div class="req-tab-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
+        </div>
+        <div>
+          <div class="req-tab-label">Step 1</div>
+          <div class="req-tab-title">Requests</div>
+        </div>
+        <span class="req-tab-badge" id="badge-drafts">0</span>
       </button>
       <button class="req-tab" id="tab-queue" onclick="switchReqTab('queue')">
-        Payment Queue <span class="req-tab-badge" id="badge-queue">0</span>
+        <div class="req-tab-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+        </div>
+        <div>
+          <div class="req-tab-label">Step 2</div>
+          <div class="req-tab-title">Payment Queue</div>
+        </div>
+        <span class="req-tab-badge" id="badge-queue">0</span>
       </button>
       <button class="req-tab" id="tab-paid" onclick="switchReqTab('paid')">
-        Paid Requests <span class="req-tab-badge" id="badge-paid">0</span>
+        <div class="req-tab-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div>
+          <div class="req-tab-label">Step 3</div>
+          <div class="req-tab-title">Paid Requests</div>
+        </div>
+        <span class="req-tab-badge" id="badge-paid">0</span>
       </button>
     </div>
 
@@ -2540,9 +2627,7 @@ function approveRequest(ref) {
                    + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
   persistRequestsToStorage();
   syncAfterChange();
-  // Switch to queue tab to show where it went
-  switchReqTab('queue');
-  toast('Request approved -- moved to Payment Queue');
+  toast('Approved -- moved to Payment Queue');
 }
 
 // Step 2: Mark as Paid (Approved -> Paid, actuals update NOW)
@@ -2567,8 +2652,6 @@ function confirmSignAndApprove() {
   // syncAfterChange pushes full actuals recalc (only Paid requests count)
   syncAfterChange();
 
-  // Switch to paid tab
-  switchReqTab('paid');
   toast('Payment confirmed & signed');
 }
 
