@@ -614,9 +614,12 @@
   #loginScreen {
     position:fixed;inset:0;z-index:9999;
     background:linear-gradient(135deg, var(--ink) 0%, #1a2d47 60%, #0d1f35 100%);
-    display:flex;align-items:center;justify-content:center;
+    display:none;align-items:center;justify-content:center;
     font-family:'Inter',sans-serif;
     transition:opacity .25s;
+  }
+  #loginScreen.visible {
+    display:flex;
   }
   #loginScreen::before {
     content:'';position:absolute;inset:0;
@@ -3542,40 +3545,36 @@ async function hashPassword(pass) {
 // -- Show / hide login screen -----------------------------------
 function showLoginScreen() {
   const el = document.getElementById('loginScreen');
+  el.style.display = 'flex';
+  el.classList.add('visible');
   el.classList.remove('hidden');
-  setTimeout(() => { try { document.getElementById('loginEmail').focus(); } catch(e){} }, 150);
+  setTimeout(function(){ try { document.getElementById('loginEmail').focus(); } catch(e){} }, 150);
 }
 
 function hideLoginScreen() {
-  document.getElementById('loginScreen').classList.add('hidden');
+  const el = document.getElementById('loginScreen');
+  el.style.display = 'none';
+  el.classList.remove('visible');
+  el.classList.add('hidden');
 }
 
 // -- Called from the single DOMContentLoaded --------------------
 function bootAuth() {
-  // Clear any ghost session left from when login was removed
-  // (those sessions have blank email -- they were auto-generated)
+  // Always clear ghost sessions (blank email = old auto-login artifact)
   try {
     const raw  = localStorage.getItem(SESSION_KEY);
     const sess = raw ? JSON.parse(raw) : null;
-    if (sess && sess.user) {
-      const email = (sess.user.email || '').trim();
-      // Reject ghost sessions: no email, or expired, or the old default 'User'
-      const isGhost = !email || email === '' || sess.user.name === 'User';
-      const isExpired = !sess.expires || sess.expires <= Date.now();
-      if (!isGhost && !isExpired) {
-        currentUser = sess.user;
-        applyRole(currentUser.role);
-        updateNavUser();
-        hideLoginScreen();
-        return;
-      }
+    const email = sess && sess.user ? (sess.user.email || '').trim() : '';
+    const valid = email && sess.expires && sess.expires > Date.now();
+    if (valid) {
+      currentUser = sess.user;
+      applyRole(currentUser.role);
+      updateNavUser();
+      hideLoginScreen();
+      return;
     }
-    // Remove any invalid session
-    localStorage.removeItem(SESSION_KEY);
-  } catch(e) {
-    localStorage.removeItem(SESSION_KEY);
-  }
-  // Show login screen
+  } catch(e) {}
+  localStorage.removeItem(SESSION_KEY);
   showLoginScreen();
 }
 
