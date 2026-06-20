@@ -905,11 +905,11 @@
     <div class="two-col">
       <div class="card">
         <div class="card-header"><div class="card-title">Approved Projects</div><span class="badge badge-teal" id="dashProjCount"></span></div>
-        <div class="card-body" style="padding:0"><table><thead><tr><th>Project</th><th>Department</th><th>Total Budget</th><th>Loaded</th><th>Utilized</th></tr></thead><tbody id="dashProjTable"></tbody></table></div>
+        <div class="card-body" style="padding:0"><table><thead><tr><th>Project</th><th>Type</th><th>Dept / Country</th><th>Budgeted (KES)</th><th>Utilised (KES)</th><th>Usage</th></tr></thead><tbody id="dashProjTable"></tbody></table></div>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Recent Payments</div><span class="badge badge-purple">This Month</span></div>
-        <div class="card-body" style="padding:0"><table><thead><tr><th>Description</th><th>Project</th><th>Amount</th><th>Status</th></tr></thead><tbody id="dashPaymentsTable"></tbody></table></div>
+        <div class="card-body" style="padding:0"><table><thead><tr><th>Ref</th><th>Project</th><th>Category / Line</th><th>Amount (KES)</th><th>Status</th></tr></thead><tbody id="dashPaymentsTable"></tbody></table></div>
       </div>
     </div>
     <div class="card">
@@ -974,7 +974,7 @@
     <div class="card">
       <div class="card-header"><div class="card-title">Payment Requests</div><div class="flex gap-2"><button class="btn btn-secondary btn-sm" onclick="downloadRequestsPDF()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download PDF</button><button class="btn btn-secondary btn-sm" onclick="openBulkApprove()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M20 19.5v.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8.5L18 5.5"/><path d="M15 2v4h4"/><path d="m13.5 15.5 3-3-1.5-1.5-3 3 1.5 1.5z"/><path d="m9 21 1.5-1.5-1.5-1.5L7.5 19.5 9 21z"/></svg> Sign All</button><button class="btn btn-primary btn-sm" onclick="openNewRequestModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New Request</button></div></div>
       <div class="card-body" style="padding:0">
-        <table><thead><tr><th>Request #</th><th>Project</th><th>Description</th><th>Amount</th><th>Requester</th><th>Status</th><th>Action</th></tr></thead>
+        <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount (KES)</th><th>Requester</th><th>Status</th><th>Action</th></tr></thead>
         <tbody id="requestsBody">
           <tr><td class="text-muted">#REQ-001</td><td>Nairobi Field Ops</td><td>Field allowances</td><td class="currency">450,000</td><td>J. Kamau</td><td><span class="badge badge-teal">Paid</span></td><td><button class="btn btn-ghost btn-sm" onclick="showReceipt('REQ-001','450000','J. Kamau')">Receipt</button></td></tr>
           <tr><td class="text-muted">#REQ-002</td><td>Mombasa Survey</td><td>Transport costs</td><td class="currency">320,000</td><td>A. Ali</td><td><span class="badge badge-teal">Paid</span></td><td><button class="btn btn-ghost btn-sm" onclick="showReceipt('REQ-002','320000','A. Ali')">Receipt</button></td></tr>
@@ -1064,7 +1064,7 @@
     <div class="card">
       <div class="card-header"><div class="card-title">Reconciliation Summary -- June 2026</div><button class="btn btn-secondary btn-sm" onclick="toast('PDF report downloaded!')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export PDF</button></div>
       <div class="card-body" style="padding:0">
-        <table><thead><tr><th>Project</th><th>Dept</th><th>Total Budget</th><th>Money-In</th><th>Payments Made</th><th>Balance</th><th>Status</th></tr></thead>
+        <table><thead><tr><th>Project</th><th>Type</th><th>Dept</th><th>Budgeted (KES)</th><th>Paid Out (KES)</th><th>Remaining (KES)</th><th>Usage</th></tr></thead>
         <tbody id="reconTable"></tbody></table>
       </div>
     </div>
@@ -1551,224 +1551,224 @@ let requestsStore = [
 const fmt = n => n.toLocaleString();
 const fmtK = n => n >= 1000000 ? 'KES '+(n/1000000).toFixed(1)+'M' : n >= 1000 ? 'KES '+(n/1000).toFixed(0)+'K' : 'KES '+n;
 
-function projectNames() { return budgetStore.map(p => p.name); }
+// ============================================================
+// CORE CALCULATION LAYER
+// All figures derive from budgetLines + requestsStore.
+// Never use budgetStore.loaded for utilisation -- always sum requestsStore.
+// ============================================================
+
+// Total budgeted across all lines (or filtered by project/type)
+function totalBudgeted(proj, type) {
+  return budgetLines
+    .filter(l => (!proj || l.project === proj) && (!type || l.type === type))
+    .reduce((s, l) => s + l.budgetedAmount, 0);
+}
+
+// Total actuals: sum of ALL Paid requests matching proj/type (or all if omitted)
+function totalActuals(proj, type) {
+  return requestsStore
+    .filter(r => r.status === 'Paid'
+      && (!proj || r.project === proj)
+      && (!type  || r.type   === type))
+    .reduce((s, r) => s + r.amount, 0);
+}
+
+// Actuals for a specific line (project + type + category + costSummary)
+function getActualForLine(proj, type, cat, summary) {
+  return requestsStore
+    .filter(r => r.status === 'Paid'
+      && r.project     === proj
+      && r.type        === type
+      && r.category    === cat
+      && r.costSummary === summary)
+    .reduce((s, r) => s + r.amount, 0);
+}
+
+// Total funds loaded (from fundsLedger DOM or stored fundsStore)
+function totalLoaded() {
+  var loaded = 0;
+  document.querySelectorAll('#fundsLedger tr').forEach(function(tr) {
+    var cells = tr.querySelectorAll('td');
+    if (cells.length >= 2) {
+      var amt = parseFloat(String(cells[1].textContent).replace(/[^0-9.-]/g,'')) || 0;
+      loaded += amt;
+    }
+  });
+  // Fallback: if no fundsLedger rows, use total budget as proxy
+  return loaded || totalBudgeted();
+}
+
+// Count of paid / pending / draft requests
+function reqCounts() {
+  var paid = 0, pending = 0, draft = 0;
+  requestsStore.forEach(function(r) {
+    if (r.status === 'Paid')    paid++;
+    else if (r.status === 'Pending') pending++;
+    else draft++;
+  });
+  return { paid:paid, pending:pending, draft:draft };
+}
+
+// Unique project+type groups
+function getProjectGroups() {
+  var seen = {};
+  var groups = [];
+  budgetLines.forEach(function(l) {
+    var k = l.project + '||' + l.type;
+    if (!seen[k]) {
+      seen[k] = true;
+      groups.push({ project:l.project, type:l.type, dept:l.dept, country:l.country, month:l.month, year:l.year });
+    }
+  });
+  return groups;
+}
+
+function projectNames() { return getProjects(); }
 
 function populateSelect(id, options, includeBlank) {
   const el = document.getElementById(id);
   if (!el) return;
-  el.innerHTML = (includeBlank ? '<option value="">-- Select --</option>' : '') +
-    options.map(o => `<option value="${o}">${o}</option>`).join('');
+  el.innerHTML = (includeBlank ? '<option value="">-- All --</option>' : '') +
+    options.map(o => '<option value="'+o+'">'+o+'</option>').join('');
 }
 
-function projectUtilised(name) {
-  return requestsStore.filter(r => r.project === name && r.status === 'Paid')
-    .reduce((s, r) => s + r.amount, 0);
-}
-
-// -- DATA-DRIVEN RENDERS ------------------------------------
-
+// ============================================================
+// DASHBOARD
+// ============================================================
 function renderDashboard() {
-  const totalBudget = budgetStore.reduce((s,p) => s+p.totalBudget, 0);
-  const totalLoaded = budgetStore.reduce((s,p) => s+p.loaded, 0);
-  const totalUtil   = budgetStore.reduce((s,p) => s+projectUtilised(p.name), 0);
-  const balance     = totalLoaded - totalUtil;
+  var budgeted = totalBudgeted();
+  var utilised = totalActuals();
+  var loaded   = totalLoaded();
+  var balance  = loaded - utilised;
+  var counts   = reqCounts();
+  var paidReqs = requestsStore.filter(function(r){ return r.status === 'Paid'; });
 
-  document.getElementById('dashStats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Total Budget</div><div class="stat-value teal">${fmtK(totalBudget)}</div><div class="stat-sub">${budgetStore.length} projects approved by SMT</div></div>
-    <div class="stat-card"><div class="stat-label">Money In</div><div class="stat-value teal">${fmtK(totalLoaded)}</div><div class="stat-sub">Loaded to platform</div></div>
-    <div class="stat-card"><div class="stat-label">Utilised</div><div class="stat-value purple">${fmtK(totalUtil)}</div><div class="stat-sub">via ${requestsStore.filter(r=>r.status==='Paid').length} paid requests</div></div>
-    <div class="stat-card"><div class="stat-label">Advance Balance</div><div class="stat-value gold">${fmtK(balance)}</div><div class="stat-sub">Pending reconciliation</div></div>`;
+  // Stats
+  document.getElementById('dashStats').innerHTML =
+    '<div class="stat-card"><div class="stat-label">Total Budget</div>'
+      +'<div class="stat-value teal">'+fmtK(budgeted)+'</div>'
+      +'<div class="stat-sub">'+budgetLines.length+' budget lines across '+getProjects().length+' project(s)</div></div>'
+    +'<div class="stat-card"><div class="stat-label">Money In (Loaded)</div>'
+      +'<div class="stat-value teal">'+fmtK(loaded)+'</div>'
+      +'<div class="stat-sub">Available for disbursement</div></div>'
+    +'<div class="stat-card"><div class="stat-label">Utilised</div>'
+      +'<div class="stat-value purple">'+fmtK(utilised)+'</div>'
+      +'<div class="stat-sub">via '+counts.paid+' approved request'+(counts.paid===1?'':'s')+'</div></div>'
+    +'<div class="stat-card"><div class="stat-label">Advance Balance</div>'
+      +'<div class="stat-value gold">'+fmtK(balance)+'</div>'
+      +'<div class="stat-sub">'+(counts.pending+counts.draft)+' request(s) pending approval</div></div>';
 
-  document.getElementById('dashProjCount').textContent = budgetStore.length + ' Active';
-  document.getElementById('dashProjTable').innerHTML = budgetStore.map(p => {
-    const util = projectUtilised(p.name);
-    const pct = p.loaded ? Math.round(util/p.loaded*100) : 0;
-    return `<tr>
-      <td class="font-600">${p.name}</td>
-      <td class="text-muted text-sm">${p.dept}</td>
-      <td class="currency">${fmt(p.totalBudget)}</td>
-      <td class="currency">${fmt(p.loaded)}</td>
-      <td><span style="color:var(--purple);font-weight:600">${fmt(util)}</span> <span class="text-muted text-sm">(${pct}%)</span></td>
-    </tr>`;}).join('');
-
-  // Recent payments (last 4 from requestsStore)
-  document.getElementById('dashPaymentsTable').innerHTML = [...requestsStore].slice(-5).reverse().map(r => {
-    const cls = {Paid:'badge-teal',Pending:'badge-gold',Draft:'badge-gray'}[r.status]||'badge-gray';
-    return `<tr><td>${r.description}</td><td class="text-muted text-sm">${r.project}</td><td class="currency">${fmt(r.amount)}</td><td><span class="badge ${cls}">${r.status}</span></td></tr>`;
+  // Project summary table (one row per project+type group)
+  var groups = getProjectGroups();
+  document.getElementById('dashProjCount').textContent = groups.length + ' Active';
+  document.getElementById('dashProjTable').innerHTML = groups.map(function(g) {
+    var budg = totalBudgeted(g.project, g.type);
+    var util = totalActuals(g.project, g.type);
+    var pct  = budg ? Math.min(100, Math.round(util/budg*100)) : 0;
+    var pc   = pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--success)';
+    return '<tr>'
+      +'<td class="font-600">'+g.project+'</td>'
+      +'<td><span class="badge badge-gray">'+g.type+'</span></td>'
+      +'<td class="text-muted text-sm">'+g.dept+' &middot; '+g.country+'</td>'
+      +'<td class="currency">'+fmt(budg)+'</td>'
+      +'<td class="currency" style="color:var(--purple);font-weight:600">'+fmt(util)+'</td>'
+      +'<td><div style="display:flex;align-items:center;gap:8px">'
+        +'<div style="width:80px;height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden">'
+          +'<div style="width:'+pct+'%;height:100%;background:'+pc+'"></div>'
+        +'</div>'
+        +'<span class="text-sm text-muted">'+pct+'%</span>'
+      +'</div></td>'
+    +'</tr>';
   }).join('');
 
-  // Progress bars
-  document.getElementById('dashProgress').innerHTML = budgetStore.map(p => {
-    const util = projectUtilised(p.name);
-    const pct = p.loaded ? Math.round(util/p.loaded*100) : 0;
-    return `<div>
-      <div class="flex justify-between mb-3">
-        <span class="font-600 text-sm">${p.name}</span>
-        <span class="text-sm text-muted">KES ${fmt(util)} utilised of ${fmt(p.loaded)} loaded  .  <strong>${pct}%</strong></span>
-      </div>
-      <div class="progress-wrap"><div class="progress-fill" style="width:${pct}%"></div></div>
-    </div>`;}).join('');
+  // Recent payments (last 6, newest first)
+  var recent = [...requestsStore].reverse().slice(0, 6);
+  document.getElementById('dashPaymentsTable').innerHTML = recent.map(function(r) {
+    var cls = {Paid:'badge-teal',Pending:'badge-gold',Draft:'badge-gray'}[r.status]||'badge-gray';
+    var label = (r.category && r.costSummary) ? r.category+' / '+r.costSummary : r.description;
+    return '<tr>'
+      +'<td class="text-muted text-sm">#'+r.ref+'</td>'
+      +'<td>'+r.project+(r.type?' ('+r.type+')':'')+'</td>'
+      +'<td class="text-muted text-sm">'+label+'</td>'
+      +'<td class="currency">'+fmt(r.amount)+'</td>'
+      +'<td><span class="badge '+cls+'">'+r.status+'</span></td>'
+    +'</tr>';
+  }).join('');
+
+  // Progress bars per project+type
+  document.getElementById('dashProgress').innerHTML = groups.map(function(g) {
+    var budg = totalBudgeted(g.project, g.type);
+    var util = totalActuals(g.project, g.type);
+    var pct  = budg ? Math.min(100, Math.round(util/budg*100)) : 0;
+    var pc   = pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--amber)';
+    return '<div style="margin-bottom:14px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">'
+        +'<span class="font-600 text-sm">'+g.project+' ('+g.type+')</span>'
+        +'<span class="text-sm text-muted">KES '+fmt(util)+' of '+fmt(budg)+' &nbsp; <strong>'+pct+'%</strong></span>'
+      +'</div>'
+      +'<div class="progress-wrap"><div class="progress-fill" style="width:'+pct+'%;background:'+pc+'"></div></div>'
+    +'</div>';
+  }).join('');
 }
 
-function renderBudgetView() {
-  if (gsWebAppUrl && gsConnected) pullBudgetLinesFromSheets();
-
-  var groups = {};
-  budgetLines.forEach(function(l) {
-    var key = l.project + '||' + l.type;
-    if (!groups[key]) groups[key] = { project:l.project, type:l.type, dept:l.dept, country:l.country, month:l.month, year:l.year, lines:[] };
-    groups[key].lines.push(l);
-  });
-
-  var tbody = document.getElementById('budgetDetailBody');
-  tbody.innerHTML = '';
-
-  Object.values(groups).forEach(function(g, gi) {
-    var gid    = 'bg' + gi;
-    var total  = g.lines.reduce(function(s,l){ return s + l.budgetedAmount; }, 0);
-    var actual = g.lines.reduce(function(s,l){ return s + getActualForLine(g.project, g.type, l.category, l.costSummary); }, 0);
-    var remain = total - actual;
-    var pct    = total ? Math.round(actual / total * 100) : 0;
-    var pc     = pct > 85 ? 'var(--danger)' : pct > 60 ? 'var(--warn)' : 'var(--success)';
-    var rcol   = remain < 0 ? '#fca5a5' : '#d1fae5';
-
-    // Build header row using DOM (no string quoting issues)
-    var htr = document.createElement('tr');
-    htr.style.cssText = 'background:var(--ink);color:#fff;cursor:pointer;user-select:none';
-    htr.addEventListener('click', (function(id){ return function(){ toggleBudgetGroup(id); }; })(gid));
-    htr.innerHTML = [
-      '<td colspan="5" style="padding:11px 16px;font-weight:600;font-size:13px">',
-        '<span id="' + gid + '-arr" style="margin-right:8px;font-size:11px">&#9660;</span>',
-        '<span style="color:var(--amber)">' + g.project + '</span>',
-        ' &middot; ' + g.type,
-        ' &middot; <span style="opacity:.65;font-size:11.5px;font-weight:400">' + g.dept + ' &middot; ' + g.country + ' &middot; ' + g.month + ' ' + g.year + '</span>',
-      '</td>',
-      '<td style="padding:11px 16px;text-align:right" class="js-currency">' + total.toLocaleString() + '</td>',
-      '<td style="padding:11px 16px;text-align:right;color:#86efac" class="js-currency">' + actual.toLocaleString() + '</td>',
-      '<td style="padding:11px 16px;text-align:right;color:' + rcol + '" class="js-currency">' + remain.toLocaleString() + '</td>',
-      '<td style="padding:11px 16px">',
-        '<div style="display:flex;align-items:center;gap:6px">',
-          '<div style="flex:1;height:5px;background:rgba(255,255,255,.2);border-radius:3px;overflow:hidden">',
-            '<div style="width:' + Math.min(100, pct) + '%;height:100%;background:' + pc + '"></div>',
-          '</div>',
-          '<span style="font-size:11px">' + pct + '%</span>',
-        '</div>',
-      '</td>'
-    ].join('');
-    tbody.appendChild(htr);
-
-    // Line item rows (hidden by default)
-    g.lines.forEach(function(l) {
-      var a   = getActualForLine(g.project, g.type, l.category, l.costSummary);
-      var r   = l.budgetedAmount - a;
-      var p   = l.budgetedAmount ? Math.min(100, Math.round(a / l.budgetedAmount * 100)) : 0;
-      var c   = p > 85 ? 'var(--danger)' : p > 60 ? 'var(--warn)' : 'var(--teal)';
-      var rc  = r < 0 ? 'var(--danger)' : 'inherit';
-
-      var dtr = document.createElement('tr');
-      dtr.className = 'budgetLine-' + gid;
-      dtr.style.display = 'none';
-      dtr.innerHTML = [
-        '<td style="padding:9px 16px 9px 30px;font-size:12px;color:var(--muted)">' + l.category + '</td>',
-        '<td style="padding:9px 16px;font-weight:500">' + l.costSummary + '</td>',
-        '<td style="padding:9px 16px;font-size:12px;color:var(--muted)">' + l.costItem + '</td>',
-        '<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">' + l.unitOfMeasure + '</td>',
-        '<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">' + l.currency + '</td>',
-        '<td style="padding:9px 16px;text-align:right" class="js-currency">' + l.budgetedAmount.toLocaleString() + '</td>',
-        '<td style="padding:9px 16px;text-align:right;color:var(--success)" class="js-currency">' + a.toLocaleString() + '</td>',
-        '<td style="padding:9px 16px;text-align:right;color:' + rc + '" class="js-currency">' + r.toLocaleString() + '</td>',
-        '<td style="padding:9px 16px">',
-          '<div style="display:flex;align-items:center;gap:6px">',
-            '<div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">',
-              '<div style="width:' + p + '%;height:100%;background:' + c + '"></div>',
-            '</div>',
-            '<span style="font-size:10px;color:var(--muted)">' + p + '%</span>',
-          '</div>',
-        '</td>'
-      ].join('');
-      tbody.appendChild(dtr);
-    });
-  });
-}
-
-function toggleBudgetGroup(gid) {
-  var rows = document.querySelectorAll('.budgetLine-'+gid);
-  var arr  = document.getElementById(gid+'-arr');
-  var open = rows.length && rows[0].style.display !== 'none';
-  rows.forEach(function(r){ r.style.display = open ? 'none' : ''; });
-  if (arr) arr.innerHTML = open ? '&#9658;' : '&#9660;';
-}
-
-// Pull budget lines from Sheets (Budgets tab is read-only -- manually entered)
-async function pullBudgetLinesFromSheets() {
-  if (!gsWebAppUrl) return;
-  try {
-    var res = await gasCall({ action:'getBudgets' });
-    if (res && res.ok && res.data && res.data.length > 0) {
-      budgetLines = res.data.map(function(r){
-        return {
-          project:       String(r['Project']        || r.project        || ''),
-          type:          String(r['Type']            || r.type           || ''),
-          year:          parseInt(r['Year']          || r.year)          || 2026,
-          month:         String(r['Month']           || r.month          || ''),
-          dept:          String(r['Department']      || r.dept           || ''),
-          country:       String(r['Country']         || r.country        || ''),
-          costItem:      String(r['Cost Item']       || r.costItem       || ''),
-          unitOfMeasure: String(r['Unit of Measure'] || r.unitOfMeasure  || ''),
-          category:      String(r['Category']        || r.category       || ''),
-          costSummary:   String(r['Cost Summary']    || r.costSummary    || ''),
-          budgetedAmount:parseFloat(r['Amount']      || r.budgetedAmount || 0),
-          currency:      String(r['Currency']        || r.currency       || 'KES'),
-          actual:        0,
-        };
-      }).filter(function(l){ return l.project && l.category; });
-      budgetStore = buildBudgetStore();
-    }
-  } catch(e) { console.error('pullBudgetLines:', e); }
-}
-
-function toggleLineItems(id) {
-  const row = document.getElementById(id);
-  row.style.display = row.style.display === 'none' ? '' : 'none';
-}
-
+// ============================================================
+// RECONCILIATION
+// ============================================================
 function renderReconciliation() {
-  const totalLoaded = budgetStore.reduce((s,p)=>s+p.loaded,0);
-  const totalPaid   = requestsStore.filter(r=>r.status==='Paid').reduce((s,r)=>s+r.amount,0);
-  const balance     = totalLoaded - totalPaid;
+  var budgeted = totalBudgeted();
+  var utilised = totalActuals();
+  var loaded   = totalLoaded();
+  var balance  = loaded - utilised;
+  var paidReqs = requestsStore.filter(function(r){ return r.status==='Paid'; });
+  var pendReqs = requestsStore.filter(function(r){ return r.status==='Pending'||r.status==='Draft'; });
 
-  document.getElementById('reconStats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Total Money-In</div><div class="stat-value teal">${fmtK(totalLoaded)}</div><div class="stat-sub">Loaded this cycle</div></div>
-    <div class="stat-card"><div class="stat-label">Total Payments Made</div><div class="stat-value purple">${fmtK(totalPaid)}</div><div class="stat-sub">Via approved requests</div></div>
-    <div class="stat-card"><div class="stat-label">Advance Balance</div><div class="stat-value gold">${fmtK(balance)}</div><div class="stat-sub">To be closed or carried over</div></div>`;
+  document.getElementById('reconStats').innerHTML =
+    '<div class="stat-card"><div class="stat-label">Total Budget</div>'
+      +'<div class="stat-value teal">'+fmtK(budgeted)+'</div>'
+      +'<div class="stat-sub">SMT approved across all projects</div></div>'
+    +'<div class="stat-card"><div class="stat-label">Money Loaded</div>'
+      +'<div class="stat-value teal">'+fmtK(loaded)+'</div>'
+      +'<div class="stat-sub">Disbursed to field wallets</div></div>'
+    +'<div class="stat-card"><div class="stat-label">Total Paid Out</div>'
+      +'<div class="stat-value purple">'+fmtK(utilised)+'</div>'
+      +'<div class="stat-sub">'+paidReqs.length+' approved requests</div></div>'
+    +'<div class="stat-card"><div class="stat-label">Advance Balance</div>'
+      +'<div class="stat-value gold" style="color:'+( balance<0?'var(--danger)':'')+'">'+fmtK(balance)+'</div>'
+      +'<div class="stat-sub">'+pendReqs.length+' pending / draft</div></div>';
 
-  document.getElementById('reconTable').innerHTML = budgetStore.map(p => {
-    const util = projectUtilised(p.name);
-    const bal  = p.loaded - util;
-    return `<tr>
-      <td class="font-600">${p.name}</td>
-      <td class="text-muted text-sm">${p.dept}</td>
-      <td class="currency">${fmt(p.totalBudget)}</td>
-      <td class="currency">${fmt(p.loaded)}</td>
-      <td class="currency" style="color:var(--purple);font-weight:600">${fmt(util)}</td>
-      <td class="currency font-600" style="color:${bal<0?'var(--danger)':'var(--gold)'}">${fmt(bal)}</td>
-      <td><span class="badge ${p.closed?'badge-teal':'badge-gold'}">${p.closed?'Closed':'Open'}</span></td>
-    </tr>`;}).join('');
+  // Reconciliation table: one row per project+type group
+  var groups = getProjectGroups();
+  document.getElementById('reconTable').innerHTML = groups.map(function(g) {
+    var budg = totalBudgeted(g.project, g.type);
+    var util = totalActuals(g.project, g.type);
+    var bal  = budg - util;
+    var pct  = budg ? Math.min(100, Math.round(util/budg*100)) : 0;
+    return '<tr>'
+      +'<td class="font-600">'+g.project+'</td>'
+      +'<td><span class="badge badge-gray">'+g.type+'</span></td>'
+      +'<td class="text-muted text-sm">'+g.dept+'</td>'
+      +'<td class="currency">'+fmt(budg)+'</td>'
+      +'<td class="currency" style="color:var(--purple);font-weight:600">'+fmt(util)+'</td>'
+      +'<td class="currency font-600" style="color:'+( bal<0?'var(--danger)':'var(--success)')+'">'+fmt(bal)+'</td>'
+      +'<td><span class="badge '+(pct>=100?'badge-danger':pct>60?'badge-gold':'badge-teal')+'">'+pct+'%</span></td>'
+    +'</tr>';
+  }).join('');
 
-  populateSelect('reconProjectSelect', projectNames(), true);
+  populateSelect('reconProjectSelect', getProjects(), true);
 }
 
+// ============================================================
+// DROPDOWNS
+// ============================================================
 function populateAllDropdowns() {
-  // Project names for load funds and expense forms
-  const names = getProjects();
-  populateSelect('loadProjectSelect', names, false);
-  populateSelect('expProjectSelect', names, false);
-  // expense request refs
-  const refs = requestsStore.map(r=>'#'+r.ref);
+  var projs = getProjects();
+  populateSelect('loadProjectSelect', projs, false);
+  populateSelect('expProjectSelect', projs, false);
+  populateSelect('reconProjectSelect', projs, true);
+  var refs = requestsStore.map(function(r){ return '#'+r.ref; });
   populateSelect('expReqSelect', refs, false);
-  // recon dropdown
-  populateSelect('reconProjectSelect', names, true);
 }
+
 
 // -- PDF GENERATION -----------------------------------------
 async function downloadRequestsPDF() {
