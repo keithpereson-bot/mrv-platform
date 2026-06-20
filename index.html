@@ -1822,8 +1822,10 @@ function renderBudgetView() {
 
     // Header row — light on dark, good contrast
     var htr = document.createElement('tr');
-    htr.style.cssText = 'background:#1a2f45;color:#fff;cursor:pointer;user-select:none;border-bottom:2px solid #0f1c2e';
+    htr.style.cssText = 'color:#fff;cursor:pointer;user-select:none;border-bottom:2px solid #0f1c2e';
+    htr.className = 'budget-header';
     htr.addEventListener('click', (function(id){ return function(){ toggleBudgetGroup(id); }; })(gid));
+    htr.style.background = '#1a2f45';
     htr.innerHTML =
       '<td colspan="5" style="padding:12px 16px;font-weight:600;font-size:13px;color:#fff">'
         + '<span id="' + gid + '-arr" style="margin-right:10px;font-size:10px;opacity:.7">&#9658;</span>'
@@ -1856,7 +1858,7 @@ function renderBudgetView() {
       var c  = p>85?'var(--danger)':p>60?'var(--warn)':'var(--teal)';
 
       var dtr = document.createElement('tr');
-      dtr.className = 'budgetLine-' + gid;
+      dtr.className = 'budgetLine-' + gid + ' budget-detail';
       dtr.style.display = 'none';
       dtr.innerHTML =
         '<td style="padding:9px 16px 9px 30px;font-size:12px;color:var(--muted)">' + (l.category||'') + '</td>'
