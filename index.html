@@ -976,7 +976,7 @@
       <div class="card-body" style="padding:0">
         <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount (KES)</th><th>Requester</th><th>Status</th><th>Action</th></tr></thead>
         <tbody id="requestsBody">
-          <tr><td class="text-muted">#REQ-001</td><td>Nairobi Field Ops</td><td>Field allowances</td><td class="currency">450,000</td><td>J. Kamau</td><td><span class="badge badge-teal">Paid</span></td><td><button class="btn btn-ghost btn-sm" onclick="showReceipt('REQ-001','450000','J. Kamau')">Receipt</button></td></tr>
+
           <tr><td class="text-muted">#REQ-002</td><td>Mombasa Survey</td><td>Transport costs</td><td class="currency">320,000</td><td>A. Ali</td><td><span class="badge badge-teal">Paid</span></td><td><button class="btn btn-ghost btn-sm" onclick="showReceipt('REQ-002','320000','A. Ali')">Receipt</button></td></tr>
           <tr><td class="text-muted">#REQ-003</td><td>Nairobi Field Ops</td><td>Stationery purchase</td><td class="currency">85,000</td><td>M. Wanjiku</td><td><span class="badge badge-gold">Pending</span></td><td><button class="btn btn-primary btn-sm" onclick="openSignAndApprove(this,'REQ-003','M. Wanjiku')">Sign & Approve</button></td></tr>
           <tr><td class="text-muted">#REQ-004</td><td>Kisumu Training</td><td>Venue hire</td><td class="currency">390,000</td><td>P. Otieno</td><td><span class="badge badge-gray">Draft</span></td><td><button class="btn btn-secondary btn-sm" onclick="openSignAndApprove(this,'REQ-004','P. Otieno')">Sign & Approve</button></td></tr>
@@ -1532,20 +1532,29 @@ function persistSigsToStorage() {
   try { localStorage.setItem('mrv_saved_signatures', JSON.stringify(savedSigs)); } catch(e) {}
 }
 let savedSigs = loadSigsFromStorage();
-let reqCounter = 5;
+// Central requests store -- Sheets is source of truth, localStorage is cache
+function loadRequestsFromStorage() {
+  try { var s = localStorage.getItem('mrv_requests'); return s ? JSON.parse(s) : []; }
+  catch(e) { return []; }
+}
+function persistRequestsToStorage() {
+  try { localStorage.setItem('mrv_requests', JSON.stringify(requestsStore)); } catch(e) {}
+}
+let requestsStore = loadRequestsFromStorage();
+
+// reqCounter always derived from current store (declared AFTER requestsStore)
+function calcReqCounter() {
+  if (!requestsStore || !requestsStore.length) return 0;
+  return Math.max.apply(null, requestsStore.map(function(r){
+    return parseInt((r.ref||'').replace(/[^0-9]/g,'')) || 0;
+  }));
+}
+let reqCounter = calcReqCounter();
 let activeSignRowBtn = null;
 let activeSignRef = '';
 let pendingModalSig = null;
 let pendingExpSig = null;
 
-// Central requests store -- each request maps to a budget line
-let requestsStore = [
-  { ref:'REQ-001', project:'GS5642', type:'Usage', category:'Field', costSummary:'Transport', costItem:'Enumerator Field Transport', description:'Field transport June', amount:120000, requester:'J. Kamau', status:'Paid',    sigDataUrl:null, sigLabel:'J. Kamau', sigTime:'04 Jun 2026 09:14', date:'04 Jun 2026' },
-  { ref:'REQ-002', project:'GS5642', type:'KPT',   category:'Field', costSummary:'Stipend',   costItem:'Enumerator Stipend',          description:'Enumerator stipends',  amount:150000, requester:'A. Ali',   status:'Paid',    sigDataUrl:null, sigLabel:'A. Ali',   sigTime:'05 Jun 2026 11:30', date:'05 Jun 2026' },
-  { ref:'REQ-003', project:'GS5642', type:'Usage', category:'Training', costSummary:'Venue Hire', costItem:'Enumerator Training Venue', description:'Training venue deposit', amount:20000, requester:'M. Wanjiku', status:'Pending', sigDataUrl:null, sigLabel:null, sigTime:null, date:'06 Jun 2026' },
-  { ref:'REQ-004', project:'GS5642', type:'KPT',   category:'Field', costSummary:'Transport', costItem:'Enumerator Field Transport Usage', description:'Field ops transport', amount:80000, requester:'P. Otieno', status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:'07 Jun 2026' },
-  { ref:'REQ-005', project:'GS5642', type:'KPT',   category:'Field', costSummary:'Accommodation', costItem:'Coordinator spot checks accommodation', description:'Spot check accommodation', amount:16000, requester:'A. Ali', status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:'07 Jun 2026' },
-];
 
 // -- HELPERS ------------------------------------------------
 const fmt = n => n.toLocaleString();
@@ -2438,6 +2447,7 @@ function confirmSignAndApprove() {
   const amt = entry ? entry.amount : 0;
   activeSignRowBtn.outerHTML = `<button class="btn btn-ghost btn-sm" onclick="showReceipt('${ref}','${amt}','${sigLabel}')">Receipt</button>`;
   closeModal('signApproveModal');
+  persistRequestsToStorage();   // keep localStorage in sync
   renderDashboard();
   // Refresh budget view so actuals update immediately
   if (document.getElementById('view-budgets').classList.contains('active')) {
@@ -2649,6 +2659,7 @@ function submitRequest() {
     status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today
   });
   rebuildRequestsTable();
+  persistRequestsToStorage();   // keep localStorage in sync
   renderDashboard();
   populateAllDropdowns();
   closeModal('requestModal');
@@ -2901,8 +2912,8 @@ async function pullFromSheets() {
       })).filter(r => r.ref);
       if (imported.length > 0) {
         requestsStore = imported;
-        const nums = imported.map(r => parseInt(r.ref.replace(/\D/g,'')) || 0);
-        reqCounter = Math.max(...nums, reqCounter);
+        reqCounter = calcReqCounter();
+        persistRequestsToStorage();  // cache for offline use
         rebuildRequestsTable();
       }
     }
@@ -3403,22 +3414,7 @@ async function pullUsersFromSheets() {
 // ==============================================================
 
 // -- Single consolidated DOMContentLoaded -------------------
-document.addEventListener('DOMContentLoaded', () => {
-  // Restore Web App URL and connected state
-  if (gsWebAppUrl) {
-    document.getElementById('webAppUrl').value = gsWebAppUrl;
-    // Restore the connected UI without re-pinging (user already tested this)
-    document.getElementById('connStatusBadge').className = 'badge badge-teal';
-    document.getElementById('connStatusBadge').textContent = 'OK Connected';
-    document.getElementById('connSuccessMsg').textContent = 'Reconnected from saved URL';
-    document.getElementById('connSuccessUrl').textContent = gsWebAppUrl;
-    document.getElementById('connSuccessBox').style.display = 'flex';
-    document.getElementById('disconnectBtn').style.display = '';
-    document.getElementById('syncControlCard').style.cssText = '';
-    updateSheetStatusPill(true);
-    // Pull fresh data silently in the background
-    setTimeout(() => pullFromSheets().catch(()=>{}), 1000);
-  }
+document.addEventListener('DOMContentLoaded', async () => {
 
   // Seed demo signature if none saved
   if (savedSigs.length === 0) {
@@ -3433,24 +3429,51 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.moveTo(220,30); ctx.lineTo(260,30);
     ctx.stroke();
     const demoSig = offscreen.toDataURL();
-    savedSigs.push({label:'A. Omondi -- Finance Officer', dataUrl: demoSig, date:'01 Jun 2026', id:1});
+    savedSigs.push({label:'Finance Officer', dataUrl: demoSig, date: new Date().toLocaleDateString('en-GB'), id:1});
     persistSigsToStorage();
   }
 
-  // Attach demo sig to pre-seeded paid requests
-  const demoSig = savedSigs[0] ? savedSigs[0].dataUrl : null;
-  const r1 = requestsStore.find(r=>r.ref==='REQ-001');
-  const r2 = requestsStore.find(r=>r.ref==='REQ-002');
-  if (r1 && demoSig) { r1.sigDataUrl = demoSig; r1.sigLabel = savedSigs[0].label; }
-  if (r2 && demoSig) { r2.sigDataUrl = demoSig; r2.sigLabel = savedSigs[0].label; }
+  // Restore Sheets UI state
+  if (gsWebAppUrl) {
+    const urlEl = document.getElementById('webAppUrl');
+    if (urlEl) urlEl.value = gsWebAppUrl;
+    const badge = document.getElementById('connStatusBadge');
+    if (badge) { badge.className = 'badge badge-teal'; badge.textContent = 'Connected'; }
+    const msgEl = document.getElementById('connSuccessMsg');
+    if (msgEl) msgEl.textContent = 'Connected to Google Sheets';
+    const urlDisplay = document.getElementById('connSuccessUrl');
+    if (urlDisplay) urlDisplay.textContent = gsWebAppUrl;
+    const box = document.getElementById('connSuccessBox');
+    if (box) box.style.display = 'flex';
+    const disc = document.getElementById('disconnectBtn');
+    if (disc) disc.style.display = '';
+    const ctrl = document.getElementById('syncControlCard');
+    if (ctrl) ctrl.style.cssText = '';
+    updateSheetStatusPill(true);
+  }
 
-  // Initial renders
+  // ── PULL FROM SHEETS BEFORE FIRST RENDER ──────────────────
+  // This ensures the app always shows what the Sheet has,
+  // even after a code update on GitHub.
+  if (gsWebAppUrl) {
+    try {
+      appendSyncLog('Loading data from Google Sheets...');
+      await pullFromSheets();          // requests, funds, expenses, sigs, users
+      await pullBudgetLinesFromSheets(); // budgets (read-only, source of truth)
+      reqCounter = calcReqCounter();   // recalculate after pull
+    } catch(e) {
+      appendSyncLog('Initial pull failed: ' + e.message + ' -- using cached data');
+    }
+  }
+
+  // Initial renders (now with live Sheet data)
   renderDashboard();
+  rebuildRequestsTable();
   populateAllDropdowns();
   refreshSigGrids();
-
   wrapTables();
-  // Boot auth LAST -- shows login screen or restores session
+
+  // Boot auth LAST
   bootAuth();
 });
 </script>
