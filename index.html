@@ -683,6 +683,16 @@
   body.role-requester .approver-only,
   body.role-approver  .admin-only { display:none !important; }
 
+  .desktop-only { }
+  /* -- MOBILE NAV: hide pill + date so avatar always visible -- */
+  @media (max-width: 768px) {
+    #sheetsStatusPill { display:none !important; }
+    .desktop-only { display:none !important; }
+  }
+  @media (max-width: 480px) {
+    nav > div > span { display:none; }
+  }
+
   /* -- SCROLLBAR -- */
   ::-webkit-scrollbar { width:5px;height:5px; }
   ::-webkit-scrollbar-track { background:transparent; }
@@ -924,13 +934,13 @@
       <div class="nav-sub">Money-In / Money-Out</div>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:14px">
+  <div style="display:flex;align-items:center;gap:10px">
     <div id="sheetsStatusPill" onclick="showView('sheets',null)" style="display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:5px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);cursor:pointer;font-size:11.5px;font-weight:500;transition:background .15s;color:rgba(255,255,255,.7)" title="Google Sheets sync">
       <span id="sheetsStatusDot" style="width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0"></span>
       <span id="sheetsStatusLabel">Not connected</span>
     </div>
-    <span style="font-size:12px;opacity:.7">June 2026</span>
-    <div class="nav-user" style="position:relative;cursor:pointer" id="navUserAvatar" onclick="toggleUserMenu()" title="Account / Sign Out">
+    <span class="desktop-only" style="font-size:12px;opacity:.7">June 2026</span>
+    <div class="nav-user" style="position:relative;cursor:pointer;flex-shrink:0" id="navUserAvatar" onclick="toggleUserMenu()" title="Account / Sign Out">
       <span id="navUserInitials">?</span>
       <span id="navRoleDot" style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;background:#C89B2A;border-radius:50%;border:2px solid var(--teal);"></span>
     </div>
@@ -3589,8 +3599,9 @@ function bootAuth() {
       return;
     }
   } catch(e) {}
-  // No valid session -- clear and show login
+  // No valid session -- wipe session + user cache, show login
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem('mrv_users');
   showLoginScreen();
   // Show URL field if no Sheets connection configured
   var noUrl = !gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE';
@@ -3734,11 +3745,14 @@ function loginSuccess(user) {
 
 // -- Logout -----------------------------------------------------
 function doLogout() {
+  clearInterval(gsAutoSyncTimer);
+  gsAutoSyncTimer = null;
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem('mrv_users');
   currentUser = null;
-  document.getElementById('loginEmail').value    = '';
-  document.getElementById('loginPassword').value = '';
-  document.getElementById('loginError').style.display = 'none';
+  try { document.getElementById('loginEmail').value = ''; } catch(e){}
+  try { document.getElementById('loginPassword').value = ''; } catch(e){}
+  try { document.getElementById('loginError').style.display = 'none'; } catch(e){}
   closeUserMenu();
   showLoginScreen();
 }
