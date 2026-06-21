@@ -90,7 +90,7 @@
     background:var(--amber);
     border-radius:6px;
     display:flex;align-items:center;justify-content:center;
-    font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:#fff;
+    font-family:Playfair Display,serif;font-size:15px;font-weight:600;color:#fff;
     letter-spacing:-.5px;
     flex-shrink:0;
   }
@@ -182,7 +182,7 @@
   /* -- PAGE HEADER -- */
   .page-header { margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border); }
   .page-header h1 {
-    font-family:'Playfair Display',serif;
+    font-family:Playfair Display,serif;
     font-size:24px;font-weight:600;
     color:var(--ink);margin-bottom:4px;
     letter-spacing:-.3px;
@@ -219,7 +219,7 @@
     color:var(--muted);margin-bottom:10px;
   }
   .stat-value {
-    font-family:'Playfair Display',serif;
+    font-family:Playfair Display,serif;
     font-size:26px;font-weight:600;
     color:var(--ink);line-height:1;
     letter-spacing:-.5px;
@@ -474,7 +474,7 @@
   .mt-1 { margin-top:4px; } .mt-2 { margin-top:8px; } .mb-3 { margin-bottom:12px; }
   .text-sm { font-size:12px; } .text-muted { color:var(--muted); } .font-600 { font-weight:600; }
   .two-col { display:grid;grid-template-columns:1fr 1fr;gap:20px; }
-  .currency { font-family:'Playfair Display',serif;font-weight:600; }
+  .currency { font-family:Playfair Display,serif;font-weight:600; }
 
   /* -- MODALS -- */
   .modal-overlay {
@@ -642,12 +642,12 @@
   .login-logo {
     width:40px;height:40px;border-radius:10px;
     background:var(--amber);
-    color:#fff;font-family:'Playfair Display',serif;font-size:18px;font-weight:600;
+    color:#fff;font-family:Playfair Display,serif;font-size:18px;font-weight:600;
     display:flex;align-items:center;justify-content:center;
   }
   .login-brand-text { }
   .login-title {
-    font-family:'Playfair Display',serif;
+    font-family:Playfair Display,serif;
     font-size:22px;font-weight:600;color:var(--ink);
     letter-spacing:-.3px;line-height:1;
   }
@@ -684,6 +684,16 @@
   body.role-approver  .admin-only { display:none !important; }
 
   .desktop-only { }
+  .budget-project-card .bpc-header {
+    cursor:pointer;
+    padding:18px 20px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    transition:background .15s;
+  }
+  .budget-project-card .bpc-header:hover { background:var(--surface); }
+
   /* -- MOBILE NAV: hide pill + date so avatar always visible -- */
   @media (max-width: 768px) {
     #sheetsStatusPill { display:none !important; }
@@ -1004,21 +1014,27 @@
 
   <!-- -- STEP 1: APPROVED BUDGETS -- -->
   <div id="view-budgets" class="view">
-    <div class="page-header"><h1>Approved Budgets</h1><p>SMT-approved project budgets for June 2026 -- read-only. All downstream data is linked to these budgets.</p></div>
-    <div id="budgetStatsRow" class="stats" style="grid-template-columns:repeat(4,1fr)"></div>
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Approved Project Budgets -- June 2026</div>
-        <span class="badge badge-teal" id="budgetApprovedBy">Approved by SMT</span>
-      </div>
-      <div class="card-body" style="padding:0">
-        <table>
-          <thead><tr><th>Category</th><th>Cost Summary</th><th>Cost Item</th><th>Unit</th><th>CCY</th><th style="text-align:right">Budgeted</th><th style="text-align:right">Actual (KES)</th><th style="text-align:right">Remaining</th><th>Utilisation</th></tr></thead>
-          <tbody id="budgetDetailBody"></tbody>
-        </table>
+    <div class="page-header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+        <div>
+          <h1>Approved Budgets</h1>
+          <p>SMT-approved budgets &mdash; read-only. Click any project to see line-by-line detail.</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-secondary btn-sm" onclick="toggleAllBudgetGroups(true)">Expand All</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleAllBudgetGroups(false)">Collapse All</button>
+        </div>
       </div>
     </div>
-    <!-- Per-project line item breakdown -->
+
+    <!-- Summary stat row -->
+    <div id="budgetStatsRow" class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px"></div>
+
+    <!-- Project cards container -->
+    <div id="budgetProjectCards" style="display:grid;gap:16px"></div>
+
+    <!-- Hidden legacy tbody for compat -->
+    <table style="display:none"><tbody id="budgetDetailBody"></tbody></table>
     <div id="budgetLineCards"></div>
   </div>
 
@@ -2079,19 +2095,29 @@ function populateAllDropdowns() {
 // groups with live actuals calculated from requestsStore.
 // ============================================================
 
+// ============================================================
+// APPROVED BUDGETS VIEW -- Card-based redesign
+// One card per project+type. Click to expand line items.
+// ============================================================
 function renderBudgetView() {
-  var tbody = document.getElementById('budgetDetailBody');
-  if (!tbody) return;
+  var container = document.getElementById('budgetProjectCards');
+  if (!container) return;
 
-  // If no budget lines loaded yet and Sheets connected, pull first
+  // Loading state
   if (budgetLines.length === 0 && gsWebAppUrl) {
-    tbody.innerHTML = '<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">Loading budgets from Google Sheets...</td></tr>';
+    container.innerHTML = '<div style="text-align:center;padding:48px 24px;color:var(--muted)">'
+      + '<div style="font-size:28px;margin-bottom:12px">⏳</div>'
+      + '<div style="font-weight:500;margin-bottom:4px">Loading budgets...</div>'
+      + '<div style="font-size:12px">Pulling from Google Sheets</div></div>';
     pullBudgetLinesFromSheets().then(function() { renderBudgetView(); });
     return;
   }
 
   if (budgetLines.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">No budget lines. Connect Google Sheets and ensure your Budgets tab has data.</td></tr>';
+    container.innerHTML = '<div style="text-align:center;padding:48px 24px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg)">'
+      + '<div style="font-size:28px;margin-bottom:12px">📋</div>'
+      + '<div style="font-weight:600;color:var(--ink);margin-bottom:6px">No budget lines found</div>'
+      + '<div style="font-size:12.5px">Connect Google Sheets and ensure your Budgets tab has data with the correct column headers.</div></div>';
     return;
   }
 
@@ -2102,97 +2128,196 @@ function renderBudgetView() {
     var k = l.project + '||' + l.type;
     if (!groups[k]) {
       groups[k] = { project:l.project, type:l.type, dept:l.dept,
-                    country:l.country, month:l.month, year:l.year, lines:[] };
+                    country:l.country, month:l.month, year:l.year,
+                    currency: l.currency || 'KES', lines:[] };
       groupOrder.push(k);
     }
     groups[k].lines.push(l);
   });
 
-  // Use a DocumentFragment for fast batch DOM insertion
-  var frag = document.createDocumentFragment();
+  // Summary stats row
+  var allTotal  = budgetLines.reduce(function(s,l){ return s+(parseFloat(l.budgetedAmount)||0); }, 0);
+  var allActual = groupOrder.reduce(function(s,k){
+    var g = groups[k];
+    return s + g.lines.reduce(function(ss,l){ return ss+getActualForLine(g.project,g.type,l.category,l.costSummary,l.costItem); }, 0);
+  }, 0);
+  var allRemain = allTotal - allActual;
+  var allPct    = allTotal ? Math.round(allActual/allTotal*100) : 0;
+  var ccy = groups[groupOrder[0]] ? groups[groupOrder[0]].currency : 'KES';
 
+  var statsEl = document.getElementById('budgetStatsRow');
+  if (statsEl) {
+    statsEl.innerHTML =
+      '<div class="stat-card"><div class="stat-label">Total Budget</div>'
+        +'<div class="stat-value teal">'+fmtK(allTotal, ccy)+'</div>'
+        +'<div class="stat-sub">'+budgetLines.length+' lines &middot; '+groupOrder.length+' project(s)</div></div>'
+      +'<div class="stat-card"><div class="stat-label">Total Spent</div>'
+        +'<div class="stat-value purple">'+fmtK(allActual, ccy)+'</div>'
+        +'<div class="stat-sub">From paid requests only</div></div>'
+      +'<div class="stat-card"><div class="stat-label">Remaining</div>'
+        +'<div class="stat-value" style="color:'+(allRemain<0?'var(--danger)':'var(--success)')+'">'+fmtK(Math.abs(allRemain), ccy)+'</div>'
+        +'<div class="stat-sub">'+(allRemain<0?'Over budget':'Available to spend')+'</div></div>'
+      +'<div class="stat-card"><div class="stat-label">Overall Usage</div>'
+        +'<div class="stat-value" style="color:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--ink)')+'">'+allPct+'%</div>'
+        +'<div class="stat-sub"><div class="progress-wrap" style="margin-top:6px"><div class="progress-fill" style="width:'+Math.min(100,allPct)+'%;background:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--amber)')+'"></div></div></div></div>';
+  }
+
+  // Build cards
+  container.innerHTML = '';
   groupOrder.forEach(function(k, gi) {
     var g      = groups[k];
-    var gid    = 'bg' + gi;
-    var total  = g.lines.reduce(function(s,l){ return s + (parseFloat(l.budgetedAmount)||0); }, 0);
-    var actual = g.lines.reduce(function(s,l){ return s + getActualForLine(g.project, g.type, l.category, l.costSummary, l.costItem); }, 0);
+    var gid    = 'bgc' + gi;
+    var ccy    = g.currency;
+    var total  = g.lines.reduce(function(s,l){ return s+(parseFloat(l.budgetedAmount)||0); }, 0);
+    var actual = g.lines.reduce(function(s,l){ return s+getActualForLine(g.project,g.type,l.category,l.costSummary,l.costItem); }, 0);
     var remain = total - actual;
-    var pct    = total ? Math.round(actual / total * 100) : 0;
-    var pc     = pct>85?'#f87171':pct>60?'#fbbf24':'#4ade80';
+    var pct    = total ? Math.min(100, Math.round(actual/total*100)) : 0;
+    var pctColor = pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--success)';
+    var barColor = pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--amber)';
 
-    // Header row — light on dark, good contrast
-    var htr = document.createElement('tr');
-    htr.style.cssText = 'color:#fff;cursor:pointer;user-select:none;border-bottom:2px solid #0f1c2e';
-    htr.className = 'budget-header';
-    htr.addEventListener('click', (function(id){ return function(){ toggleBudgetGroup(id); }; })(gid));
-    htr.style.background = '#1a2f45';
-    htr.innerHTML =
-      '<td colspan="5" style="padding:12px 16px;font-weight:600;font-size:13px;color:#fff">'
-        + '<span id="' + gid + '-arr" style="margin-right:10px;font-size:10px;opacity:.7">&#9658;</span>'
-        + '<span style="color:#fcd34d;font-size:14px">' + g.project + '</span>'
-        + ' <span style="color:rgba(255,255,255,.55);font-size:12px;font-weight:400;margin-left:6px">'
-          + g.type
-          + (g.dept    ? ' &nbsp;&middot;&nbsp; ' + g.dept    : '')
-          + (g.country ? ' &nbsp;&middot;&nbsp; ' + g.country : '')
-          + (g.month   ? ' &nbsp;&middot;&nbsp; ' + g.month + ' ' + (g.year||'') : '')
-        + '</span>'
-      + '</td>'
-      + '<td style="padding:12px 16px;text-align:right;font-weight:700;color:#fff;font-family:Playfair Display,serif">' + (g.lines[0]&&g.lines[0].currency||'KES') + ' ' + fmt(total) + '</td>'
-      + '<td style="padding:12px 16px;text-align:right;font-weight:700;color:#86efac;font-family:Playfair Display,serif">' + (g.lines[0]&&g.lines[0].currency||'KES') + ' ' + fmt(actual) + '</td>'
-      + '<td style="padding:12px 16px;text-align:right;font-weight:700;font-family:Playfair Display,serif;color:' + (remain<0?'#fca5a5':'#bfdbfe') + '">' + (g.lines[0]&&g.lines[0].currency||'KES') + ' ' + fmt(remain) + '</td>'
-      + '<td style="padding:12px 16px">'
-        + '<div style="display:flex;align-items:center;gap:8px">'
-          + '<div style="flex:1;height:5px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden">'
-            + '<div style="width:' + Math.min(100,pct) + '%;height:100%;background:' + pc + '"></div>'
-          + '</div>'
-          + '<span style="font-size:11px;color:rgba(255,255,255,.8);white-space:nowrap">' + pct + '%</span>'
-        + '</div>'
-      + '</td>';
-    frag.appendChild(htr);
-
-    // Detail rows — collapsed by default
+    // Group lines by category for cleaner display
+    var catMap = {};
     g.lines.forEach(function(l) {
-      var a  = getActualForLine(g.project, g.type, l.category, l.costSummary, l.costItem);
-      var r  = (parseFloat(l.budgetedAmount)||0) - a;
-      var p  = l.budgetedAmount ? Math.min(100, Math.round(a / l.budgetedAmount * 100)) : 0;
-      var c  = p>85?'var(--danger)':p>60?'var(--warn)':'var(--teal)';
-
-      var dtr = document.createElement('tr');
-      dtr.className = 'budgetLine-' + gid + ' budget-detail';
-      dtr.style.display = 'none';
-      dtr.innerHTML =
-        '<td style="padding:9px 16px 9px 30px;font-size:12px;color:var(--muted)">' + (l.category||'') + '</td>'
-        + '<td style="padding:9px 16px;font-weight:500">' + (l.costSummary||'') + '</td>'
-        + '<td style="padding:9px 16px;font-size:12px;color:var(--muted)">' + (l.costItem||'') + '</td>'
-        + '<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">' + (l.unitOfMeasure||'') + '</td>'
-        + '<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">' + (l.currency||'KES') + '</td>'
-        + '<td style="padding:9px 16px;text-align:right;font-weight:600;font-family:Playfair Display,serif">' + (l.currency||'KES') + ' ' + fmt(parseFloat(l.budgetedAmount)||0) + '</td>'
-        + '<td style="padding:9px 16px;text-align:right;font-weight:600;color:var(--success);font-family:Playfair Display,serif">' + (l.currency||'KES') + ' ' + fmt(a) + '</td>'
-        + '<td style="padding:9px 16px;text-align:right;font-weight:600;font-family:Playfair Display,serif;color:' + (r<0?'var(--danger)':'inherit') + '">' + (l.currency||'KES') + ' ' + fmt(r) + '</td>'
-        + '<td style="padding:9px 16px">'
-          + '<div style="display:flex;align-items:center;gap:6px">'
-            + '<div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">'
-              + '<div style="width:' + p + '%;height:100%;background:' + c + '"></div>'
-            + '</div>'
-            + '<span style="font-size:10px;color:var(--muted)">' + p + '%</span>'
-          + '</div>'
-        + '</td>';
-      frag.appendChild(dtr);
+      if (!catMap[l.category]) catMap[l.category] = [];
+      catMap[l.category].push(l);
     });
+
+    // Line items HTML (hidden by default)
+    var linesHtml = Object.keys(catMap).map(function(cat) {
+      var catLines = catMap[cat];
+      var catTotal  = catLines.reduce(function(s,l){ return s+(parseFloat(l.budgetedAmount)||0); }, 0);
+      var catActual = catLines.reduce(function(s,l){ return s+getActualForLine(g.project,g.type,l.category,l.costSummary,l.costItem); }, 0);
+
+      var linesRows = catLines.map(function(l) {
+        var a = getActualForLine(g.project,g.type,l.category,l.costSummary,l.costItem);
+        var r = (parseFloat(l.budgetedAmount)||0) - a;
+        var p = l.budgetedAmount ? Math.min(100, Math.round(a/l.budgetedAmount*100)) : 0;
+        var pc = p>85?'var(--danger)':p>60?'var(--warn)':'var(--success)';
+        return '<tr style="border-bottom:1px solid var(--surface-2)">'
+          + '<td style="padding:9px 12px 9px 16px;font-size:12px;color:var(--ink);font-weight:500">' + (l.costSummary||'--') + '</td>'
+          + '<td style="padding:9px 12px;font-size:11.5px;color:var(--muted)">' + (l.costItem||'--') + '</td>'
+          + '<td style="padding:9px 12px;font-size:11px;color:var(--muted);white-space:nowrap">' + (l.unitOfMeasure||'--') + '</td>'
+          + '<td style="padding:9px 12px;text-align:right;font-weight:600;white-space:nowrap">' + ccy + ' ' + fmt(parseFloat(l.budgetedAmount)||0) + '</td>'
+          + '<td style="padding:9px 12px;text-align:right;color:var(--success);font-weight:600;white-space:nowrap">' + ccy + ' ' + fmt(a) + '</td>'
+          + '<td style="padding:9px 12px;text-align:right;font-weight:600;color:'+(r<0?'var(--danger)':'var(--ink)')+';white-space:nowrap">' + (r<0?'-':'')+ccy+' '+fmt(Math.abs(r)) + '</td>'
+          + '<td style="padding:9px 16px 9px 12px;width:110px">'
+            + '<div style="display:flex;align-items:center;gap:6px">'
+              + '<div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">'
+                + '<div style="width:'+p+'%;height:100%;background:'+pc+'"></div>'
+              + '</div>'
+              + '<span style="font-size:10px;color:var(--muted);width:28px;text-align:right">'+p+'%</span>'
+            + '</div>'
+          + '</td>'
+        + '</tr>';
+      }).join('');
+
+      return '<div style="margin-bottom:2px">'
+        + '<div style="padding:8px 16px;background:var(--surface);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">'
+          + '<span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">' + cat + '</span>'
+          + '<span style="font-size:12px;color:var(--muted)">'+ ccy +' '+fmt(catTotal)+' budget</span>'
+        + '</div>'
+        + '<table style="width:100%;border-collapse:collapse">'
+          + '<thead><tr style="background:var(--surface)">'
+            + '<th style="padding:7px 12px 7px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Cost Summary</th>'
+            + '<th style="padding:7px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Cost Item</th>'
+            + '<th style="padding:7px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Unit</th>'
+            + '<th style="padding:7px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:right;border-bottom:1px solid var(--border)">Budgeted</th>'
+            + '<th style="padding:7px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:right;border-bottom:1px solid var(--border)">Spent</th>'
+            + '<th style="padding:7px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:right;border-bottom:1px solid var(--border)">Remaining</th>'
+            + '<th style="padding:7px 16px 7px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Usage</th>'
+          + '</tr></thead>'
+          + '<tbody>' + linesRows + '</tbody>'
+        + '</table>'
+      + '</div>';
+    }).join('');
+
+    // Card HTML
+    var card = document.createElement('div');
+    card.className = 'budget-project-card';
+    card.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm)';
+    card.innerHTML =
+      // Card header -- always visible, click to expand
+      '<div class="bpc-header" data-gid="'+gid+'" onclick="toggleBudgetCard(this.dataset.gid)">'
+
+        // Left: project name + meta
+        + '<div style="flex:1;min-width:0">'
+          + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">'
+            + '<div style="font-family:Playfair Display,serif;font-size:16px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + g.project + '</div>'
+            + '<span class="badge badge-gray" style="flex-shrink:0">' + g.type + '</span>'
+            + (g.country ? '<span class="badge badge-blue" style="flex-shrink:0">' + g.country + '</span>' : '')
+          + '</div>'
+          + '<div style="font-size:11.5px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap">'
+            + (g.dept ? '<span>'+g.dept+'</span>' : '')
+            + (g.month ? '<span>'+g.month+(g.year?' '+g.year:'')+'</span>' : '')
+            + '<span>' + g.lines.length + ' line item' + (g.lines.length===1?'':'s') + '</span>'
+          + '</div>'
+        + '</div>'
+
+        // Middle: 3 amount pills
+        + '<div style="display:flex;gap:20px;flex-shrink:0">'
+          + '<div style="text-align:right">'
+            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px">Budget</div>'
+            + '<div style="font-family:Playfair Display,serif;font-size:14px;font-weight:600;color:var(--ink)">'+ccy+' '+fmt(total)+'</div>'
+          + '</div>'
+          + '<div style="text-align:right">'
+            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px">Spent</div>'
+            + '<div style="font-family:Playfair Display,serif;font-size:14px;font-weight:600;color:var(--purple)">'+ccy+' '+fmt(actual)+'</div>'
+          + '</div>'
+          + '<div style="text-align:right">'
+            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px">Remaining</div>'
+            + '<div style="font-family:Playfair Display,serif;font-size:14px;font-weight:600;color:'+(remain<0?'var(--danger)':'var(--success)')+';">'+(remain<0?'-':'')+ccy+' '+fmt(Math.abs(remain))+'</div>'
+          + '</div>'
+        + '</div>'
+
+        // Right: progress ring + expand arrow
+        + '<div style="display:flex;align-items:center;gap:16px;flex-shrink:0">'
+          + '<div style="text-align:center">'
+            + '<svg width="52" height="52" viewBox="0 0 52 52">'
+              + '<circle cx="26" cy="26" r="22" fill="none" stroke="var(--surface-2)" stroke-width="5"/>'
+              + '<circle cx="26" cy="26" r="22" fill="none" stroke="'+barColor+'" stroke-width="5" stroke-linecap="round" '
+                + 'stroke-dasharray="'+Math.round(2*3.14159*22*Math.min(pct,100)/100)+' 999" '
+                + 'transform="rotate(-90 26 26)"/>'
+              + '<text x="26" y="30" text-anchor="middle" font-size="11" font-weight="700" fill="'+pctColor+'" font-family="Inter,sans-serif">'+pct+'%</text>'
+            + '</svg>'
+          + '</div>'
+          + '<div id="'+gid+'-arr" style="color:var(--muted);font-size:18px;transition:transform .2s;transform:rotate(0deg)">&#8964;</div>'
+        + '</div>'
+      + '</div>'
+
+      // Progress bar strip
+      + '<div style="height:4px;background:var(--surface-2)">'
+        + '<div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+barColor+';transition:width .5s"></div>'
+      + '</div>'
+
+      // Expandable line items
+      + '<div id="'+gid+'-body" style="display:none;border-top:1px solid var(--border)">'
+        + linesHtml
+      + '</div>';
+
+    container.appendChild(card);
   });
-
-  // Single DOM write — much faster than appending one by one
-  tbody.innerHTML = '';
-  tbody.appendChild(frag);
 }
 
-function toggleBudgetGroup(gid) {
-  var rows = document.querySelectorAll('.budgetLine-' + gid);
+function toggleBudgetCard(gid) {
+  var body = document.getElementById(gid + '-body');
   var arr  = document.getElementById(gid + '-arr');
-  var open = rows.length && rows[0].style.display !== 'none';
-  rows.forEach(function(r) { r.style.display = open ? 'none' : ''; });
-  if (arr) arr.innerHTML = open ? '&#9658;' : '&#9660;';
+  if (!body) return;
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  if (arr) arr.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
 }
+
+function toggleAllBudgetGroups(expand) {
+  document.querySelectorAll('[id$="-body"][id^="bgc"]').forEach(function(el) {
+    el.style.display = expand ? '' : 'none';
+  });
+  document.querySelectorAll('[id$="-arr"][id^="bgc"]').forEach(function(el) {
+    el.style.transform = expand ? 'rotate(180deg)' : 'rotate(0deg)';
+  });
+}
+
+// Legacy stub -- no-op (old table-based toggle)
+function toggleBudgetGroup(gid) {}
 
 // Pull budget lines from Google Sheet (READ ONLY -- never written by app)
 // Maps EXACTLY to your sheet column names as shown in the image:
