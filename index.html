@@ -954,7 +954,7 @@
   <div class="aside-item active" onclick="showView('dashboard',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Dashboard</div>
   <div class="aside-item" onclick="showView('budgets',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>Approved Budgets</div>
   <div class="aside-item approver-only" onclick="showView('funds',this)" data-role-required="admin"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span>Load Funds</div>
-  <div class="aside-item" onclick="showView('requests',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg></span>System Requests <span class="aside-badge">5</span></div>
+  <div class="aside-item" onclick="showView('requests',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg></span>System Requests <span class="aside-badge" id="sidebarReqBadge">0</span></div>
   <div class="aside-item" onclick="showView('expenses',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Weekly Expensing</div>
   <div class="aside-item" onclick="showView('reconciliation',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>Reconciliation</div>
   <div class="aside-section">Reports</div>
@@ -1040,11 +1040,7 @@
         <div class="card-header"><div class="card-title">Money-In Ledger</div></div>
         <div class="card-body" style="padding:0">
           <table><thead><tr><th>Project</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
-          <tbody id="fundsLedger">
-            <tr><td>Nairobi Field Ops</td><td class="currency">1,800,000</td><td>01 Jun</td><td><span class="badge badge-teal">Posted</span></td></tr>
-            <tr><td>Mombasa Survey</td><td class="currency">1,200,000</td><td>01 Jun</td><td><span class="badge badge-teal">Posted</span></td></tr>
-            <tr><td>Kisumu Training</td><td class="currency">800,000</td><td>03 Jun</td><td><span class="badge badge-teal">Posted</span></td></tr>
-          </tbody></table>
+          <tbody id="fundsLedger"></tbody></table>
           <div style="padding:14px 16px;font-size:13px;color:var(--teal);font-weight:600;border-top:1px solid var(--border);">Total Money-In: <span class="currency" id="totalIn">0</span></div>
         </div>
       </div>
@@ -1209,11 +1205,7 @@
         <div class="card-header"><div class="card-title">Weekly Expense Log</div></div>
         <div class="card-body" style="padding:0">
           <table><thead><tr><th>Date</th><th>Project</th><th>Amount</th><th>Signature</th></tr></thead>
-          <tbody id="expenseLog">
-            <tr><td>02 Jun</td><td>Nairobi Field Ops</td><td class="currency">320,000</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
-            <tr><td>03 Jun</td><td>Mombasa Survey</td><td class="currency">180,000</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
-            <tr><td>05 Jun</td><td>Nairobi Field Ops</td><td class="currency">130,000</td><td><span class="badge badge-gold">Pending</span></td></tr>
-          </tbody></table>
+          <tbody id="expenseLog"></tbody></table>
           <div style="padding:14px 16px;font-size:13px;color:var(--purple);font-weight:600;border-top:1px solid var(--border);">Total Expensed: <span class="currency">0</span></div>
         </div>
       </div>
@@ -1250,12 +1242,8 @@
     <div class="card">
       <div class="card-header"><div class="card-title">All Transactions -- June 2026</div><button class="btn btn-secondary btn-sm" onclick="toast('PDF with signatures downloaded!')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download with Signatures</button></div>
       <div class="card-body" style="padding:0">
-        <table><thead><tr><th>Ref</th><th>Type</th><th>Project</th><th>Description</th><th>Amount</th><th>Date</th><th>Signed By</th><th>Status</th></tr></thead><tbody>
-          <tr><td class="text-muted">TXN-001</td><td><span class="badge badge-teal">Money-In</span></td><td>Nairobi Field Ops</td><td>Monthly load</td><td class="currency">1,800,000</td><td>01 Jun</td><td>Finance Officer</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
-          <tr><td class="text-muted">TXN-002</td><td><span class="badge badge-teal">Money-In</span></td><td>Mombasa Survey</td><td>Monthly load</td><td class="currency">1,200,000</td><td>01 Jun</td><td>Finance Officer</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
-          <tr><td class="text-muted">TXN-003</td><td><span class="badge badge-teal">Money-In</span></td><td>Kisumu Training</td><td>Partial load</td><td class="currency">800,000</td><td>03 Jun</td><td>Finance Officer</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
-          <tr><td class="text-muted">TXN-004</td><td><span class="badge badge-purple">Money-Out</span></td><td>Nairobi Field Ops</td><td>Field allowances</td><td class="currency">450,000</td><td>04 Jun</td><td>J. Kamau</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
-          <tr><td class="text-muted">TXN-005</td><td><span class="badge badge-purple">Money-Out</span></td><td>Mombasa Survey</td><td>Transport costs</td><td class="currency">320,000</td><td>05 Jun</td><td>A. Ali</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
+        <table><thead><tr><th>Ref</th><th>Type</th><th>Project</th><th>Description</th><th>Amount</th><th>Date</th><th>Signed By</th><th>Status</th></tr></thead><tbody id="transactionsBody">
+          <tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No transactions yet</td></tr>
         </tbody></table>
       </div>
     </div>
@@ -1989,6 +1977,74 @@ function renderReconciliation() {
 }
 
 // ============================================================
+// TRANSACTIONS VIEW -- live from requestsStore + fundsLedger
+// ============================================================
+function renderTransactions() {
+  var tbody = document.getElementById('transactionsBody');
+  if (!tbody) return;
+
+  var rows = [];
+
+  // Money-Out: all requests (any status)
+  requestsStore.forEach(function(r) {
+    rows.push({
+      ref:    r.ref,
+      type:   'Money-Out',
+      badge:  'badge-purple',
+      project: r.project,
+      desc:   r.description || (r.category + ' -- ' + r.costSummary),
+      amount: r.amount,
+      ccy:    getCurrency(r.project, r.type),
+      date:   r.date || '--',
+      signer: r.sigLabel || (r.status === 'Paid' ? r.approvedBy||'--' : '--'),
+      status: r.status,
+      statusBadge: {Paid:'badge-teal', Approved:'badge-gold', Draft:'badge-gray', Pending:'badge-gold'}[r.status] || 'badge-gray'
+    });
+  });
+
+  // Money-In: from fundsLedger DOM rows
+  document.querySelectorAll('#fundsLedger tr').forEach(function(tr) {
+    var cells = tr.querySelectorAll('td');
+    if (cells.length >= 3) {
+      rows.push({
+        ref:    'FND',
+        type:   'Money-In',
+        badge:  'badge-teal',
+        project: cells[0].textContent.trim(),
+        desc:   'Fund load',
+        amount: parseFloat(cells[1].textContent.replace(/[^0-9.-]/g,'')) || 0,
+        ccy:    getDefaultCurrency(),
+        date:   cells[2].textContent.trim(),
+        signer: '--',
+        status: 'Posted',
+        statusBadge: 'badge-teal'
+      });
+    }
+  });
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No transactions yet</td></tr>';
+    return;
+  }
+
+  // Sort newest first (by date string -- best effort)
+  rows.reverse();
+
+  tbody.innerHTML = rows.map(function(r) {
+    return '<tr>'
+      + '<td class="text-muted">' + r.ref + '</td>'
+      + '<td><span class="badge ' + r.badge + '">' + r.type + '</span></td>'
+      + '<td>' + r.project + '</td>'
+      + '<td class="text-muted text-sm">' + r.desc + '</td>'
+      + '<td class="currency">' + r.ccy + ' ' + fmt(r.amount) + '</td>'
+      + '<td>' + r.date + '</td>'
+      + '<td>' + r.signer + '</td>'
+      + '<td><span class="badge ' + r.statusBadge + '">' + r.status + '</span></td>'
+      + '</tr>';
+  }).join('');
+}
+
+// ============================================================
 // DROPDOWNS
 // ============================================================
 function populateAllDropdowns() {
@@ -2442,6 +2498,7 @@ function showView(id, el) {
   if (id === 'budgets')        { renderBudgetView(); if (gsWebAppUrl && window._budgetPulled !== true) { window._budgetPulled = true; pullBudgetLinesFromSheets().then(function(){ renderBudgetView(); }); } }
   if (id === 'reconciliation') renderReconciliation();
   if (id === 'dashboard')      renderDashboard();
+  if (id === 'transactions')   renderTransactions();
 }
 
 // -- Modals -------------------------------------------------
@@ -3033,7 +3090,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // All devices use this URL automatically -- no per-device setup
 // Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx_Xx2iykXZglTMyk6Fs7X4Wo0Kwx05HDs-599Fx7MKH59ItSLq4qu04QE8O976G1o/exec';
+const HARDCODED_WEB_APP_URL = 'YOUR_WEB_APP_URL_HERE';
 // ════════════════════════════════════════════════════════════
 
 // State -- always use hardcoded URL so all devices share the same data
@@ -3398,6 +3455,9 @@ function rebuildRequestsTable() {
   var bd = document.getElementById('badge-drafts'); if(bd) bd.textContent = drafts.length;
   var bq = document.getElementById('badge-queue');  if(bq) bq.textContent = queue.length;
   var bp = document.getElementById('badge-paid');   if(bp) bp.textContent = paid.length;
+  // Sidebar badge = pending drafts + queue
+  var sb = document.getElementById('sidebarReqBadge');
+  if(sb) { var tot = drafts.length + queue.length; sb.textContent = tot; sb.style.display = tot ? '' : 'none'; }
 
   // Paid total
   var paidAmt = paid.reduce(function(s,r){ return s+(parseFloat(r.amount)||0); },0);
@@ -3999,23 +4059,6 @@ async function pullUsersFromSheets() {
 // -- Single consolidated DOMContentLoaded -------------------
 document.addEventListener('DOMContentLoaded', async () => {
 
-  // Seed demo signature if none saved
-  if (savedSigs.length === 0) {
-    const offscreen = document.createElement('canvas');
-    offscreen.width = 300; offscreen.height = 80;
-    const ctx = offscreen.getContext('2d');
-    ctx.strokeStyle = '#0D2B1E'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(20,50); ctx.bezierCurveTo(40,10,60,70,90,40);
-    ctx.bezierCurveTo(110,20,120,60,150,35);
-    ctx.bezierCurveTo(170,15,185,55,210,30);
-    ctx.moveTo(220,30); ctx.lineTo(260,30);
-    ctx.stroke();
-    const demoSig = offscreen.toDataURL();
-    savedSigs.push({label:'Finance Officer', dataUrl: demoSig, date: new Date().toLocaleDateString('en-GB'), id:1});
-    persistSigsToStorage();
-  }
-
   wrapTables();
 
   // ── AUTH FIRST: check session before showing anything ──────
@@ -4061,6 +4104,7 @@ async function afterLogin() {
   rebuildRequestsTable();
   populateAllDropdowns();
   refreshSigGrids();
+  renderTransactions();
 
   // Start auto-sync
   if (gsWebAppUrl) {
