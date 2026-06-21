@@ -2103,7 +2103,7 @@ function populateAllDropdowns() {
 // ============================================================
 
 // ============================================================
-// APPROVED BUDGETS VIEW -- Clean card redesign
+// APPROVED BUDGETS VIEW
 // ============================================================
 function renderBudgetView() {
   var container = document.getElementById('budgetProjectCards');
@@ -2111,8 +2111,8 @@ function renderBudgetView() {
 
   if (budgetLines.length === 0 && gsWebAppUrl) {
     container.innerHTML = '<div style="text-align:center;padding:56px 24px;color:var(--muted)">'
-      + '<div style="font-size:32px;margin-bottom:12px">⏳</div>'
-      + '<div style="font-weight:600;font-size:14px;margin-bottom:4px;color:var(--ink)">Loading budgets&hellip;</div>'
+      + '<div style="font-size:28px;margin-bottom:10px">⏳</div>'
+      + '<div style="font-weight:600;color:var(--ink);margin-bottom:4px">Loading budgets&hellip;</div>'
       + '<div style="font-size:12px">Pulling from Google Sheets</div></div>';
     pullBudgetLinesFromSheets().then(function() { renderBudgetView(); });
     return;
@@ -2120,13 +2120,13 @@ function renderBudgetView() {
 
   if (budgetLines.length === 0) {
     container.innerHTML = '<div style="text-align:center;padding:56px 24px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);color:var(--muted)">'
-      + '<div style="font-size:32px;margin-bottom:12px">📋</div>'
-      + '<div style="font-weight:600;font-size:14px;color:var(--ink);margin-bottom:6px">No budgets found</div>'
-      + '<div style="font-size:12.5px">Check your Budgets tab in Google Sheets has data and correct headers.</div></div>';
+      + '<div style="font-size:28px;margin-bottom:10px">📋</div>'
+      + '<div style="font-weight:600;color:var(--ink);margin-bottom:6px">No budgets found</div>'
+      + '<div style="font-size:12.5px">Check your Budgets tab has data with the correct headers.</div></div>';
     return;
   }
 
-  // Group lines by Project + Type
+  // Group by Project + Type (preserving sheet order)
   var groups = {}, groupOrder = [];
   budgetLines.forEach(function(l) {
     var k = l.project + '||' + l.type;
@@ -2158,147 +2158,127 @@ function renderBudgetView() {
       +'<div class="stat-card"><div class="stat-label">Spent to Date</div>'
         +'<div class="stat-value purple">'+fmtK(allActual,topCcy)+'</div>'
         +'<div class="stat-sub">Paid requests only</div></div>'
-      +'<div class="stat-card"><div class="stat-label">Balance Remaining</div>'
+      +'<div class="stat-card"><div class="stat-label">Remaining</div>'
         +'<div class="stat-value" style="color:'+(allRemain<0?'var(--danger)':'var(--success)')+'">'+fmtK(Math.abs(allRemain),topCcy)+'</div>'
-        +'<div class="stat-sub">'+(allRemain<0?'<span style=color:var(--danger)>Over budget</span>':'Available')+'</div></div>'
-      +'<div class="stat-card"><div class="stat-label">Overall Usage</div>'
+        +'<div class="stat-sub">'+(allRemain<0?'Over budget':'Available')+'</div></div>'
+      +'<div class="stat-card"><div class="stat-label">Usage</div>'
         +'<div class="stat-value" style="color:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--ink)')+'">'+allPct+'%</div>'
-        +'<div class="stat-sub"><div class="progress-wrap" style="margin-top:8px">'
-          +'<div class="progress-fill" style="width:'+Math.min(100,allPct)+'%;background:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--amber)')+'"></div>'
-        +'</div></div></div>';
+        +'<div class="stat-sub"><div class="progress-wrap" style="margin-top:8px"><div class="progress-fill" style="width:'+Math.min(100,allPct)+'%;background:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--amber)')+'"></div></div></div></div>';
   }
 
-  // Build one card per project+type
+  // One card per project+type group
   container.innerHTML = '';
 
   groupOrder.forEach(function(k, gi) {
-    var g       = groups[k];
-    var gid     = 'bgc' + gi;
-    var ccy     = g.currency;
-    var total   = g.lines.reduce(function(s,l){ return s+(parseFloat(l.budgetedAmount)||0); }, 0);
-    var actual  = g.lines.reduce(function(s,l){ return s+getActualForLine(g.project,g.type,l.category,l.costSummary,l.costItem); }, 0);
-    var remain  = total - actual;
-    var pct     = total ? Math.min(100,Math.round(actual/total*100)) : 0;
-    var barClr  = pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--amber)';
-    var remClr  = remain<0?'var(--danger)':'var(--success)';
+    var g      = groups[k];
+    var gid    = 'bgc' + gi;
+    var ccy    = g.currency;
+    var total  = g.lines.reduce(function(s,l){ return s+(parseFloat(l.budgetedAmount)||0); }, 0);
+    var actual = g.lines.reduce(function(s,l){ return s+getActualForLine(g.project,g.type,l.category,l.costSummary,l.costItem); }, 0);
+    var remain = total - actual;
+    var pct    = total ? Math.min(100,Math.round(actual/total*100)) : 0;
+    var barClr = pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--amber)';
 
-    // Group lines by category
-    var catMap = {}, catOrder = [];
-    g.lines.forEach(function(l){
-      if (!catMap[l.category]){ catMap[l.category]=[]; catOrder.push(l.category); }
-      catMap[l.category].push(l);
-    });
-
-    // Build line rows — ONE shared table, category as a label row
-    var tableRows = catOrder.map(function(cat) {
-      var catLines = catMap[cat];
-      var catBudg  = catLines.reduce(function(s,l){ return s+(parseFloat(l.budgetedAmount)||0); },0);
-      var catAct   = catLines.reduce(function(s,l){ return s+getActualForLine(g.project,g.type,l.category,l.costSummary,l.costItem); },0);
-      var catRem   = catBudg - catAct;
-
-      // Category divider row
-      var divider = '<tr>'
-        + '<td colspan="5" style="padding:7px 20px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">'
-          + '<div style="display:flex;justify-content:space-between;align-items:center">'
-            + '<span style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">'+cat+'</span>'
-            + '<span style="font-size:11px;color:var(--muted)">'+ccy+' '+fmt(catBudg)+'&nbsp;&middot;&nbsp;'
-              +'<span style="color:'+(catRem<0?'var(--danger)':'var(--success)')+'">'+ccy+' '+fmt(Math.abs(catRem))+' '+(catRem<0?'over':'left')+'</span></span>'
+    // Build line rows exactly as they appear in the sheet
+    var lineRows = g.lines.map(function(l) {
+      var a  = getActualForLine(g.project,g.type,l.category,l.costSummary,l.costItem);
+      var r  = (parseFloat(l.budgetedAmount)||0) - a;
+      var p  = l.budgetedAmount ? Math.min(100,Math.round(a/l.budgetedAmount*100)) : 0;
+      var pc = p>85?'var(--danger)':p>60?'var(--warn)':'var(--teal)';
+      return '<tr style="border-bottom:1px solid var(--surface-2)">'
+        + '<td style="padding:10px 12px 10px 20px;font-size:12.5px;color:var(--muted)">'+(l.category||'')+'</td>'
+        + '<td style="padding:10px 12px;font-size:13px;font-weight:500;color:var(--ink)">'+(l.costSummary||'')+'</td>'
+        + '<td style="padding:10px 12px;font-size:12.5px;color:var(--muted)">'+(l.costItem||'')+'</td>'
+        + '<td style="padding:10px 12px;font-size:11.5px;color:var(--muted);white-space:nowrap">'+(l.unitOfMeasure||'')+'</td>'
+        + '<td style="padding:10px 12px;font-size:11.5px;color:var(--muted);text-align:center">'+(l.currency||ccy)+'</td>'
+        + '<td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;color:var(--ink-mid);white-space:nowrap">'+fmt(parseFloat(l.budgetedAmount)||0)+'</td>'
+        + '<td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;color:var(--success);white-space:nowrap">'+fmt(a)+'</td>'
+        + '<td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;color:'+(r<0?'var(--danger)':'var(--ink-mid)')+';white-space:nowrap">'+(r<0?'−':'')+fmt(Math.abs(r))+'</td>'
+        + '<td style="padding:10px 20px 10px 12px;width:130px">'
+          + '<div style="display:flex;align-items:center;gap:8px">'
+            + '<div style="flex:1;height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden">'
+              + '<div style="width:'+p+'%;height:100%;background:'+pc+';border-radius:3px"></div>'
+            + '</div>'
+            + '<span style="font-size:11.5px;font-weight:600;color:'+pc+';min-width:30px;text-align:right">'+p+'%</span>'
           + '</div>'
         + '</td>'
       + '</tr>';
-
-      var lineRows = catLines.map(function(l){
-        var a  = getActualForLine(g.project,g.type,l.category,l.costSummary,l.costItem);
-        var r  = (parseFloat(l.budgetedAmount)||0) - a;
-        var p  = l.budgetedAmount ? Math.min(100,Math.round(a/l.budgetedAmount*100)) : 0;
-        var pc = p>85?'var(--danger)':p>60?'var(--warn)':'var(--teal)';
-        return '<tr style="border-bottom:1px solid var(--surface-2)">'
-          + '<td style="padding:10px 12px 10px 20px">'
-            + '<div style="font-size:13px;font-weight:500;color:var(--ink)">'+(l.costSummary||'--')+'</div>'
-            + (l.costItem ? '<div style="font-size:11px;color:var(--muted);margin-top:1px">'+l.costItem+'</div>' : '')
-          + '</td>'
-          + '<td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;color:var(--ink-mid);white-space:nowrap">'+ccy+' '+fmt(parseFloat(l.budgetedAmount)||0)+'</td>'
-          + '<td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;color:var(--success);white-space:nowrap">'+ccy+' '+fmt(a)+'</td>'
-          + '<td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;color:'+(r<0?'var(--danger)':'var(--ink-mid)')+';white-space:nowrap">'+(r<0?'&#8722;':'')+ccy+' '+fmt(Math.abs(r))+'</td>'
-          + '<td style="padding:10px 20px 10px 12px;width:120px">'
-            + '<div style="display:flex;align-items:center;gap:8px">'
-              + '<div style="flex:1;height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden">'
-                + '<div style="width:'+p+'%;height:100%;background:'+pc+';border-radius:3px"></div>'
-              + '</div>'
-              + '<span style="font-size:11px;font-weight:600;color:'+pc+';min-width:28px;text-align:right">'+p+'%</span>'
-            + '</div>'
-          + '</td>'
-        + '</tr>';
-      }).join('');
-
-      return divider + lineRows;
     }).join('');
 
     var card = document.createElement('div');
     card.className = 'budget-project-card';
     card.innerHTML =
 
-      // ── CARD HEADER ─────────────────────────────────────────
+      // Header -- always visible, click to expand
       '<div class="bpc-header" data-gid="'+gid+'" onclick="toggleBudgetCard(this.dataset.gid)">'
 
-        // Row 1: Project title + badges
-        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
-          + '<div style="font-family:Playfair Display,serif;font-size:17px;font-weight:600;color:var(--ink)">'+g.project+'</div>'
+        // Top row: project + badges + arrow
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
+          + '<div style="font-family:Playfair Display,serif;font-size:16px;font-weight:600;color:var(--ink)">'+g.project+'</div>'
           + '<span class="badge badge-gray">'+g.type+'</span>'
           + (g.country ? '<span class="badge badge-blue">'+g.country+'</span>' : '')
           + (g.dept    ? '<span class="badge" style="background:var(--amber-lt);color:var(--amber)">'+g.dept+'</span>' : '')
-          + '<div style="margin-left:auto;color:var(--muted);font-size:16px;transition:transform .25s" id="'+gid+'-arr">&#8964;</div>'
-        + '</div>'
-
-        // Row 2: Progress bar
-        + '<div style="height:6px;background:var(--surface-2);border-radius:4px;overflow:hidden;margin-bottom:12px">'
-          + '<div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+barClr+';border-radius:4px;transition:width .6s"></div>'
-        + '</div>'
-
-        // Row 3: 4 figures in a clean grid
-        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
-          + '<div style="padding:10px 14px;border-right:1px solid var(--border)">'
-            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Approved Budget</div>'
-            + '<div style="font-size:14px;font-weight:700;color:var(--ink)">'+ccy+' '+fmt(total)+'</div>'
-          + '</div>'
-          + '<div style="padding:10px 14px;border-right:1px solid var(--border)">'
-            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Spent</div>'
-            + '<div style="font-size:14px;font-weight:700;color:var(--purple)">'+ccy+' '+fmt(actual)+'</div>'
-          + '</div>'
-          + '<div style="padding:10px 14px;border-right:1px solid var(--border)">'
-            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Remaining</div>'
-            + '<div style="font-size:14px;font-weight:700;color:'+remClr+'">'+(remain<0?'&#8722;':'')+ccy+' '+fmt(Math.abs(remain))+'</div>'
-          + '</div>'
-          + '<div style="padding:10px 14px;background:'+(pct>85?'#fef2f2':pct>60?'#fffbeb':'#f0fdf4')+'">'
-            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Usage</div>'
-            + '<div style="font-size:14px;font-weight:700;color:'+barClr+'">'+pct+'%</div>'
+          + '<div style="margin-left:auto;display:flex;align-items:center;gap:14px">'
+            + (g.month ? '<span style="font-size:11px;color:var(--muted)">'+g.month+(g.year?' '+g.year:'')+'</span>' : '')
+            + '<span style="font-size:11px;color:var(--muted)">'+g.lines.length+' line'+(g.lines.length===1?'':'s')+'</span>'
+            + '<div id="'+gid+'-arr" style="color:var(--muted);font-size:16px;transition:transform .25s">&#8964;</div>'
           + '</div>'
         + '</div>'
 
-        // Row 4: meta info
-        + (g.month||g.lines.length
-          ? '<div style="margin-top:8px;font-size:11px;color:var(--muted);display:flex;gap:16px">'
-              + (g.month ? '<span>'+g.month+(g.year?' '+g.year:'')+'</span>' : '')
-              + '<span>'+g.lines.length+' budget line'+(g.lines.length===1?'':'s')+'</span>'
-              + '<span style="margin-left:auto;color:var(--ink-light);font-size:11px">Click to '+(false?'collapse':'expand')+' detail &rsaquo;</span>'
-            + '</div>'
-          : '')
+        // Progress bar
+        + '<div style="height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin-bottom:12px">'
+          + '<div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+barClr+';border-radius:3px;transition:width .5s"></div>'
+        + '</div>'
 
-      + '</div>'  // end bpc-header
+        // Summary figures
+        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--border);border-radius:7px;overflow:hidden">'
+          + '<div style="padding:9px 14px;border-right:1px solid var(--border)">'
+            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px">Budget</div>'
+            + '<div style="font-size:13.5px;font-weight:700;color:var(--ink)">'+ccy+' '+fmt(total)+'</div>'
+          + '</div>'
+          + '<div style="padding:9px 14px;border-right:1px solid var(--border)">'
+            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px">Spent</div>'
+            + '<div style="font-size:13.5px;font-weight:700;color:var(--purple)">'+ccy+' '+fmt(actual)+'</div>'
+          + '</div>'
+          + '<div style="padding:9px 14px;border-right:1px solid var(--border)">'
+            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px">Remaining</div>'
+            + '<div style="font-size:13.5px;font-weight:700;color:'+(remain<0?'var(--danger)':'var(--success)')+';">'+(remain<0?'−':'')+ccy+' '+fmt(Math.abs(remain))+'</div>'
+          + '</div>'
+          + '<div style="padding:9px 14px;background:'+(pct>85?'#fef2f2':pct>60?'#fffbeb':'#f0fdf4')+'">'
+            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px">Usage</div>'
+            + '<div style="font-size:13.5px;font-weight:700;color:'+barClr+'">'+pct+'%</div>'
+          + '</div>'
+        + '</div>'
 
-      // ── EXPANDABLE DETAIL ────────────────────────────────────
-      + '<div id="'+gid+'-body" style="display:none">'
-        + '<table style="width:100%;border-collapse:collapse">'
+      + '</div>' // end .bpc-header
+
+      // Expandable table -- same column order as Sheets
+      + '<div id="'+gid+'-body" style="display:none;overflow-x:auto">'
+        + '<table style="width:100%;border-collapse:collapse;min-width:700px">'
           + '<thead>'
-            + '<tr>'
-              + '<th style="padding:9px 12px 9px 20px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);background:var(--surface)">Cost Line</th>'
-              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:right;border-bottom:2px solid var(--border);background:var(--surface)">Budgeted</th>'
-              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:right;border-bottom:2px solid var(--border);background:var(--surface)">Spent</th>'
-              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:right;border-bottom:2px solid var(--border);background:var(--surface)">Remaining</th>'
-              + '<th style="padding:9px 20px 9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);background:var(--surface)">Usage</th>'
+            + '<tr style="background:var(--surface)">'
+              + '<th style="padding:9px 12px 9px 20px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Category</th>'
+              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Cost Summary</th>'
+              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Cost Item</th>'
+              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Unit</th>'
+              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:center;border-bottom:2px solid var(--border);white-space:nowrap">CCY</th>'
+              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:right;border-bottom:2px solid var(--border);white-space:nowrap">Budgeted</th>'
+              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:right;border-bottom:2px solid var(--border);white-space:nowrap">Actual</th>'
+              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:right;border-bottom:2px solid var(--border);white-space:nowrap">Remaining</th>'
+              + '<th style="padding:9px 20px 9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Utilisation</th>'
             + '</tr>'
           + '</thead>'
-          + '<tbody>'+tableRows+'</tbody>'
+          + '<tbody>'+lineRows+'</tbody>'
+          // Totals row
+          + '<tfoot>'
+            + '<tr style="background:var(--surface);border-top:2px solid var(--border)">'
+              + '<td colspan="5" style="padding:10px 12px 10px 20px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Total</td>'
+              + '<td style="padding:10px 12px;text-align:right;font-size:13.5px;font-weight:700;color:var(--ink)">'+fmt(total)+'</td>'
+              + '<td style="padding:10px 12px;text-align:right;font-size:13.5px;font-weight:700;color:var(--success)">'+fmt(actual)+'</td>'
+              + '<td style="padding:10px 12px;text-align:right;font-size:13.5px;font-weight:700;color:'+(remain<0?'var(--danger)':'var(--ink)')+'">'+fmt(remain)+'</td>'
+              + '<td style="padding:10px 20px 10px 12px;font-size:12px;font-weight:700;color:'+barClr+'">'+pct+'% used</td>'
+            + '</tr>'
+          + '</tfoot>'
         + '</table>'
       + '</div>';
 
