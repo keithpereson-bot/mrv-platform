@@ -695,7 +695,10 @@
   .budget-project-card:hover { box-shadow:var(--shadow); }
   .budget-project-card .bpc-header {
     cursor:pointer;
-    padding:18px 20px 16px;
+    padding:14px 20px;
+    display:flex;
+    align-items:center;
+    gap:8px;
     transition:background .15s;
     user-select:none;
   }
@@ -2210,50 +2213,49 @@ function renderBudgetView() {
     card.innerHTML =
 
       // Header -- always visible, click to expand
+      // Header row -- project name, badges, arrow only
       '<div class="bpc-header" data-gid="'+gid+'" onclick="toggleBudgetCard(this.dataset.gid)">'
-
-        // Top row: project + badges + arrow
-        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
-          + '<div style="font-family:Playfair Display,serif;font-size:16px;font-weight:600;color:var(--ink)">'+g.project+'</div>'
-          + '<span class="badge badge-gray">'+g.type+'</span>'
-          + (g.country ? '<span class="badge badge-blue">'+g.country+'</span>' : '')
-          + (g.dept    ? '<span class="badge" style="background:var(--amber-lt);color:var(--amber)">'+g.dept+'</span>' : '')
-          + '<div style="margin-left:auto;display:flex;align-items:center;gap:14px">'
-            + (g.month ? '<span style="font-size:11px;color:var(--muted)">'+g.month+(g.year?' '+g.year:'')+'</span>' : '')
-            + '<span style="font-size:11px;color:var(--muted)">'+g.lines.length+' line'+(g.lines.length===1?'':'s')+'</span>'
-            + '<div id="'+gid+'-arr" style="color:var(--muted);font-size:16px;transition:transform .25s">&#8964;</div>'
-          + '</div>'
+        + '<div style="font-family:Playfair Display,serif;font-size:15px;font-weight:600;color:var(--ink)">'+g.project+'</div>'
+        + '<span class="badge badge-gray">'+g.type+'</span>'
+        + (g.country ? '<span class="badge badge-blue">'+g.country+'</span>' : '')
+        + (g.dept    ? '<span class="badge" style="background:var(--amber-lt);color:var(--amber)">'+g.dept+'</span>' : '')
+        + '<div style="margin-left:auto;display:flex;align-items:center;gap:12px">'
+          + (g.month ? '<span style="font-size:11px;color:var(--muted)">'+g.month+(g.year?' '+g.year:'')+'</span>' : '')
+          + '<span style="font-size:11px;color:var(--muted)">'+g.lines.length+' line'+(g.lines.length===1?'':'s')+'</span>'
+          + '<div id="'+gid+'-arr" style="color:var(--muted);font-size:16px;transition:transform .25s">&#8964;</div>'
         + '</div>'
+      + '</div>'
 
-        // Progress bar
-        + '<div style="height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin-bottom:12px">'
-          + '<div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+barClr+';border-radius:3px;transition:width .5s"></div>'
-        + '</div>'
+      // Expandable body -- summary figures + table
+      + '<div id="'+gid+'-body" style="display:none">'
 
         // Summary figures
-        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--border);border-radius:7px;overflow:hidden">'
-          + '<div style="padding:9px 14px;border-right:1px solid var(--border)">'
-            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px">Budget</div>'
-            + '<div style="font-size:13.5px;font-weight:700;color:var(--ink)">'+ccy+' '+fmt(total)+'</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">'
+          + '<div style="padding:12px 18px;border-right:1px solid var(--border)">'
+            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Budget</div>'
+            + '<div style="font-size:14px;font-weight:700;color:var(--ink)">'+ccy+' '+fmt(total)+'</div>'
           + '</div>'
-          + '<div style="padding:9px 14px;border-right:1px solid var(--border)">'
-            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px">Spent</div>'
-            + '<div style="font-size:13.5px;font-weight:700;color:var(--purple)">'+ccy+' '+fmt(actual)+'</div>'
+          + '<div style="padding:12px 18px;border-right:1px solid var(--border)">'
+            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Spent</div>'
+            + '<div style="font-size:14px;font-weight:700;color:var(--purple)">'+ccy+' '+fmt(actual)+'</div>'
           + '</div>'
-          + '<div style="padding:9px 14px;border-right:1px solid var(--border)">'
-            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px">Remaining</div>'
-            + '<div style="font-size:13.5px;font-weight:700;color:'+(remain<0?'var(--danger)':'var(--success)')+';">'+(remain<0?'−':'')+ccy+' '+fmt(Math.abs(remain))+'</div>'
+          + '<div style="padding:12px 18px;border-right:1px solid var(--border)">'
+            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Remaining</div>'
+            + '<div style="font-size:14px;font-weight:700;color:'+(remain<0?'var(--danger)':'var(--success)')+';">'+(remain<0?'−':'')+ccy+' '+fmt(Math.abs(remain))+'</div>'
           + '</div>'
-          + '<div style="padding:9px 14px;background:'+(pct>85?'#fef2f2':pct>60?'#fffbeb':'#f0fdf4')+'">'
-            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px">Usage</div>'
-            + '<div style="font-size:13.5px;font-weight:700;color:'+barClr+'">'+pct+'%</div>'
+          + '<div style="padding:12px 18px;background:'+(pct>85?'#fef2f2':pct>60?'#fffbeb':'#f0fdf4')+'">'
+            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Usage</div>'
+            + '<div style="display:flex;align-items:center;gap:8px">'
+              + '<div style="flex:1;height:5px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden">'
+                + '<div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+barClr+'"></div>'
+              + '</div>'
+              + '<span style="font-size:14px;font-weight:700;color:'+barClr+'">'+pct+'%</span>'
+            + '</div>'
           + '</div>'
         + '</div>'
 
-      + '</div>' // end .bpc-header
-
-      // Expandable table -- same column order as Sheets
-      + '<div id="'+gid+'-body" style="display:none;overflow-x:auto">'
+        // Line items table
+        + '<div style="overflow-x:auto">'
         + '<table style="width:100%;border-collapse:collapse;min-width:700px">'
           + '<thead>'
             + '<tr style="background:var(--surface)">'
@@ -2280,7 +2282,8 @@ function renderBudgetView() {
             + '</tr>'
           + '</tfoot>'
         + '</table>'
-      + '</div>';
+        + '</div>' // end overflow-x:auto
+      + '</div>'; // end expandable body
 
     container.appendChild(card);
   });
