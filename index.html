@@ -3543,7 +3543,6 @@ async function pullFromSheets() {
     populateAllDropdowns();
     updateSheetStatusPill(true);
     appendSyncLog('OK Pull complete at ' + now);
-    toast('Pulled latest data from Sheets OK');
   } catch(e) {
     appendSyncLog('X Pull failed: ' + e.message);
     toast('Pull failed -- see sync log');
