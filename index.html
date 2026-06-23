@@ -1850,6 +1850,25 @@ function getActualForLine(proj, type, cat, summary, costItem) {
 
 // -- State --------------------------------------------------
 // Signatures persist in localStorage so you never re-upload
+// ── REQUESTER ACKNOWLEDGEMENT SIGNATURES ─────────────────────────────────
+// Stored locally only, keyed by ref number. NEVER pushed to Sheets.
+// Only visible on the device of the requester who signed.
+// Admin sees them in PDF only because the PDF is generated on the requester's device.
+var _reqSigStore = (function() {
+  try { return JSON.parse(localStorage.getItem('mrv_req_sigs') || '{}'); } catch(e) { return {}; }
+})();
+function saveReqSig(ref, dataUrl) {
+  _reqSigStore[ref] = dataUrl;
+  try { localStorage.setItem('mrv_req_sigs', JSON.stringify(_reqSigStore)); } catch(e) {}
+}
+function getReqSig(ref) {
+  return _reqSigStore[ref] || null;
+}
+function removeReqSig(ref) {
+  delete _reqSigStore[ref];
+  try { localStorage.setItem('mrv_req_sigs', JSON.stringify(_reqSigStore)); } catch(e) {}
+}
+
 // Signatures are user-scoped: each user has their own key in localStorage.
 // They are NEVER synced to Sheets -- only visible on the device of the owner.
 function sigStorageKey() {
@@ -2638,7 +2657,8 @@ async function downloadAcknowledgedPDF() {
   for (let ri = 0; ri < paid.length; ri++) {
     const r      = paid[ri];
     const hasSig = !!r.sigDataUrl;
-    const hasAck = !!r.requesterSigName;
+    const hasAck    = !!r.requesterSigName;
+    const localSig  = getReqSig(r.ref);  // only present on requester's device
 
     // Row height: taller if we need to show signature images
     const rowH = (hasSig || hasAck) ? 22 : 14;
@@ -2712,11 +2732,11 @@ async function downloadAcknowledgedPDF() {
 
     // Requester acknowledgement signature
     const rSigX = COL.ack.x + 2;
-    if (hasAck && r.requesterSig) {
+    if (hasAck && localSig) {
       try {
-        const fmt2 = r.requesterSig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        const fmt2 = localSig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
         const imgH2 = rowH - 4;
-        doc.addImage(r.requesterSig, fmt2, rSigX, y + 2, 36, imgH2, undefined, 'FAST');
+        doc.addImage(localSig, fmt2, rSigX, y + 2, 36, imgH2, undefined, 'FAST');
         doc.setFontSize(5); doc.setTextColor(...SUCCESS);
         doc.text('✓ ' + (r.requesterSigName || ''), rSigX, y + rowH - 2);
         if (r.requesterSigTime) doc.text(r.requesterSigTime, rSigX, y + rowH - 2 + 3.5);
@@ -3804,6 +3824,7 @@ async function pullFromSheets(silent) {
         approvedAt:       r['Approved At']        || r.approvedAt       || null,
         requesterSigName: r['Requester Sig Name'] || r.requesterSigName || null,
         requesterSigTime: r['Requester Sig Time'] || r.requesterSigTime || null,
+        // requesterSig (image) is NEVER in Sheets -- local device only
         sigDataUrl:  null,
       })).filter(r => r.ref);
       if (imported.length > 0) {
@@ -4640,7 +4661,7 @@ function filterHistory(filter) {
   var unsignedPaid = requestsStore.filter(function(r){
     return r.status==='Paid'
       && (r.requester||'').toLowerCase().trim() === uname
-      && !r.requesterSig;
+      && !r.requesterSigName;  // name in requestsStore = they signed
   });
   var signAllBtn = document.getElementById('signAllPaidBtn');
   if (signAllBtn) signAllBtn.style.display = unsignedPaid.length > 0 ? '' : 'none';
@@ -4685,9 +4706,10 @@ function filterHistory(filter) {
     // Acknowledgement column (only for paid requests)
     var ackHtml = '';
     if (r.status === 'Paid') {
-      if (r.requesterSig) {
+      var _rSig = getReqSig(r.ref);
+      if (_rSig) {
         ackHtml = '<div style="display:flex;align-items:center;gap:8px">'
-          + '<img src="'+r.requesterSig+'" style="height:32px;max-width:90px;object-fit:contain;border:1px solid var(--border);border-radius:4px;padding:2px;background:#fff">'
+          + '<img src="'+_rSig+'" style="height:32px;max-width:90px;object-fit:contain;border:1px solid var(--border);border-radius:4px;padding:2px;background:#fff">'
           + '<button class="btn btn-ghost btn-sm" style="color:var(--danger);padding:3px 7px;font-size:11px" data-ackref="'+r.ref+'" onclick="clearAck(this.dataset.ackref)" title="Remove">✕</button>'
           + '</div>';
       } else {
@@ -4841,9 +4863,13 @@ function confirmAck() {
   }
 
   targets.forEach(function(r){
-    r.requesterSig     = _pendingAckSig;
+    // Image stored locally only -- never in requestsStore or Sheets
+    saveReqSig(r.ref, _pendingAckSig);
+    // Only name + time go into requestsStore (for Sheets audit trail)
     r.requesterSigName = name;
     r.requesterSigTime = now;
+    // Remove any accidentally stored image from requestsStore
+    delete r.requesterSig;
   });
 
   persistRequestsToStorage();
@@ -4862,6 +4888,7 @@ function confirmAck() {
 function clearAck(ref) {
   var entry = requestsStore.find(function(r){ return r.ref === ref; });
   if (!entry) return;
+  removeReqSig(entry.ref);  // remove image from local store
   delete entry.requesterSig;
   delete entry.requesterSigName;
   delete entry.requesterSigTime;
