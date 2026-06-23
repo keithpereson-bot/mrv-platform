@@ -1157,11 +1157,17 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">Paid Requests</div>
-          <span class="badge badge-teal" id="paidTotal">0</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="btn btn-secondary btn-sm admin-only" onclick="downloadAcknowledgedPDF()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Acknowledged PDF
+            </button>
+            <span class="badge badge-teal" id="paidTotal">0</span>
+          </div>
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Signed By</th><th>Paid Date</th><th>Action</th></tr></thead>
+            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Signed By</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
             <tbody id="bodyPaid"></tbody></table>
           </div>
         </div>
@@ -2532,6 +2538,220 @@ async function pullBudgetLinesFromSheets() {
 
 
 // -- PDF GENERATION -----------------------------------------
+
+// Download PDF of paid+acknowledged requests (for expense clearing)
+async function downloadAcknowledgedPDF() {
+  const { jsPDF } = window.jspdf;
+  const paid = requestsStore.filter(function(r){ return r.status === 'Paid'; });
+
+  if (!paid.length) { toast('No paid requests to export'); return; }
+
+  const doc  = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const pw   = doc.internal.pageSize.getWidth();
+  const ph   = doc.internal.pageSize.getHeight();
+  const now  = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+
+  const NAVY   = [15, 28, 46];
+  const TEAL   = [15, 110, 86];
+  const PURPLE = [67, 56, 202];
+  const GOLD   = [200, 135, 42];
+  const MUTED  = [107, 122, 153];
+  const WHITE  = [255, 255, 255];
+  const BORDER = [221, 226, 235];
+  const SUCCESS= [22, 163, 74];
+
+  // Count acknowledged vs unacknowledged
+  const acked   = paid.filter(function(r){ return r.requesterSigName; });
+  const unacked = paid.filter(function(r){ return !r.requesterSigName; });
+
+  function drawHeader(isFirstPage) {
+    // Header bar
+    doc.setFillColor(...NAVY);
+    doc.rect(0, 0, pw, 22, 'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...WHITE);
+    doc.text('MRV Platform — Paid Requests & Acknowledgements', 14, 9);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(8);
+    doc.setTextColor(180, 200, 220);
+    doc.text('For expense clearing — includes approver and requester signatures', 14, 15);
+    doc.text('Generated: ' + now, pw - 14, 15, {align:'right'});
+
+    if (isFirstPage) {
+      // Summary row
+      const sW = (pw - 28) / 4;
+      const summaries = [
+        { label:'Total Paid', value: paid.length + ' requests',          color:NAVY   },
+        { label:'Acknowledged', value: acked.length + ' signed',         color:SUCCESS},
+        { label:'Pending Ack', value: unacked.length + ' unsigned',      color:GOLD   },
+        { label:'Total Amount', value: getDefaultCurrency()+' '+paid.reduce(function(s,r){return s+(r.amount||0);},0).toLocaleString(), color:TEAL },
+      ];
+      summaries.forEach(function(s, i) {
+        const bx = 14 + i * (sW + 2.3);
+        doc.setFillColor(245, 247, 250);
+        doc.roundedRect(bx, 25, sW, 14, 2, 2, 'F');
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(6.5);
+        doc.setTextColor(...MUTED);
+        doc.text(s.label.toUpperCase(), bx + 4, 30);
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...s.color);
+        doc.text(s.value, bx + 4, 36);
+      });
+    }
+  }
+
+  // Table columns
+  const COL = {
+    ref:    { x:14,  w:18  },
+    proj:   { x:32,  w:44  },
+    cat:    { x:76,  w:36  },
+    amt:    { x:112, w:28  },
+    date:   { x:140, w:22  },
+    approv: { x:162, w:50  },
+    ack:    { x:212, w:70  },
+  };
+  const HEADERS = ['Ref #','Project / Type','Category / Line','Amount','Date','Approved By (Finance)','Requester Acknowledgement'];
+
+  function drawTableHeader(y) {
+    doc.setFillColor(...NAVY);
+    doc.rect(14, y, pw - 28, 8, 'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...WHITE);
+    Object.values(COL).forEach(function(c, i) {
+      doc.text(HEADERS[i], c.x + 2, y + 5.2);
+    });
+    return y + 8;
+  }
+
+  let y = 42;
+  drawHeader(true);
+  y = drawTableHeader(y);
+
+  for (let ri = 0; ri < paid.length; ri++) {
+    const r      = paid[ri];
+    const hasSig = !!r.sigDataUrl;
+    const hasAck = !!r.requesterSigName;
+
+    // Row height: taller if we need to show signature images
+    const rowH = (hasSig || hasAck) ? 22 : 14;
+
+    if (y + rowH > ph - 14) {
+      doc.addPage();
+      y = 5;
+      drawHeader(false);
+      y = drawTableHeader(y + 22);
+    }
+
+    // Alternating row background
+    if (ri % 2 === 0) {
+      doc.setFillColor(248, 250, 252);
+      doc.rect(14, y, pw - 28, rowH, 'F');
+    }
+
+    // Row border
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.2);
+    doc.rect(14, y, pw - 28, rowH, 'S');
+
+    const mid = y + rowH / 2;
+
+    // Ref #
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...TEAL);
+    doc.text('#' + r.ref, COL.ref.x + 2, mid + 1, {baseline:'middle'});
+
+    // Project + type
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...NAVY);
+    doc.text(r.project || '', COL.proj.x + 2, mid, {baseline:'middle', maxWidth: COL.proj.w - 4});
+    if (r.type) {
+      doc.setFontSize(6); doc.setTextColor(...MUTED);
+      doc.text(r.type, COL.proj.x + 2, mid + 4, {baseline:'middle'});
+    }
+
+    // Category / line
+    doc.setFontSize(6.5); doc.setTextColor(...NAVY);
+    doc.text((r.category || r.description || ''), COL.cat.x + 2, mid - 1, {baseline:'middle', maxWidth: COL.cat.w - 4});
+    if (r.costSummary) {
+      doc.setFontSize(5.5); doc.setTextColor(...MUTED);
+      doc.text(r.costSummary, COL.cat.x + 2, mid + 3.5, {baseline:'middle', maxWidth: COL.cat.w - 4});
+    }
+
+    // Amount
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...NAVY);
+    doc.text((r.amount||0).toLocaleString(), COL.amt.x + 2, mid + 1, {baseline:'middle'});
+
+    // Date
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+    doc.text(r.date || '', COL.date.x + 2, mid + 1, {baseline:'middle'});
+
+    // Approver signature (finance officer)
+    const aSigX = COL.approv.x + 2;
+    if (hasSig) {
+      try {
+        const fmt = r.sigDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        const imgH = rowH - 4;
+        doc.addImage(r.sigDataUrl, fmt, aSigX, y + 2, 30, imgH, undefined, 'FAST');
+        doc.setFontSize(5); doc.setTextColor(...MUTED);
+        doc.text(r.sigLabel || '', aSigX, y + rowH - 2);
+        if (r.sigTime) doc.text(r.sigTime, aSigX, y + rowH - 2 + 3.5);
+      } catch(e) {
+        doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...SUCCESS);
+        doc.text('[Signature on file]', aSigX, mid + 1, {baseline:'middle'});
+      }
+    } else {
+      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...MUTED);
+      doc.text('Not signed', aSigX, mid + 1, {baseline:'middle'});
+    }
+
+    // Requester acknowledgement signature
+    const rSigX = COL.ack.x + 2;
+    if (hasAck && r.requesterSig) {
+      try {
+        const fmt2 = r.requesterSig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        const imgH2 = rowH - 4;
+        doc.addImage(r.requesterSig, fmt2, rSigX, y + 2, 36, imgH2, undefined, 'FAST');
+        doc.setFontSize(5); doc.setTextColor(...SUCCESS);
+        doc.text('✓ ' + (r.requesterSigName || ''), rSigX, y + rowH - 2);
+        if (r.requesterSigTime) doc.text(r.requesterSigTime, rSigX, y + rowH - 2 + 3.5);
+      } catch(e) {
+        doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...SUCCESS);
+        doc.text('✓ Acknowledged: ' + (r.requesterSigName || ''), rSigX, mid + 1, {baseline:'middle'});
+      }
+    } else if (hasAck) {
+      doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...SUCCESS);
+      doc.text('✓ ' + (r.requesterSigName || ''), rSigX, mid - 1, {baseline:'middle'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED);
+      if (r.requesterSigTime) doc.text(r.requesterSigTime, rSigX, mid + 3, {baseline:'middle'});
+    } else {
+      // Blank signature box
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.3);
+      doc.setLineDashPattern([1, 1], 0);
+      doc.rect(rSigX, y + 3, 48, rowH - 6, 'S');
+      doc.setLineDashPattern([], 0);
+      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...MUTED);
+      doc.text('Awaiting acknowledgement', rSigX + 24, mid + 1, {align:'center', baseline:'middle'});
+    }
+
+    y += rowH;
+  }
+
+  // Footer
+  const footerY = ph - 8;
+  doc.setDrawColor(...BORDER); doc.setLineWidth(0.3);
+  doc.line(14, footerY - 4, pw - 14, footerY - 4);
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+  doc.text('MRV Platform — Confidential. For expense clearing only.', 14, footerY);
+  doc.text('Page ' + doc.getCurrentPageInfo().pageNumber + ' of ' + doc.getNumberOfPages(), pw - 14, footerY, {align:'right'});
+  doc.text(acked.length + ' of ' + paid.length + ' requests acknowledged by requester.', pw / 2, footerY, {align:'center'});
+
+  doc.save('MRV_Acknowledged_Requests_' + new Date().toISOString().slice(0,10) + '.pdf');
+  toast('PDF downloaded — ' + paid.length + ' paid requests');
+}
+
 async function downloadRequestsPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -3355,7 +3575,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // All devices use this URL automatically -- no per-device setup
 // Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx_Xx2iykXZglTMyk6Fs7X4Wo0Kwx05HDs-599Fx7MKH59ItSLq4qu04QE8O976G1o/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwgnO78LXR-RmeEP8-rDQ-sFRQ5zoNcoI1BmL3n1KMBxbVrwSKLNVOge-vq72FHFgk/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- always use hardcoded URL so all devices share the same data
@@ -3464,10 +3684,12 @@ async function pushToSheets() {
         requester:   r.requester   || '',
         status:      r.status      || '',
         date:        r.date        || '',
-        sigLabel:    r.sigLabel    || '',
-        sigTime:     r.sigTime     || '',
-        approvedBy:  r.approvedBy  || '',
-        approvedAt:  r.approvedAt  || '',
+        sigLabel:         r.sigLabel         || '',
+        sigTime:          r.sigTime          || '',
+        approvedBy:       r.approvedBy       || '',
+        approvedAt:       r.approvedAt       || '',
+        requesterSigName: r.requesterSigName || '',
+        requesterSigTime: r.requesterSigTime || '',
       };
     });
 
@@ -3572,10 +3794,12 @@ async function pullFromSheets(silent) {
         requester:   String(r['Requester']    || r.requester   || '').trim(),
         status:      String(r['Status']       || r.status      || 'Draft').trim(),
         date:        String(r['Date']         || r.date        || '').trim(),
-        sigLabel:    r['Signed By']  || r.sigLabel  || null,
-        sigTime:     r['Sign Time']  || r.sigTime   || null,
-        approvedBy:  r['Approved By']|| r.approvedBy|| null,
-        approvedAt:  r['Approved At']|| r.approvedAt|| null,
+        sigLabel:         r['Signed By']          || r.sigLabel         || null,
+        sigTime:          r['Sign Time']          || r.sigTime          || null,
+        approvedBy:       r['Approved By']        || r.approvedBy       || null,
+        approvedAt:       r['Approved At']        || r.approvedAt       || null,
+        requesterSigName: r['Requester Sig Name'] || r.requesterSigName || null,
+        requesterSigTime: r['Requester Sig Time'] || r.requesterSigTime || null,
         sigDataUrl:  null,
       })).filter(r => r.ref);
       if (imported.length > 0) {
@@ -3777,8 +4001,18 @@ function rebuildRequestsTable() {
   if (bp_el) bp_el.innerHTML = paid.length===0
     ? '<tr><td colspan="10" style="padding:24px;text-align:center;color:var(--muted)">No paid requests yet</td></tr>'
     : paid.map(function(r) {
+        var ackCell = r.requesterSigName
+          ? '<td><div style="display:flex;align-items:center;gap:6px">'
+              + '<span style="color:var(--success);font-size:11px">&#10003;</span>'
+              + '<div>'
+                + '<div style="font-size:12px;font-weight:500;color:var(--success)">'+r.requesterSigName+'</div>'
+                + '<div style="font-size:10.5px;color:var(--muted)">'+(r.requesterSigTime||'')+'</div>'
+              + '</div>'
+            + '</div></td>'
+          : '<td><span class="badge badge-gray" style="font-size:10px">Pending</span></td>';
         return '<tr>'
           + cols(r, '<td>'+(r.requester||'')+'</td><td style="color:var(--success);font-size:12px;font-weight:500">'+(r.sigLabel||'--')+'</td><td style="color:var(--muted);font-size:12px">'+(r.sigTime||r.date||'--')+'</td>')
+          + ackCell
           + '<td style="display:flex;gap:4px;align-items:center">'
             +'<button class="btn btn-ghost btn-sm" data-rref="'+r.ref+'" data-ramt="'+r.amount+'" data-rlab="'+(r.sigLabel||r.requester)+'" onclick="showReceipt(this.dataset.rref,this.dataset.ramt,this.dataset.rlab)">Receipt</button>'
             +delBtn(r.ref)
