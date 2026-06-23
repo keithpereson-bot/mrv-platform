@@ -1850,25 +1850,6 @@ function getActualForLine(proj, type, cat, summary, costItem) {
 
 // -- State --------------------------------------------------
 // Signatures persist in localStorage so you never re-upload
-// ── REQUESTER ACKNOWLEDGEMENT SIGNATURES ─────────────────────────────────
-// Stored locally only, keyed by ref number. NEVER pushed to Sheets.
-// Only visible on the device of the requester who signed.
-// Admin sees them in PDF only because the PDF is generated on the requester's device.
-var _reqSigStore = (function() {
-  try { return JSON.parse(localStorage.getItem('mrv_req_sigs') || '{}'); } catch(e) { return {}; }
-})();
-function saveReqSig(ref, dataUrl) {
-  _reqSigStore[ref] = dataUrl;
-  try { localStorage.setItem('mrv_req_sigs', JSON.stringify(_reqSigStore)); } catch(e) {}
-}
-function getReqSig(ref) {
-  return _reqSigStore[ref] || null;
-}
-function removeReqSig(ref) {
-  delete _reqSigStore[ref];
-  try { localStorage.setItem('mrv_req_sigs', JSON.stringify(_reqSigStore)); } catch(e) {}
-}
-
 // Signatures are user-scoped: each user has their own key in localStorage.
 // They are NEVER synced to Sheets -- only visible on the device of the owner.
 function sigStorageKey() {
@@ -2657,8 +2638,8 @@ async function downloadAcknowledgedPDF() {
   for (let ri = 0; ri < paid.length; ri++) {
     const r      = paid[ri];
     const hasSig = !!r.sigDataUrl;
-    const hasAck    = !!r.requesterSigName;
-    const localSig  = getReqSig(r.ref);  // only present on requester's device
+    const hasAck = !!r.requesterSigName;
+    const localSig = r.requesterSig || null;  // image from Sheets, visible to all
 
     // Row height: taller if we need to show signature images
     const rowH = (hasSig || hasAck) ? 22 : 14;
@@ -3599,7 +3580,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // All devices use this URL automatically -- no per-device setup
 // Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwgnO78LXR-RmeEP8-rDQ-sFRQ5zoNcoI1BmL3n1KMBxbVrwSKLNVOge-vq72FHFgk/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzpJV0g7OVU5YLPBZB3kO8pt8CvyA7AhjsAXtdxK3SGiIy7dKzUDJfsfJXhgDx3gXo/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- always use hardcoded URL so all devices share the same data
@@ -3712,6 +3693,7 @@ async function pushToSheets() {
         sigTime:          r.sigTime          || '',
         approvedBy:       r.approvedBy       || '',
         approvedAt:       r.approvedAt       || '',
+        requesterSig:     r.requesterSig     || '',
         requesterSigName: r.requesterSigName || '',
         requesterSigTime: r.requesterSigTime || '',
       };
@@ -3822,9 +3804,9 @@ async function pullFromSheets(silent) {
         sigTime:          r['Sign Time']          || r.sigTime          || null,
         approvedBy:       r['Approved By']        || r.approvedBy       || null,
         approvedAt:       r['Approved At']        || r.approvedAt       || null,
+        requesterSig:     r['Requester Sig']      || r.requesterSig     || null,
         requesterSigName: r['Requester Sig Name'] || r.requesterSigName || null,
         requesterSigTime: r['Requester Sig Time'] || r.requesterSigTime || null,
-        // requesterSig (image) is NEVER in Sheets -- local device only
         sigDataUrl:  null,
       })).filter(r => r.ref);
       if (imported.length > 0) {
@@ -4661,7 +4643,7 @@ function filterHistory(filter) {
   var unsignedPaid = requestsStore.filter(function(r){
     return r.status==='Paid'
       && (r.requester||'').toLowerCase().trim() === uname
-      && !r.requesterSigName;  // name in requestsStore = they signed
+      && !r.requesterSig;
   });
   var signAllBtn = document.getElementById('signAllPaidBtn');
   if (signAllBtn) signAllBtn.style.display = unsignedPaid.length > 0 ? '' : 'none';
@@ -4706,10 +4688,9 @@ function filterHistory(filter) {
     // Acknowledgement column (only for paid requests)
     var ackHtml = '';
     if (r.status === 'Paid') {
-      var _rSig = getReqSig(r.ref);
-      if (_rSig) {
+      if (r.requesterSig) {
         ackHtml = '<div style="display:flex;align-items:center;gap:8px">'
-          + '<img src="'+_rSig+'" style="height:32px;max-width:90px;object-fit:contain;border:1px solid var(--border);border-radius:4px;padding:2px;background:#fff">'
+          + '<img src="'+r.requesterSig+'" style="height:32px;max-width:90px;object-fit:contain;border:1px solid var(--border);border-radius:4px;padding:2px;background:#fff">'
           + '<button class="btn btn-ghost btn-sm" style="color:var(--danger);padding:3px 7px;font-size:11px" data-ackref="'+r.ref+'" onclick="clearAck(this.dataset.ackref)" title="Remove">✕</button>'
           + '</div>';
       } else {
@@ -4863,13 +4844,9 @@ function confirmAck() {
   }
 
   targets.forEach(function(r){
-    // Image stored locally only -- never in requestsStore or Sheets
-    saveReqSig(r.ref, _pendingAckSig);
-    // Only name + time go into requestsStore (for Sheets audit trail)
+    r.requesterSig     = _pendingAckSig;  // base64 image -- stored in Sheets like approver sig
     r.requesterSigName = name;
     r.requesterSigTime = now;
-    // Remove any accidentally stored image from requestsStore
-    delete r.requesterSig;
   });
 
   persistRequestsToStorage();
@@ -4888,7 +4865,6 @@ function confirmAck() {
 function clearAck(ref) {
   var entry = requestsStore.find(function(r){ return r.ref === ref; });
   if (!entry) return;
-  removeReqSig(entry.ref);  // remove image from local store
   delete entry.requesterSig;
   delete entry.requesterSigName;
   delete entry.requesterSigTime;
