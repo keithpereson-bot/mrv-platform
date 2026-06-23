@@ -3281,22 +3281,34 @@ function disconnectWebApp() {
 
 // -- Core fetch wrapper --------------------------------------
 async function gasCall(payload) {
-  const url = gsWebAppUrl || document.getElementById('webAppUrl').value.trim();
+  const url = gsWebAppUrl || (document.getElementById('webAppUrl') && document.getElementById('webAppUrl').value.trim());
   if (!url) throw new Error('No Web App URL set');
-  // Apps Script requires GET for ping, POST for data
-  let resp;
-  if (payload.action === 'ping') {
-    resp = await fetch(url + '?action=ping', { redirect: 'follow' });
-  } else {
-    resp = await fetch(url, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain' }, // avoid CORS preflight
-      body: JSON.stringify(payload),
-    });
+
+  // 30-second timeout -- prevents hanging on Apps Script cold starts
+  const controller = new AbortController();
+  const timer = setTimeout(function() { controller.abort(); }, 30000);
+
+  try {
+    let resp;
+    if (payload.action === 'ping') {
+      resp = await fetch(url + '?action=ping', { redirect:'follow', signal:controller.signal });
+    } else {
+      resp = await fetch(url, {
+        method:  'POST',
+        redirect:'follow',
+        headers: { 'Content-Type': 'text/plain' },
+        body:    JSON.stringify(payload),
+        signal:  controller.signal,
+      });
+    }
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return await resp.json();
+  } catch(e) {
+    if (e.name === 'AbortError') throw new Error('Request timed out (30s) -- Apps Script may be slow');
+    throw e;
+  } finally {
+    clearTimeout(timer);
   }
-  if (!resp.ok) throw new Error('HTTP ' + resp.status);
-  return await resp.json();
 }
 
 // -- Push all data to Sheets ---------------------------------
@@ -3400,16 +3412,16 @@ async function pushToSheets() {
     appendSyncLog('Pushed: ' + reqRows.length + ' requests, ' + actualsData.filter(function(a){return a.actual>0;}).length + ' actuals, ' + fundRows.length + ' funds');
   } catch(e) {
     appendSyncLog('Push failed: ' + e.message);
-    toast('Push failed');
+    if (currentUser && currentUser.role === 'admin') toast('Push failed -- see sync log');
   } finally {
     window._pushInProgress = false;
   }
 }
 
 // -- Pull data from Sheets -----------------------------------
-async function pullFromSheets() {
-  if (!gsWebAppUrl) { toast('Please connect a Web App URL first'); return; }
-  appendSyncLog('Pulling from Sheets...');
+async function pullFromSheets(silent) {
+  if (!gsWebAppUrl) { if (!silent) toast('Please connect a Web App URL first'); return; }
+  if (!silent) appendSyncLog('Pulling from Sheets...');
   try {
     const res = await gasCall({ action: 'getAll' });
     if (!res.ok) throw new Error(res.error || 'Pull failed');
@@ -3545,7 +3557,10 @@ async function pullFromSheets() {
     appendSyncLog('OK Pull complete at ' + now);
   } catch(e) {
     appendSyncLog('X Pull failed: ' + e.message);
-    toast('Pull failed -- see sync log');
+    // Only show toast to admin -- non-admins and background syncs stay silent
+    if (!silent && currentUser && currentUser.role === 'admin') {
+      toast('Sync error -- see sync log');
+    }
   }
 }
 
@@ -3690,8 +3705,7 @@ function startAutoSync() {
   clearInterval(gsAutoSyncTimer);
   if (!gsWebAppUrl) return;
   gsAutoSyncTimer = setInterval(function() {
-    pullFromSheets().catch(function(){});
-    // Reset budget pull flag so budget view refreshes too
+    pullFromSheets(true).catch(function(){}); // silent=true: no toasts for background pulls
     window._budgetPulled = false;
   }, AUTO_SYNC_INTERVAL);
   appendSyncLog('Auto-sync active (every 10s)');
@@ -4222,7 +4236,7 @@ async function afterLogin() {
   if (gsWebAppUrl) {
     try {
       appendSyncLog('Loading data from Google Sheets...');
-      await pullFromSheets();
+      await pullFromSheets(true);   // silent on login load
       await pullBudgetLinesFromSheets();
       reqCounter = calcReqCounter();
     } catch(e) {
