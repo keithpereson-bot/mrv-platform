@@ -3500,10 +3500,17 @@ function submitRequest() {
     status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today
   });
   persistRequestsToStorage();
-  populateAllDropdowns();
   closeModal('requestModal');
-  syncAfterChange();
-  toast('Request submitted -- REQ-'+String(reqCounter).padStart(3,'0'));
+  rebuildRequestsTable();
+  renderDashboard();
+  renderHistory();
+  populateAllDropdowns();
+  // Stop auto-sync, push immediately, restart — same as approve
+  clearInterval(gsAutoSyncTimer);
+  if (gsWebAppUrl) {
+    pushToSheets().then(function(){ startAutoSync(); }).catch(function(){ startAutoSync(); });
+  }
+  toast('Request submitted -- ' + num);
 }
 
 function submitExpense() {
@@ -3580,7 +3587,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // All devices use this URL automatically -- no per-device setup
 // Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzpJV0g7OVU5YLPBZB3kO8pt8CvyA7AhjsAXtdxK3SGiIy7dKzUDJfsfJXhgDx3gXo/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzvyKbVbBNIiU3wYrv5mL9WXIvYxXZEagsKduINzn7TgrP4Dj37mgL3KeNCtERoGc4/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- always use hardcoded URL so all devices share the same data
@@ -3810,10 +3817,17 @@ async function pullFromSheets(silent) {
         sigDataUrl:  null,
       })).filter(r => r.ref);
       if (imported.length > 0) {
-        requestsStore = imported;
+        // Smart merge: Sheets is authoritative for existing refs.
+        // Keep any local Draft refs not yet in Sheets (submitted but push pending).
+        var sheetsRefs = new Set(imported.map(function(r){ return r.ref; }));
+        var localOnly  = requestsStore.filter(function(r){
+          return !sheetsRefs.has(r.ref);
+        });
+        requestsStore = imported.concat(localOnly);
         reqCounter = calcReqCounter();
         persistRequestsToStorage();
         rebuildRequestsTable();
+        renderHistory();
       }
     }
 
@@ -4040,18 +4054,17 @@ function rebuildRequestsTable() {
 // Called after any data mutation.
 // Updates all views immediately then pushes to Sheets.
 function syncAfterChange() {
-  // 1. Refresh all views with current in-memory data
+  // Refresh all views immediately
   renderDashboard();
   rebuildRequestsTable();
   if (document.getElementById('view-history') && document.getElementById('view-history').classList.contains('active')) renderHistory();
-  if (document.getElementById('view-budgets') &&
-      document.getElementById('view-budgets').classList.contains('active')) {
+  if (document.getElementById('view-budgets') && document.getElementById('view-budgets').classList.contains('active')) {
     renderBudgetView();
   }
-  // 2. Push to Sheets (debounced 800ms)
+  // Push immediately — stop auto-sync to prevent race, restart after
   if (gsWebAppUrl) {
-    clearTimeout(window._gsPushTimer);
-    window._gsPushTimer = setTimeout(function() { pushToSheets(); }, 800);
+    clearInterval(gsAutoSyncTimer);
+    pushToSheets().then(function(){ startAutoSync(); }).catch(function(){ startAutoSync(); });
   }
 }
 
