@@ -4183,7 +4183,7 @@ function bootAuth() {
   localStorage.removeItem('mrv_users');
   showLoginScreen();
   // Show URL field if no Sheets connection configured
-  var noUrl = !gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE';
+  var noUrl = !gsWebAppUrl || gsWebAppUrl === 'https://script.google.com/macros/s/AKfycbzbx_BJulk7xYXGG2Dcsj5l8t98YUCx4l3dKZ3A_8V2Pei6ei3m8ve9Htvdt1e-9g/exec';
   var urlRow = document.getElementById('loginUrlRow');
   if (urlRow) urlRow.style.display = noUrl ? '' : 'none';
   // Pre-fill if user previously saved a URL via the quick-connect
