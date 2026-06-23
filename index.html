@@ -975,6 +975,7 @@
   <div class="aside-item" onclick="showView('budgets',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>Approved Budgets</div>
   <div class="aside-item approver-only" onclick="showView('funds',this)" data-role-required="admin"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span>Load Funds</div>
   <div class="aside-item" onclick="showView('requests',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg></span>System Requests <span class="aside-badge" id="sidebarReqBadge">0</span></div>
+  <div class="aside-item requester-only" id="historyNavItem" onclick="showView('history',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>My Submissions</div>
   <div class="aside-item" onclick="showView('expenses',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Weekly Expensing</div>
   <div class="aside-item" onclick="showView('reconciliation',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>Reconciliation</div>
   <div class="aside-section">Reports</div>
@@ -1489,6 +1490,52 @@
             <tbody id="usersTableBody">
               <tr><td colspan="4" class="text-muted text-sm" style="padding:20px;text-align:center">No users yet -- add one to get started</td></tr>
             </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- -- MY SUBMISSIONS (Requesters only) -- -->
+  <div id="view-history" class="view">
+    <div class="page-header">
+      <h1>My Submissions</h1>
+      <p>All requests you have submitted &mdash; track approval and payment status in real time.</p>
+    </div>
+
+    <!-- Summary stat row -->
+    <div id="historyStats" class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px"></div>
+
+    <!-- Filter tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" id="hfilt-all"    onclick="filterHistory('all')">All</button>
+      <button class="btn btn-ghost btn-sm"   id="hfilt-draft"  onclick="filterHistory('draft')">Drafts</button>
+      <button class="btn btn-ghost btn-sm"   id="hfilt-approved" onclick="filterHistory('approved')">In Queue</button>
+      <button class="btn btn-ghost btn-sm"   id="hfilt-paid"   onclick="filterHistory('paid')">Paid</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Submission History</div>
+        <span class="badge badge-gray" id="historyCount">0 requests</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Ref #</th>
+                <th>Project</th>
+                <th>Type</th>
+                <th>Category / Line</th>
+                <th>Amount</th>
+                <th>Submitted</th>
+                <th>Approval</th>
+                <th>Payment</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
           </table>
         </div>
       </div>
@@ -2631,6 +2678,7 @@ function showView(id, el) {
   if (id === 'reconciliation') renderReconciliation();
   if (id === 'dashboard')      renderDashboard();
   if (id === 'transactions')   renderTransactions();
+  if (id === 'history')        renderHistory();
 }
 
 // -- Modals -------------------------------------------------
@@ -3673,6 +3721,9 @@ function rebuildRequestsTable() {
   // Keep legacy tbody in sync for PDF etc
   var leg = document.getElementById('requestsBody');
   if (leg) leg.innerHTML = requestsStore.map(function(r) { return '<tr><td>'+r.ref+'</td></tr>'; }).join('');
+  // Refresh history view if active
+  var hv = document.getElementById('view-history');
+  if (hv && hv.classList.contains('active')) renderHistory();
 }
 
 
@@ -3683,6 +3734,7 @@ function syncAfterChange() {
   // 1. Refresh all views with current in-memory data
   renderDashboard();
   rebuildRequestsTable();
+  if (document.getElementById('view-history') && document.getElementById('view-history').classList.contains('active')) renderHistory();
   if (document.getElementById('view-budgets') &&
       document.getElementById('view-budgets').classList.contains('active')) {
     renderBudgetView();
@@ -4007,9 +4059,9 @@ showView = function(id, el) {
   var role    = currentUser.role    || 'requester';
   var country = currentUser.country || '';
 
-  // Requester: only requests view
+  // Requester: only requests + history
   if (role === 'requester') {
-    if (id !== 'requests') {
+    if (id !== 'requests' && id !== 'history') {
       toast('Access restricted -- contact Admin for other sections');
       return;
     }
@@ -4198,6 +4250,140 @@ async function pullUsersFromSheets() {
 }
 
 // ==============================================================
+// MY SUBMISSIONS -- Requester history view
+// Shows only requests submitted by the currently logged-in user
+// ==============================================================
+
+var _historyFilter = 'all';
+
+function renderHistory() {
+  if (!currentUser) return;
+  var name  = (currentUser.name  || '').trim().toLowerCase();
+  var email = (currentUser.email || '').trim().toLowerCase();
+
+  // Match requests by requester name or email
+  var mine = requestsStore.filter(function(r) {
+    var rname = (r.requester || '').trim().toLowerCase();
+    return rname === name || rname === email;
+  });
+
+  // Stats
+  var total    = mine.length;
+  var drafts   = mine.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; }).length;
+  var approved = mine.filter(function(r){ return r.status==='Approved'; }).length;
+  var paid     = mine.filter(function(r){ return r.status==='Paid'; }).length;
+  var paidAmt  = mine.filter(function(r){ return r.status==='Paid'; }).reduce(function(s,r){ return s+(parseFloat(r.amount)||0); }, 0);
+
+  var statsEl = document.getElementById('historyStats');
+  if (statsEl) {
+    statsEl.innerHTML =
+      '<div class="stat-card"><div class="stat-label">Total Submitted</div>'
+        +'<div class="stat-value" style="color:var(--ink)">'+total+'</div>'
+        +'<div class="stat-sub">All time</div></div>'
+      +'<div class="stat-card"><div class="stat-label">Pending Approval</div>'
+        +'<div class="stat-value gold">'+drafts+'</div>'
+        +'<div class="stat-sub">Awaiting review</div></div>'
+      +'<div class="stat-card"><div class="stat-label">In Payment Queue</div>'
+        +'<div class="stat-value purple">'+approved+'</div>'
+        +'<div class="stat-sub">Approved, not yet paid</div></div>'
+      +'<div class="stat-card"><div class="stat-label">Paid Out</div>'
+        +'<div class="stat-value teal">'+paid+'</div>'
+        +'<div class="stat-sub">'+fmtK(paidAmt, getDefaultCurrency())+'</div></div>';
+  }
+
+  filterHistory(_historyFilter);
+}
+
+function filterHistory(filter) {
+  _historyFilter = filter;
+
+  // Update filter button styles
+  ['all','draft','approved','paid'].forEach(function(f) {
+    var btn = document.getElementById('hfilt-'+f);
+    if (!btn) return;
+    btn.className = filter === f ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+  });
+
+  var name  = currentUser ? (currentUser.name  || '').trim().toLowerCase() : '';
+  var email = currentUser ? (currentUser.email || '').trim().toLowerCase() : '';
+
+  var mine = requestsStore.filter(function(r) {
+    var rname = (r.requester || '').trim().toLowerCase();
+    return rname === name || rname === email;
+  });
+
+  var filtered = mine.filter(function(r) {
+    if (filter === 'draft')    return r.status === 'Draft' || r.status === 'Pending';
+    if (filter === 'approved') return r.status === 'Approved';
+    if (filter === 'paid')     return r.status === 'Paid';
+    return true;
+  });
+
+  // Sort: newest first (by ref number)
+  filtered = filtered.slice().sort(function(a,b) {
+    var na = parseInt((a.ref||'').replace(/[^0-9]/g,'')) || 0;
+    var nb = parseInt((b.ref||'').replace(/[^0-9]/g,'')) || 0;
+    return nb - na;
+  });
+
+  var countEl = document.getElementById('historyCount');
+  if (countEl) countEl.textContent = filtered.length + ' request' + (filtered.length===1?'':'s');
+
+  var tbody = document.getElementById('historyBody');
+  if (!tbody) return;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:32px;text-align:center;color:var(--muted)">'
+      + (mine.length === 0
+          ? 'You have not submitted any requests yet. Click <strong>+ New Request</strong> on the Requests tab to get started.'
+          : 'No requests match this filter.')
+      + '</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(function(r) {
+    // Status badge
+    var statusMap = {
+      Draft:    { cls:'badge-gray',   label:'Draft' },
+      Pending:  { cls:'badge-gold',   label:'Pending' },
+      Approved: { cls:'badge-blue',   label:'Approved' },
+      Paid:     { cls:'badge-teal',   label:'Paid' },
+    };
+    var s = statusMap[r.status] || { cls:'badge-gray', label:r.status };
+
+    // Approval column
+    var approvalHtml = r.approvedBy
+      ? '<div style="font-size:12px;font-weight:500;color:var(--success)">&#10003; '+r.approvedBy+'</div>'
+        + '<div style="font-size:10.5px;color:var(--muted)">'+(r.approvedAt||'')+'</div>'
+      : '<span style="color:var(--muted);font-size:12px">Awaiting</span>';
+
+    // Payment column
+    var paymentHtml = r.status === 'Paid'
+      ? '<div style="font-size:12px;font-weight:500;color:var(--success)">&#10003; Paid</div>'
+        + (r.sigLabel ? '<div style="font-size:10.5px;color:var(--muted)">'+r.sigLabel+'</div>' : '')
+        + (r.sigTime  ? '<div style="font-size:10.5px;color:var(--muted)">'+r.sigTime+'</div>'  : '')
+      : r.status === 'Approved'
+        ? '<span style="font-size:12px;color:var(--warn)">&#9679; In Queue</span>'
+        : '<span style="color:var(--muted);font-size:12px">Not yet</span>';
+
+    return '<tr>'
+      + '<td style="font-family:JetBrains Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
+      + '<td style="font-weight:500">'+r.project+'</td>'
+      + '<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
+      + '<td>'
+        + '<div style="font-size:12.5px;color:var(--ink)">'+(r.category||r.description||'--')+'</div>'
+        + (r.costSummary ? '<div style="font-size:11px;color:var(--muted)">'+r.costSummary+'</div>' : '')
+      + '</td>'
+      + '<td class="currency" style="font-weight:600;white-space:nowrap">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
+      + '<td style="font-size:12px;color:var(--muted);white-space:nowrap">'+(r.date||'--')+'</td>'
+      + '<td>'+approvalHtml+'</td>'
+      + '<td>'+paymentHtml+'</td>'
+      + '<td><span class="badge '+s.cls+'">'+s.label+'</span></td>'
+    + '</tr>';
+  }).join('');
+}
+
+// ==============================================================
 // END AUTH SYSTEM
 // ==============================================================
 
@@ -4260,7 +4446,7 @@ async function afterLogin() {
 
   // Route to correct starting view based on role
   if (currentUser.role === 'requester') {
-    showView('requests', null);
+    showView('history', null);  // Requesters land on their submissions history
   } else {
     showView('dashboard', null);
   }
