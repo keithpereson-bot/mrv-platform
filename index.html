@@ -1517,7 +1517,13 @@
     <div class="card">
       <div class="card-header">
         <div class="card-title">Submission History</div>
-        <span class="badge badge-gray" id="historyCount">0 requests</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn btn-secondary btn-sm" id="signAllPaidBtn" onclick="openAckModal('all')" style="display:none">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+            Sign All Paid
+          </button>
+          <span class="badge badge-gray" id="historyCount">0 requests</span>
+        </div>
       </div>
       <div class="card-body" style="padding:0">
         <div class="table-scroll">
@@ -1532,6 +1538,7 @@
                 <th>Submitted</th>
                 <th>Approval</th>
                 <th>Payment</th>
+                <th>My Acknowledgement</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -1546,6 +1553,68 @@
 </div>
 
 <!-- -- MODALS -- -->
+
+<!-- Acknowledge Receipt Modal -->
+<div id="ackModal" class="modal-overlay" onclick="closeModalOutside(event,'ackModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <strong>Acknowledge Receipt of Funds</strong>
+        <div id="ackModalSub" style="font-size:12px;color:var(--muted);margin-top:2px">Sign to confirm you received the funds</div>
+      </div>
+      <button class="close-btn" onclick="closeModal('ackModal')">×</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Applied sig display -->
+      <div id="ackSigApplied" style="display:none;margin-bottom:16px" class="sig-applied">
+        <img id="ackSigImg" src="" style="height:48px;object-fit:contain;max-width:160px">
+        <div class="sig-applied-info">
+          <div class="sig-applied-name" id="ackSigName"></div>
+          <div class="sig-applied-time">Your saved signature</div>
+        </div>
+        <span class="sig-stamp">Ready</span>
+        <button class="btn btn-ghost btn-sm" onclick="clearAckSig()" style="margin-left:8px">Change</button>
+      </div>
+
+      <div id="ackSigWidget">
+        <div class="alert alert-info" style="margin-bottom:14px;font-size:12.5px">
+          Your signature is saved <strong>only on this device</strong> and is never shared with other users. You can only have one signature at a time.
+        </div>
+
+        <div class="sig-tabs">
+          <button class="sig-tab active" onclick="switchSigTab(this,'ack-saved')">💾 My Saved Signature</button>
+          <button class="sig-tab" onclick="switchSigTab(this,'ack-draw')">✏️ Draw</button>
+          <button class="sig-tab" onclick="switchSigTab(this,'ack-upload')">📷 Upload</button>
+        </div>
+
+        <div id="ack-saved" class="sig-panel active">
+          <div id="ackSavedPreview" style="margin-bottom:10px"></div>
+          <p class="text-sm text-muted" style="margin-top:4px">
+            No saved signature? Draw one or upload a photo below, then save it to your account first via <strong>My Signatures</strong>.
+          </p>
+        </div>
+
+        <div id="ack-draw" class="sig-panel">
+          <canvas id="ackCanvas" width="900" height="160" style="width:100%;height:160px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none;"></canvas>
+          <div class="flex gap-2" style="margin-top:8px">
+            <button class="btn btn-ghost btn-sm" onclick="clearCanvas('ackCanvas')">Clear</button>
+            <button class="btn btn-secondary btn-sm" onclick="saveAndApplyAckSig('draw')">Save & Use This Signature</button>
+          </div>
+        </div>
+
+        <div id="ack-upload" class="sig-panel">
+          <div class="upload-zone" onclick="document.getElementById('ackSigFile').click()">📷 Upload photo of your signature</div>
+          <input type="file" id="ackSigFile" accept="image/*" style="display:none" onchange="saveAndApplyAckSigFromFile(event)">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('ackModal')">Cancel</button>
+      <button class="btn btn-primary" id="confirmAckBtn" onclick="confirmAck()" disabled style="opacity:.5">Confirm & Sign</button>
+    </div>
+  </div>
+</div>
 
 <!-- Request Modal -->
 <div id="requestModal" class="modal-overlay" onclick="closeModalOutside(event,'requestModal')">
@@ -1771,27 +1840,41 @@ function getActualForLine(proj, type, cat, summary, costItem) {
 
 // -- State --------------------------------------------------
 // Signatures persist in localStorage so you never re-upload
+// Signatures are user-scoped: each user has their own key in localStorage.
+// They are NEVER synced to Sheets -- only visible on the device of the owner.
+function sigStorageKey() {
+  // Use logged-in user email as key; fall back to shared key if not yet logged in
+  var email = currentUser ? currentUser.email.toLowerCase().trim() : '';
+  return email ? 'mrv_sig_' + email : 'mrv_saved_signatures';
+}
 function loadSigsFromStorage() {
-  try { const s = localStorage.getItem('mrv_saved_signatures'); return s ? JSON.parse(s) : []; }
-  catch(e) { return []; }
+  try {
+    // Try user-scoped key first, then legacy shared key
+    var key = sigStorageKey();
+    var s = localStorage.getItem(key);
+    if (!s && key !== 'mrv_saved_signatures') {
+      // Check for demo sig in old shared key; ignore it (id===1 was seeded)
+      var legacy = localStorage.getItem('mrv_saved_signatures');
+      if (legacy) {
+        var parsed = JSON.parse(legacy);
+        var valid  = parsed.filter(function(x){ return x.id !== 1 && x.label !== 'Finance Officer'; });
+        return valid;
+      }
+    }
+    return s ? JSON.parse(s) : [];
+  } catch(e) { return []; }
 }
 function persistSigsToStorage() {
-  try { localStorage.setItem('mrv_saved_signatures', JSON.stringify(savedSigs)); } catch(e) {}
+  try { localStorage.setItem(sigStorageKey(), JSON.stringify(savedSigs)); } catch(e) {}
 }
-// One-time cleanup: remove the seeded demo "Finance Officer" signature
-// that was auto-generated by older versions of this app
+// Clean up old shared demo signature
 (function() {
   try {
     var raw = localStorage.getItem('mrv_saved_signatures');
     if (!raw) return;
     var sigs = JSON.parse(raw);
-    // Remove any sig with id===1 (the seeded demo) or label==="Finance Officer"
-    var cleaned = sigs.filter(function(s) {
-      return s.id !== 1 && s.label !== 'Finance Officer';
-    });
-    if (cleaned.length !== sigs.length) {
-      localStorage.setItem('mrv_saved_signatures', JSON.stringify(cleaned));
-    }
+    var cleaned = sigs.filter(function(s){ return s.id !== 1 && s.label !== 'Finance Officer'; });
+    if (cleaned.length !== sigs.length) localStorage.setItem('mrv_saved_signatures', JSON.stringify(cleaned));
   } catch(e) {}
 })();
 let savedSigs = loadSigsFromStorage();
@@ -2840,13 +2923,15 @@ function saveNewSig(mode) {
     if (!dataUrl || dataUrl === window.location.href) { toast('Please upload an image first'); return; }
   }
   const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  savedSigs.push({label, dataUrl, date: now, id: Date.now()});
+  // One signature per user -- replace any existing
+  savedSigs = [{label, dataUrl, date: now, id: Date.now()}];
   persistSigsToStorage();
   clearCanvas('newCanvas');
   document.getElementById('newSigLabel').value = '';
   clearUpload();
   renderSavedSigs();
-  toast('Signature saved OK');
+  refreshSigGrids();
+  toast('Signature saved');
 }
 
 function previewUpload(e) {
@@ -3414,10 +3499,8 @@ async function pushToSheets() {
       if (cells.length >= 3) expRows.push({ date:cells[0], project:cells[1], amount:cells[2], signed:cells[3]||'' });
     });
 
-    // Signatures
-    const sigRows = savedSigs.map(function(s) {
-      return { id:s.id, label:s.label, date:s.date, dataUrl:s.dataUrl||'' };
-    });
+    // Signatures are user-scoped (stored locally only, never synced to Sheets)
+    const sigRows = [];
 
     // Deleted requests (archived)
     const deletedRows = deletedStore.map(function(r) {
@@ -3582,22 +3665,7 @@ async function pullFromSheets(silent) {
       }
     }
 
-    // -- Signatures -- restore from sheet --
-    if (res.signatures && res.signatures.length > 0) {
-      // Merge: add any from sheet not already in localStorage (match by id)
-      let changed = false;
-      res.signatures.forEach(s => {
-        if (s.dataUrl && !savedSigs.find(x => String(x.id) === String(s.id))) {
-          savedSigs.push({ id: s.id, label: s.label || 'Signature', date: s.date || '', dataUrl: s.dataUrl });
-          changed = true;
-        }
-      });
-      if (changed) {
-        persistSigsToStorage();
-        refreshSigGrids();
-        appendSyncLog(`OK Restored ${res.signatures.length} signature(s) from Sheets.`);
-      }
-    }
+    // Signatures are user-scoped (private, never synced from Sheets)
 
     renderDashboard();
     populateAllDropdowns();
@@ -4329,6 +4397,16 @@ function filterHistory(filter) {
   var countEl = document.getElementById('historyCount');
   if (countEl) countEl.textContent = filtered.length + ' request' + (filtered.length===1?'':'s');
 
+  // Show "Sign All Paid" only if there are paid-but-unsigned requests
+  var uname = currentUser ? (currentUser.name||'').toLowerCase().trim() : '';
+  var unsignedPaid = requestsStore.filter(function(r){
+    return r.status==='Paid'
+      && (r.requester||'').toLowerCase().trim() === uname
+      && !r.requesterSig;
+  });
+  var signAllBtn = document.getElementById('signAllPaidBtn');
+  if (signAllBtn) signAllBtn.style.display = unsignedPaid.length > 0 ? '' : 'none';
+
   var tbody = document.getElementById('historyBody');
   if (!tbody) return;
 
@@ -4366,6 +4444,23 @@ function filterHistory(filter) {
         ? '<span style="font-size:12px;color:var(--warn)">&#9679; In Queue</span>'
         : '<span style="color:var(--muted);font-size:12px">Not yet</span>';
 
+    // Acknowledgement column (only for paid requests)
+    var ackHtml = '';
+    if (r.status === 'Paid') {
+      if (r.requesterSig) {
+        ackHtml = '<div style="display:flex;align-items:center;gap:8px">'
+          + '<img src="'+r.requesterSig+'" style="height:32px;max-width:90px;object-fit:contain;border:1px solid var(--border);border-radius:4px;padding:2px;background:#fff">'
+          + '<button class="btn btn-ghost btn-sm" style="color:var(--danger);padding:3px 7px;font-size:11px" data-ackref="'+r.ref+'" onclick="clearAck(this.dataset.ackref)" title="Remove">✕</button>'
+          + '</div>';
+      } else {
+        ackHtml = '<button class="btn btn-secondary btn-sm" style="font-size:11.5px" data-aref="'+r.ref+'" onclick="openAckModal(this.dataset.aref)">'
+          + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>'
+          + ' Sign to Acknowledge</button>';
+      }
+    } else {
+      ackHtml = '<span style="color:var(--muted);font-size:12px">—</span>';
+    }
+
     return '<tr>'
       + '<td style="font-family:JetBrains Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
       + '<td style="font-weight:500">'+r.project+'</td>'
@@ -4378,9 +4473,163 @@ function filterHistory(filter) {
       + '<td style="font-size:12px;color:var(--muted);white-space:nowrap">'+(r.date||'--')+'</td>'
       + '<td>'+approvalHtml+'</td>'
       + '<td>'+paymentHtml+'</td>'
+      + '<td>'+ackHtml+'</td>'
       + '<td><span class="badge '+s.cls+'">'+s.label+'</span></td>'
     + '</tr>';
   }).join('');
+}
+
+// ==============================================================
+// ACKNOWLEDGEMENT -- Requester signs to confirm receipt of funds
+// ==============================================================
+
+var _ackTargetRef = null;  // 'all' or a specific ref
+var _pendingAckSig = null;
+
+function openAckModal(ref) {
+  _ackTargetRef = ref;
+  _pendingAckSig = null;
+
+  // Set subtitle
+  var sub = document.getElementById('ackModalSub');
+  if (sub) sub.textContent = ref === 'all'
+    ? 'Sign to acknowledge receipt of all paid requests'
+    : 'Signing for request #' + ref;
+
+  // Reset widget
+  document.getElementById('ackSigApplied').style.display = 'none';
+  document.getElementById('ackSigWidget').style.display = '';
+  var btn = document.getElementById('confirmAckBtn');
+  btn.disabled = true; btn.style.opacity = '.5';
+
+  // Load saved signature into ack-saved panel
+  var preview = document.getElementById('ackSavedPreview');
+  if (savedSigs.length > 0) {
+    var sig = savedSigs[0];
+    preview.innerHTML = '<div style="border:1.5px solid var(--amber);border-radius:8px;padding:12px 16px;background:var(--amber-lt);display:flex;align-items:center;gap:14px;cursor:pointer" onclick="useExistingAckSig()">'
+      + '<img src="'+sig.dataUrl+'" style="height:44px;object-fit:contain;max-width:140px;background:#fff;border-radius:4px;padding:4px;border:1px solid var(--border)">'
+      + '<div>'
+        + '<div style="font-size:13px;font-weight:600;color:var(--ink)">'+sig.label+'</div>'
+        + '<div style="font-size:11px;color:var(--muted)">Saved '+sig.date+' &mdash; click to use</div>'
+      + '</div>'
+    + '</div>';
+  } else {
+    preview.innerHTML = '<div style="padding:12px;background:var(--surface);border-radius:8px;font-size:12.5px;color:var(--muted)">No saved signature yet. Draw or upload one below.</div>';
+  }
+
+  openModal('ackModal');
+  setTimeout(function(){ initCanvas('ackCanvas'); }, 100);
+}
+
+function useExistingAckSig() {
+  if (!savedSigs.length) return;
+  _pendingAckSig = savedSigs[0].dataUrl;
+  document.getElementById('ackSigImg').src = _pendingAckSig;
+  document.getElementById('ackSigName').textContent = savedSigs[0].label;
+  document.getElementById('ackSigApplied').style.display = 'flex';
+  document.getElementById('ackSigWidget').style.display = 'none';
+  var btn = document.getElementById('confirmAckBtn');
+  btn.disabled = false; btn.style.opacity = '1';
+}
+
+function clearAckSig() {
+  _pendingAckSig = null;
+  document.getElementById('ackSigApplied').style.display = 'none';
+  document.getElementById('ackSigWidget').style.display = '';
+  var btn = document.getElementById('confirmAckBtn');
+  btn.disabled = true; btn.style.opacity = '.5';
+}
+
+function saveAndApplyAckSig(mode) {
+  var dataUrl;
+  if (mode === 'draw') {
+    if (isCanvasBlank('ackCanvas')) { toast('Please draw your signature first'); return; }
+    dataUrl = document.getElementById('ackCanvas').toDataURL();
+  }
+  if (!dataUrl) return;
+  // Save as the user's single signature
+  var label = currentUser ? currentUser.name : 'My Signature';
+  savedSigs = [{ label:label, dataUrl:dataUrl, date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}), id:Date.now() }];
+  persistSigsToStorage();
+  _pendingAckSig = dataUrl;
+  document.getElementById('ackSigImg').src = dataUrl;
+  document.getElementById('ackSigName').textContent = label;
+  document.getElementById('ackSigApplied').style.display = 'flex';
+  document.getElementById('ackSigWidget').style.display = 'none';
+  var btn = document.getElementById('confirmAckBtn');
+  btn.disabled = false; btn.style.opacity = '1';
+  refreshSigGrids();
+}
+
+function saveAndApplyAckSigFromFile(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var dataUrl = ev.target.result;
+    var label = currentUser ? currentUser.name : 'My Signature';
+    savedSigs = [{ label:label, dataUrl:dataUrl, date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}), id:Date.now() }];
+    persistSigsToStorage();
+    _pendingAckSig = dataUrl;
+    document.getElementById('ackSigImg').src = dataUrl;
+    document.getElementById('ackSigName').textContent = label;
+    document.getElementById('ackSigApplied').style.display = 'flex';
+    document.getElementById('ackSigWidget').style.display = 'none';
+    var btn = document.getElementById('confirmAckBtn');
+    btn.disabled = false; btn.style.opacity = '1';
+    refreshSigGrids();
+  };
+  reader.readAsDataURL(file);
+}
+
+function confirmAck() {
+  if (!_pendingAckSig) { toast('Please provide your signature first'); return; }
+  var now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+    + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  var name = currentUser ? currentUser.name : 'Requester';
+
+  var targets;
+  if (_ackTargetRef === 'all') {
+    // Sign all paid requests belonging to this user that don't have ack yet
+    var uname = (currentUser ? currentUser.name : '').toLowerCase().trim();
+    targets = requestsStore.filter(function(r){
+      return r.status === 'Paid'
+        && (r.requester||'').toLowerCase().trim() === uname
+        && !r.requesterSig;
+    });
+  } else {
+    var entry = requestsStore.find(function(r){ return r.ref === _ackTargetRef; });
+    targets = entry ? [entry] : [];
+  }
+
+  targets.forEach(function(r){
+    r.requesterSig     = _pendingAckSig;
+    r.requesterSigName = name;
+    r.requesterSigTime = now;
+  });
+
+  persistRequestsToStorage();
+  closeModal('ackModal');
+
+  // Push to Sheets so acknowledgement is recorded
+  clearInterval(gsAutoSyncTimer);
+  if (gsWebAppUrl) {
+    pushToSheets().then(function(){ startAutoSync(); }).catch(function(){ startAutoSync(); });
+  }
+
+  renderHistory();
+  toast('Receipt acknowledged — ' + targets.length + ' request' + (targets.length===1?'':'s') + ' signed');
+}
+
+function clearAck(ref) {
+  var entry = requestsStore.find(function(r){ return r.ref === ref; });
+  if (!entry) return;
+  delete entry.requesterSig;
+  delete entry.requesterSigName;
+  delete entry.requesterSigTime;
+  persistRequestsToStorage();
+  renderHistory();
+  toast('Acknowledgement removed');
 }
 
 // ==============================================================
@@ -4429,6 +4678,9 @@ async function afterLogin() {
       appendSyncLog('Initial pull failed: ' + e.message);
     }
   }
+
+  // Reload user-scoped signatures now that currentUser is set
+  savedSigs = loadSigsFromStorage();
 
   // Render everything
   renderDashboard();
