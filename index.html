@@ -711,6 +711,8 @@
   @media (max-width: 768px) {
     #sheetsStatusPill { display:none !important; }
     .desktop-only { display:none !important; }
+    #mobileSignOutBtn { display:flex !important; align-items:center; }
+    /* Also hide user menu dropdown on mobile -- sign out button replaces it */
   }
   @media (max-width: 480px) {
     nav > div > span { display:none; }
@@ -967,6 +969,11 @@
       <span id="navUserInitials">?</span>
       <span id="navRoleDot" style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;background:#C89B2A;border-radius:50%;border:2px solid var(--teal);"></span>
     </div>
+    <!-- Mobile sign-out -- always visible, no dropdown needed -->
+    <button id="mobileSignOutBtn" onclick="doLogout()" title="Sign Out"
+      style="display:none;background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);color:#fca5a5;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap">
+      Sign Out
+    </button>
   </div>
 </nav>
 
@@ -995,7 +1002,7 @@
 <main>
 
   <!-- -- DASHBOARD -- -->
-  <div id="view-dashboard" class="view active">
+  <div id="view-dashboard" class="view">
     <div class="page-header"><h1>Dashboard</h1><p>Monthly cycle overview -- June 2026</p></div>
     <div class="process-bar">
       <div class="ps"><div class="ps-dot done">OK</div><span class="ps-label done">Approved Budgets</span></div>
@@ -4948,13 +4955,17 @@ function confirmAck() {
   persistRequestsToStorage();
   closeModal('ackModal');
 
-  // Push to Sheets so acknowledgement is recorded
+  // Render immediately -- no waiting for Sheets
+  rebuildRequestsTable();   // updates admin Paid Requests view instantly
+  renderHistory();          // updates requester My Submissions view instantly
+  renderDashboard();
+
+  // Push to Sheets in background
   clearInterval(gsAutoSyncTimer);
   if (gsWebAppUrl) {
     pushToSheets().then(function(){ startAutoSync(); }).catch(function(){ startAutoSync(); });
   }
 
-  renderHistory();
   toast('Receipt acknowledged — ' + targets.length + ' request' + (targets.length===1?'':'s') + ' signed');
 }
 
