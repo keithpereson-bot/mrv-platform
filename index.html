@@ -3549,32 +3549,114 @@ function closeAdvance() {
 }
 
 function showReceipt(ref, amount, signer) {
-  const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
-  const entry = requestsStore.find(r => r.ref === ref);
-  const sigImg = entry && entry.sigDataUrl;
-  const sigLabel = (entry && entry.sigLabel) || signer || 'Digitally signed';
-  const sigLine = sigImg
-    ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-         <div class="text-muted text-sm" style="margin-bottom:4px;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Authorised by</div>
-         <img src="${sigImg}" style="height:44px;object-fit:contain;max-width:160px;display:block;margin-bottom:4px">
-         <div style="font-size:11px;color:var(--muted)">${sigLabel}${entry && entry.sigTime ? '  .  '+entry.sigTime : ''}</div>
-       </div>`
-    : `<div class="flex justify-between"><span class="text-muted text-sm">Signed by</span><span>OK ${sigLabel}</span></div>`;
-  document.getElementById('receiptBody').innerHTML = `
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--teal)">MRV Platform</div>
-      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Official Payment Receipt</div>
-    </div>
-    <div style="background:var(--teal-pale);border-radius:10px;padding:16px 20px;display:grid;gap:10px">
-      <div class="flex justify-between"><span class="text-muted text-sm">Reference</span><strong>#${ref}</strong></div>
-      <div class="flex justify-between"><span class="text-muted text-sm">Date</span><span>${now}</span></div>
-      <div class="flex justify-between"><span class="text-muted text-sm">Amount</span><strong class="currency" style="font-size:18px;color:var(--teal)">${parseInt(amount||entry&&entry.amount||0).toLocaleString()}</strong></div>
-      <div class="flex justify-between"><span class="text-muted text-sm">Project</span><span>${entry ? entry.project : '--'}</span></div>
-      <div class="flex justify-between"><span class="text-muted text-sm">Description</span><span>${entry ? entry.description : '--'}</span></div>
-      <div class="flex justify-between"><span class="text-muted text-sm">Platform</span><span>MRV Money-In/Out</span></div>
-      ${sigLine}
-    </div>
-    <div style="margin-top:14px;font-size:11px;color:var(--muted);text-align:center">System-generated receipt -- MRV Platform audit trail</div>`;
+  const now   = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const entry = requestsStore.find(function(r){ return r.ref === ref; });
+  if (!entry) { toast('Receipt not found'); return; }
+
+  const ccy = getCurrency(entry.project, entry.type);
+
+  // ── Approver signature block ──
+  const approvLabel = entry.sigLabel || signer || 'Finance Officer';
+  const approvImg   = entry.sigDataUrl;  // base64 from Sheets if available
+  var approverBlock;
+  if (approvImg) {
+    approverBlock =
+      '<div style="padding:14px 16px;border-top:1px solid var(--border)">'
+      + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Authorised by (Finance)</div>'
+      + '<div style="display:flex;align-items:center;gap:14px">'
+        + '<img src="'+approvImg+'" style="height:48px;max-width:160px;object-fit:contain;border:1px solid var(--border);border-radius:6px;padding:4px;background:#fff">'
+        + '<div>'
+          + '<div style="font-size:13px;font-weight:600;color:var(--ink)">'+approvLabel+'</div>'
+          + '<div style="font-size:11px;color:var(--muted)">'+(entry.sigTime||now)+'</div>'
+        + '</div>'
+      + '</div>'
+    + '</div>';
+  } else {
+    approverBlock =
+      '<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
+      + '<span style="font-size:12px;color:var(--muted)">Authorised by</span>'
+      + '<div style="text-align:right">'
+        + '<div style="font-size:13px;font-weight:600;color:var(--success)">&#10003; '+approvLabel+'</div>'
+        + '<div style="font-size:11px;color:var(--muted)">'+(entry.sigTime||now)+'</div>'
+      + '</div>'
+    + '</div>';
+  }
+
+  // ── Requester acknowledgement block ──
+  var ackBlock = '';
+  if (entry.requesterSigName) {
+    const ackImg = entry.requesterSig;
+    if (ackImg) {
+      ackBlock =
+        '<div style="padding:14px 16px;border-top:1px solid var(--border)">'
+        + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Received by (Requester)</div>'
+        + '<div style="display:flex;align-items:center;gap:14px">'
+          + '<img src="'+ackImg+'" style="height:48px;max-width:160px;object-fit:contain;border:1px solid var(--border);border-radius:6px;padding:4px;background:#fff">'
+          + '<div>'
+            + '<div style="font-size:13px;font-weight:600;color:var(--ink)">'+entry.requesterSigName+'</div>'
+            + '<div style="font-size:11px;color:var(--muted)">'+(entry.requesterSigTime||'')+'</div>'
+          + '</div>'
+        + '</div>'
+      + '</div>';
+    } else {
+      ackBlock =
+        '<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
+        + '<span style="font-size:12px;color:var(--muted)">Received by</span>'
+        + '<div style="text-align:right">'
+          + '<div style="font-size:13px;font-weight:600;color:var(--success)">&#10003; '+entry.requesterSigName+'</div>'
+          + '<div style="font-size:11px;color:var(--muted)">'+(entry.requesterSigTime||'')+'</div>'
+        + '</div>'
+      + '</div>';
+    }
+  } else {
+    ackBlock =
+      '<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
+      + '<span style="font-size:12px;color:var(--muted)">Received by</span>'
+      + '<span class="badge badge-gray" style="font-size:11px">Awaiting acknowledgement</span>'
+      + '</div>';
+  }
+
+  document.getElementById('receiptBody').innerHTML =
+    '<div style="text-align:center;margin-bottom:20px">'
+      + '<div style="font-size:22px;font-weight:700;color:var(--ink);font-family:Playfair Display,serif;letter-spacing:-.3px">MRV Platform</div>'
+      + '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Payment Receipt</div>'
+    + '</div>'
+    + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
+      // Details
+      + '<div style="padding:14px 16px;display:grid;gap:10px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+          + '<span style="font-size:12px;color:var(--muted)">Reference</span>'
+          + '<strong style="font-family:JetBrains Mono,monospace;font-size:13px">#'+entry.ref+'</strong>'
+        + '</div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+          + '<span style="font-size:12px;color:var(--muted)">Date</span>'
+          + '<span style="font-size:13px">'+(entry.sigTime||entry.date||now)+'</span>'
+        + '</div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+          + '<span style="font-size:12px;color:var(--muted)">Amount</span>'
+          + '<strong style="font-size:20px;color:var(--success);font-family:Playfair Display,serif">'+ccy+' '+(entry.amount||0).toLocaleString()+'</strong>'
+        + '</div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+          + '<span style="font-size:12px;color:var(--muted)">Project</span>'
+          + '<span style="font-size:13px;font-weight:500">'+entry.project+'</span>'
+        + '</div>'
+        + (entry.type ? '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--muted)">Type</span><span class="badge badge-gray">'+entry.type+'</span></div>' : '')
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+          + '<span style="font-size:12px;color:var(--muted)">Category</span>'
+          + '<span style="font-size:12.5px">'+(entry.category||entry.description||'--')+'</span>'
+        + '</div>'
+        + (entry.costSummary ? '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--muted)">Cost Line</span><span style="font-size:12.5px">'+entry.costSummary+'</span></div>' : '')
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+          + '<span style="font-size:12px;color:var(--muted)">Requester</span>'
+          + '<span style="font-size:13px;font-weight:500">'+(entry.requester||'--')+'</span>'
+        + '</div>'
+      + '</div>'
+      // Signatures
+      + approverBlock
+      + ackBlock
+    + '</div>'
+    + '<div style="margin-top:12px;font-size:11px;color:var(--muted);text-align:center">System-generated receipt &mdash; MRV Platform audit trail</div>';
+
   openModal('receiptModal');
 }
 
@@ -3587,7 +3669,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // All devices use this URL automatically -- no per-device setup
 // Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzvyKbVbBNIiU3wYrv5mL9WXIvYxXZEagsKduINzn7TgrP4Dj37mgL3KeNCtERoGc4/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzwHj6A5juN6PzrG6a2GWcZXl8gDSF9i75NMlDqvyTp_gKbWiKLYLQ305lA9v4ThPk/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- always use hardcoded URL so all devices share the same data
@@ -3698,6 +3780,7 @@ async function pushToSheets() {
         date:        r.date        || '',
         sigLabel:         r.sigLabel         || '',
         sigTime:          r.sigTime          || '',
+        sigDataUrl:       r.sigDataUrl       || '',
         approvedBy:       r.approvedBy       || '',
         approvedAt:       r.approvedAt       || '',
         requesterSig:     r.requesterSig     || '',
@@ -3811,10 +3894,10 @@ async function pullFromSheets(silent) {
         sigTime:          r['Sign Time']          || r.sigTime          || null,
         approvedBy:       r['Approved By']        || r.approvedBy       || null,
         approvedAt:       r['Approved At']        || r.approvedAt       || null,
+        sigDataUrl:       r['Sig Data']           || r.sigDataUrl       || null,
         requesterSig:     r['Requester Sig']      || r.requesterSig     || null,
         requesterSigName: r['Requester Sig Name'] || r.requesterSigName || null,
         requesterSigTime: r['Requester Sig Time'] || r.requesterSigTime || null,
-        sigDataUrl:  null,
       })).filter(r => r.ref);
       if (imported.length > 0) {
         // Smart merge: Sheets is authoritative for existing refs.
@@ -4183,7 +4266,7 @@ function bootAuth() {
   localStorage.removeItem('mrv_users');
   showLoginScreen();
   // Show URL field if no Sheets connection configured
-  var noUrl = !gsWebAppUrl || gsWebAppUrl === 'https://script.google.com/macros/s/AKfycbzbx_BJulk7xYXGG2Dcsj5l8t98YUCx4l3dKZ3A_8V2Pei6ei3m8ve9Htvdt1e-9g/exec';
+  var noUrl = !gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE';
   var urlRow = document.getElementById('loginUrlRow');
   if (urlRow) urlRow.style.display = noUrl ? '' : 'none';
   // Pre-fill if user previously saved a URL via the quick-connect
