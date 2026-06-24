@@ -3689,7 +3689,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // All devices use this URL automatically -- no per-device setup
 // Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwqU7sm1IM-sxj_UjbbOAADov5EQnKq-f1_EeO1naW1nbTpyMdVdwzHYHFqmHZb4II/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxm9nE7JZmv2WXcwQW-Pel1KEw8ilOOanpK0WpFRH9dPY96fjBpPWnHcEurqiXu3Gg/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- use hardcoded URL if set, otherwise fall back to localStorage
@@ -3896,40 +3896,62 @@ async function pushToSheets() {
 }
 
 // -- Lightweight pull: requests only, no images -- used by auto-sync ----
+// Status rank: higher = more advanced in workflow. Pull can never downgrade.
+var STATUS_RANK = { 'Draft':0, 'Pending':1, 'Approved':2, 'Paid':3 };
+
 async function pullRequestsOnly() {
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
+  // Never pull while a push is in flight -- would overwrite local changes
+  if (window._pushInProgress) return;
   try {
     var res = await gasCall({ action: 'getRequests' });
     if (!res || !res.ok || !res.requests || !res.requests.length) return;
 
+    // Build lookup of current local state
+    var localByRef = {};
+    requestsStore.forEach(function(r){ localByRef[r.ref] = r; });
+
     var imported = res.requests.map(function(r) {
+      var ref    = String(r['Ref #'] || r.ref || '').trim();
+      var local  = localByRef[ref];
+      var sheetsStatus = String(r['Status'] || r.status || 'Draft').trim();
+
+      // Never downgrade status -- if local is more advanced, keep it
+      // This prevents Paid -> Approved revert when push is still propagating
+      var finalStatus = sheetsStatus;
+      if (local) {
+        var localRank  = STATUS_RANK[local.status]  || 0;
+        var sheetsRank = STATUS_RANK[sheetsStatus]  || 0;
+        if (localRank > sheetsRank) finalStatus = local.status;
+      }
+
       return {
-        ref:         String(r['Ref #']        || r.ref         || '').trim(),
-        project:     String(r['Project']      || r.project     || '').trim(),
-        type:        String(r['Type']         || r.type        || '').trim(),
-        category:    String(r['Category']     || r.category    || '').trim(),
-        costSummary: String(r['Cost Summary'] || r.costSummary || '').trim(),
-        costItem:    String(r['Cost Item']    || r.costItem    || '').trim(),
-        description: String(r['Description']  || r.description || '').trim(),
-        amount:      parseFloat(r['Amount (KES)'] || r['Amount'] || r.amount) || 0,
-        requester:   String(r['Requester']    || r.requester   || '').trim(),
-        status:      String(r['Status']       || r.status      || 'Draft').trim(),
-        date:        String(r['Date']         || r.date        || '').trim(),
-        sigLabel:         r['Signed By']           || r.sigLabel         || null,
-        sigTime:          r['Sign Time']           || r.sigTime          || null,
-        approvedBy:       r['Approved By']         || r.approvedBy       || null,
-        approvedAt:       r['Approved At']         || r.approvedAt       || null,
-        requesterSigName: r['Requester Sig Name']  || r.requesterSigName || null,
-        requesterSigTime: r['Requester Sig Time']  || r.requesterSigTime || null,
-        // Preserve local image fields -- not in this lightweight pull
-        sigDataUrl:   (function(){ var l = requestsStore.find(function(x){ return x.ref===String(r['Ref #']||r.ref||'').trim(); }); return l ? l.sigDataUrl : null; })(),
-        requesterSig: (function(){ var l = requestsStore.find(function(x){ return x.ref===String(r['Ref #']||r.ref||'').trim(); }); return l ? l.requesterSig : null; })(),
+        ref:              ref,
+        project:          String(r['Project']          || '').trim(),
+        type:             String(r['Type']              || '').trim(),
+        category:         String(r['Category']          || '').trim(),
+        costSummary:      String(r['Cost Summary']      || '').trim(),
+        costItem:         String(r['Cost Item']         || '').trim(),
+        description:      String(r['Description']       || '').trim(),
+        amount:           parseFloat(r['Amount (KES)']  || r['Amount'] || 0) || 0,
+        requester:        String(r['Requester']         || '').trim(),
+        status:           finalStatus,
+        date:             String(r['Date']              || '').trim(),
+        sigLabel:         r['Signed By']                || (local && local.sigLabel)         || null,
+        sigTime:          r['Sign Time']                || (local && local.sigTime)           || null,
+        approvedBy:       r['Approved By']              || (local && local.approvedBy)        || null,
+        approvedAt:       r['Approved At']              || (local && local.approvedAt)        || null,
+        requesterSigName: r['Requester Sig Name']       || (local && local.requesterSigName)  || null,
+        requesterSigTime: r['Requester Sig Time']       || (local && local.requesterSigTime)  || null,
+        // Always preserve local image fields (not in lightweight pull)
+        sigDataUrl:       local ? local.sigDataUrl   : null,
+        requesterSig:     local ? local.requesterSig : null,
       };
     }).filter(function(r){ return r.ref; });
 
     if (!imported.length) return;
 
-    // Merge: keep local-only refs not yet in Sheets
+    // Keep local-only refs (submitted but push not yet complete)
     var sheetsRefs = new Set(imported.map(function(r){ return r.ref; }));
     var localOnly  = requestsStore.filter(function(r){ return !sheetsRefs.has(r.ref); });
     requestsStore  = imported.concat(localOnly);
@@ -3939,7 +3961,7 @@ async function pullRequestsOnly() {
     renderHistory();
     renderDashboard();
   } catch(e) {
-    // Silent failure -- don't interrupt the user
+    // Silent -- don't interrupt user
   }
 }
 
@@ -3956,7 +3978,7 @@ async function pullFromSheets(silent) {
     if (!res.ok) throw new Error(res.error || 'Pull failed');
     if (!silent) appendSyncLog('Pull OK, requests=' + (res.requests ? res.requests.length : 0));
 
-    // -- Requests --
+    // -- Requests -- skip if push in flight to prevent status revert
     if (res.requests && res.requests.length > 0 && !window._pushInProgress) {
       const imported = res.requests.map(r => ({
         ref:         String(r['Ref #']        || r.ref         || '').trim(),
@@ -3968,7 +3990,12 @@ async function pullFromSheets(silent) {
         description: String(r['Description']  || r.description || '').trim(),
         amount:      parseFloat(r['Amount (KES)'] || r['Amount'] || r.amount) || 0,
         requester:   String(r['Requester']    || r.requester   || '').trim(),
-        status:      String(r['Status']       || r.status      || 'Draft').trim(),
+        status:      (function(){
+          var s = String(r['Status'] || r.status || 'Draft').trim();
+          var loc = requestsStore.find(function(x){ return x.ref===String(r['Ref #']||r.ref||'').trim(); });
+          if (loc && (STATUS_RANK[loc.status]||0) > (STATUS_RANK[s]||0)) return loc.status;
+          return s;
+        })(),
         date:        String(r['Date']         || r.date        || '').trim(),
         sigLabel:         r['Signed By']          || r.sigLabel         || null,
         sigTime:          r['Sign Time']          || r.sigTime          || null,
