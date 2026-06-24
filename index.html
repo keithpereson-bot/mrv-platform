@@ -3890,7 +3890,7 @@ async function pushToSheets() {
 // -- Pull data from Sheets -----------------------------------
 async function pullFromSheets(silent) {
   if (!gsWebAppUrl) { if (!silent) toast('Please connect a Web App URL first'); return; }
-  if (!silent) appendSyncLog('Pulling from Sheets...');
+  // silent background pulls don't log unless there's an error
   try {
     const res = await gasCall({ action: 'getAll' });
     if (!res.ok) throw new Error(res.error || 'Pull failed');
@@ -3939,11 +3939,21 @@ async function pullFromSheets(silent) {
         // Keep local-only refs (submitted but not yet in Sheets)
         var sheetsRefs = new Set(imported.map(function(r){ return r.ref; }));
         var localOnly  = requestsStore.filter(function(r){ return !sheetsRefs.has(r.ref); });
-        requestsStore = merged.concat(localOnly);
+        var newStore = merged.concat(localOnly);
+
+        // Only re-render if something actually changed (avoids flicker on every 3s pull)
+        var changed = JSON.stringify(newStore.map(function(r){ return r.ref + r.status + r.requesterSigName; }))
+                   !== JSON.stringify(requestsStore.map(function(r){ return r.ref + r.status + r.requesterSigName; }));
+
+        requestsStore = newStore;
         reqCounter = calcReqCounter();
         persistRequestsToStorage();
-        rebuildRequestsTable();
-        renderHistory();
+
+        if (changed) {
+          rebuildRequestsTable();
+          renderHistory();
+          renderDashboard();
+        }
       }
     }
 
@@ -4188,17 +4198,23 @@ function syncAfterChange() {
 function gsPushIfConnected() { syncAfterChange(); }
 
 // -- Auto-sync timer -----------------------------------------
-// Auto-sync: always on, 10s interval, survives page refresh
-var AUTO_SYNC_INTERVAL = 10000; // 10 seconds
+// Auto-sync: always on, 3s interval for near-instant cross-device reflection
+var AUTO_SYNC_INTERVAL = 3000; // 3 seconds
 
 function startAutoSync() {
   clearInterval(gsAutoSyncTimer);
   if (!gsWebAppUrl) return;
+  var _syncCount = 0;
   gsAutoSyncTimer = setInterval(function() {
-    pullFromSheets(true).catch(function(){}); // silent=true: no toasts for background pulls
-    window._budgetPulled = false;
+    _syncCount++;
+    pullFromSheets(true).catch(function(){});
+    // Pull budgets less frequently (every 30s = every 10th cycle at 3s)
+    if (_syncCount % 10 === 0) {
+      window._budgetPulled = false;
+      pullBudgetLinesFromSheets().catch(function(){});
+    }
   }, AUTO_SYNC_INTERVAL);
-  appendSyncLog('Auto-sync active (every 10s)');
+  appendSyncLog('Auto-sync active (every 3s)');
 }
 
 function toggleAutoSync(on) {
@@ -5059,7 +5075,7 @@ async function afterLogin() {
 
   // ── STEP 3: Pull from Sheets in background (non-blocking) ─────
   if (gsWebAppUrl) {
-    // Start auto-sync immediately -- it will pull within 10s
+    // Start auto-sync immediately -- it will pull within 3s
     var chk = document.getElementById('autoSyncToggle');
     if (chk) chk.checked = true;
     startAutoSync();
