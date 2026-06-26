@@ -3683,7 +3683,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // All devices use this URL automatically -- no per-device setup
 // Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw2Mjc2Ax1qgKAj6x_5hESD4ZFOkykP9hme9hZvM9CFpVffkl8zumn4yNCI34A/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxUpHqRyYocDQr7QJUqfgiJR5ajRggXE8NAzX2Vd52NlSrjDlfMFOquV5Ml5Tne0U4/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- use hardcoded URL if set, otherwise fall back to localStorage
@@ -3873,6 +3873,9 @@ async function pushToSheets() {
 
     if (!res.ok) throw new Error(res.error || 'Push failed');
 
+    // Update local version so we don't re-pull our own write
+    if (res.version) _lastKnownVersion = res.version;
+
     const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
     ['syncTimeRequests','syncTimeBudgets','syncTimeFunds','syncTimeExpenses','syncTimeSigs'].forEach(function(id) {
       const el = document.getElementById(id);
@@ -3886,12 +3889,7 @@ async function pushToSheets() {
   } finally {
     clearTimeout(_pushSafetyTimer);
     window._pushInProgress = false;
-    // After push completes, fetch the new version so we don't re-pull our own write
-    if (gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
-      gasCall({ action:'getVersion' }).then(function(r){
-        if (r && r.ok) _lastKnownVersion = r.version;
-      }).catch(function(){});
-    }
+    // Version is returned directly in the push response -- no extra call needed
   }
 }
 
@@ -3992,8 +3990,8 @@ async function pullFromSheets(silent) {
     if (!res.ok) throw new Error(res.error || 'Pull failed');
     if (!silent) appendSyncLog('Pull OK, requests=' + (res.requests ? res.requests.length : 0));
 
-    // -- Requests -- skip if push in flight to prevent status revert
-    if (res.requests && res.requests.length > 0 && !window._pushInProgress) {
+    // -- Requests -- STATUS_RANK protection prevents status downgrade
+    if (res.requests && res.requests.length > 0) {
       const imported = res.requests.map(r => ({
         ref:         String(r['Ref #']        || r.ref         || '').trim(),
         project:     String(r['Project']      || r.project     || '').trim(),
@@ -4303,7 +4301,7 @@ var _versionPollCount = 0;
 
 async function checkVersionAndSync() {
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
-  if (window._pushInProgress) return; // don't poll while pushing
+  // Note: _pushInProgress is local-only; other devices won't have it set
 
   try {
     // Ultra-lightweight: just fetch the version number from CacheService
