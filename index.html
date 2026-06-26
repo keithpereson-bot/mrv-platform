@@ -1167,7 +1167,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Signed By</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
+            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Finance Signatory</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
             <tbody id="bodyPaid"></tbody></table>
           </div>
         </div>
@@ -1934,6 +1934,26 @@ function getCurrency(project, type) {
     return (!project || l.project === project) && (!type || l.type === type);
   });
   return line ? String(line.currency || 'KES').trim() : getDefaultCurrency();
+}
+
+// Format date strings for display -- handles ISO, Sheets serial numbers, and text dates
+function fmtDate(val) {
+  if (!val || val === '--' || val === 'null') return '--';
+  // Sheets serial number (days since 1899-12-30)
+  if (typeof val === 'number' || (!isNaN(Number(val)) && String(val).length < 6)) {
+    var d = new Date((Number(val) - 25569) * 86400000);
+    if (!isNaN(d)) return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  }
+  // Already a formatted string
+  var s = String(val).trim();
+  if (!s) return '--';
+  // Try parsing ISO or common formats
+  var d = new Date(s);
+  if (!isNaN(d) && d.getFullYear() > 2000) {
+    return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  }
+  // Return as-is if already readable (e.g. "01 Jun 2026 09:30")
+  return s;
 }
 
 // Format number with currency symbol
@@ -4178,10 +4198,10 @@ function rebuildRequestsTable() {
     return '<td style="font-family:JetBrains Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
       +'<td style="font-weight:500">'+r.project+'</td>'
       +'<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
-      +'<td>'+(r.category||'--')+'</td>'
+      +'<td style="font-size:12.5px">'+(r.category||'--')+'</td>'
       +'<td style="color:var(--muted);font-size:12px">'+(r.costSummary||r.description||'--')+'</td>'
-      +'<td class="currency" style="font-weight:600">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
-      +'<td>'+(r.requester||'')+'</td>'
+      +'<td class="currency" style="font-weight:600;white-space:nowrap">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
+      +'<td style="font-size:12.5px">'+(r.requester||'')+'</td>'
       + extra;
   };
 
@@ -4194,7 +4214,7 @@ function rebuildRequestsTable() {
           ? '<button class="btn btn-primary btn-sm" data-aref="'+r.ref+'" onclick="approveRequest(this.dataset.aref)">Approve</button>'
           : '<span class="badge badge-gray">Awaiting approval</span>';
         return '<tr>'
-          + cols(r, '<td>'+(r.date||'--')+'</td>')
+          + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.date)+'</td>')
           + '<td style="display:flex;gap:4px;align-items:center">'+approveBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
       }).join('');
@@ -4208,7 +4228,7 @@ function rebuildRequestsTable() {
           ? '<button class="btn btn-amber btn-sm" data-mref="'+r.ref+'" data-mreq="'+r.requester+'" onclick="openSignAndApprove(this,this.dataset.mref,this.dataset.mreq)">Mark Paid</button>'
           : '<span class="badge badge-gold">Awaiting payment</span>';
         return '<tr>'
-          + cols(r, '<td style="color:var(--muted);font-size:12px">'+(r.approvedAt||r.date||'--')+'</td>')
+          + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.approvedAt||r.date)+'</td>')
           + '<td style="display:flex;gap:4px;align-items:center">'+payBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
       }).join('');
@@ -4223,12 +4243,13 @@ function rebuildRequestsTable() {
               + '<span style="color:var(--success);font-size:11px">&#10003;</span>'
               + '<div>'
                 + '<div style="font-size:12px;font-weight:500;color:var(--success)">'+r.requesterSigName+'</div>'
-                + '<div style="font-size:10.5px;color:var(--muted)">'+(r.requesterSigTime||'')+'</div>'
+                + '<div style="font-size:10.5px;color:var(--muted)">'+fmtDate(r.requesterSigTime||'')+'</div>'
               + '</div>'
             + '</div></td>'
           : '<td><span class="badge badge-gray" style="font-size:10px">Pending</span></td>';
         return '<tr>'
-          + cols(r, '<td>'+(r.requester||'')+'</td><td style="color:var(--success);font-size:12px;font-weight:500">'+(r.sigLabel||'--')+'</td><td style="color:var(--muted);font-size:12px">'+(r.sigTime||r.date||'--')+'</td>')
+          + cols(r, '<td style="color:var(--success);font-size:12px;font-weight:500">'+(r.sigLabel||'--')+'</td>'
+                  + '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.sigTime||r.date)+'</td>')
           + ackCell
           + '<td style="display:flex;gap:4px;align-items:center">'
             +'<button class="btn btn-ghost btn-sm" data-rref="'+r.ref+'" data-ramt="'+r.amount+'" data-rlab="'+(r.sigLabel||r.requester)+'" onclick="showReceipt(this.dataset.rref,this.dataset.ramt,this.dataset.rlab)">Receipt</button>'
@@ -4924,7 +4945,7 @@ function filterHistory(filter) {
     var paymentHtml = r.status === 'Paid'
       ? '<div style="font-size:12px;font-weight:500;color:var(--success)">&#10003; Paid</div>'
         + (r.sigLabel ? '<div style="font-size:10.5px;color:var(--muted)">'+r.sigLabel+'</div>' : '')
-        + (r.sigTime  ? '<div style="font-size:10.5px;color:var(--muted)">'+r.sigTime+'</div>'  : '')
+        + (r.sigTime  ? '<div style="font-size:10.5px;color:var(--muted)">'+fmtDate(r.sigTime)+'</div>'  : '')
       : r.status === 'Approved'
         ? '<span style="font-size:12px;color:var(--warn)">&#9679; In Queue</span>'
         : '<span style="color:var(--muted);font-size:12px">Not yet</span>';
@@ -4955,7 +4976,7 @@ function filterHistory(filter) {
         + (r.costSummary ? '<div style="font-size:11px;color:var(--muted)">'+r.costSummary+'</div>' : '')
       + '</td>'
       + '<td class="currency" style="font-weight:600;white-space:nowrap">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
-      + '<td style="font-size:12px;color:var(--muted);white-space:nowrap">'+(r.date||'--')+'</td>'
+      + '<td style="font-size:12px;color:var(--muted);white-space:nowrap">'+fmtDate(r.date)+'</td>'
       + '<td>'+approvalHtml+'</td>'
       + '<td>'+paymentHtml+'</td>'
       + '<td>'+ackHtml+'</td>'
