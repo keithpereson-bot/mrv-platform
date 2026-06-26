@@ -1496,11 +1496,11 @@
             </select>
           </div>
           <div class="form-group" id="countryFieldGroup">
-            <label>Country Access <span style="color:var(--muted);font-weight:400">(Requesters only)</span></label>
+            <label>Country Access</label>
             <select id="newUserCountry">
               <option value="">-- All Countries (no restriction) --</option>
             </select>
-            <div style="font-size:11.5px;color:var(--muted);margin-top:5px">Requesters can only submit requests for their assigned country's projects.</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:5px">User can only view, submit or approve requests for this country. Leave blank for full access.</div>
           </div>
           <div class="form-group"><label>Password</label><input id="newUserPass" type="password" placeholder="Min 6 characters"></div>
           <div class="form-group"><label>Confirm Password</label><input id="newUserPass2" type="password" placeholder="Repeat password"></div>
@@ -1516,7 +1516,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Country</th><th></th></tr></thead>
+            <thead><tr><th>Name / Email</th><th>Role</th><th>Country</th><th></th></tr></thead>
             <tbody id="usersTableBody">
               <tr><td colspan="4" class="text-muted text-sm" style="padding:20px;text-align:center">No users yet -- add one to get started</td></tr>
             </tbody>
@@ -3844,7 +3844,7 @@ async function pushToSheets() {
       if (cells.length >= 3) expRows.push({ date:cells[0], project:cells[1], amount:cells[2], signed:cells[3]||'' });
     });
 
-    // Signatures are user-scoped (stored locally only, never synced to Sheets)
+    // Signatures are private per-user (local only) -- never sent to Sheets
     const sigRows = [];
 
     // Deleted requests (archived)
@@ -4154,11 +4154,11 @@ function rebuildRequestsTable() {
   // Requesters can only delete their own drafts
   var canDelete  = role === 'admin' || role === 'approver';
 
-  // Country filter: requesters see only their country; approvers see their country (or all if blank)
+  // Country filter: all roles respect their assigned country (blank = all)
   var ctryFilter = function(r) {
-    if (!userCtry) return true;          // no restriction
+    if (!userCtry) return true;
     return (r.project && budgetLines.some(function(l){
-      return l.project === r.project && l.type === r.type && l.country === userCtry;
+      return l.project === r.project && l.country === userCtry;
     }));
   };
   var allFiltered = requestsStore.filter(ctryFilter);
@@ -4636,24 +4636,30 @@ showView = function(id, el) {
 
 // -- Users management --------------------------------------------
 function toggleCountryField() {
-  var role = document.getElementById('newUserRole').value;
-  var grp  = document.getElementById('countryFieldGroup');
-  if (grp) grp.style.display = role === 'requester' ? '' : 'none';
+  // Country applies to all roles -- always show
+  var grp = document.getElementById('countryFieldGroup');
+  if (grp) grp.style.display = '';
+}
+
+function getCountryOptions(selected) {
+  var countries = [...new Set(budgetLines.map(function(l){ return l.country; }).filter(Boolean))].sort();
+  return '<option value=""'+(selected===''?' selected':'')+'">-- All Countries --</option>'
+    + countries.map(function(c){
+        return '<option value="'+c+'"'+(c===selected?' selected':'')+'>'+c+'</option>';
+      }).join('');
 }
 
 function populateCountryDropdown() {
   var sel = document.getElementById('newUserCountry');
   if (!sel) return;
-  var countries = [...new Set(budgetLines.map(function(l){ return l.country; }).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">-- All Countries (no restriction) --</option>'
-    + countries.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+  sel.innerHTML = getCountryOptions('');
 }
 
 async function addUser() {
   const name    = (document.getElementById('newUserName').value    || '').trim();
   const email   = (document.getElementById('newUserEmail').value   || '').trim().toLowerCase();
   const role    = document.getElementById('newUserRole').value;
-  const country = role === 'requester' ? (document.getElementById('newUserCountry').value || '') : '';
+  const country = (document.getElementById('newUserCountry').value || '');
   const pass    = (document.getElementById('newUserPass').value    || '');
   const pass2   = (document.getElementById('newUserPass2').value   || '');
   if (!name || !email || !pass) { toast('Please fill all fields'); return; }
@@ -4668,6 +4674,19 @@ async function addUser() {
   renderUsersTable();
   await pushUsersToSheets();
   toast('User added -- ' + (country ? 'restricted to ' + country : 'all countries'));
+}
+
+async function updateUserField(id, field, value) {
+  var user = usersStore.find(function(u){ return u.id === id; });
+  if (!user) return;
+  // Don't let admin demote themselves
+  if (field === 'role' && currentUser && currentUser.email === user.email && value !== 'admin') {
+    toast("Can't change your own role"); renderUsersTable(); return;
+  }
+  user[field] = value;
+  persistUsersToStorage();
+  await pushUsersToSheets();
+  toast('User updated');
 }
 
 async function deleteUser(id) {
@@ -4708,13 +4727,20 @@ function renderUsersTable() {
   }
 
   tbody.innerHTML = usersStore.map(function(u) {
-    var country = u.country ? u.country : '<span style="color:var(--muted);font-style:italic">All</span>';
-    return '<tr>'
-      + '<td style="font-weight:500;color:var(--ink)">'+(u.name||'--')+'</td>'
-      + '<td style="color:var(--muted);font-size:12.5px">'+(u.email||'--')+'</td>'
-      + '<td>'+badge(u.role||'requester')+'</td>'
-      + '<td style="font-size:12px">'+country+'</td>'
-      + '<td><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser('+u.id+')">Remove</button></td>'
+    var isSelf = currentUser && currentUser.email === (u.email||'').toLowerCase();
+    var countries = [...new Set(budgetLines.map(function(l){ return l.country; }).filter(Boolean))].sort();
+    var countryOpts = '<option value=""'+(u.country===''||!u.country?' selected':'')+'">All</option>'
+      + countries.map(function(c){ return '<option value="'+c+'"'+(c===u.country?' selected':'')+'>'+c+'</option>'; }).join('');
+    var roleOpts = ['requester','approver','admin'].map(function(r){
+      return '<option value="'+r+'"'+(r===(u.role||'requester')?' selected':'')+'>'+r.charAt(0).toUpperCase()+r.slice(1)+'</option>';
+    }).join('');
+    return '<tr id="urow-'+u.id+'">'
+      + '<td style="font-weight:500;color:var(--ink)">'+(u.name||'--')+'<div style="font-size:11px;color:var(--muted)">'+(u.email||'')+'</div></td>'
+      + '<td><select data-uid="'+u.id+'" data-field="role" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;'+(isSelf?'opacity:.5;pointer-events:none':'')+'">'+roleOpts+'</select></td>'
+      + '<td><select data-uid="'+u.id+'" data-field="country" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px">'+countryOpts+'</select></td>'
+      + '<td style="white-space:nowrap">'
+        + (isSelf ? '' : '<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser('+u.id+')">Remove</button>')
+      + '</td>'
       + '</tr>';
   }).join('');
 }
