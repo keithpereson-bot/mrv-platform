@@ -2657,8 +2657,8 @@ async function downloadAcknowledgedPDF() {
     const hasAck = !!r.requesterSigName;
     const localSig = r.requesterSig || null;  // image from Sheets, visible to all
 
-    // Row height: taller if we need to show signature images
-    const rowH = (hasSig || hasAck) ? 22 : 14;
+    // Row height: taller rows for signed entries so sig + name + timestamp fit cleanly
+    const rowH = (hasSig || hasAck) ? 28 : 13;
 
     if (y + rowH > ph - 14) {
       doc.addPage();
@@ -2713,11 +2713,12 @@ async function downloadAcknowledgedPDF() {
     if (hasSig) {
       try {
         const fmt = r.sigDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        const imgH = rowH - 4;
-        doc.addImage(r.sigDataUrl, fmt, aSigX, y + 2, 30, imgH, undefined, 'FAST');
-        doc.setFontSize(5); doc.setTextColor(...MUTED);
-        doc.text(r.sigLabel || '', aSigX, y + rowH - 2);
-        if (r.sigTime) doc.text(r.sigTime, aSigX, y + rowH - 2 + 3.5);
+        var imgH = rowH - 10;
+        doc.addImage(r.sigDataUrl, fmt, aSigX, y + 2, 28, imgH, undefined, 'FAST');
+        doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(...NAVY);
+        doc.text(r.sigLabel || '', aSigX, y + imgH + 5);
+        doc.setFont('helvetica','normal'); doc.setFontSize(5); doc.setTextColor(...MUTED);
+        if (r.sigTime) doc.text(String(r.sigTime), aSigX, y + imgH + 9.5);
       } catch(e) {
         doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...SUCCESS);
         doc.text('[Signature on file]', aSigX, mid + 1, {baseline:'middle'});
@@ -2732,20 +2733,21 @@ async function downloadAcknowledgedPDF() {
     if (hasAck && localSig) {
       try {
         const fmt2 = localSig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        const imgH2 = rowH - 4;
-        doc.addImage(localSig, fmt2, rSigX, y + 2, 36, imgH2, undefined, 'FAST');
-        doc.setFontSize(5); doc.setTextColor(...SUCCESS);
-        doc.text('✓ ' + (r.requesterSigName || ''), rSigX, y + rowH - 2);
-        if (r.requesterSigTime) doc.text(r.requesterSigTime, rSigX, y + rowH - 2 + 3.5);
+        var imgH2 = rowH - 10;
+        doc.addImage(localSig, fmt2, rSigX, y + 2, 34, imgH2, undefined, 'FAST');
+        doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(...SUCCESS);
+        doc.text('✓ ' + (r.requesterSigName || ''), rSigX, y + imgH2 + 5);
+        doc.setFont('helvetica','normal'); doc.setFontSize(5); doc.setTextColor(...MUTED);
+        if (r.requesterSigTime) doc.text(String(r.requesterSigTime), rSigX, y + imgH2 + 9.5);
       } catch(e) {
         doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...SUCCESS);
         doc.text('✓ Acknowledged: ' + (r.requesterSigName || ''), rSigX, mid + 1, {baseline:'middle'});
       }
     } else if (hasAck) {
       doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...SUCCESS);
-      doc.text('✓ ' + (r.requesterSigName || ''), rSigX, mid - 1, {baseline:'middle'});
+      doc.text('✓ ' + (r.requesterSigName || ''), rSigX, y + 8, {baseline:'middle'});
       doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED);
-      if (r.requesterSigTime) doc.text(r.requesterSigTime, rSigX, mid + 3, {baseline:'middle'});
+      if (r.requesterSigTime) doc.text(String(r.requesterSigTime), rSigX, y + 14, {baseline:'middle'});
     } else {
       // Blank signature box
       doc.setDrawColor(...BORDER);
@@ -3597,31 +3599,32 @@ function showReceipt(ref, amount, signer) {
   }
 
   // ── Requester acknowledgement block ──
+  // requesterSig image comes from Sheets via full pull; may not be in lightweight pull
+  // Show it if available, fall back to name+timestamp only
   var ackBlock = '';
   if (entry.requesterSigName) {
-    const ackImg = entry.requesterSig;
-    if (ackImg) {
-      ackBlock =
-        '<div style="padding:14px 16px;border-top:1px solid var(--border)">'
-        + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Received by (Requester)</div>'
-        + '<div style="display:flex;align-items:center;gap:14px">'
-          + '<img src="'+ackImg+'" style="height:48px;max-width:160px;object-fit:contain;border:1px solid var(--border);border-radius:6px;padding:4px;background:#fff">'
-          + '<div>'
-            + '<div style="font-size:13px;font-weight:600;color:var(--ink)">'+entry.requesterSigName+'</div>'
-            + '<div style="font-size:11px;color:var(--muted)">'+(entry.requesterSigTime||'')+'</div>'
-          + '</div>'
+    var ackImg = entry.requesterSig || null;
+    var ackName = entry.requesterSigName;
+    var ackTime = fmtDate(entry.requesterSigTime || '');
+    ackBlock =
+      '<div style="padding:16px;border-top:2px solid var(--border);background:var(--surface)">'
+      + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">Received by (Requester)</div>'
+      + '<div style="display:flex;align-items:flex-start;gap:16px">'
+        + (ackImg
+            ? '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;flex-shrink:0">'
+                + '<img src="'+ackImg+'" style="height:52px;max-width:160px;object-fit:contain;display:block">'
+              + '</div>'
+            : '<div style="width:140px;height:52px;border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+                + '<span style="font-size:22px;color:var(--success)">&#10003;</span>'
+              + '</div>'
+          )
+        + '<div style="padding-top:4px">'
+          + '<div style="font-size:14px;font-weight:600;color:var(--ink)">'+ackName+'</div>'
+          + '<div style="font-size:11.5px;color:var(--muted);margin-top:3px">'+ackTime+'</div>'
+          + '<div style="margin-top:6px"><span class="badge badge-teal" style="font-size:10px">&#10003; Acknowledged</span></div>'
         + '</div>'
-      + '</div>';
-    } else {
-      ackBlock =
-        '<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
-        + '<span style="font-size:12px;color:var(--muted)">Received by</span>'
-        + '<div style="text-align:right">'
-          + '<div style="font-size:13px;font-weight:600;color:var(--success)">&#10003; '+entry.requesterSigName+'</div>'
-          + '<div style="font-size:11px;color:var(--muted)">'+(entry.requesterSigTime||'')+'</div>'
-        + '</div>'
-      + '</div>';
-    }
+      + '</div>'
+    + '</div>';
   } else {
     ackBlock =
       '<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
