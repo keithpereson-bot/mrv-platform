@@ -3683,7 +3683,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // All devices use this URL automatically -- no per-device setup
 // Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyGeIbeWEPj0Sei5XSu2plQfBtRDNhs7v03L8s8YX0BRGnvP6aDdgU20dY95C19_Jo/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxIAAy42xszE8oMoKGMgHNk6Za_sNU2cBFX4meBptuggS3tLZepNtIyiAlXZDdxTsw/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- use hardcoded URL if set, otherwise fall back to localStorage
@@ -3886,6 +3886,12 @@ async function pushToSheets() {
   } finally {
     clearTimeout(_pushSafetyTimer);
     window._pushInProgress = false;
+    // After push completes, fetch the new version so we don't re-pull our own write
+    if (gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
+      gasCall({ action:'getVersion' }).then(function(r){
+        if (r && r.ok) _lastKnownVersion = r.version;
+      }).catch(function(){});
+    }
   }
 }
 
@@ -4290,25 +4296,54 @@ function gsPushIfConnected() { syncAfterChange(); }
 
 // -- Auto-sync timer -----------------------------------------
 // Auto-sync: always on, 3s interval for near-instant cross-device reflection
-var AUTO_SYNC_INTERVAL = 3000; // 3 seconds
+var AUTO_SYNC_INTERVAL = 2000; // 2 seconds -- version check is near-instant
+
+var _lastKnownVersion = -1;
+var _versionPollCount = 0;
+
+async function checkVersionAndSync() {
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
+  if (window._pushInProgress) return; // don't poll while pushing
+
+  try {
+    // Ultra-lightweight: just fetch the version number from CacheService
+    var res = await gasCall({ action: 'getVersion' });
+    if (!res || !res.ok) return;
+
+    var serverVersion = res.version;
+
+    if (_lastKnownVersion === -1) {
+      // First poll -- just store the version, do a full pull to init
+      _lastKnownVersion = serverVersion;
+      await pullRequestsOnly();
+      return;
+    }
+
+    if (serverVersion !== _lastKnownVersion) {
+      // Something changed -- pull requests now
+      _lastKnownVersion = serverVersion;
+      await pullRequestsOnly();
+    }
+
+    // Every 30s do a full pull to catch anything missed
+    _versionPollCount++;
+    if (_versionPollCount % 15 === 0) {
+      pullBudgetLinesFromSheets().catch(function(){});
+    }
+  } catch(e) {
+    // Silent -- version check failed, will retry next cycle
+  }
+}
 
 function startAutoSync() {
   clearInterval(gsAutoSyncTimer);
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
-  var _syncCount = 0;
-  appendSyncLog('startAutoSync called, url=' + (gsWebAppUrl ? gsWebAppUrl.slice(0,40) + '...' : 'EMPTY'));
+  _lastKnownVersion = -1;
+  _versionPollCount = 0;
   gsAutoSyncTimer = setInterval(function() {
-    _syncCount++;
-    // Use lightweight request-only pull for the frequent sync
-    pullRequestsOnly().catch(function(e){ appendSyncLog('Sync error: ' + e.message); });
-    // Full pull + budgets every 60s (every 20th cycle at 3s)
-    if (_syncCount % 20 === 0) {
-      pullFromSheets(true).catch(function(){});
-      window._budgetPulled = false;
-      pullBudgetLinesFromSheets().catch(function(){});
-    }
+    checkVersionAndSync();
   }, AUTO_SYNC_INTERVAL);
-  appendSyncLog('Auto-sync active (every 3s), interval=' + gsAutoSyncTimer);
+  appendSyncLog('Auto-sync active (version poll every ' + (AUTO_SYNC_INTERVAL/1000) + 's)');
 }
 
 function toggleAutoSync(on) {
