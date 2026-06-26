@@ -3320,14 +3320,12 @@ function confirmSignAndApprove() {
   persistRequestsToStorage();
   rebuildRequestsTable();
   renderDashboard();
-  // Pause auto-sync, push, then restart
   clearInterval(gsAutoSyncTimer);
   if (gsWebAppUrl) {
     pushToSheets().then(function() {
+      pushSigImages(); // push images after metadata
       startAutoSync();
-    }).catch(function() {
-      startAutoSync();
-    });
+    }).catch(function() { startAutoSync(); });
   }
   toast('Payment confirmed & signed');
 }
@@ -3689,7 +3687,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // All devices use this URL automatically -- no per-device setup
 // Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz-1Hml5ydIHyLhw9wi-4BYMWY3FUusNCBqlIQFuLr_2bgDQD5BCoz_rWy7gSQcJA/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyGeIbeWEPj0Sei5XSu2plQfBtRDNhs7v03L8s8YX0BRGnvP6aDdgU20dY95C19_Jo/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- use hardcoded URL if set, otherwise fall back to localStorage
@@ -3792,27 +3790,27 @@ async function pushToSheets() {
   appendSyncLog('Pushing to Sheets...');
   try {
     // Requests
+    // Strip image fields from main push -- sent separately via pushSigData
     const reqRows = requestsStore.map(function(r) {
       return {
-        ref:         r.ref         || '',
-        project:     r.project     || '',
-        type:        r.type        || '',
-        category:    r.category    || '',
-        costSummary: r.costSummary || '',
-        costItem:    r.costItem    || '',
-        description: r.description || '',
-        amount:      r.amount      || 0,
-        requester:   r.requester   || '',
-        status:      r.status      || '',
-        date:        r.date        || '',
+        ref:              r.ref              || '',
+        project:          r.project          || '',
+        type:             r.type             || '',
+        category:         r.category         || '',
+        costSummary:      r.costSummary      || '',
+        costItem:         r.costItem         || '',
+        description:      r.description      || '',
+        amount:           r.amount           || 0,
+        requester:        r.requester        || '',
+        status:           r.status           || '',
+        date:             r.date             || '',
         sigLabel:         r.sigLabel         || '',
         sigTime:          r.sigTime          || '',
-        sigDataUrl:       r.sigDataUrl       || '',
         approvedBy:       r.approvedBy       || '',
         approvedAt:       r.approvedAt       || '',
-        requesterSig:     r.requesterSig     || '',
         requesterSigName: r.requesterSigName || '',
         requesterSigTime: r.requesterSigTime || '',
+        // sigDataUrl and requesterSig pushed separately (large images)
       };
     });
 
@@ -3885,7 +3883,7 @@ async function pushToSheets() {
       if (el) el.textContent = now;
     });
     updateSheetStatusPill(true);
-    appendSyncLog('Pushed: ' + reqRows.length + ' requests, ' + actualsData.filter(function(a){return a.actual>0;}).length + ' actuals, ' + fundRows.length + ' funds');
+    appendSyncLog('Pushed: ' + reqRows.length + ' requests, ' + actualsData.filter(function(a){return a.actual>0;}).length + ' actuals');
   } catch(e) {
     appendSyncLog('Push failed: ' + e.message);
     if (currentUser && currentUser.role === 'admin') toast('Push failed -- see sync log');
@@ -3896,6 +3894,20 @@ async function pushToSheets() {
 }
 
 // -- Lightweight pull: requests only, no images -- used by auto-sync ----
+// -- Push signature images separately (not part of main push) --------
+async function pushSigImages() {
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
+  var sigs = requestsStore
+    .filter(function(r){ return r.sigDataUrl || r.requesterSig; })
+    .map(function(r){ return { ref:r.ref, sigDataUrl:r.sigDataUrl||'', requesterSig:r.requesterSig||'' }; });
+  if (!sigs.length) return;
+  try {
+    await gasCall({ action:'pushSigData', sigs:sigs });
+  } catch(e) {
+    appendSyncLog('Sig push error: ' + e.message);
+  }
+}
+
 // Status rank: higher = more advanced in workflow. Pull can never downgrade.
 var STATUS_RANK = { 'Draft':0, 'Pending':1, 'Approved':2, 'Paid':3 };
 
@@ -5113,10 +5125,13 @@ function confirmAck() {
   renderHistory();          // updates requester My Submissions view instantly
   renderDashboard();
 
-  // Push to Sheets in background
+  // Push metadata first, then images
   clearInterval(gsAutoSyncTimer);
   if (gsWebAppUrl) {
-    pushToSheets().then(function(){ startAutoSync(); }).catch(function(){ startAutoSync(); });
+    pushToSheets().then(function(){
+      pushSigImages();
+      startAutoSync();
+    }).catch(function(){ startAutoSync(); });
   }
 
   toast('Receipt acknowledged — ' + targets.length + ' request' + (targets.length===1?'':'s') + ' signed');
