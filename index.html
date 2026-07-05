@@ -4666,6 +4666,9 @@ showView = function(id, el) {
     }
   }
 
+  // History (My Submissions) is accessible to ALL roles
+  // (each user only sees their own requests)
+
   // Approver: no admin, no sheets
   if (role === 'approver') {
     var blocked = ['sheets','users'];
@@ -4677,7 +4680,7 @@ showView = function(id, el) {
 
   // Viewer: read-only -- dashboard, budgets, paid requests, transactions, reconciliation only
   if (role === 'viewer') {
-    var viewerAllowed = ['dashboard','budgets','transactions','reconciliation','requests'];
+    var viewerAllowed = ['dashboard','budgets','transactions','reconciliation','requests','history'];
     if (!viewerAllowed.includes(id)) {
       toast('Access restricted -- Viewer accounts are read-only');
       return;
@@ -5265,6 +5268,7 @@ function buildSidebar() {
       { type:'item', label:'Paid Requests',   view:'requests',       icon:'requests' },
       { type:'item', label:'Transactions',    view:'transactions',   icon:'transactions' },
       { type:'item', label:'Reconciliation',  view:'reconciliation', icon:'reconciliation' },
+      { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
     ];
 
   } else if (role === 'approver') {
@@ -5279,6 +5283,7 @@ function buildSidebar() {
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
       { type:'item', label:'My Signatures',    view:'signatures',     icon:'signatures' },
+      { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
     ];
 
   } else { // admin
@@ -5293,6 +5298,7 @@ function buildSidebar() {
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
       { type:'item', label:'My Signatures',    view:'signatures',     icon:'signatures' },
+      { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
       { type:'section', label:'Admin' },
       { type:'item', label:'Manage Users',     view:'users',          icon:'users' },
       { type:'section', label:'Integration' },
@@ -5753,7 +5759,7 @@ function wrapTables() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
     <span>Recon</span>
   </div>
-  <div class="mob-nav-item requester-only" id="mob-history" onclick="showView('history',null);setMobActive('mob-history')">
+  <div class="mob-nav-item" id="mob-history" onclick="showView('history',null);setMobActive('mob-history')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     <span>My History</span>
   </div>
