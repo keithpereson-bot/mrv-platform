@@ -1120,14 +1120,18 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">Requests</div>
-          <div class="flex gap-2">
+          <div class="flex gap-2" style="align-items:center">
+            <button class="btn btn-ghost btn-sm admin-only" id="delSelDrafts" onclick="deleteSelected('drafts')" style="display:none;color:var(--danger);border-color:var(--danger)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              Delete Selected (<span id="delCountDrafts">0</span>)
+            </button>
             <button class="btn btn-secondary btn-sm" onclick="downloadRequestsPDF()">Download PDF</button>
             <button class="btn btn-primary btn-sm" onclick="openNewRequestModal()">+ New Request</button>
           </div>
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Date</th><th>Action</th></tr></thead>
+            <table id="tblDrafts"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllDrafts" onchange="toggleAllChecks('drafts',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Date</th><th>Action</th></tr></thead>
             <tbody id="bodyDrafts"></tbody></table>
           </div>
         </div>
@@ -1139,13 +1143,17 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">Payment Queue</div>
-          <div class="flex gap-2">
+          <div class="flex gap-2" style="align-items:center">
+            <button class="btn btn-ghost btn-sm admin-only" id="delSelQueue" onclick="deleteSelected('queue')" style="display:none;color:var(--danger);border-color:var(--danger)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              Delete Selected (<span id="delCountQueue">0</span>)
+            </button>
             <button class="btn btn-secondary btn-sm" onclick="openBulkApprove()">Mark All Paid</button>
           </div>
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Approved</th><th>Action</th></tr></thead>
+            <table id="tblQueue"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllQueue" onchange="toggleAllChecks('queue',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Approved</th><th>Action</th></tr></thead>
             <tbody id="bodyQueue"></tbody></table>
           </div>
         </div>
@@ -1162,12 +1170,16 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Download Acknowledged PDF
             </button>
+            <button class="btn btn-ghost btn-sm admin-only" id="delSelPaid" onclick="deleteSelected('paid')" style="display:none;color:var(--danger);border-color:var(--danger)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              Delete Selected (<span id="delCountPaid">0</span>)
+            </button>
             <span class="badge badge-teal" id="paidTotal">0</span>
           </div>
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Finance Signatory</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
+            <table id="tblPaid"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllPaid" onchange="toggleAllChecks('paid',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Finance Signatory</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
             <tbody id="bodyPaid"></tbody></table>
           </div>
         </div>
@@ -4202,7 +4214,10 @@ function rebuildRequestsTable() {
   };
 
   var cols = function(r, extra) {
-    return '<td style="font-family:JetBrains Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
+    var chkCell = canDelete
+      ? '<td style="padding:6px 6px 6px 14px"><input type="checkbox" class="req-chk" data-ref="'+r.ref+'" onchange="onReqCheckChange()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--danger)"></td>'
+      : '<td></td>';
+    return chkCell + '<td style="font-family:JetBrains Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
       +'<td style="font-weight:500">'+r.project+'</td>'
       +'<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
       +'<td style="font-size:12.5px">'+(r.category||'--')+'</td>'
@@ -5255,6 +5270,69 @@ async function afterLogin() {
 // Deleted requests are archived to localStorage + Deleted sheet tab.
 // Requests sheet and actuals are updated immediately.
 // ============================================================
+
+// ── BULK DELETE ──────────────────────────────────────────────────────────────
+function toggleAllChecks(tab, checked) {
+  var chks = document.querySelectorAll('#body' + tab.charAt(0).toUpperCase() + tab.slice(1) + ' .req-chk');
+  chks.forEach(function(c){ c.checked = checked; });
+  onReqCheckChange();
+}
+
+function onReqCheckChange() {
+  var tabs = ['Drafts','Queue','Paid'];
+  tabs.forEach(function(tab) {
+    var lower = tab.toLowerCase();
+    var chks    = document.querySelectorAll('#body' + tab + ' .req-chk:checked');
+    var allChks = document.querySelectorAll('#body' + tab + ' .req-chk');
+    var btn     = document.getElementById('delSel' + tab);
+    var cnt     = document.getElementById('delCount' + tab);
+    var chkAll  = document.getElementById('chkAll' + tab);
+    if (cnt) cnt.textContent = chks.length;
+    if (btn) btn.style.display = chks.length > 0 ? '' : 'none';
+    if (chkAll) chkAll.indeterminate = chks.length > 0 && chks.length < allChks.length;
+    if (chkAll && chks.length === allChks.length && allChks.length > 0) chkAll.checked = true;
+    if (chkAll && chks.length === 0) chkAll.checked = false;
+  });
+}
+
+function deleteSelected(tab) {
+  var tbody = document.getElementById('body' + tab.charAt(0).toUpperCase() + tab.slice(1));
+  if (!tbody) return;
+  var chks = tbody.querySelectorAll('.req-chk:checked');
+  if (!chks.length) return;
+  var refs = Array.from(chks).map(function(c){ return c.dataset.ref; });
+  var word = refs.length === 1 ? '1 request' : refs.length + ' requests';
+  if (!confirm('Delete ' + word + '? This cannot be undone.')) return;
+
+  refs.forEach(function(ref) {
+    var idx = requestsStore.findIndex(function(r){ return r.ref === ref; });
+    if (idx < 0) return;
+    var entry = requestsStore[idx];
+    // Archive to deleted store
+    deletedStore.push(Object.assign({}, entry, { deletedAt: new Date().toISOString(), deletedBy: currentUser ? currentUser.name : 'Admin' }));
+    requestsStore.splice(idx, 1);
+  });
+
+  persistRequestsToStorage();
+  rebuildRequestsTable();
+  renderDashboard();
+  renderHistory();
+
+  // Reset select-all checkboxes
+  ['Drafts','Queue','Paid'].forEach(function(t){
+    var ca = document.getElementById('chkAll' + t);
+    if (ca) { ca.checked = false; ca.indeterminate = false; }
+    var btn = document.getElementById('delSel' + t);
+    if (btn) btn.style.display = 'none';
+  });
+
+  // Push to Sheets
+  clearInterval(gsAutoSyncTimer);
+  if (gsWebAppUrl) {
+    pushToSheets().then(function(){ startAutoSync(); }).catch(function(){ startAutoSync(); });
+  }
+  toast('Deleted ' + word);
+}
 
 var _pendingDeleteRef = null;
 
