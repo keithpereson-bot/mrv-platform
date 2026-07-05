@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Padaa Enterprises ltd</title>
+<title>MRV Money Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -696,6 +696,7 @@
   .role-admin    { background:var(--info-lt);color:var(--info); }
   .role-approver { background:var(--success-lt);color:var(--success); }
   .role-requester{ background:var(--surface-2);color:var(--muted); }
+  .role-viewer    { background:#ede9fe;color:#6d28d9; }
 
 
   /* -- ICONS -- */
@@ -973,16 +974,16 @@
   <div class="aside-section non-requester-only">Cycle</div>
   <div class="aside-item active non-requester-only" onclick="showView('dashboard',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Dashboard</div>
   <div class="aside-item non-requester-only" onclick="showView('budgets',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>Approved Budgets</div>
-  <div class="aside-item approver-only non-requester-only" onclick="showView('funds',this)" data-role-required="admin"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span>Load Funds</div>
+  <div class="aside-item approver-only non-requester-only viewer-hidden" onclick="showView('funds',this)" data-role-required="admin"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span>Load Funds</div>
   <div class="aside-section requester-only">My Work</div>
   <div class="aside-item" onclick="showView('requests',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg></span>System Requests <span class="aside-badge" id="sidebarReqBadge">0</span></div>
   <div class="aside-item requester-only" id="historyNavItem" onclick="showView('history',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>My Submissions</div>
-  <div class="aside-item non-requester-only" onclick="showView('expenses',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Weekly Expensing</div>
+  <div class="aside-item non-requester-only viewer-hidden" onclick="showView('expenses',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Weekly Expensing</div>
   <div class="aside-item non-requester-only" onclick="showView('reconciliation',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>Reconciliation</div>
   <div class="aside-section non-requester-only">Reports</div>
   <div class="aside-item non-requester-only" onclick="showView('transactions',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Transactions</div>
-  <div class="aside-item non-requester-only" onclick="showView('signatures',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 17l4-4 4 4 4-8 4 8"/><path d="M21 21H3"/></svg></span>My Signatures</div>
-  <div class="aside-item non-requester-only" onclick="alert('PDF report generated!')"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h.01M12 13v4M15 15h.01"/></svg></span>PDF Reports</div>
+  <div class="aside-item non-requester-only viewer-hidden" onclick="showView('signatures',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 17l4-4 4 4 4-8 4 8"/><path d="M21 21H3"/></svg></span>My Signatures</div>
+  <div class="aside-item non-requester-only viewer-hidden" onclick="alert('PDF report generated!')"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h.01M12 13v4M15 15h.01"/></svg></span>PDF Reports</div>
   <div class="aside-section admin-only non-requester-only">Admin</div>
   <div class="aside-item admin-only non-requester-only" onclick="showView('users',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Manage Users</div>
   <div class="aside-section non-requester-only">Integration</div>
@@ -1084,7 +1085,7 @@
 
     <!-- Tab bar -->
     <div class="req-tabs">
-      <button class="req-tab active" id="tab-drafts" onclick="switchReqTab('drafts')">
+      <button class="req-tab active viewer-hidden" id="tab-drafts" onclick="switchReqTab('drafts')">
         <div class="req-tab-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
         </div>
@@ -1094,7 +1095,7 @@
         </div>
         <span class="req-tab-badge" id="badge-drafts">0</span>
       </button>
-      <button class="req-tab non-requester-only" id="tab-queue" onclick="switchReqTab('queue')">
+      <button class="req-tab non-requester-only viewer-hidden" id="tab-queue" onclick="switchReqTab('queue')">
         <div class="req-tab-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
         </div>
@@ -1127,7 +1128,7 @@
               Delete Selected (<span id="delCountDrafts">0</span>)
             </button>
             <button class="btn btn-secondary btn-sm" onclick="downloadRequestsPDF()">Download PDF</button>
-            <button class="btn btn-primary btn-sm" onclick="openNewRequestModal()">+ New Request</button>
+            <button class="btn btn-primary btn-sm viewer-hidden" onclick="openNewRequestModal()">+ New Request</button>
           </div>
         </div>
         <div class="card-body" style="padding:0">
@@ -1149,7 +1150,7 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
               Delete Selected (<span id="delCountQueue">0</span>)
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="openBulkApprove()">Mark All Paid</button>
+            <button class="btn btn-secondary btn-sm viewer-hidden" onclick="openBulkApprove()">Mark All Paid</button>
           </div>
         </div>
         <div class="card-body" style="padding:0">
@@ -1167,7 +1168,7 @@
         <div class="card-header">
           <div class="card-title">Paid Requests</div>
           <div style="display:flex;align-items:center;gap:8px">
-            <button class="btn btn-secondary btn-sm admin-only" onclick="downloadAcknowledgedPDF()">
+            <button class="btn btn-secondary btn-sm admin-only viewer-hidden" onclick="downloadAcknowledgedPDF()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Download Acknowledged PDF
             </button>
@@ -1480,6 +1481,7 @@
             <label>Role</label>
             <select id="newUserRole" onchange="toggleCountryField()">
               <option value="requester">Requester -- country-limited requests only</option>
+              <option value="viewer">Viewer -- read-only, dashboards & reports</option>
               <option value="approver">Approver -- all countries, approve & load funds</option>
               <option value="admin">Admin -- full access, all countries</option>
             </select>
@@ -4633,9 +4635,10 @@ function updateNavUser() {
     admin:     '<span class="login-role-badge role-admin">* Admin</span>',
     approver:  '<span class="login-role-badge role-approver">OK Approver</span>',
     requester: '<span class="login-role-badge role-requester">-> Requester</span>',
+    viewer:    '<span class="login-role-badge role-viewer">👁 Viewer</span>',
   }[currentUser.role] || '';
   const dot = document.getElementById('navRoleDot');
-  if (dot) dot.style.background = {admin:'#6D28D9',approver:'#059669',requester:'#2563EB'}[currentUser.role]||'#C89B2A';
+  if (dot) dot.style.background = {admin:'#6D28D9',approver:'#059669',requester:'#2563EB',viewer:'#7C3AED'}[currentUser.role]||'#C89B2A';
 }
 
 // -- User menu ---------------------------------------------------
@@ -4667,11 +4670,20 @@ showView = function(id, el) {
     }
   }
 
-  // Approver: no funds, no admin, no sheets
+  // Approver: no admin, no sheets
   if (role === 'approver') {
-    var blocked = ['funds','sheets','users'];
+    var blocked = ['sheets','users'];
     if (blocked.includes(id)) {
-      toast('Access restricted -- Approvers cannot access this section');
+      toast('Access restricted');
+      return;
+    }
+  }
+
+  // Viewer: read-only -- dashboard, budgets, paid requests, transactions, reconciliation only
+  if (role === 'viewer') {
+    var viewerAllowed = ['dashboard','budgets','transactions','reconciliation','requests'];
+    if (!viewerAllowed.includes(id)) {
+      toast('Access restricted -- Viewer accounts are read-only');
       return;
     }
   }
@@ -4779,7 +4791,8 @@ function renderUsersTable() {
   const badge = r => ({
     admin:     '<span class="login-role-badge role-admin">Admin</span>',
     approver:  '<span class="login-role-badge role-approver">Approver</span>',
-    requester: '<span class="login-role-badge role-requester">Requester</span>'
+    requester: '<span class="login-role-badge role-requester">Requester</span>',
+    viewer:    '<span class="login-role-badge role-viewer">👁 Viewer</span>'
   }[r] || r);
 
   if (usersStore.length === 0) {
@@ -4792,7 +4805,7 @@ function renderUsersTable() {
     var countries = [...new Set(budgetLines.map(function(l){ return l.country; }).filter(Boolean))].sort();
     var countryOpts = '<option value=""'+(u.country===''||!u.country?' selected':'')+'">All</option>'
       + countries.map(function(c){ return '<option value="'+c+'"'+(c===u.country?' selected':'')+'>'+c+'</option>'; }).join('');
-    var roleOpts = ['requester','approver','admin'].map(function(r){
+    var roleOpts = ['requester','viewer','approver','admin'].map(function(r){
       return '<option value="'+r+'"'+(r===(u.role||'requester')?' selected':'')+'>'+r.charAt(0).toUpperCase()+r.slice(1)+'</option>';
     }).join('');
     return '<tr id="urow-'+u.id+'">'
@@ -5225,9 +5238,9 @@ async function afterLogin() {
 
   // Route immediately -- user sees their view right away
   if (currentUser.role === 'requester') {
-    showView('requests', null);   // Requesters land on Requests tab
+    showView('requests', null);
   } else {
-    showView('dashboard', null);
+    showView('dashboard', null);  // viewer, approver, admin all land on dashboard
   }
 
   // ── STEP 2: Restore Sheets UI state ──────────────────────────
