@@ -5311,23 +5311,7 @@ async function afterLogin() {
   // ── STEP 0: Build sidebar for this role ─────────────────────
   buildSidebar();
 
-  // ── STEP 1: Render from cache immediately (instant) ──────────
-  savedSigs = loadSigsFromStorage();
-  renderDashboard();
-  rebuildRequestsTable();
-  populateAllDropdowns();
-  refreshSigGrids();
-  renderTransactions();
-  renderHistory();
-
-  // Route immediately -- user sees their view right away
-  if (currentUser.role === 'requester') {
-    showView('requests', null);
-  } else {
-    showView('dashboard', null);  // viewer, approver, admin all land on dashboard
-  }
-
-  // ── STEP 2: Restore Sheets UI state ──────────────────────────
+  // ── STEP 1: Restore Sheets UI state ──────────────────────────
   if (gsWebAppUrl) {
     gsConnected = true;
     var urlEl = document.getElementById('webAppUrl');
@@ -5345,21 +5329,37 @@ async function afterLogin() {
     updateSheetStatusPill(true);
   }
 
-  // ── STEP 3: Pull budgets + requests, then start auto-sync ───
+  // ── STEP 2: Load signatures ───────────────────────────────────
+  savedSigs = loadSigsFromStorage();
+
+  // ── STEP 3: Render from localStorage cache (budgetLines already loaded from cache) ──
+  // budgetLines loads from localStorage at init so dashboard data is ready immediately
+  rebuildRequestsTable();
+  populateAllDropdowns();
+  refreshSigGrids();
+  renderTransactions();
+  renderHistory();
+  renderDashboard();   // after budgetLines cache loaded -- shows data immediately
+
+  // Route -- user sees correct view with data already there
+  if (currentUser.role === 'requester') {
+    showView('requests', null);
+  } else {
+    showView('dashboard', null);
+  }
+
+  // ── STEP 4: Pull fresh data from Sheets in background ────────
   if (gsWebAppUrl) {
     var chk = document.getElementById('autoSyncToggle');
     if (chk) chk.checked = true;
 
-    // Pull budgets FIRST (needed for country filter + dropdowns),
-    // then requests, then start auto-sync
+    // Pull budgets first (refreshes cache + re-renders), then requests, then auto-sync
     pullBudgetLinesFromSheets()
       .catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); })
       .finally(function() {
-        // Budgets done -- now pull requests (they need budgetLines for filtering)
         pullRequestsOnly()
           .catch(function(e){ appendSyncLog('Pull failed: ' + e.message); })
           .finally(function() {
-            // Both done -- start auto-sync
             startAutoSync();
           });
       });
