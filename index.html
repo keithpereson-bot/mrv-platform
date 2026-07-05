@@ -2054,6 +2054,7 @@ function populateSelect(id, options, includeBlank) {
 // DASHBOARD
 // ============================================================
 function renderDashboard() {
+  if (!document.getElementById('dashStats')) return;
   var budgeted = totalBudgeted();
   var utilised = totalActuals();
   var loaded   = totalLoaded();
@@ -2133,6 +2134,7 @@ function renderDashboard() {
 // RECONCILIATION
 // ============================================================
 function renderReconciliation() {
+  if (!document.getElementById('reconStats')) return;
   var budgeted = totalBudgeted();
   var utilised = totalActuals();
   var loaded   = totalLoaded();
@@ -3127,6 +3129,7 @@ function deleteSig(i) {
 }
 
 function refreshSigGrids() {
+  if (!document.getElementById('sigGrid')) return;
   ['expSavedGrid','modalSavedGrid'].forEach(gridId => {
     const grid = document.getElementById(gridId);
     if (!grid) return;
@@ -3694,7 +3697,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // All devices use this URL automatically -- no per-device setup
 // Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/library/d/1kBiZeS7wREEfx9LAkWGG0VBFaD6X-xcIIqXPJLTIoWYhkKMUg_eleKMi/43';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyEPHN3yoKlj46DUvOcaUBbN2C1sokEx_9lko3H0P7SAXe4RupEWcW3HwhrxHYDYRg/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- use hardcoded URL if set, otherwise fall back to localStorage
@@ -4373,13 +4376,13 @@ function updateSheetStatusPill(connected) {
   const label = document.getElementById('sheetsStatusLabel');
   const badge = document.getElementById('sheetsSyncBadge');
   if (connected) {
-    dot.style.background = '#4ade80';
-    label.textContent    = 'Sheets synced';
-    badge.style.display  = 'none';
+    if (dot)   dot.style.background = '#4ade80';
+    if (label) label.textContent    = 'Sheets synced';
+    if (badge) badge.style.display  = 'none';
   } else {
-    dot.style.background = '#aaa';
-    label.textContent    = 'Not connected';
-    badge.style.display  = 'none';
+    if (dot)   dot.style.background = '#aaa';
+    if (label) label.textContent    = 'Not connected';
+    if (badge) badge.style.display  = 'none';
   }
 }
 
@@ -4890,6 +4893,7 @@ var _historyFilter = 'all';
 
 function renderHistory() {
   if (!currentUser) return;
+  if (!document.getElementById('historyStats')) return;
   var name  = (currentUser.name  || '').trim().toLowerCase();
   var email = (currentUser.email || '').trim().toLowerCase();
 
