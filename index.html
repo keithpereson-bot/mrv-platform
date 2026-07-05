@@ -5345,14 +5345,9 @@ async function afterLogin() {
     if (chk) chk.checked = true;
     startAutoSync();
 
-    // Also pull once right now in background -- don't await
-    Promise.all([
-      pullFromSheets(true).catch(function(e){ appendSyncLog('Pull failed: ' + e.message); }),
-      pullBudgetLinesFromSheets().catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); })
-    ]).then(function() {
-      reqCounter = calcReqCounter();
-      appendSyncLog('Initial sync complete');
-    });
+    // Pull requests immediately (lightweight), then budgets
+    pullRequestsOnly().catch(function(e){ appendSyncLog('Pull failed: ' + e.message); });
+    pullBudgetLinesFromSheets().catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); });
   }
 }
 
