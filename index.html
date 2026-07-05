@@ -5341,16 +5341,24 @@ async function afterLogin() {
     updateSheetStatusPill(true);
   }
 
-  // ── STEP 3: Pull from Sheets in background (non-blocking) ─────
+  // ── STEP 3: Pull budgets + requests, then start auto-sync ───
   if (gsWebAppUrl) {
-    // Start auto-sync immediately -- it will pull within 3s
     var chk = document.getElementById('autoSyncToggle');
     if (chk) chk.checked = true;
-    startAutoSync();
 
-    // Pull requests immediately (lightweight), then budgets
-    pullRequestsOnly().catch(function(e){ appendSyncLog('Pull failed: ' + e.message); });
-    pullBudgetLinesFromSheets().catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); });
+    // Pull budgets FIRST (needed for country filter + dropdowns),
+    // then requests, then start auto-sync
+    pullBudgetLinesFromSheets()
+      .catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); })
+      .finally(function() {
+        // Budgets done -- now pull requests (they need budgetLines for filtering)
+        pullRequestsOnly()
+          .catch(function(e){ appendSyncLog('Pull failed: ' + e.message); })
+          .finally(function() {
+            // Both done -- start auto-sync
+            startAutoSync();
+          });
+      });
   }
 }
 
