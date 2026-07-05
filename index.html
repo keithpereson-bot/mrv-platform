@@ -3000,9 +3000,12 @@ async function downloadRequestsPDF() {
 
 // -- Navigation ---------------------------------------------
 function showView(id, el) {
+  if (!id || id === 'undefined') { console.warn('showView called with bad id:', id); return; }
+  var viewEl = document.getElementById('view-' + id);
+  if (!viewEl) { console.warn('showView: no element for view-' + id); return; }
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.aside-item').forEach(a => a.classList.remove('active'));
-  document.getElementById('view-' + id).classList.add('active');
+  viewEl.classList.add('active');
   if (el && el.classList) el.classList.add('active');
   if (id === 'signatures')     renderSavedSigs();
   if (id === 'budgets')        { renderBudgetView(); if (gsWebAppUrl && window._budgetPulled !== true) { window._budgetPulled = true; pullBudgetLinesFromSheets().then(function(){ renderBudgetView(); }); } }
@@ -3691,7 +3694,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // All devices use this URL automatically -- no per-device setup
 // Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyEPHN3yoKlj46DUvOcaUBbN2C1sokEx_9lko3H0P7SAXe4RupEWcW3HwhrxHYDYRg/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/library/d/1kBiZeS7wREEfx9LAkWGG0VBFaD6X-xcIIqXPJLTIoWYhkKMUg_eleKMi/43';
 // ════════════════════════════════════════════════════════════
 
 // State -- use hardcoded URL if set, otherwise fall back to localStorage
@@ -5298,6 +5301,7 @@ function buildSidebar() {
     if (n.type === 'section') {
       return '<div class="aside-section">'+n.label+'</div>';
     }
+    if (!n.view) return '';
     return '<div class="aside-item"'+(n.id?' id="'+n.id+'"':'')+' data-view="'+n.view+'" onclick="showView(this.dataset.view,this)">'
       + makeIcon(n.icon)
       + n.label
@@ -5332,21 +5336,20 @@ async function afterLogin() {
   // ── STEP 2: Load signatures ───────────────────────────────────
   savedSigs = loadSigsFromStorage();
 
-  // ── STEP 3: Render from localStorage cache (budgetLines already loaded from cache) ──
-  // budgetLines loads from localStorage at init so dashboard data is ready immediately
-  rebuildRequestsTable();
-  populateAllDropdowns();
-  refreshSigGrids();
-  renderTransactions();
-  renderHistory();
-  renderDashboard();   // after budgetLines cache loaded -- shows data immediately
+  // ── STEP 3: Render from localStorage cache ──────────────────
+  var safeRender = function(fn, name) {
+    try { fn(); } catch(e) { console.error('Render error in ' + name + ':', e); }
+  };
+  safeRender(function(){ rebuildRequestsTable(); },  'rebuildRequestsTable');
+  safeRender(function(){ populateAllDropdowns(); },  'populateAllDropdowns');
+  safeRender(function(){ refreshSigGrids(); },       'refreshSigGrids');
+  safeRender(function(){ renderTransactions(); },    'renderTransactions');
+  safeRender(function(){ renderHistory(); },         'renderHistory');
+  safeRender(function(){ renderDashboard(); },       'renderDashboard');
 
-  // Route -- user sees correct view with data already there
-  if (currentUser.role === 'requester') {
-    showView('requests', null);
-  } else {
-    showView('dashboard', null);
-  }
+  // Route -- user sees correct view
+  var startView = (currentUser.role === 'requester') ? 'requests' : 'dashboard';
+  safeRender(function(){ showView(startView, null); }, 'showView:' + startView);
 
   // ── STEP 4: Pull fresh data from Sheets in background ────────
   if (gsWebAppUrl) {
