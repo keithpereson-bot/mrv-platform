@@ -1767,8 +1767,11 @@
 // project, type, year, month, dept, country, costItem,
 // unitOfMeasure, category, costSummary, budgetedAmount, currency, actual
 // budgetLines: populated from Google Sheets on load (read-only)
-// Empty on first load -- filled by pullBudgetLinesFromSheets()
-let budgetLines = [];
+// Cached in localStorage so refresh shows data instantly
+let budgetLines = (function(){
+  try { var s = localStorage.getItem('mrv_budget_lines'); return s ? JSON.parse(s) : []; }
+  catch(e) { return []; }
+})();
 
 // budgetStore derived from budgetLines (for legacy compat)
 function buildBudgetStore() {
@@ -2507,8 +2510,9 @@ async function pullBudgetLinesFromSheets() {
       return;
     }
 
-    // REPLACE budgetLines with exactly what Sheets has
+    // REPLACE budgetLines with exactly what Sheets has and persist
     budgetLines = mapped;
+    try { localStorage.setItem('mrv_budget_lines', JSON.stringify(budgetLines)); } catch(e) {}
     budgetStore = buildBudgetStore();
     appendSyncLog('Budgets: loaded ' + mapped.length + ' lines across ' + getProjects().length + ' project(s)');
     // Re-render tables now that budgetLines is populated (country filter was waiting)
