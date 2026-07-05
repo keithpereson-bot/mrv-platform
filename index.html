@@ -2511,6 +2511,9 @@ async function pullBudgetLinesFromSheets() {
     budgetLines = mapped;
     budgetStore = buildBudgetStore();
     appendSyncLog('Budgets: loaded ' + mapped.length + ' lines across ' + getProjects().length + ' project(s)');
+    // Re-render tables now that budgetLines is populated (country filter was waiting)
+    rebuildRequestsTable();
+    populateAllDropdowns();
 
     // RECONCILE: check if app actuals match Sheet actuals
     // If mismatch, push corrections to Sheet
@@ -3962,8 +3965,6 @@ async function pullRequestsOnly() {
       };
     }).filter(function(r){ return r.ref; });
 
-    if (!imported.length) return;
-
     // Keep local-only refs (submitted but push not yet complete)
     var sheetsRefs = new Set(imported.map(function(r){ return r.ref; }));
     var localOnly  = requestsStore.filter(function(r){ return !sheetsRefs.has(r.ref); });
@@ -4168,8 +4169,10 @@ function rebuildRequestsTable() {
   var canDelete  = role === 'admin' || role === 'approver';
 
   // Country filter: all roles respect their assigned country (blank = all)
+  // If budgetLines not loaded yet, show all (avoids blank tables on first render)
   var ctryFilter = function(r) {
     if (!userCtry) return true;
+    if (!budgetLines.length) return true; // budgets not loaded yet -- show all
     return (r.project && budgetLines.some(function(l){
       return l.project === r.project && l.country === userCtry;
     }));
