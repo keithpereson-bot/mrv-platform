@@ -1466,6 +1466,7 @@
               <option value="requester">Requester -- country-limited requests only</option>
               <option value="viewer">Viewer -- read-only, dashboards & reports</option>
               <option value="approver">Approver -- all countries, approve & load funds</option>
+              <option value="manager">Manager -- full access except Users & Sheets</option>
               <option value="admin">Admin -- full access, all countries</option>
             </select>
           </div>
@@ -4632,9 +4633,10 @@ function updateNavUser() {
     approver:  '<span class="login-role-badge role-approver">OK Approver</span>',
     requester: '<span class="login-role-badge role-requester">-> Requester</span>',
     viewer:    '<span class="login-role-badge role-viewer">👁 Viewer</span>',
+    manager:   '<span class="login-role-badge role-admin">⬡ Manager</span>',
   }[currentUser.role] || '';
   const dot = document.getElementById('navRoleDot');
-  if (dot) dot.style.background = {admin:'#6D28D9',approver:'#059669',requester:'#2563EB',viewer:'#7C3AED'}[currentUser.role]||'#C89B2A';
+  if (dot) dot.style.background = {admin:'#6D28D9',approver:'#059669',requester:'#2563EB',viewer:'#7C3AED',manager:'#B45309'}[currentUser.role]||'#C89B2A';
 }
 
 // -- User menu ---------------------------------------------------
@@ -4683,6 +4685,14 @@ showView = function(id, el) {
     var viewerAllowed = ['dashboard','budgets','transactions','reconciliation','requests','history'];
     if (!viewerAllowed.includes(id)) {
       toast('Access restricted -- Viewer accounts are read-only');
+      return;
+    }
+  }
+
+  // Manager: full access except Manage Users and Google Sheets
+  if (role === 'manager') {
+    if (id === 'users' || id === 'sheets') {
+      toast('Access restricted -- contact the system Admin');
       return;
     }
   }
@@ -4791,7 +4801,8 @@ function renderUsersTable() {
     admin:     '<span class="login-role-badge role-admin">Admin</span>',
     approver:  '<span class="login-role-badge role-approver">Approver</span>',
     requester: '<span class="login-role-badge role-requester">Requester</span>',
-    viewer:    '<span class="login-role-badge role-viewer">👁 Viewer</span>'
+    viewer:    '<span class="login-role-badge role-viewer">👁 Viewer</span>',
+    manager:   '<span class="login-role-badge role-admin">⬡ Manager</span>'
   }[r] || r);
 
   if (usersStore.length === 0) {
@@ -4804,7 +4815,7 @@ function renderUsersTable() {
     var countries = [...new Set(budgetLines.map(function(l){ return l.country; }).filter(Boolean))].sort();
     var countryOpts = '<option value=""'+(u.country===''||!u.country?' selected':'')+'">All</option>'
       + countries.map(function(c){ return '<option value="'+c+'"'+(c===u.country?' selected':'')+'>'+c+'</option>'; }).join('');
-    var roleOpts = ['requester','viewer','approver','admin'].map(function(r){
+    var roleOpts = ['requester','viewer','approver','manager','admin'].map(function(r){
       return '<option value="'+r+'"'+(r===(u.role||'requester')?' selected':'')+'>'+r.charAt(0).toUpperCase()+r.slice(1)+'</option>';
     }).join('');
     return '<tr id="urow-'+u.id+'">'
@@ -5286,7 +5297,7 @@ function buildSidebar() {
       { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
     ];
 
-  } else { // admin
+  } else if (role === 'manager') {
     nav = [
       { type:'section', label:'Cycle' },
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
@@ -5298,7 +5309,22 @@ function buildSidebar() {
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
       { type:'item', label:'My Signatures',    view:'signatures',     icon:'signatures' },
-      { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
+      { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
+    ];
+
+  } else { // admin -- full access including Users + Sheets
+    nav = [
+      { type:'section', label:'Cycle' },
+      { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
+      { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
+      { type:'item', label:'Load Funds',       view:'funds',          icon:'funds' },
+      { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Weekly Expensing', view:'expenses',       icon:'expenses' },
+      { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
+      { type:'section', label:'Reports' },
+      { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
+      { type:'item', label:'My Signatures',    view:'signatures',     icon:'signatures' },
+      { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
       { type:'section', label:'Admin' },
       { type:'item', label:'Manage Users',     view:'users',          icon:'users' },
       { type:'section', label:'Integration' },
