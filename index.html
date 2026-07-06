@@ -7,6 +7,7 @@
 <title>MRV Money Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   /* -- ENTERPRISE TOKEN SYSTEM -- */
@@ -1111,6 +1112,10 @@
               Delete Selected (<span id="delCountDrafts">0</span>)
             </button>
             <button class="btn btn-secondary btn-sm" onclick="downloadRequestsPDF()">Download PDF</button>
+            <button class="btn btn-secondary btn-sm admin-only" onclick="showExportModal()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              Export Excel
+            </button>
             <button class="btn btn-primary btn-sm viewer-hidden" onclick="openNewRequestModal()">+ New Request</button>
           </div>
         </div>
@@ -1558,6 +1563,40 @@
 </div>
 
 <!-- -- MODALS -- -->
+
+<!-- Export to Excel Modal -->
+<div id="exportModal" class="modal-overlay" onclick="closeModalOutside(event,'exportModal')">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div>
+        <strong>Export to Excel</strong>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Choose what to export</div>
+      </div>
+      <button class="close-btn" onclick="closeModal('exportModal')">×</button>
+    </div>
+    <div class="modal-body" style="display:grid;gap:10px">
+      <button class="btn btn-secondary" onclick="exportToExcel('requests')" style="justify-content:flex-start;gap:12px;padding:14px 16px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg>
+        <div style="text-align:left"><div style="font-weight:600">All Requests</div><div style="font-size:11.5px;color:var(--muted)">Every request across all statuses</div></div>
+      </button>
+      <button class="btn btn-secondary" onclick="exportToExcel('paid')" style="justify-content:flex-start;gap:12px;padding:14px 16px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+        <div style="text-align:left"><div style="font-weight:600">Paid Requests</div><div style="font-size:11.5px;color:var(--muted)">Only paid requests with signatories</div></div>
+      </button>
+      <button class="btn btn-secondary" onclick="exportToExcel('budgets')" style="justify-content:flex-start;gap:12px;padding:14px 16px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <div style="text-align:left"><div style="font-weight:600">Approved Budgets</div><div style="font-size:11.5px;color:var(--muted)">Budget lines with actuals and utilisation</div></div>
+      </button>
+      <button class="btn btn-secondary" onclick="exportToExcel('all')" style="justify-content:flex-start;gap:12px;padding:14px 16px;border-color:var(--teal)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <div style="text-align:left"><div style="font-weight:600;color:var(--teal)">Full Workbook</div><div style="font-size:11.5px;color:var(--muted)">All sheets in one Excel file</div></div>
+      </button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('exportModal')">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <!-- Acknowledge Receipt Modal -->
 <div id="ackModal" class="modal-overlay" onclick="closeModalOutside(event,'ackModal')">
@@ -5219,6 +5258,115 @@ function clearAck(ref) {
   persistRequestsToStorage();
   renderHistory();
   toast('Acknowledgement removed');
+}
+
+// ==============================================================
+// EXPORT TO EXCEL
+// ==============================================================
+
+function showExportModal() {
+  openModal('exportModal');
+}
+
+function exportToExcel(type) {
+  closeModal('exportModal');
+  if (typeof XLSX === 'undefined') {
+    toast('Excel library not loaded — please refresh and try again');
+    return;
+  }
+
+  var wb = XLSX.utils.book_new();
+  var date = new Date().toISOString().slice(0,10);
+
+  // ── Requests sheet ──
+  if (type === 'requests' || type === 'paid' || type === 'all') {
+    var rows = type === 'paid'
+      ? requestsStore.filter(function(r){ return r.status === 'Paid'; })
+      : requestsStore;
+
+    var data = [['Ref #','Project','Type','Category','Cost Summary','Cost Item',
+                 'Description','Amount','Currency','Requester','Status','Date',
+                 'Approved By','Approved At','Signed By','Sign Time',
+                 'Acknowledged By','Acknowledged At']];
+    rows.forEach(function(r) {
+      data.push([
+        r.ref, r.project, r.type, r.category, r.costSummary, r.costItem,
+        r.description, r.amount, getCurrency(r.project, r.type), r.requester,
+        r.status, fmtDate(r.date),
+        r.approvedBy||'', fmtDate(r.approvedAt||''), r.sigLabel||'', fmtDate(r.sigTime||''),
+        r.requesterSigName||'', fmtDate(r.requesterSigTime||'')
+      ]);
+    });
+    var ws = XLSX.utils.aoa_to_sheet(data);
+    // Column widths
+    ws['!cols'] = [8,22,14,16,22,16,24,12,8,16,10,14,16,14,16,14,16,14].map(function(w){ return {wch:w}; });
+    styleExcelSheet(ws, data[0].length);
+    XLSX.utils.book_append_sheet(wb, ws, type === 'paid' ? 'Paid Requests' : 'All Requests');
+  }
+
+  // ── Budgets sheet ──
+  if (type === 'budgets' || type === 'all') {
+    var bdata = [['Project','Type','Department','Country','Month','Year',
+                  'Category','Cost Summary','Cost Item','Unit','Currency',
+                  'Budgeted Amount','Actual Spent','Remaining','Utilisation %']];
+    budgetLines.forEach(function(l) {
+      var actual  = getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem);
+      var remain  = (parseFloat(l.budgetedAmount)||0) - actual;
+      var pct     = l.budgetedAmount ? Math.round(actual / l.budgetedAmount * 100) : 0;
+      bdata.push([
+        l.project, l.type, l.dept||'', l.country||'', l.month||'', l.year||'',
+        l.category, l.costSummary, l.costItem, l.unitOfMeasure||'', l.currency||'KES',
+        parseFloat(l.budgetedAmount)||0, actual, remain, pct + '%'
+      ]);
+    });
+    var bws = XLSX.utils.aoa_to_sheet(bdata);
+    bws['!cols'] = [22,14,14,12,8,6,14,22,16,10,8,14,14,14,10].map(function(w){ return {wch:w}; });
+    styleExcelSheet(bws, bdata[0].length);
+    XLSX.utils.book_append_sheet(wb, bws, 'Approved Budgets');
+  }
+
+  // ── Summary sheet (full workbook only) ──
+  if (type === 'all') {
+    var total   = budgetLines.reduce(function(s,l){ return s+(parseFloat(l.budgetedAmount)||0); }, 0);
+    var spent   = requestsStore.filter(function(r){ return r.status==='Paid'; })
+                               .reduce(function(s,r){ return s+(parseFloat(r.amount)||0); }, 0);
+    var pending = requestsStore.filter(function(r){ return r.status==='Approved'; }).length;
+    var sdata = [
+      ['MRV Platform Export','','Generated:', new Date().toLocaleString('en-GB')],
+      [],
+      ['Summary',''],
+      ['Total Budget',total],
+      ['Total Spent',spent],
+      ['Remaining',total-spent],
+      ['Utilisation %', total ? Math.round(spent/total*100)+'%' : '0%'],
+      [],
+      ['Requests',''],
+      ['Total Requests', requestsStore.length],
+      ['Pending Approval', requestsStore.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; }).length],
+      ['In Payment Queue', requestsStore.filter(function(r){ return r.status==='Approved'; }).length],
+      ['Paid', requestsStore.filter(function(r){ return r.status==='Paid'; }).length],
+    ];
+    var sws = XLSX.utils.aoa_to_sheet(sdata);
+    sws['!cols'] = [{wch:22},{wch:16},{wch:14},{wch:22}];
+    XLSX.utils.book_append_sheet(wb, sws, 'Summary');
+  }
+
+  // ── Download ──
+  var filename = 'MRV_Export_' + date + '_' +
+    { requests:'All_Requests', paid:'Paid_Requests', budgets:'Budgets', all:'Full_Workbook' }[type] +
+    '.xlsx';
+  XLSX.writeFile(wb, filename);
+  toast('Excel file downloaded — ' + filename.split('_').slice(-1)[0].replace('.xlsx','').replace(/_/g,' '));
+}
+
+function styleExcelSheet(ws, colCount) {
+  // Bold the header row
+  var range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  for (var c = range.s.c; c <= Math.min(range.e.c, colCount-1); c++) {
+    var addr = XLSX.utils.encode_cell({r:0, c:c});
+    if (!ws[addr]) continue;
+    ws[addr].s = { font:{ bold:true }, fill:{ fgColor:{ rgb:'0D2B1E' } }, font:{ bold:true, color:{ rgb:'FFFFFF' } } };
+  }
 }
 
 // ==============================================================
