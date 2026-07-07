@@ -3197,23 +3197,20 @@ function saveNewSig(mode) {
   var roleLabel = { admin:'Admin', manager:'Manager', approver:'Approver',
                     requester:'Requester', viewer:'Viewer' };
   const label = currentUser
-    ? (currentUser.name + ' — ' + (roleLabel[currentUser.role] || currentUser.role))
+    ? (currentUser.name + ' \u2014 ' + (roleLabel[currentUser.role] || currentUser.role))
     : 'My Signature';
   let dataUrl = null;
   if (mode === 'draw') {
     if (isCanvasBlank('newCanvas')) { toast('Please draw your signature first'); return; }
     dataUrl = document.getElementById('newCanvas').toDataURL();
   } else {
-    dataUrl = document.getElementById('newPreviewImg').src;
-    if (!dataUrl || dataUrl === window.location.href) { toast('Please upload an image first'); return; }
+    toast('Only drawn signatures are supported'); return;
   }
   const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
   // One signature per user -- replace any existing
   savedSigs = [{label, dataUrl, date: now, id: Date.now()}];
   persistSigsToStorage();
   clearCanvas('newCanvas');
-  document.getElementById('newSigLabel').value = '';
-  clearUpload();
   renderSavedSigs();
   refreshSigGrids();
   toast('Signature saved');
@@ -3232,10 +3229,12 @@ function previewUpload(e) {
 }
 
 function clearUpload() {
-  document.getElementById('newPreviewImg').src = '';
-  document.getElementById('newUploadPreview').style.display = 'none';
-  document.getElementById('newUploadZone').style.display = 'block';
-  document.getElementById('newSigFile').value = '';
+  // Upload removed -- draw only
+  var el;
+  el = document.getElementById('newPreviewImg');    if (el) el.src = '';
+  el = document.getElementById('newUploadPreview'); if (el) el.style.display = 'none';
+  el = document.getElementById('newUploadZone');    if (el) el.style.display = 'block';
+  el = document.getElementById('newSigFile');       if (el) el.value = '';
 }
 
 // -- Handle upload in inline contexts ----------------------
