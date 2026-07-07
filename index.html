@@ -1293,7 +1293,7 @@
       <div class="card">
         <div class="card-header"><div class="card-title">Add New Signature</div></div>
         <div class="card-body">
-          <div class="form-group"><label>Signature Label (name or role)</label><input type="text" id="newSigLabel" placeholder="e.g. J. Kamau -- Field Officer"></div>
+          <div class="form-group"><label>Signature Label (name or role)</label><input type="text" id="newSigLabel" placeholder="e.g. J. Kamau -- Finance Officer" onfocus="if(!this.value&&currentUser)this.value=currentUser.name;"></div>
           <div class="sig-tabs" style="margin-bottom:16px">
             <button class="sig-tab active" onclick="switchSigTab(this,'new-draw')">✏️ Draw</button>
             <button class="sig-tab" onclick="switchSigTab(this,'new-upload')">📷 Upload Photo</button>
@@ -3218,7 +3218,9 @@ function selectSavedSig(idx, context, el) {
 
 // -- Save new sig (from My Signatures page) ----------------
 function saveNewSig(mode) {
-  const label = document.getElementById('newSigLabel').value.trim() || 'My Signature';
+  const label = document.getElementById('newSigLabel').value.trim()
+    || (currentUser ? currentUser.name : '')
+    || 'My Signature';
   let dataUrl = null;
   if (mode === 'draw') {
     if (isCanvasBlank('newCanvas')) { toast('Please draw your signature first'); return; }
@@ -4020,9 +4022,9 @@ async function pullRequestsOnly() {
         approvedAt:       r['Approved At']              || (local && local.approvedAt)        || null,
         requesterSigName: r['Requester Sig Name']       || (local && local.requesterSigName)  || null,
         requesterSigTime: r['Requester Sig Time']       || (local && local.requesterSigTime)  || null,
-        // Always preserve local image fields (not in lightweight pull)
-        sigDataUrl:       local ? local.sigDataUrl   : null,
-        requesterSig:     local ? local.requesterSig : null,
+        // Sig images now included from Sheets (AppScript no longer skips them)
+        sigDataUrl:       r['Sig Data']      || (local && local.sigDataUrl)   || null,
+        requesterSig:     r['Requester Sig'] || (local && local.requesterSig) || null,
       };
     }).filter(function(r){ return r.ref; });
 
@@ -5187,7 +5189,8 @@ function saveAndApplyAckSig(mode) {
   }
   if (!dataUrl) return;
   // Save as the user's single signature
-  var label = currentUser ? currentUser.name : 'My Signature';
+  var sigLabel = document.getElementById('newSigLabel');
+  var label = (sigLabel && sigLabel.value.trim()) || (currentUser ? currentUser.name : 'My Signature');
   savedSigs = [{ label:label, dataUrl:dataUrl, date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}), id:Date.now() }];
   persistSigsToStorage();
   _pendingAckSig = dataUrl;
