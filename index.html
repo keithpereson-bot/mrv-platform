@@ -1157,7 +1157,15 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">Paid Requests</div>
-          <div style="display:flex;align-items:center;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <select id="paidSortSelect" style="font-size:11.5px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--ink);cursor:pointer" onchange="sortAndRebuild()">
+              <option value="date-desc">Date: Newest first</option>
+              <option value="date-asc">Date: Oldest first</option>
+              <option value="amount-desc">Amount: High to low</option>
+              <option value="amount-asc">Amount: Low to high</option>
+              <option value="requester">Requester A–Z</option>
+              <option value="project">Project A–Z</option>
+            </select>
             <button class="btn btn-secondary btn-sm admin-only viewer-hidden" onclick="downloadAcknowledgedPDF()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Download Acknowledged PDF
@@ -2611,7 +2619,7 @@ async function pullBudgetLinesFromSheets() {
 // Download PDF -- paid requests in a clean table with signatures
 async function downloadAcknowledgedPDF() {
   const { jsPDF } = window.jspdf;
-  const paid = requestsStore.filter(function(r){ return r.status === 'Paid'; });
+  const paid = sortPaid(requestsStore.filter(function(r){ return r.status === 'Paid'; }));
   if (!paid.length) { toast('No paid requests to export'); return; }
 
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
@@ -2646,8 +2654,8 @@ async function downloadAcknowledgedPDF() {
     { label:'Finance Signature',x:ML+170,   w:58  },
     { label:'Acknowledgement',  x:ML+228,   w:59  },
   ];
-  const ROW_TEXT = 11;   // height for text-only row
-  const ROW_SIG  = 26;   // height for row with signature image
+  const ROW_TEXT = 22;   // fixed height for all rows
+  const ROW_SIG  = 22;   // same -- every row is equal height
 
   // ── Page header ───────────────────────────────────────────────
   function pageHeader(isFirst) {
@@ -2803,8 +2811,7 @@ async function downloadAcknowledgedPDF() {
   var pageNum = 1;
 
   paid.forEach(function(r, i) {
-    var hasSig = !!(r.sigDataUrl || r.requesterSig);
-    var rowH   = hasSig ? ROW_SIG : ROW_TEXT;
+    var rowH   = ROW_SIG; // fixed height -- sigs force-fit
 
     if (y + rowH > ph - 12) {
       // Footer then new page
@@ -3852,8 +3859,7 @@ async function pushToSheets() {
   var _pushSafetyTimer = setTimeout(function(){ window._pushInProgress = false; }, 15000);
   appendSyncLog('Pushing to Sheets...');
   try {
-    // Requests
-    // Strip image fields from main push -- sent separately via pushSigData
+    // Requests -- include sig images so they're stored in Sheets with each request
     const reqRows = requestsStore.map(function(r) {
       return {
         ref:              r.ref              || '',
@@ -3869,11 +3875,12 @@ async function pushToSheets() {
         date:             r.date             || '',
         sigLabel:         r.sigLabel         || '',
         sigTime:          r.sigTime          || '',
+        sigDataUrl:       r.sigDataUrl       || '',
         approvedBy:       r.approvedBy       || '',
         approvedAt:       r.approvedAt       || '',
+        requesterSig:     r.requesterSig     || '',
         requesterSigName: r.requesterSigName || '',
         requesterSigTime: r.requesterSigTime || '',
-        // sigDataUrl and requesterSig pushed separately (large images)
       };
     });
 
@@ -4230,6 +4237,28 @@ function switchReqTab(tab) {
   if (panel) panel.style.display='';
 }
 
+var _paidSort = 'date-desc';
+
+function sortAndRebuild() {
+  var sel = document.getElementById('paidSortSelect');
+  if (sel) _paidSort = sel.value;
+  rebuildRequestsTable();
+}
+
+function sortPaid(rows) {
+  return rows.slice().sort(function(a, b) {
+    switch (_paidSort) {
+      case 'date-asc':    return new Date(a.sigTime||a.date||0) - new Date(b.sigTime||b.date||0);
+      case 'date-desc':   return new Date(b.sigTime||b.date||0) - new Date(a.sigTime||a.date||0);
+      case 'amount-desc': return (parseFloat(b.amount)||0) - (parseFloat(a.amount)||0);
+      case 'amount-asc':  return (parseFloat(a.amount)||0) - (parseFloat(b.amount)||0);
+      case 'requester':   return (a.requester||'').localeCompare(b.requester||'');
+      case 'project':     return (a.project||'').localeCompare(b.project||'');
+      default:            return new Date(b.sigTime||b.date||0) - new Date(a.sigTime||a.date||0);
+    }
+  });
+}
+
 function rebuildRequestsTable() {
   var role       = currentUser ? (currentUser.role||'requester') : 'requester';
   var userCtry   = currentUser ? (currentUser.country||'') : '';
@@ -4250,7 +4279,7 @@ function rebuildRequestsTable() {
   var allFiltered = requestsStore.filter(ctryFilter);
   var drafts   = allFiltered.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; });
   var queue    = allFiltered.filter(function(r){ return r.status==='Approved'; });
-  var paid     = allFiltered.filter(function(r){ return r.status==='Paid'; });
+  var paid     = sortPaid(allFiltered.filter(function(r){ return r.status==='Paid'; }));
 
   // Update tab badges
   var bd = document.getElementById('badge-drafts'); if(bd) bd.textContent = drafts.length;
