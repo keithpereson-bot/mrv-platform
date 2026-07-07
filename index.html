@@ -3748,7 +3748,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // All devices use this URL automatically -- no per-device setup
 // Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyEPHN3yoKlj46DUvOcaUBbN2C1sokEx_9lko3H0P7SAXe4RupEWcW3HwhrxHYDYRg/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyw93mFocIR4Ee3EUPTg3Gm2-NUkmfuTZTtHzHRZP9453OKORb7-k_EOzAOl_BKErQ/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- use hardcoded URL if set, otherwise fall back to localStorage
@@ -4026,9 +4026,13 @@ async function pullRequestsOnly() {
       };
     }).filter(function(r){ return r.ref; });
 
-    // Keep local-only refs (submitted but push not yet complete)
-    var sheetsRefs = new Set(imported.map(function(r){ return r.ref; }));
-    var localOnly  = requestsStore.filter(function(r){ return !sheetsRefs.has(r.ref); });
+    // Keep local-only refs that are NOT deleted
+    // (prevents deleted requests from re-appearing via localOnly merge)
+    var sheetsRefs   = new Set(imported.map(function(r){ return r.ref; }));
+    var deletedRefs  = new Set(deletedStore.map(function(r){ return r.ref; }));
+    var localOnly    = requestsStore.filter(function(r){
+      return !sheetsRefs.has(r.ref) && !deletedRefs.has(r.ref);
+    });
     requestsStore  = imported.concat(localOnly);
     reqCounter     = calcReqCounter();
     persistRequestsToStorage();
@@ -4098,9 +4102,12 @@ async function pullFromSheets(silent) {
           return r;
         });
 
-        // Keep local-only refs (submitted but not yet in Sheets)
-        var sheetsRefs = new Set(imported.map(function(r){ return r.ref; }));
-        var localOnly  = requestsStore.filter(function(r){ return !sheetsRefs.has(r.ref); });
+        // Keep local-only refs that are NOT deleted
+        var sheetsRefs  = new Set(imported.map(function(r){ return r.ref; }));
+        var deletedRefs3 = new Set(deletedStore.map(function(r){ return r.ref; }));
+        var localOnly   = requestsStore.filter(function(r){
+          return !sheetsRefs.has(r.ref) && !deletedRefs3.has(r.ref);
+        });
         var newStore = merged.concat(localOnly);
 
         requestsStore = newStore;
@@ -5551,16 +5558,34 @@ async function afterLogin() {
     var chk = document.getElementById('autoSyncToggle');
     if (chk) chk.checked = true;
 
-    // Pull budgets first (refreshes cache + re-renders), then requests, then auto-sync
-    pullBudgetLinesFromSheets()
-      .catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); })
-      .finally(function() {
-        pullRequestsOnly()
-          .catch(function(e){ appendSyncLog('Pull failed: ' + e.message); })
-          .finally(function() {
-            startAutoSync();
-          });
-      });
+    // Pull deleted refs first so merge correctly excludes them
+    gasCall({ action:'getDeletedRefs' }).then(function(res) {
+      if (res && res.ok && res.refs && res.refs.length) {
+        // Add any server-deleted refs to local deletedStore so merge excludes them
+        var existingRefs = new Set(deletedStore.map(function(r){ return r.ref; }));
+        res.refs.forEach(function(ref) {
+          if (!existingRefs.has(ref)) {
+            deletedStore.push({ ref:ref, deletedAt:'', deletedBy:'server' });
+          }
+        });
+        try { localStorage.setItem('mrv_deleted', JSON.stringify(deletedStore)); } catch(e) {}
+        // Also remove from requestsStore immediately
+        var delSet = new Set(res.refs);
+        requestsStore = requestsStore.filter(function(r){ return !delSet.has(r.ref); });
+        persistRequestsToStorage();
+      }
+    }).catch(function(){}).finally(function() {
+      // Then pull budgets + requests
+      pullBudgetLinesFromSheets()
+        .catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); })
+        .finally(function() {
+          pullRequestsOnly()
+            .catch(function(e){ appendSyncLog('Pull failed: ' + e.message); })
+            .finally(function() {
+              startAutoSync();
+            });
+        });
+    });
   }
 }
 
