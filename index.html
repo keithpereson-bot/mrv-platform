@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- BUILD: v2-dynamic-sidebar -->
+
+
+<!-- BUILD: v3-excel-export -->
 <title>MRV Money Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2606,220 +2608,229 @@ async function pullBudgetLinesFromSheets() {
 
 // -- PDF GENERATION -----------------------------------------
 
-// Download PDF of paid+acknowledged requests (for expense clearing)
+// Download PDF of paid requests -- one page per request, receipt-style
 async function downloadAcknowledgedPDF() {
   const { jsPDF } = window.jspdf;
   const paid = requestsStore.filter(function(r){ return r.status === 'Paid'; });
-
   if (!paid.length) { toast('No paid requests to export'); return; }
 
-  const doc  = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-  const pw   = doc.internal.pageSize.getWidth();
-  const ph   = doc.internal.pageSize.getHeight();
-  const now  = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  // Portrait A4 -- one receipt per page
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const pw  = doc.internal.pageSize.getWidth();   // 210mm
+  const ph  = doc.internal.pageSize.getHeight();  // 297mm
+  const M   = 18; // margin
+  const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
 
-  const NAVY   = [15, 28, 46];
-  const TEAL   = [15, 110, 86];
-  const PURPLE = [67, 56, 202];
-  const GOLD   = [200, 135, 42];
-  const MUTED  = [107, 122, 153];
-  const WHITE  = [255, 255, 255];
-  const BORDER = [221, 226, 235];
-  const SUCCESS= [22, 163, 74];
+  const NAVY    = [13, 43, 46];
+  const TEAL    = [15, 110, 86];
+  const MUTED   = [120, 130, 145];
+  const BORDER  = [210, 220, 225];
+  const WHITE   = [255, 255, 255];
+  const SUCCESS = [22, 163, 74];
+  const LIGHT   = [246, 250, 248];
+  const AMBER   = [180, 120, 20];
 
-  // Count acknowledged vs unacknowledged
-  const acked   = paid.filter(function(r){ return r.requesterSigName; });
-  const unacked = paid.filter(function(r){ return !r.requesterSigName; });
+  const acked = paid.filter(function(r){ return r.requesterSigName; });
 
-  function drawHeader(isFirstPage) {
-    // Header bar
+  paid.forEach(function(r, idx) {
+    if (idx > 0) doc.addPage();
+
+    var ccy = getCurrency(r.project, r.type);
+
+    // ── HEADER BAND ────────────────────────────────────────────
     doc.setFillColor(...NAVY);
-    doc.rect(0, 0, pw, 22, 'F');
+    doc.rect(0, 0, pw, 28, 'F');
+
     doc.setFont('helvetica','bold');
-    doc.setFontSize(14);
+    doc.setFontSize(15);
     doc.setTextColor(...WHITE);
-    doc.text('MRV Platform — Paid Requests & Acknowledgements', 14, 9);
+    doc.text('MRV Platform', M, 11);
+
     doc.setFont('helvetica','normal');
-    doc.setFontSize(8);
-    doc.setTextColor(180, 200, 220);
-    doc.text('For expense clearing — includes approver and requester signatures', 14, 15);
-    doc.text('Generated: ' + now, pw - 14, 15, {align:'right'});
+    doc.setFontSize(8.5);
+    doc.setTextColor(180, 215, 205);
+    doc.text('Payment Receipt & Acknowledgement', M, 18);
 
-    if (isFirstPage) {
-      // Summary row
-      const sW = (pw - 28) / 4;
-      const summaries = [
-        { label:'Total Paid', value: paid.length + ' requests',          color:NAVY   },
-        { label:'Acknowledged', value: acked.length + ' signed',         color:SUCCESS},
-        { label:'Pending Ack', value: unacked.length + ' unsigned',      color:GOLD   },
-        { label:'Total Amount', value: getDefaultCurrency()+' '+paid.reduce(function(s,r){return s+(r.amount||0);},0).toLocaleString(), color:TEAL },
-      ];
-      summaries.forEach(function(s, i) {
-        const bx = 14 + i * (sW + 2.3);
-        doc.setFillColor(245, 247, 250);
-        doc.roundedRect(bx, 25, sW, 14, 2, 2, 'F');
-        doc.setFont('helvetica','bold');
-        doc.setFontSize(6.5);
-        doc.setTextColor(...MUTED);
-        doc.text(s.label.toUpperCase(), bx + 4, 30);
-        doc.setFont('helvetica','bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...s.color);
-        doc.text(s.value, bx + 4, 36);
-      });
-    }
-  }
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...WHITE);
+    doc.text('Ref: #' + r.ref, pw - M, 11, {align:'right'});
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(180, 215, 205);
+    doc.text('Generated ' + now, pw - M, 18, {align:'right'});
 
-  // Table columns
-  const COL = {
-    ref:    { x:14,  w:18  },
-    proj:   { x:32,  w:44  },
-    cat:    { x:76,  w:36  },
-    amt:    { x:112, w:28  },
-    date:   { x:140, w:22  },
-    approv: { x:162, w:50  },
-    ack:    { x:212, w:70  },
-  };
-  const HEADERS = ['Ref #','Project / Type','Category / Line','Amount','Date','Approved By (Finance)','Requester Acknowledgement'];
-
-  function drawTableHeader(y) {
-    doc.setFillColor(...NAVY);
-    doc.rect(14, y, pw - 28, 8, 'F');
+    // Status badge
+    var statusClr = r.requesterSigName ? SUCCESS : AMBER;
+    doc.setFillColor(...statusClr);
+    doc.roundedRect(pw - M - 34, 20, 34, 7, 2, 2, 'F');
     doc.setFont('helvetica','bold');
     doc.setFontSize(6.5);
     doc.setTextColor(...WHITE);
-    Object.values(COL).forEach(function(c, i) {
-      doc.text(HEADERS[i], c.x + 2, y + 5.2);
-    });
-    return y + 8;
-  }
+    doc.text(r.requesterSigName ? 'ACKNOWLEDGED' : 'AWAITING ACK', pw - M - 17, 24.8, {align:'center'});
 
-  let y = 42;
-  drawHeader(true);
-  y = drawTableHeader(y);
+    var y = 38;
 
-  for (let ri = 0; ri < paid.length; ri++) {
-    const r      = paid[ri];
-    const hasSig = !!r.sigDataUrl;
-    const hasAck = !!r.requesterSigName;
-    const localSig = r.requesterSig || null;  // image from Sheets, visible to all
-
-    // Row height: taller rows for signed entries so sig + name + timestamp fit cleanly
-    const rowH = (hasSig || hasAck) ? 28 : 13;
-
-    if (y + rowH > ph - 14) {
-      doc.addPage();
-      y = 5;
-      drawHeader(false);
-      y = drawTableHeader(y + 22);
-    }
-
-    // Alternating row background
-    if (ri % 2 === 0) {
-      doc.setFillColor(248, 250, 252);
-      doc.rect(14, y, pw - 28, rowH, 'F');
-    }
-
-    // Row border
+    // ── AMOUNT HERO ────────────────────────────────────────────
+    doc.setFillColor(...LIGHT);
+    doc.roundedRect(M, y, pw - M*2, 22, 3, 3, 'F');
     doc.setDrawColor(...BORDER);
-    doc.setLineWidth(0.2);
-    doc.rect(14, y, pw - 28, rowH, 'S');
+    doc.setLineWidth(0.3);
+    doc.roundedRect(M, y, pw - M*2, 22, 3, 3, 'S');
 
-    const mid = y + rowH / 2;
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...MUTED);
+    doc.text('AMOUNT PAID', pw/2, y + 7, {align:'center'});
 
-    // Ref #
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...TEAL);
-    doc.text('#' + r.ref, COL.ref.x + 2, mid + 1, {baseline:'middle'});
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(22);
+    doc.setTextColor(...TEAL);
+    doc.text(ccy + ' ' + (r.amount||0).toLocaleString(), pw/2, y + 17, {align:'center'});
 
-    // Project + type
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...NAVY);
-    doc.text(r.project || '', COL.proj.x + 2, mid, {baseline:'middle', maxWidth: COL.proj.w - 4});
-    if (r.type) {
-      doc.setFontSize(6); doc.setTextColor(...MUTED);
-      doc.text(r.type, COL.proj.x + 2, mid + 4, {baseline:'middle'});
-    }
+    y += 30;
 
-    // Category / line
-    doc.setFontSize(6.5); doc.setTextColor(...NAVY);
-    doc.text((r.category || r.description || ''), COL.cat.x + 2, mid - 1, {baseline:'middle', maxWidth: COL.cat.w - 4});
-    if (r.costSummary) {
-      doc.setFontSize(5.5); doc.setTextColor(...MUTED);
-      doc.text(r.costSummary, COL.cat.x + 2, mid + 3.5, {baseline:'middle', maxWidth: COL.cat.w - 4});
-    }
-
-    // Amount
-    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...NAVY);
-    doc.text((r.amount||0).toLocaleString(), COL.amt.x + 2, mid + 1, {baseline:'middle'});
-
-    // Date
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
-    doc.text(r.date || '', COL.date.x + 2, mid + 1, {baseline:'middle'});
-
-    // Approver signature (finance officer)
-    const aSigX = COL.approv.x + 2;
-    if (hasSig) {
-      try {
-        const fmt = r.sigDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        var imgH = rowH - 10;
-        doc.addImage(r.sigDataUrl, fmt, aSigX, y + 2, 28, imgH, undefined, 'FAST');
-        doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(...NAVY);
-        doc.text(r.sigLabel || '', aSigX, y + imgH + 5);
-        doc.setFont('helvetica','normal'); doc.setFontSize(5); doc.setTextColor(...MUTED);
-        if (r.sigTime) doc.text(String(r.sigTime), aSigX, y + imgH + 9.5);
-      } catch(e) {
-        doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...SUCCESS);
-        doc.text('[Signature on file]', aSigX, mid + 1, {baseline:'middle'});
-      }
-    } else {
-      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...MUTED);
-      doc.text('Not signed', aSigX, mid + 1, {baseline:'middle'});
-    }
-
-    // Requester acknowledgement signature
-    const rSigX = COL.ack.x + 2;
-    if (hasAck && localSig) {
-      try {
-        const fmt2 = localSig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        var imgH2 = rowH - 10;
-        doc.addImage(localSig, fmt2, rSigX, y + 2, 34, imgH2, undefined, 'FAST');
-        doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(...SUCCESS);
-        doc.text('✓ ' + (r.requesterSigName || ''), rSigX, y + imgH2 + 5);
-        doc.setFont('helvetica','normal'); doc.setFontSize(5); doc.setTextColor(...MUTED);
-        if (r.requesterSigTime) doc.text(String(r.requesterSigTime), rSigX, y + imgH2 + 9.5);
-      } catch(e) {
-        doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...SUCCESS);
-        doc.text('✓ Acknowledged: ' + (r.requesterSigName || ''), rSigX, mid + 1, {baseline:'middle'});
-      }
-    } else if (hasAck) {
-      doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...SUCCESS);
-      doc.text('✓ ' + (r.requesterSigName || ''), rSigX, y + 8, {baseline:'middle'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED);
-      if (r.requesterSigTime) doc.text(String(r.requesterSigTime), rSigX, y + 14, {baseline:'middle'});
-    } else {
-      // Blank signature box
+    // ── DETAILS GRID ───────────────────────────────────────────
+    function detailRow(label, value, yPos) {
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...MUTED);
+      doc.text(label, M, yPos);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...NAVY);
+      var maxW = pw - M*2 - 35;
+      doc.text(String(value||'--'), M + 35, yPos, {maxWidth: maxW});
+      // divider
       doc.setDrawColor(...BORDER);
-      doc.setLineWidth(0.3);
-      doc.setLineDashPattern([1, 1], 0);
-      doc.rect(rSigX, y + 3, 48, rowH - 6, 'S');
-      doc.setLineDashPattern([], 0);
-      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...MUTED);
-      doc.text('Awaiting acknowledgement', rSigX + 24, mid + 1, {align:'center', baseline:'middle'});
+      doc.setLineWidth(0.15);
+      doc.line(M, yPos + 2.5, pw - M, yPos + 2.5);
+      return yPos + 10;
     }
 
-    y += rowH;
-  }
+    y = detailRow('Project',      r.project,           y);
+    y = detailRow('Type',         r.type||'--',        y);
+    y = detailRow('Category',     r.category||'--',    y);
+    if (r.costSummary) y = detailRow('Cost Line', r.costSummary, y);
+    if (r.costItem)    y = detailRow('Cost Item', r.costItem,    y);
+    if (r.description) y = detailRow('Description', r.description, y);
+    y = detailRow('Requester',    r.requester||'--',   y);
+    y = detailRow('Date Paid',    fmtDate(r.sigTime||r.date||''), y);
 
-  // Footer
-  const footerY = ph - 8;
-  doc.setDrawColor(...BORDER); doc.setLineWidth(0.3);
-  doc.line(14, footerY - 4, pw - 14, footerY - 4);
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
-  doc.text('MRV Platform — Confidential. For expense clearing only.', 14, footerY);
-  doc.text('Page ' + doc.getCurrentPageInfo().pageNumber + ' of ' + doc.getNumberOfPages(), pw - 14, footerY, {align:'right'});
-  doc.text(acked.length + ' of ' + paid.length + ' requests acknowledged by requester.', pw / 2, footerY, {align:'center'});
+    y += 4;
 
-  doc.save('MRV_Acknowledged_Requests_' + new Date().toISOString().slice(0,10) + '.pdf');
-  toast('PDF downloaded — ' + paid.length + ' paid requests');
+    // ── SIGNATURE SECTION ──────────────────────────────────────
+    var sigBoxH  = 52;
+    var sigBoxW  = (pw - M*2 - 8) / 2;
+
+    // Left box: Finance Approver
+    doc.setFillColor(245, 250, 247);
+    doc.roundedRect(M, y, sigBoxW, sigBoxH, 3, 3, 'F');
+    doc.setDrawColor(...TEAL);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(M, y, sigBoxW, sigBoxH, 3, 3, 'S');
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...TEAL);
+    doc.text('FINANCE SIGNATORY', M + 4, y + 6);
+
+    if (r.sigDataUrl) {
+      try {
+        var fmt1 = r.sigDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        doc.addImage(r.sigDataUrl, fmt1, M + 4, y + 9, 55, 22, undefined, 'FAST');
+      } catch(e) {}
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...NAVY);
+      doc.text(r.sigLabel || 'Approved', M + 4, y + 35);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(7);
+      doc.setTextColor(...MUTED);
+      doc.text(fmtDate(r.sigTime||''), M + 4, y + 41);
+      doc.setFontSize(6.5);
+      doc.text(r.approvedBy ? 'Approved by: ' + r.approvedBy : '', M + 4, y + 47);
+    } else {
+      doc.setFont('helvetica','italic');
+      doc.setFontSize(8);
+      doc.setTextColor(...MUTED);
+      doc.text('Signature not available', M + 4, y + 28);
+      if (r.sigLabel) {
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(8);
+        doc.setTextColor(...NAVY);
+        doc.text(r.sigLabel, M + 4, y + 38);
+        doc.setFont('helvetica','normal');
+        doc.setFontSize(7);
+        doc.setTextColor(...MUTED);
+        doc.text(fmtDate(r.sigTime||''), M + 4, y + 44);
+      }
+    }
+
+    // Right box: Requester Acknowledgement
+    var rx = M + sigBoxW + 8;
+    var ackClr = r.requesterSigName ? [240, 253, 244] : [255, 253, 245];
+    var ackBorder = r.requesterSigName ? SUCCESS : AMBER;
+    doc.setFillColor(...ackClr);
+    doc.roundedRect(rx, y, sigBoxW, sigBoxH, 3, 3, 'F');
+    doc.setDrawColor(...ackBorder);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(rx, y, sigBoxW, sigBoxH, 3, 3, 'S');
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...ackBorder);
+    doc.text('RECEIVED BY (REQUESTER)', rx + 4, y + 6);
+
+    if (r.requesterSig) {
+      try {
+        var fmt2 = r.requesterSig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        doc.addImage(r.requesterSig, fmt2, rx + 4, y + 9, 55, 22, undefined, 'FAST');
+      } catch(e) {}
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...NAVY);
+      doc.text(r.requesterSigName || 'Acknowledged', rx + 4, y + 35);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(7);
+      doc.setTextColor(...MUTED);
+      doc.text(fmtDate(r.requesterSigTime||''), rx + 4, y + 41);
+    } else if (r.requesterSigName) {
+      // Name+date but no image
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(12);
+      doc.setTextColor(...SUCCESS);
+      doc.text('✓', rx + sigBoxW/2, y + 22, {align:'center'});
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...NAVY);
+      doc.text(r.requesterSigName, rx + 4, y + 35);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(7);
+      doc.setTextColor(...MUTED);
+      doc.text(fmtDate(r.requesterSigTime||''), rx + 4, y + 41);
+    } else {
+      doc.setFont('helvetica','italic');
+      doc.setFontSize(8);
+      doc.setTextColor(...MUTED);
+      doc.text('Awaiting acknowledgement', rx + sigBoxW/2, y + 28, {align:'center'});
+    }
+
+    y += sigBoxH + 8;
+
+    // ── FOOTER ─────────────────────────────────────────────────
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.3);
+    doc.line(M, ph - 16, pw - M, ph - 16);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...MUTED);
+    doc.text('MRV Platform — Confidential — For expense clearing only', pw/2, ph - 11, {align:'center'});
+    doc.text('Page ' + (idx+1) + ' of ' + paid.length, pw - M, ph - 11, {align:'right'});
+  });
+
+  doc.save('MRV_Paid_Requests_' + new Date().toISOString().slice(0,10) + '.pdf');
+  toast('PDF downloaded — ' + paid.length + ' request' + (paid.length===1?'':'s'));
 }
 
 async function downloadRequestsPDF() {
