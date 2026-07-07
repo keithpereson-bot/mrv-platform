@@ -1224,11 +1224,10 @@
               <div class="sig-tabs">
                 <button class="sig-tab active" onclick="switchSigTab(this,'exp-saved')">💾 Saved Signatures</button>
                 <button class="sig-tab" onclick="switchSigTab(this,'exp-draw')">✏️ Draw</button>
-                <button class="sig-tab" onclick="switchSigTab(this,'exp-upload')">📷 Upload</button>
               </div>
               <div id="exp-saved" class="sig-panel active">
                 <div class="sig-grid" id="expSavedGrid"></div>
-                <p class="text-sm text-muted" style="margin-top:4px">No saved signature? <a href="#" onclick="showView('signatures',null);return false;" style="color:var(--teal)">Add one in My Signatures -></a></p>
+                <p class="text-sm text-muted" style="margin-top:4px">No saved signature yet. Go to <a href="#" onclick="showView('signatures',null);return false;" style="color:var(--teal)">My Signatures</a> to draw and save one.</p>
               </div>
               <div id="exp-draw" class="sig-panel">
                 <canvas id="expCanvas" width="900" height="160" style="width:100%;height:160px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none;"></canvas>
@@ -1236,10 +1235,6 @@
                   <button class="btn btn-ghost btn-sm" onclick="clearCanvas('expCanvas')">Clear</button>
                   <button class="btn btn-primary btn-sm" onclick="applyDrawnSig('exp')">Apply Signature</button>
                 </div>
-              </div>
-              <div id="exp-upload" class="sig-panel">
-                <div class="upload-zone" onclick="document.getElementById('expSigUpload').click()">📷 Upload photo of your signature</div>
-                <input type="file" id="expSigUpload" accept="image/*" style="display:none" onchange="handleSigUpload(event,'exp')">
               </div>
             </div>
           </div>
@@ -1301,10 +1296,8 @@
       <div class="card">
         <div class="card-header"><div class="card-title">Add New Signature</div></div>
         <div class="card-body">
-          <div class="form-group"><label>Signature Label (name or role)</label><input type="text" id="newSigLabel" placeholder="e.g. J. Kamau -- Finance Officer" onfocus="if(!this.value&&currentUser)this.value=currentUser.name;"></div>
           <div class="sig-tabs" style="margin-bottom:16px">
             <button class="sig-tab active" onclick="switchSigTab(this,'new-draw')">✏️ Draw</button>
-            <button class="sig-tab" onclick="switchSigTab(this,'new-upload')">📷 Upload Photo</button>
           </div>
           <div id="new-draw" class="sig-panel active">
             <canvas id="newCanvas" width="900" height="180" style="width:100%;height:180px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none;"></canvas>
@@ -1314,20 +1307,8 @@
               <button class="btn btn-primary" onclick="saveNewSig('draw')" style="margin-left:auto">Save Signature</button>
             </div>
           </div>
-          <div id="new-upload" class="sig-panel">
-            <div class="upload-zone" onclick="document.getElementById('newSigFile').click()" id="newUploadZone">
-              📷 Click to upload a photo of your handwritten signature<br>
-              <span style="font-size:11px;margin-top:4px;display:block">JPG, PNG -- best on white paper, good lighting</span>
-            </div>
-            <input type="file" id="newSigFile" accept="image/*" style="display:none" onchange="previewUpload(event)">
-            <div id="newUploadPreview" style="display:none;margin-top:12px;">
-              <img id="newPreviewImg" style="width:100%;max-height:160px;object-fit:contain;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px;">
-              <div class="flex gap-2" style="margin-top:10px">
-                <button class="btn btn-ghost btn-sm" onclick="clearUpload()">Clear</button>
-                <button class="btn btn-primary" onclick="saveNewSig('upload')" style="margin-left:auto">Save Signature</button>
-              </div>
-            </div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -1337,7 +1318,7 @@
           <div id="savedSigsGrid" style="display:grid;gap:14px;"></div>
           <div id="noSigMsg" class="empty" style="padding:32px 0">
             <div class="empty-icon">✍️</div>
-            <p>No signatures saved yet.<br>Draw or upload one to get started.</p>
+            <p>No signature saved yet.<br>Draw one using the canvas above.</p>
           </div>
         </div>
       </div>
@@ -1639,13 +1620,12 @@
         <div class="sig-tabs">
           <button class="sig-tab active" onclick="switchSigTab(this,'ack-saved')">💾 My Saved Signature</button>
           <button class="sig-tab" onclick="switchSigTab(this,'ack-draw')">✏️ Draw</button>
-          <button class="sig-tab" onclick="switchSigTab(this,'ack-upload')">📷 Upload</button>
         </div>
 
         <div id="ack-saved" class="sig-panel active">
           <div id="ackSavedPreview" style="margin-bottom:10px"></div>
           <p class="text-sm text-muted" style="margin-top:4px">
-            No saved signature? Draw one or upload a photo below, then save it to your account first via <strong>My Signatures</strong>.
+            No saved signature yet. Draw one using the canvas below and it will be saved automatically.
           </p>
         </div>
 
@@ -1657,10 +1637,6 @@
           </div>
         </div>
 
-        <div id="ack-upload" class="sig-panel">
-          <div class="upload-zone" onclick="document.getElementById('ackSigFile').click()">📷 Upload photo of your signature</div>
-          <input type="file" id="ackSigFile" accept="image/*" style="display:none" onchange="saveAndApplyAckSigFromFile(event)">
-        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1764,7 +1740,6 @@
         <div class="sig-tabs">
           <button class="sig-tab active" onclick="switchSigTab(this,'modal-saved')">💾 Saved Signatures</button>
           <button class="sig-tab" onclick="switchSigTab(this,'modal-draw')">✏️ Draw</button>
-          <button class="sig-tab" onclick="switchSigTab(this,'modal-upload')">📷 Upload</button>
         </div>
 
         <div id="modal-saved" class="sig-panel active">
@@ -1781,12 +1756,7 @@
             <button class="btn btn-primary btn-sm" onclick="applyDrawnSig('modal')">Use This Signature</button>
           </div>
         </div>
-
-        <div id="modal-upload" class="sig-panel">
-          <div class="upload-zone" onclick="document.getElementById('modalSigUpload').click()">📷 Upload photo of your signature</div>
-          <input type="file" id="modalSigUpload" accept="image/*" style="display:none" onchange="handleSigUpload(event,'modal')">
         </div>
-      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('signApproveModal')">Cancel</button>
@@ -3225,9 +3195,12 @@ function selectSavedSig(idx, context, el) {
 
 // -- Save new sig (from My Signatures page) ----------------
 function saveNewSig(mode) {
-  const label = document.getElementById('newSigLabel').value.trim()
-    || (currentUser ? currentUser.name : '')
-    || 'My Signature';
+  // Auto-label: full name + role (no manual entry)
+  var roleLabel = { admin:'Admin', manager:'Manager', approver:'Approver',
+                    requester:'Requester', viewer:'Viewer' };
+  const label = currentUser
+    ? (currentUser.name + ' — ' + (roleLabel[currentUser.role] || currentUser.role))
+    : 'My Signature';
   let dataUrl = null;
   if (mode === 'draw') {
     if (isCanvasBlank('newCanvas')) { toast('Please draw your signature first'); return; }
@@ -5118,9 +5091,9 @@ function filterHistory(filter) {
     var ackHtml = '';
     if (r.status === 'Paid') {
       if (r.requesterSig) {
-        ackHtml = '<div style="display:flex;align-items:center;gap:8px">'
+        ackHtml = '<div style="display:flex;align-items:center;gap:6px">'
           + '<img src="'+r.requesterSig+'" style="height:32px;max-width:90px;object-fit:contain;border:1px solid var(--border);border-radius:4px;padding:2px;background:#fff">'
-          + '<button class="btn btn-ghost btn-sm" style="color:var(--danger);padding:3px 7px;font-size:11px" data-ackref="'+r.ref+'" onclick="clearAck(this.dataset.ackref)" title="Remove">✕</button>'
+          + '<span style="color:var(--success);font-size:11px;font-weight:600">✓ Signed</span>'
           + '</div>';
       } else {
         ackHtml = '<button class="btn btn-secondary btn-sm" style="font-size:11.5px" data-aref="'+r.ref+'" onclick="openAckModal(this.dataset.aref)">'
@@ -5157,6 +5130,14 @@ var _ackTargetRef = null;  // 'all' or a specific ref
 var _pendingAckSig = null;
 
 function openAckModal(ref) {
+  // Check if this specific request is already acknowledged
+  if (ref !== 'all') {
+    var existing = requestsStore.find(function(r){ return r.ref === ref; });
+    if (existing && existing.requesterSigName) {
+      toast('This request is already acknowledged and cannot be changed');
+      return;
+    }
+  }
   _ackTargetRef = ref;
   _pendingAckSig = null;
 
@@ -5218,8 +5199,11 @@ function saveAndApplyAckSig(mode) {
   }
   if (!dataUrl) return;
   // Save as the user's single signature
-  var sigLabel = document.getElementById('newSigLabel');
-  var label = (sigLabel && sigLabel.value.trim()) || (currentUser ? currentUser.name : 'My Signature');
+  var roleLabel2 = { admin:'Admin', manager:'Manager', approver:'Approver',
+                     requester:'Requester', viewer:'Viewer' };
+  var label = currentUser
+    ? (currentUser.name + ' — ' + (roleLabel2[currentUser.role] || currentUser.role))
+    : 'My Signature';
   savedSigs = [{ label:label, dataUrl:dataUrl, date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}), id:Date.now() }];
   persistSigsToStorage();
   _pendingAckSig = dataUrl;
