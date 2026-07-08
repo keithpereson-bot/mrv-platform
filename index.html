@@ -355,16 +355,38 @@
 
   /* -- TABLES -- */
   table { width:100%;border-collapse:collapse;min-width:0; }
-  .table-scroll { overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%; }
+
+  /* Scrollable table wrapper: both axes, frozen header */
+  .table-scroll {
+    overflow-x:auto;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    width:100%;
+    max-height:420px; /* vertical scroll kicks in */
+    position:relative;
+    /* custom scrollbars */
+    scrollbar-width:thin;
+    scrollbar-color:var(--border-mid) var(--surface);
+  }
+  .table-scroll::-webkit-scrollbar { width:7px; height:7px; }
+  .table-scroll::-webkit-scrollbar-track { background:var(--surface); }
+  .table-scroll::-webkit-scrollbar-thumb { background:var(--border-mid);border-radius:4px; }
+  .table-scroll::-webkit-scrollbar-thumb:hover { background:var(--amber); }
+  .table-scroll::-webkit-scrollbar-corner { background:var(--surface); }
+
   th {
     font-size:10.5px;font-weight:700;
     text-transform:uppercase;letter-spacing:.09em;
-    color:var(--muted);
-    padding:10px 16px;
+    color:rgba(255,240,225,.75);
+    padding:11px 16px;
     text-align:left;
-    border-bottom:2px solid var(--border);
-    background:var(--surface);
+    border-bottom:2px solid rgba(199,91,42,.3);
+    background:linear-gradient(135deg,#2E1A0E 0%,#3D2410 100%);
     white-space:nowrap;
+    /* Freeze header */
+    position:sticky;
+    top:0;
+    z-index:3;
   }
   td {
     padding:12px 16px;
@@ -375,7 +397,82 @@
   }
   td:first-child { color:var(--muted);font-size:11.5px;font-family:'IBM Plex Mono',monospace;font-weight:500; }
   tr:last-child td { border-bottom:none; }
-  tr:hover td { background:var(--surface); }
+  tr:hover td { background:var(--amber-lt); }
+
+  /* -- PAGINATION -- */
+  .table-pagination {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 20px;
+    border-top:1px solid var(--border);
+    background:var(--surface);
+    gap:12px;
+    flex-wrap:wrap;
+    font-size:12.5px;
+    color:var(--muted);
+  }
+  .pagination-controls { display:flex;align-items:center;gap:4px; }
+  .page-btn {
+    min-width:32px;height:32px;padding:0 8px;
+    border:1px solid var(--border);border-radius:6px;
+    background:var(--card);color:var(--ink-mid);
+    font-size:12.5px;font-weight:500;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s;font-family:'DM Sans',sans-serif;
+  }
+  .page-btn:hover { background:var(--amber-lt);border-color:var(--amber);color:var(--amber); }
+  .page-btn.active { background:var(--amber);border-color:var(--amber);color:#fff; }
+  .page-btn:disabled { opacity:.4;cursor:not-allowed; }
+
+  /* -- TABLE FILTER BAR -- */
+  .table-filter-bar {
+    display:flex;align-items:center;gap:10px;
+    padding:10px 20px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
+    flex-wrap:wrap;
+  }
+  .table-filter-input {
+    flex:1;min-width:160px;max-width:280px;
+    padding:7px 12px 7px 32px;
+    border:1px solid var(--border);border-radius:6px;
+    font-size:12.5px;background:var(--card);
+    color:var(--ink);position:relative;
+    font-family:'DM Sans',sans-serif;
+  }
+  .table-filter-wrap { position:relative;display:flex;align-items:center; }
+  .table-filter-wrap svg { position:absolute;left:9px;color:var(--muted);pointer-events:none; }
+
+  /* -- ACCESSIBILITY: font size control -- */
+  body.font-lg { font-size:16px; }
+  body.font-lg td { font-size:15px; }
+  body.font-lg th { font-size:12px; }
+  body.font-lg .badge { font-size:12px;padding:4px 10px; }
+  body.font-lg .btn { font-size:14px; }
+  body.font-lg .stat-value { font-size:30px; }
+  body.font-lg .aside-item { font-size:15px; }
+  body.font-lg input, body.font-lg select, body.font-lg textarea { font-size:15px; }
+  body.font-xl { font-size:18px; }
+  body.font-xl td { font-size:17px; }
+  body.font-xl th { font-size:13px; }
+  body.font-xl .badge { font-size:13px;padding:5px 11px; }
+  body.font-xl .btn { font-size:16px;padding:12px 20px; }
+  body.font-xl .stat-value { font-size:34px; }
+  body.font-xl .aside-item { font-size:16px; }
+  body.font-xl input, body.font-xl select, body.font-xl textarea { font-size:16px; }
+
+  .font-size-toggle {
+    display:flex;align-items:center;gap:4px;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(199,91,42,.2);
+    border-radius:6px;padding:3px;
+  }
+  .fst-btn {
+    padding:3px 8px;border-radius:4px;cursor:pointer;
+    font-size:11px;font-weight:700;color:rgba(255,255,255,.6);
+    border:none;background:transparent;font-family:'DM Sans',sans-serif;
+    transition:all .15s;
+  }
+  .fst-btn:hover, .fst-btn.active { background:var(--amber);color:#fff; }
 
   /* -- BADGES -- */
   .badge {
@@ -2444,6 +2541,15 @@ function toggleBudgetCard(gid) {
   var open = body.style.display !== 'none';
   body.style.display = open ? 'none' : '';
   if (arr) arr.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+  // Add filter to budget line table when expanded
+  if (!open) {
+    var tbl = body.querySelector('tbody');
+    if (tbl && !tbl.id) tbl.id = 'bgt-' + gid;
+    if (tbl && tbl.id) {
+      addTableFilter(tbl.id, 'Filter lines...');
+      paginateTable(tbl.id, 25);
+    }
+  }
 }
 
 function toggleAllBudgetGroups(expand) {
@@ -4337,6 +4443,14 @@ function rebuildRequestsTable() {
   // Refresh history view if active
   var hv = document.getElementById('view-history');
   if (hv && hv.classList.contains('active')) renderHistory();
+
+  // Apply pagination + filter to all three request tables
+  addTableFilter('bodyDrafts', 'Search requests...');
+  addTableFilter('bodyQueue',  'Search queue...');
+  addTableFilter('bodyPaid',   'Search paid requests...');
+  paginateTable('bodyDrafts', 20);
+  paginateTable('bodyQueue',  20);
+  paginateTable('bodyPaid',   20);
 }
 
 
@@ -5030,6 +5144,10 @@ function filterHistory(filter) {
   var countEl = document.getElementById('historyCount');
   if (countEl) countEl.textContent = filtered.length + ' request' + (filtered.length===1?'':'s');
 
+  // Paginate history table
+  addTableFilter('historyBody', 'Search submissions...');
+  paginateTable('historyBody', 15);
+
   // Show "Sign All Paid" only if there are paid-but-unsigned requests
   var uname = currentUser ? (currentUser.name||'').toLowerCase().trim() : '';
   var unsignedPaid = requestsStore.filter(function(r){
@@ -5391,6 +5509,188 @@ function styleExcelSheet(ws, colCount) {
     if (!ws[addr]) continue;
     ws[addr].s = { font:{ bold:true }, fill:{ fgColor:{ rgb:'0D2B1E' } }, font:{ bold:true, color:{ rgb:'FFFFFF' } } };
   }
+}
+
+// ==============================================================
+// FONT SIZE ACCESSIBILITY
+// ==============================================================
+function setFontSize(size) {
+  document.body.classList.remove('font-lg','font-xl');
+  if (size === 'lg') document.body.classList.add('font-lg');
+  if (size === 'xl') document.body.classList.add('font-xl');
+  try { localStorage.setItem('mrv_fontsize', size); } catch(e) {}
+  ['normal','lg','xl'].forEach(function(s) {
+    var b = document.getElementById('fst-'+s);
+    if (b) b.classList.toggle('active', s === size);
+  });
+}
+// Restore font size on load
+(function(){
+  try {
+    var s = localStorage.getItem('mrv_fontsize');
+    if (s && s !== 'normal') setFontSize(s);
+  } catch(e) {}
+})();
+
+// ==============================================================
+// PAGINATION ENGINE
+// Wraps any tbody with page controls. Usage:
+//   paginateTable('bodyDrafts', 20);
+// ==============================================================
+var _pageState = {};  // { tbodyId: { page, pageSize, allRows } }
+
+function paginateTable(tbodyId, pageSize) {
+  pageSize = pageSize || 20;
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  var rows = Array.from(tbody.querySelectorAll('tr'));
+  if (rows.length === 0) { removePagination(tbodyId); return; }
+
+  _pageState[tbodyId] = {
+    page: (_pageState[tbodyId] && _pageState[tbodyId].filter === _pageState[tbodyId].filter)
+          ? (_pageState[tbodyId].page || 1) : 1,
+    pageSize: pageSize,
+    allRows: rows,
+    filter: (_pageState[tbodyId] && _pageState[tbodyId].filter) || ''
+  };
+
+  applyPageFilter(tbodyId);
+}
+
+function applyPageFilter(tbodyId) {
+  var state = _pageState[tbodyId];
+  if (!state) return;
+  var term  = (state.filter || '').toLowerCase();
+  var filtered = term
+    ? state.allRows.filter(function(r){ return r.textContent.toLowerCase().includes(term); })
+    : state.allRows;
+
+  var total = filtered.length;
+  var pages = Math.max(1, Math.ceil(total / state.pageSize));
+  state.page = Math.min(state.page, pages);
+  var start = (state.page - 1) * state.pageSize;
+  var end   = start + state.pageSize;
+
+  // Show/hide rows
+  state.allRows.forEach(function(r){ r.style.display = 'none'; });
+  filtered.slice(start, end).forEach(function(r){ r.style.display = ''; });
+
+  renderPaginationBar(tbodyId, state.page, pages, total, filtered.length);
+}
+
+function renderPaginationBar(tbodyId, page, pages, totalFiltered, totalAll) {
+  // Find the card containing this tbody
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  var card = tbody.closest('.card') || tbody.closest('[class*="card"]');
+  if (!card) return;
+
+  var barId = 'pgbar-' + tbodyId;
+  var existing = document.getElementById(barId);
+  if (existing) existing.remove();
+
+  if (pages <= 1 && totalFiltered === totalAll) return; // no bar needed for single page with no filter
+
+  var bar = document.createElement('div');
+  bar.id = barId;
+  bar.className = 'table-pagination';
+
+  var info = totalFiltered < totalAll
+    ? 'Showing ' + Math.min((page-1)*_pageState[tbodyId].pageSize+1, totalFiltered) + '–'
+      + Math.min(page*_pageState[tbodyId].pageSize, totalFiltered) + ' of ' + totalFiltered + ' (filtered from ' + totalAll + ')'
+    : 'Showing ' + Math.min((page-1)*_pageState[tbodyId].pageSize+1, totalFiltered) + '–'
+      + Math.min(page*_pageState[tbodyId].pageSize, totalFiltered) + ' of ' + totalAll;
+
+  // Page buttons (max 7 shown)
+  var btns = '<div class="pagination-controls">';
+  var tid = tbodyId;
+  btns += '<button class="page-btn" data-tid="'+tid+'" data-pg="'+(page-1)+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)" '+(page<=1?'disabled':'')+'>&#8249;</button>';
+  var range = pageRange(page, pages);
+  range.forEach(function(p) {
+    if (p === '...') {
+      btns += '<button class="page-btn" disabled style="border:none;background:none">…</button>';
+    } else {
+      btns += '<button class="page-btn'+(p===page?' active':'')+'" data-tid="'+tid+'" data-pg="'+p+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)">'+p+'</button>';
+    }
+  });
+  btns += '<button class="page-btn" data-tid="'+tid+'" data-pg="'+(page+1)+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)" '+(page>=pages?'disabled':'')+'>&#8250;</button>';
+  btns += '</div>';
+
+  bar.innerHTML = '<span style="white-space:nowrap">'+info+'</span>' + btns;
+  card.appendChild(bar);
+}
+
+function pageRange(current, total) {
+  if (total <= 7) return Array.from({length:total}, function(_,i){ return i+1; });
+  var pages = [1];
+  if (current > 3) pages.push('...');
+  for (var i = Math.max(2,current-1); i <= Math.min(total-1,current+1); i++) pages.push(i);
+  if (current < total-2) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
+function goPage(tbodyId, page) {
+  var state = _pageState[tbodyId];
+  if (!state) return;
+  var pages = Math.ceil(state.allRows.filter(function(r){
+    var term = (state.filter||'').toLowerCase();
+    return !term || r.textContent.toLowerCase().includes(term);
+  }).length / state.pageSize);
+  state.page = Math.max(1, Math.min(page, pages));
+  applyPageFilter(tbodyId);
+}
+
+function removePagination(tbodyId) {
+  var b = document.getElementById('pgbar-' + tbodyId);
+  if (b) b.remove();
+  delete _pageState[tbodyId];
+}
+
+// ==============================================================
+// TABLE FILTER BARS -- inject into card headers
+// ==============================================================
+function addTableFilter(tbodyId, placeholder) {
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  var card = tbody.closest('.card');
+  if (!card) return;
+  var filterId = 'filter-' + tbodyId;
+  if (document.getElementById(filterId)) return; // already added
+
+  var header = card.querySelector('.card-header');
+  if (!header) return;
+
+  var bar = document.createElement('div');
+  bar.className = 'table-filter-bar';
+  bar.innerHTML = '<div class="table-filter-wrap">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+    + '<input id="'+filterId+'" class="table-filter-input" type="text" placeholder="'+(placeholder||'Search...')+'" '
+    + 'data-tid="'+tbodyId+'" oninput="filterTable(this.dataset.tid,this.value)">'
+    + '</div>'
+    + '<button class="btn btn-ghost btn-sm" style="font-size:11.5px" data-tid="'+tbodyId+'" onclick="clearFilter(this.dataset.tid)">Clear</button>';
+  header.insertAdjacentElement('afterend', bar);
+}
+
+function filterTable(tbodyId, value) {
+  var state = _pageState[tbodyId];
+  if (!state) {
+    // Init pagination if not done yet
+    var tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    _pageState[tbodyId] = { page:1, pageSize:20, allRows:rows, filter:value };
+  } else {
+    state.filter = value;
+    state.page = 1;
+  }
+  applyPageFilter(tbodyId);
+}
+
+function clearFilter(tbodyId) {
+  var el = document.getElementById('filter-' + tbodyId);
+  if (el) el.value = '';
+  filterTable(tbodyId, '');
 }
 
 // ==============================================================
