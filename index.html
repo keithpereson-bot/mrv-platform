@@ -945,7 +945,7 @@
     <div style="margin-top:6px" id="menuUserRole"></div>
   </div>
   <div class="aside-item admin-only" onclick="showView('users',this);closeUserMenu()" style="padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer"><span class="aside-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Manage Users</div>
-  <div class="aside-item" onclick="showView('signatures',this);closeUserMenu()" style="padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 17l4-4 4 4 4-8 4 8"/><path d="M21 21H3"/></svg></span>My Signatures</div>
+
   <div style="border-top:1px solid var(--border);margin:4px 0"></div>
   <div onclick="doLogout()" style="padding:8px 12px;border-radius:8px;font-size:13px;color:var(--danger);cursor:pointer;display:flex;align-items:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sign Out</div>
 </div>
@@ -1230,7 +1230,7 @@
               </div>
               <div id="exp-saved" class="sig-panel active">
                 <div class="sig-grid" id="expSavedGrid"></div>
-                <p class="text-sm text-muted" style="margin-top:4px">No saved signature yet. Go to <a href="#" onclick="showView('signatures',null);return false;" style="color:var(--teal)">My Signatures</a> to draw and save one.</p>
+                <p class="text-sm text-muted" style="margin-top:4px">No saved signature yet. Draw one using the canvas below.</p>
               </div>
               <div id="exp-draw" class="sig-panel">
                 <canvas id="expCanvas" width="900" height="160" style="width:100%;height:160px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none;"></canvas>
@@ -1714,7 +1714,7 @@
         <div id="modal-saved" class="sig-panel active">
           <div class="sig-grid" id="modalSavedGrid"></div>
           <p class="text-sm text-muted" style="margin-top:8px">
-            No saved signatures? <a href="#" onclick="closeModal('signApproveModal');showView('signatures',null);return false;" style="color:var(--teal)">Add one in My Signatures -></a>
+            No saved signature yet. Draw one using the canvas below.
           </p>
         </div>
 
@@ -3006,7 +3006,6 @@ function showView(id, el) {
   document.querySelectorAll('.aside-item').forEach(a => a.classList.remove('active'));
   viewEl.classList.add('active');
   if (el && el.classList) el.classList.add('active');
-  if (id === 'signatures')     renderSavedSigs();
   if (id === 'budgets')        { renderBudgetView(); if (gsWebAppUrl && window._budgetPulled !== true) { window._budgetPulled = true; pullBudgetLinesFromSheets().then(function(){ renderBudgetView(); }); } }
   if (id === 'reconciliation') renderReconciliation();
   if (id === 'dashboard')      renderDashboard();
@@ -3148,7 +3147,7 @@ function refreshSigGrids() {
     if (!grid) return;
     if (savedSigs.length === 0) {
       grid.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px">'
-        + 'No saved signature. Draw one in <strong>My Signatures</strong> first.</div>';
+        + 'No saved signature yet. Draw one using the canvas in this modal.</div>';
       return;
     }
     // Only one signature -- show it prominently, auto-select it
@@ -3185,7 +3184,7 @@ function selectSavedSig(idx, context, el) {
   }
 }
 
-// -- Save new sig (from My Signatures page) ----------------
+// -- Save new sig --
 function saveNewSig(mode) {
   // Auto-label: full name + role (no manual entry)
   var roleLabel = { admin:'Admin', manager:'Manager', approver:'Approver',
@@ -5465,7 +5464,6 @@ function buildSidebar() {
       { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
-      { type:'item', label:'My Signatures',    view:'signatures',     icon:'signatures' },
       { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
     ];
 
@@ -5494,7 +5492,6 @@ function buildSidebar() {
       { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
-      { type:'item', label:'My Signatures',    view:'signatures',     icon:'signatures' },
       { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
       { type:'section', label:'Admin' },
       { type:'item', label:'Manage Users',     view:'users',          icon:'users' },
