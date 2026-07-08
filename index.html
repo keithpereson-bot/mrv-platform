@@ -1058,6 +1058,12 @@
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
+    <!-- Font size accessibility toggle -->
+    <div class="font-size-toggle desktop-only" title="Adjust text size">
+      <button class="fst-btn active" id="fst-normal" onclick="setFontSize('normal')">A</button>
+      <button class="fst-btn" id="fst-lg"     onclick="setFontSize('lg')">A+</button>
+      <button class="fst-btn" id="fst-xl"     onclick="setFontSize('xl')">A++</button>
+    </div>
     <div id="sheetsStatusPill" onclick="showView('sheets',null)" style="display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:5px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);cursor:pointer;font-size:11.5px;font-weight:500;transition:background .15s;color:rgba(255,255,255,.7)" title="Google Sheets sync">
       <span id="sheetsStatusDot" style="width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0"></span>
       <span id="sheetsStatusLabel">Not connected</span>
