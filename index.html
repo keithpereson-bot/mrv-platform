@@ -3128,52 +3128,75 @@ function switchSigTab(btn, panelId) {
 
 // -- SAVED SIGNATURES --------------------------------------
 function renderSavedSigs() {
-  const grid = document.getElementById('savedSigsGrid');
-  const noMsg = document.getElementById('noSigMsg');
-  const count = document.getElementById('sigCount');
-  count.textContent = savedSigs.length + ' saved';
-  if (savedSigs.length === 0) { grid.innerHTML = ''; noMsg.style.display = ''; return; }
-  noMsg.style.display = 'none';
-  grid.innerHTML = savedSigs.map((s,i) => `
-    <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff;display:flex;align-items:center;gap:14px">
-      <img src="${s.dataUrl}" style="height:52px;object-fit:contain;max-width:160px;flex-shrink:0;border:1px solid var(--border);border-radius:8px;padding:4px;background:#fafaf8">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.label}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Added ${s.date}</div>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="deleteSig(${i})" style="color:var(--danger);flex-shrink:0">Delete</button>
-    </div>`).join('');
-  // also refresh inline grids
+  var grid  = document.getElementById('savedSigsGrid');
+  var noMsg = document.getElementById('noSigMsg');
+  var count = document.getElementById('sigCount');
+  if (!grid) return;
+  if (count) count.textContent = savedSigs.length > 0 ? '1 saved' : '0 saved';
+  if (savedSigs.length === 0) {
+    grid.innerHTML = '';
+    if (noMsg) noMsg.style.display = '';
+    return;
+  }
+  if (noMsg) noMsg.style.display = 'none';
+  // Only show the single signature -- no delete, use "Replace" instead
+  var s = savedSigs[0];
+  grid.innerHTML = '<div style="border:2px solid var(--teal);border-radius:10px;padding:16px;background:#fff;display:flex;align-items:center;gap:16px">'
+    + '<img src="' + s.dataUrl + '" style="height:60px;object-fit:contain;max-width:180px;flex-shrink:0;border:1px solid var(--border);border-radius:8px;padding:6px;background:#fafaf8">'
+    + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--ink)">' + s.label + '</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-top:3px">Saved ' + s.date + '</div>'
+      + '<div style="font-size:11px;color:var(--teal);margin-top:4px">&#10003; Active signature</div>'
+    + '</div>'
+    + '<button class="btn btn-ghost btn-sm" onclick="replaceSignature()" style="flex-shrink:0">Replace</button>'
+    + '</div>';
   refreshSigGrids();
 }
 
-function deleteSig(i) {
-  savedSigs.splice(i, 1);
+function replaceSignature() {
+  // Clear saved sig so canvas is fresh for a new one
+  savedSigs = [];
   persistSigsToStorage();
   renderSavedSigs();
-  toast('Signature removed');
+  clearCanvas('newCanvas');
+  toast('Draw your new signature and save');
+}
+
+function deleteSig(i) {
+  // One signature only -- clear and allow redraw
+  savedSigs = [];
+  persistSigsToStorage();
+  renderSavedSigs();
+  toast('Signature cleared -- draw a new one');
 }
 
 function refreshSigGrids() {
-  if (!document.getElementById('sigGrid')) return;
-  ['expSavedGrid','modalSavedGrid'].forEach(gridId => {
-    const grid = document.getElementById(gridId);
+  // Populate saved-sig grids in approval and payment modals
+  ['expSavedGrid','modalSavedGrid'].forEach(function(gridId) {
+    var grid = document.getElementById(gridId);
     if (!grid) return;
     if (savedSigs.length === 0) {
-      grid.innerHTML = '<p class="text-sm text-muted">No saved signatures yet.</p>';
+      grid.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px">'
+        + 'No saved signature. Draw one in <strong>My Signatures</strong> first.</div>';
       return;
     }
-    const context = gridId.startsWith('exp') ? 'exp' : 'modal';
-    grid.innerHTML = savedSigs.map((s,i) => `
-      <div class="sig-card" onclick="selectSavedSig(${i},'${context}',this)" id="${context}-sig-${i}">
-        <div class="sig-check">OK</div>
-        <img src="${s.dataUrl}" alt="${s.label}">
-        <div class="sig-name">${s.label}</div>
-      </div>`).join('') +
-      `<div class="sig-add-card" onclick="${context==='exp'?"showView('signatures',null)":"closeModal('signApproveModal');showView('signatures',null)"}">
-        <div class="sig-add-icon">+</div>
-        <div class="sig-add-text">Add signature</div>
-      </div>`;
+    // Only one signature -- show it prominently, auto-select it
+    var s = savedSigs[0];
+    var context = gridId.startsWith('exp') ? 'exp' : 'modal';
+    grid.innerHTML = '<div class="sig-card selected" id="' + context + '-sig-0" '
+      + 'data-ctx="' + context + '" onclick="selectSavedSig(0,this.dataset.ctx,this)" style="cursor:pointer">'
+      + '<div class="sig-check">&#10003;</div>'
+      + '<img src="' + s.dataUrl + '" alt="' + s.label + '">'
+      + '<div class="sig-name">' + s.label + '</div>'
+      + '</div>';
+    // Auto-apply the saved signature so it shows immediately
+    if (context === 'exp') {
+      pendingExpSig = s.dataUrl;
+      applyExpSig(s.dataUrl, s.label);
+    } else {
+      pendingModalSig = s.dataUrl;
+      applyModalSig(s.dataUrl, s.label);
+    }
   });
 }
 
