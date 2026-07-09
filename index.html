@@ -3863,15 +3863,16 @@ function showReceipt(ref, amount, signer) {
 // Paste your Apps Script Web App URL below and deploy to GitHub.
 // ════════════════════════════════════════════════════════════
 // REQUIRED: Replace with your Apps Script Web App URL
-// All devices use this URL automatically -- no per-device setup
-// Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
+// App configuration
+// Configuration
 const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyw93mFocIR4Ee3EUPTg3Gm2-NUkmfuTZTtHzHRZP9453OKORb7-k_EOzAOl_BKErQ/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- use hardcoded URL if set, otherwise fall back to localStorage
 // Treat placeholder as not set
 const _hw = (HARDCODED_WEB_APP_URL && HARDCODED_WEB_APP_URL !== 'YOUR_WEB_APP_URL_HERE') ? HARDCODED_WEB_APP_URL : '';
-let gsWebAppUrl  = _hw || localStorage.getItem('mrv_webapp_url') || '';
+function _decodeUrl(s) { try { return s ? decodeURIComponent(escape(atob(s))) : ''; } catch(e) { return s; } }
+let gsWebAppUrl  = _hw || _decodeUrl(localStorage.getItem('mrv_webapp_url')) || '';
 let gsConnected  = !!gsWebAppUrl;
 let gsAutoSyncTimer= null;
 
@@ -3889,7 +3890,7 @@ async function connectWebApp() {
     const res = await gasCall({ action: 'ping' });
     if (!res.ok) throw new Error(res.error || 'Unknown error');
     gsWebAppUrl = url;
-    localStorage.setItem('mrv_webapp_url', url);
+    localStorage.setItem('mrv_webapp_url', btoa(unescape(encodeURIComponent(url))));
     gsConnected = true;
     document.getElementById('connStatusBadge').className = 'badge badge-teal';
     document.getElementById('connStatusBadge').textContent = 'OK Connected';
@@ -3913,6 +3914,7 @@ function disconnectWebApp() {
   gsConnected = false;
   gsWebAppUrl = '';
   localStorage.removeItem('mrv_webapp_url');
+  localStorage.removeItem('mrv_webapp_url_raw');
   document.getElementById('connStatusBadge').className = 'badge badge-gray';
   document.getElementById('connStatusBadge').textContent = 'Not connected';
   document.getElementById('connSuccessBox').style.display = 'none';
@@ -4679,7 +4681,7 @@ function applyLoginUrl() {
   if (!url.startsWith('https://')) { toast('Please enter a valid URL'); return; }
   gsWebAppUrl = url;
   gsConnected = true;
-  localStorage.setItem('mrv_webapp_url', url);
+  localStorage.setItem('mrv_webapp_url', btoa(unescape(encodeURIComponent(url))));
   var urlRow = document.getElementById('loginUrlRow');
   if (urlRow) urlRow.style.display = 'none';
   toast('Connected to Sheets');
@@ -5811,19 +5813,10 @@ async function runAIInsight() {
     + '</div>';
 
   try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system: 'You are an expert financial analyst for an African field operations programme. You provide clear, actionable insights for finance teams managing field budgets. Always use the actual numbers provided. Be concise and professional.',
-        messages: [{ role:'user', content: promptText }]
-      })
-    });
-
-    var data = await response.json();
-    var text = (data.content && data.content[0] && data.content[0].text) || 'No response received.';
+    // Route through Apps Script to avoid CORS and keep API key server-side
+    var data = await gasCall({ action: 'aiInsight', prompt: promptText });
+    if (!data || !data.ok) throw new Error(data && data.error ? data.error : 'AI service unavailable');
+    var text = data.text || 'No response received.';
 
     // Format the response
     var typeLabels = {
