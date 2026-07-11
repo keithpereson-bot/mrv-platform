@@ -6,43 +6,28 @@
 <title>MRV Money Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   /* ── ERP DESIGN SYSTEM ─────────────────────────────────────── */
   :root {
-    --ink:        #1C1008;
-    --ink-mid:    #3D2B1A;
-    --ink-light:  #6B5240;
-    --amber:      #C75B2A;
-    --amber-lt:   #FEF0E8;
-    --amber-mid:  #E07040;
-    --surface:    #F8F4EE;
-    --surface-2:  #EDE7DC;
-    --card:       #FFFDF9;
-    --card-raised:#FFFFFF;
-    --border:     #E2D9CC;
-    --border-mid: #D0C4B4;
-    --success:    #2D7A4F;
-    --success-lt: #E6F4ED;
-    --warn:       #B45309;
-    --warn-lt:    #FEF3C7;
-    --danger:     #B91C1C;
-    --danger-lt:  #FEE8E8;
-    --info:       #1D4ED8;
-    --info-lt:    #EEF2FF;
+    --ink:        #1C1008; --ink-mid:#3D2B1A; --ink-light:#6B5240;
+    --amber:      #C75B2A; --amber-lt:#FEF0E8; --amber-mid:#E07040;
+    --surface:    #F8F4EE; --surface-2:#EDE7DC;
+    --card:       #FFFDF9; --card-raised:#FFFFFF;
+    --border:     #E2D9CC; --border-mid:#D0C4B4;
+    --success:    #2D7A4F; --success-lt:#E6F4ED;
+    --warn:       #B45309; --warn-lt:#FEF3C7;
+    --danger:     #B91C1C; --danger-lt:#FEE8E8;
+    --info:       #1D4ED8; --info-lt:#EEF2FF;
     --muted:      #8C7A68;
-    --teal:       #1B6B50;
-    --teal-mid:   #207D5E;
-    --teal-light: #E0F0E8;
-    --teal-pale:  #F0F8F2;
-    --purple:     #5B21B6;
-    --purple-lt:  #F0EBFF;
+    --teal:       #1B6B50; --teal-mid:#207D5E; --teal-light:#E0F0E8; --teal-pale:#F0F8F2;
+    --purple:     #5B21B6; --purple-lt:#F0EBFF;
     --gold:       #C75B2A;
-    --radius:     6px;
-    --radius-lg:  10px;
-    --shadow-sm:  0 1px 4px rgba(28,16,8,.07), 0 1px 2px rgba(28,16,8,.05);
-    --shadow:     0 4px 16px rgba(28,16,8,.10), 0 1px 4px rgba(28,16,8,.06);
-    --shadow-lg:  0 20px 56px rgba(28,16,8,.16), 0 4px 16px rgba(28,16,8,.08);
+    --radius:6px; --radius-lg:10px;
+    --shadow-sm:0 1px 4px rgba(28,16,8,.07),0 1px 2px rgba(28,16,8,.05);
+    --shadow:0 4px 16px rgba(28,16,8,.10),0 1px 4px rgba(28,16,8,.06);
+    --shadow-lg:0 20px 56px rgba(28,16,8,.16),0 4px 16px rgba(28,16,8,.08);
   }
 
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
@@ -60,19 +45,17 @@
   /* -- TOPNAV -- */
   nav {
     background:linear-gradient(135deg,#1C1008 0%,#2E1A0E 100%);
+    border-bottom:1px solid rgba(199,91,42,.25);
     color:#fff;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:0 20px;
-    height:58px;
-    min-height:58px;
+    padding:0 24px;
+    height:56px;
     position:sticky;
     top:0;
     z-index:100;
-    box-shadow:0 2px 0 rgba(199,91,42,.2),0 4px 24px rgba(28,16,8,.35);
-    overflow:hidden;
-    border-bottom:1px solid rgba(199,91,42,.25);
+    box-shadow:0 1px 0 rgba(255,255,255,.06), 0 4px 20px rgba(0,0,0,.25);
   }
   .nav-brand { display:flex;align-items:center;gap:12px; }
   .nav-logo {
@@ -80,11 +63,11 @@
     background:var(--amber);
     border-radius:6px;
     display:flex;align-items:center;justify-content:center;
-    font-family:DM Serif Display,serif;font-size:15px;font-weight:600;color:#fff;
+    font-family:'DM Serif Display',serif;font-size:15px;font-weight:600;color:#fff;
     letter-spacing:-.5px;
     flex-shrink:0;
   }
-  .nav-title { font-size:14px;font-weight:600;letter-spacing:.02em;color:#FFF8F0;font-family:'DM Serif Display',serif; }
+  .nav-title { font-size:14px;font-weight:600;letter-spacing:.01em;color:#fff; }
   .nav-sub {
     font-size:10.5px;opacity:.5;letter-spacing:.08em;text-transform:uppercase;
     font-weight:500;
@@ -100,23 +83,17 @@
   .nav-user:hover { background:rgba(200,135,42,.4); }
 
   /* -- LAYOUT -- */
-  .layout {
-    display:flex;
-    height:calc(100vh - 56px);
-    overflow:hidden;
-    min-height:0; /* critical for flex children to scroll */
-  }
+  .layout { display:flex;height:calc(100vh - 56px);overflow:hidden; }
 
   aside {
-    width:230px;
-    min-width:185px;
-    background:linear-gradient(180deg,#1C1008 0%,#271508 60%,#1C1008 100%);
-    padding:16px 10px;
+    width:232px;
+    background:var(--ink);
+    padding:20px 10px;
     flex-shrink:0;
     display:flex;
     flex-direction:column;
     gap:2px;
-    border-right:1px solid rgba(199,91,42,.15);
+    border-right:1px solid rgba(255,255,255,.05);
     height:100%;
     overflow-y:auto;
     overflow-x:hidden;
@@ -157,8 +134,8 @@
     position:absolute;
     left:0;top:6px;bottom:6px;
     width:3px;
-    background:linear-gradient(180deg,#E07040,#C75B2A);
-    border-radius:0 4px 4px 0;
+    background:var(--amber);
+    border-radius:0 3px 3px 0;
   }
   .aside-icon { width:18px;text-align:center;font-size:14px;opacity:.8;flex-shrink:0; }
   .aside-badge {
@@ -171,22 +148,14 @@
   }
 
   /* -- MAIN CONTENT -- */
-  main {
-    flex:1;
-    min-width:0; /* prevents flex blowout */
-    padding:24px 28px;
-    overflow-y:auto;
-    overflow-x:hidden;
-    background:var(--surface);
-    height:100%;
-  }
+  main { flex:1;padding:28px 32px;overflow-y:auto;overflow-x:hidden;background:var(--surface);height:100%; }
   .view { display:none; }
   .view.active { display:block; }
 
   /* -- PAGE HEADER -- */
   .page-header { margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border); }
   .page-header h1 {
-    font-family:DM Serif Display,serif;
+    font-family:'DM Serif Display',serif;
     font-size:24px;font-weight:600;
     color:var(--ink);margin-bottom:4px;
     letter-spacing:-.3px;
@@ -194,12 +163,7 @@
   .page-header p { font-size:13px;color:var(--muted);font-weight:400; }
 
   /* -- STAT CARDS -- */
-  .stats {
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-    gap:14px;
-    margin-bottom:24px;
-  }
+  .stats { display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px; }
   .stat-card {
     background:var(--card);
     border:1px solid var(--border);
@@ -217,10 +181,10 @@
     background:var(--border);
     border-radius:var(--radius-lg) var(--radius-lg) 0 0;
   }
-  .stat-card:nth-child(1)::after { background:linear-gradient(90deg,#C75B2A,#E07040); }
-  .stat-card:nth-child(2)::after { background:linear-gradient(90deg,#2D7A4F,#3DA066); }
-  .stat-card:nth-child(3)::after { background:linear-gradient(90deg,#1D4ED8,#3B6FE0); }
-  .stat-card:nth-child(4)::after { background:linear-gradient(90deg,#B45309,#D97706); }
+  .stat-card:nth-child(1)::after { background:var(--amber); }
+  .stat-card:nth-child(2)::after { background:var(--success); }
+  .stat-card:nth-child(3)::after { background:var(--info); }
+  .stat-card:nth-child(4)::after { background:var(--warn); }
 
   .stat-label {
     font-size:10.5px;font-weight:600;
@@ -228,7 +192,7 @@
     color:var(--muted);margin-bottom:10px;
   }
   .stat-value {
-    font-family:DM Serif Display,serif;
+    font-family:'DM Serif Display',serif;
     font-size:26px;font-weight:600;
     color:var(--ink);line-height:1;
     letter-spacing:-.5px;
@@ -246,40 +210,51 @@
     box-shadow:var(--shadow-sm);
     margin-bottom:20px;
     transition:box-shadow .15s;
-    min-width:0;
-    overflow:hidden;
   }
   .card-header {
     display:flex;align-items:center;justify-content:space-between;
-    padding:14px 20px;
+    padding:16px 20px;
     border-bottom:1px solid var(--border);
     background:linear-gradient(135deg,#FFFBF5 0%,#FFF8EE 100%);
     border-radius:var(--radius-lg) var(--radius-lg) 0 0;
   }
   .card-title {
-    font-size:11.5px;font-weight:700;
-    color:var(--ink);letter-spacing:.06em;
-    text-transform:uppercase;
+    font-size:13.5px;font-weight:600;
+    color:var(--ink);letter-spacing:.01em;
   }
   .card-body { padding:20px; }
 
+  /* -- AI TYPE CARDS -- */
+  .ai-type-card{border:2px solid var(--border);border-radius:10px;padding:16px 12px;background:var(--card);cursor:pointer;text-align:center;transition:all .18s;}
+  .ai-type-card:hover{border-color:var(--amber);background:var(--amber-lt);transform:translateY(-2px);box-shadow:var(--shadow);}
+  .ai-type-card.active{border-color:var(--amber);background:linear-gradient(135deg,#FEF0E8,#FFF8F0);box-shadow:0 4px 16px rgba(199,91,42,.18);}
+  .ai-type-icon{font-size:24px;margin-bottom:8px;} .ai-type-label{font-size:12px;font-weight:600;color:var(--ink);}
+  .ai-type-card.active .ai-type-label{color:var(--amber);}
+  .ai-bullet{display:flex;gap:10px;margin:6px 0;line-height:1.6;}
+  .ai-bullet-dot{color:var(--amber);font-weight:700;flex-shrink:0;}
+  .ai-section-title{font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border);}
   /* -- FONT SIZE TOGGLE -- */
-  .font-size-toggle { display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid rgba(199,91,42,.2);border-radius:6px;padding:3px; }
-  .fst-btn { padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(255,255,255,.6);border:none;background:transparent;font-family:'DM Sans',sans-serif;transition:all .15s; }
-  .fst-btn:hover,.fst-btn.active { background:var(--amber);color:#fff; }
-  body.font-lg { font-size:16px; }
-  body.font-lg td { font-size:15px; }
-  body.font-lg th { font-size:12px; }
-  body.font-lg .btn { font-size:14px; }
-  body.font-lg .aside-item { font-size:15px; }
-  body.font-lg input,body.font-lg select,body.font-lg textarea { font-size:15px; }
-  body.font-xl { font-size:18px; }
-  body.font-xl td { font-size:17px; }
-  body.font-xl th { font-size:13px; }
-  body.font-xl .btn { font-size:16px; }
-  body.font-xl .aside-item { font-size:16px; }
-  body.font-xl input,body.font-xl select,body.font-xl textarea { font-size:16px; }
-  @keyframes spin { to { transform:rotate(360deg); } }
+  .font-size-toggle{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid rgba(199,91,42,.2);border-radius:6px;padding:3px;}
+  .fst-btn{padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(255,255,255,.6);border:none;background:transparent;font-family:'DM Sans',sans-serif;transition:all .15s;}
+  .fst-btn:hover,.fst-btn.active{background:var(--amber);color:#fff;}
+  body.font-lg{font-size:16px;} body.font-lg td{font-size:15px;} body.font-lg th{font-size:12px;}
+  body.font-lg .btn{font-size:14px;} body.font-lg .aside-item{font-size:15px;}
+  body.font-lg input,body.font-lg select,body.font-lg textarea{font-size:15px;}
+  body.font-xl{font-size:18px;} body.font-xl td{font-size:17px;} body.font-xl th{font-size:13px;}
+  body.font-xl .btn{font-size:16px;} body.font-xl .aside-item{font-size:16px;}
+  /* -- PAGINATION -- */
+  .table-pagination{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-top:1px solid var(--border);background:var(--surface);gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);}
+  .pagination-controls{display:flex;align-items:center;gap:4px;}
+  .page-btn{min-width:32px;height:32px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--ink-mid);font-size:12.5px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'DM Sans',sans-serif;}
+  .page-btn:hover{background:var(--amber-lt);border-color:var(--amber);color:var(--amber);}
+  .page-btn.active{background:var(--amber);border-color:var(--amber);color:#fff;}
+  .page-btn:disabled{opacity:.4;cursor:not-allowed;}
+  /* -- TABLE FILTER -- */
+  .table-filter-bar{display:flex;align-items:center;gap:10px;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--surface);flex-wrap:wrap;}
+  .table-filter-input{flex:1;min-width:160px;max-width:280px;padding:7px 12px 7px 32px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;background:var(--card);color:var(--ink);font-family:'DM Sans',sans-serif;}
+  .table-filter-wrap{position:relative;display:flex;align-items:center;}
+  .table-filter-wrap svg{position:absolute;left:9px;color:var(--muted);pointer-events:none;}
+  @keyframes spin{to{transform:rotate(360deg);}}
 
   /* -- BUTTONS -- */
   .btn {
@@ -349,13 +324,12 @@
     border-color:var(--ink-mid);
     box-shadow:0 0 0 3px rgba(15,28,46,.08);
   }
-  .form-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px; }
+  .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
   .form-group { margin-bottom:16px; }
   .form-full { grid-column:1/-1; }
 
   /* -- TABLES -- */
-  table { width:100%;border-collapse:collapse;min-width:0; }
-  .table-scroll { overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%; }
+  table { width:100%;border-collapse:collapse; }
   th {
     font-size:10.5px;font-weight:700;
     text-transform:uppercase;letter-spacing:.09em;
@@ -376,37 +350,6 @@
   td:first-child { color:var(--muted);font-size:11.5px;font-family:'IBM Plex Mono',monospace;font-weight:500; }
   tr:last-child td { border-bottom:none; }
   tr:hover td { background:var(--amber-lt); }
-
-  /* -- AI TYPE CARDS -- */
-  .ai-type-card {
-    border:2px solid var(--border);
-    border-radius:10px;
-    padding:16px 12px;
-    background:var(--card);
-    cursor:pointer;
-    text-align:center;
-    transition:all .18s;
-  }
-  .ai-type-card:hover {
-    border-color:var(--amber);
-    background:var(--amber-lt);
-    transform:translateY(-2px);
-    box-shadow:var(--shadow);
-  }
-  .ai-type-card.active {
-    border-color:var(--amber);
-    background:linear-gradient(135deg,#FEF0E8,#FFF8F0);
-    box-shadow:0 4px 16px rgba(199,91,42,.18);
-  }
-  .ai-type-icon { font-size:24px;margin-bottom:8px; }
-  .ai-type-label { font-size:12px;font-weight:600;color:var(--ink);letter-spacing:.02em; }
-  .ai-type-card.active .ai-type-label { color:var(--amber); }
-
-  /* AI response bullet formatting */
-  .ai-bullet { display:flex;gap:10px;margin:6px 0;line-height:1.6; }
-  .ai-bullet-dot { color:var(--amber);font-weight:700;flex-shrink:0;margin-top:1px; }
-  .ai-section-title { font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border); }
-  .ai-highlight { background:var(--amber-lt);border-left:3px solid var(--amber);padding:8px 12px;border-radius:0 6px 6px 0;margin:10px 0;font-size:13px; }
 
   /* -- BADGES -- */
   .badge {
@@ -462,9 +405,9 @@
   /* ── REQUEST 3-TAB SYSTEM ── */
   .req-tabs {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 10px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
   }
   .req-tab {
     display: flex;
@@ -525,9 +468,6 @@
   }
 
   /* -- ROLE VISIBILITY -- */
-  /* Requester: hide anything marked non-requester-only */
-  body.role-requester .non-requester-only { display:none !important; }
-
   body.role-requester [data-role-required="admin"],
   body.role-requester [data-role-required="approver"],
   body.role-approver  [data-role-required="admin"] { display:none !important; }
@@ -538,8 +478,8 @@
   .gap-2 { gap:8px; } .gap-3 { gap:12px; }
   .mt-1 { margin-top:4px; } .mt-2 { margin-top:8px; } .mb-3 { margin-bottom:12px; }
   .text-sm { font-size:12px; } .text-muted { color:var(--muted); } .font-600 { font-weight:600; }
-  .two-col { display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px; }
-  .currency { font-family:DM Serif Display,serif;font-weight:600; }
+  .two-col { display:grid;grid-template-columns:1fr 1fr;gap:20px; }
+  .currency { font-family:'DM Serif Display',serif;font-weight:600; }
 
   /* -- MODALS -- */
   .modal-overlay {
@@ -707,12 +647,12 @@
   .login-logo {
     width:40px;height:40px;border-radius:10px;
     background:var(--amber);
-    color:#fff;font-family:DM Serif Display,serif;font-size:18px;font-weight:600;
+    color:#fff;font-family:'DM Serif Display',serif;font-size:18px;font-weight:600;
     display:flex;align-items:center;justify-content:center;
   }
   .login-brand-text { }
   .login-title {
-    font-family:DM Serif Display,serif;
+    font-family:'DM Serif Display',serif;
     font-size:22px;font-weight:600;color:var(--ink);
     letter-spacing:-.3px;line-height:1;
   }
@@ -747,54 +687,6 @@
   body.role-requester .admin-only,
   body.role-requester .approver-only,
   body.role-approver  .admin-only { display:none !important; }
-
-  .desktop-only { }
-  .budget-project-card {
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:var(--radius-lg);
-    overflow:hidden;
-    box-shadow:var(--shadow-sm);
-    transition:box-shadow .15s;
-  }
-  .budget-project-card:hover { box-shadow:var(--shadow); }
-  .budget-project-card .bpc-header {
-    cursor:pointer;
-    padding:14px 20px;
-    display:flex;
-    align-items:center;
-    gap:8px;
-    transition:background .15s;
-    user-select:none;
-  }
-  .budget-project-card .bpc-header:hover { background:var(--surface); }
-
-  /* -- MOBILE SIGN OUT BUTTON -- */
-  #mobileSignOutBtn {
-    display: none;
-    background: rgba(220,38,38,.15);
-    border: 1px solid rgba(220,38,38,.35);
-    color: #fca5a5;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-size: 11.5px;
-    font-weight: 600;
-    cursor: pointer;
-    flex-shrink: 0;
-    white-space: nowrap;
-    font-family: 'Inter', sans-serif;
-    align-items: center;
-  }
-
-  /* -- MOBILE NAV: hide pill + date so avatar always visible -- */
-  @media (max-width: 768px) {
-    #sheetsStatusPill { display:none !important; }
-    .desktop-only { display:none !important; }
-    #mobileSignOutBtn { display:flex !important; }
-  }
-  @media (max-width: 480px) {
-    nav > div > span { display:none; }
-  }
 
   /* -- SCROLLBAR -- */
   ::-webkit-scrollbar { width:5px;height:5px; }
@@ -863,23 +755,22 @@
   }
   #menuToggle:hover { background:rgba(255,255,255,.1); }
 
-  /* -- Tablet / zoom breakpoint (≤1100px) -- */
-  @media (max-width: 1100px) {
-    aside { width:190px; }
-    main  { padding:18px 18px; }
-  }
-  @media (max-width: 900px) {
-    aside { width:160px; }
-    main  { padding:14px 14px; }
-    .aside-item { font-size:12px; padding:7px 8px; }
-    .stat-value { font-size:20px; }
+  /* -- Tablet breakpoint (≤1024px) -- */
+  @media (max-width: 1024px) {
+    aside { width:200px; }
+    main  { padding:20px 20px; }
+    .stats { grid-template-columns:repeat(2,1fr); }
+    .two-col { grid-template-columns:1fr; }
   }
 
   /* -- Mobile breakpoint (≤768px) -- */
   @media (max-width: 768px) {
-    nav { padding:0 10px; height:52px; }
+    /* Nav */
+    nav { padding:0 14px; height:52px; }
     .nav-sub { display:none; }
     #menuToggle { display:flex; }
+
+    /* Layout -- sidebar hidden by default, slides in */
     .layout { height:calc(100vh - 52px); }
     aside {
       position:fixed;
@@ -890,37 +781,86 @@
       width:240px;
     }
     aside.open { transform:translateX(0); }
-    main { padding:12px; padding-bottom:76px; width:100%; max-width:100%; }
+
+    /* Main fills full width, leaves space for bottom nav */
+    main {
+      padding:16px;
+      padding-bottom:76px; /* above bottom nav */
+      width:100%;
+    }
+
+    /* Show mobile bottom nav */
     #mobileNav { display:flex; }
-    .page-header { margin-bottom:14px; padding-bottom:12px; }
-    .page-header h1 { font-size:19px; }
-    .stats { grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:12px; }
-    .stat-card { padding:12px; }
-    .stat-value { font-size:20px; }
-    .card-header { padding:10px 12px; flex-wrap:wrap; gap:6px; }
-    .card-body { padding:12px; }
-    .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    table { min-width:480px; }
-    th,td { padding:8px 10px; font-size:11.5px; }
-    .btn { padding:8px 12px; font-size:12px; }
-    .btn-sm { padding:6px 10px; font-size:11px; }
+
+    /* Page header */
+    .page-header { margin-bottom:18px;padding-bottom:14px; }
+    .page-header h1 { font-size:20px; }
+
+    /* Stats -- 2 cols on mobile */
+    .stats {
+      grid-template-columns:repeat(2,1fr);
+      gap:10px;
+      margin-bottom:16px;
+    }
+    .stat-card { padding:14px 14px; }
+    .stat-value { font-size:22px; }
+
+    /* Cards */
+    .card-header {
+      padding:12px 14px;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .card-body { padding:14px; }
+
+    /* Tables -- horizontal scroll */
+    .card { overflow:hidden; }
+    .table-scroll { overflow-x:auto;-webkit-overflow-scrolling:touch; }
+    table { min-width:520px; }
+    th,td { padding:10px 12px;font-size:12px; }
+
+    /* Buttons */
+    .btn { padding:9px 14px;font-size:12.5px; }
+    .btn-sm { padding:7px 11px;font-size:11.5px; }
+
+    /* Form grids collapse */
     .form-grid { grid-template-columns:1fr; }
-    .two-col { grid-template-columns:1fr; }
+    .two-col   { grid-template-columns:1fr; }
+
+    /* Modals -- full screen on mobile */
     .modal-overlay { align-items:flex-end; padding:0; }
-    .modal { width:100%; max-width:100%; border-radius:14px 14px 0 0; max-height:92vh; }
+    .modal {
+      width:100%;
+      max-width:100%;
+      border-radius:16px 16px 0 0;
+      max-height:92vh;
+      animation:slideUp .25s cubic-bezier(.4,0,.2,1);
+    }
     .modal-wide { width:100%; }
-    .modal-header { padding:14px 16px; }
-    .modal-body { padding:14px 16px; }
-    .modal-footer { padding:10px 16px; gap:6px; }
-    .modal-footer .btn { flex:1; justify-content:center; }
+    @keyframes slideUp {
+      from { transform:translateY(100%); opacity:1; }
+      to   { transform:translateY(0);   opacity:1; }
+    }
+    .modal-header { padding:16px 18px; }
+    .modal-body   { padding:16px 18px; }
+    .modal-footer { padding:12px 18px;gap:8px; }
+    .modal-footer .btn { flex:1;justify-content:center; }
+
+    /* Sig grid 2 cols */
     .sig-grid { grid-template-columns:repeat(2,1fr); }
-    .process-bar { gap:4px; padding:8px 10px; }
+
+    /* Process bar wraps */
+    .process-bar { gap:6px;padding:10px 12px; }
     .ps-label { display:none; }
-    .alert { font-size:12px; }
+
+    /* Alert */
+    .alert { font-size:12.5px; }
+
+    /* Card header button group stacks */
     .card-header .flex { flex-wrap:wrap; }
-    .login-box { padding:24px 18px; }
-    .req-tab { padding:10px 12px; }
-    .req-tabs { gap:6px; }
+
+    /* Login box */
+    .login-box { padding:28px 22px; }
   }
 
   /* -- Small mobile (≤480px) -- */
@@ -989,48 +929,27 @@
       <div class="nav-sub">Money-In / Money-Out</div>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px">
-    <div class="font-size-toggle" style="margin-right:4px" title="Text size"><button class="fst-btn active" id="fst-normal" onclick="setFontSize('normal')">A</button><button class="fst-btn" id="fst-lg" onclick="setFontSize('lg')">A+</button><button class="fst-btn" id="fst-xl" onclick="setFontSize('xl')">A++</button></div><div id="sheetsStatusPill" onclick="showView('sheets',null)" style="display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:5px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);cursor:pointer;font-size:11.5px;font-weight:500;transition:background .15s;color:rgba(255,255,255,.7)" title="Google Sheets sync">
+  <div style="display:flex;align-items:center;gap:14px">
+    <div id="sheetsStatusPill" onclick="showView('sheets',null)" style="display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:5px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);cursor:pointer;font-size:11.5px;font-weight:500;transition:background .15s;color:rgba(255,255,255,.7)" title="Google Sheets sync">
       <span id="sheetsStatusDot" style="width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0"></span>
       <span id="sheetsStatusLabel">Not connected</span>
     </div>
-    <span class="desktop-only" style="font-size:12px;opacity:.7">June 2026</span>
-    <div class="nav-user" style="position:relative;cursor:pointer;flex-shrink:0" id="navUserAvatar" onclick="toggleUserMenu()" title="Account / Sign Out">
+    <span style="font-size:12px;opacity:.7">June 2026</span>
+    <div class="nav-user" style="position:relative;cursor:pointer" id="navUserAvatar" onclick="toggleUserMenu()" title="Account / Sign Out">
       <span id="navUserInitials">?</span>
       <span id="navRoleDot" style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;background:#C89B2A;border-radius:50%;border:2px solid var(--teal);"></span>
     </div>
-    <!-- Mobile sign-out -- always visible, no dropdown needed -->
-    <button id="mobileSignOutBtn" onclick="doLogout()">Sign Out</button>
   </div>
 </nav>
 
 <div id="sidebarOverlay" onclick="closeSidebar()"></div>
 <div class="layout">
-<aside>
-  <div class="aside-section non-requester-only">Cycle</div>
-  <div class="aside-item active non-requester-only" onclick="showView('dashboard',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Dashboard</div>
-  <div class="aside-item non-requester-only" onclick="showView('budgets',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>Approved Budgets</div>
-  <div class="aside-item approver-only non-requester-only" onclick="showView('funds',this)" data-role-required="admin"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span>Load Funds</div>
-  <div class="aside-section requester-only">My Work</div>
-  <div class="aside-item" onclick="showView('requests',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg></span>System Requests <span class="aside-badge" id="sidebarReqBadge">0</span></div>
-  <div class="aside-item requester-only" id="historyNavItem" onclick="showView('history',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>My Submissions</div>
-  <div class="aside-item non-requester-only" onclick="showView('expenses',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Weekly Expensing</div>
-  <div class="aside-item non-requester-only" onclick="showView('reconciliation',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>Reconciliation</div>
-  <div class="aside-section non-requester-only">Reports</div>
-  <div class="aside-item non-requester-only" onclick="showView('ai',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>AI Intelligence</div>
-  <div class="aside-item non-requester-only" onclick="showView('transactions',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Transactions</div>
-  <div class="aside-item non-requester-only" onclick="showView('signatures',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 17l4-4 4 4 4-8 4 8"/><path d="M21 21H3"/></svg></span>My Signatures</div>
-  <div class="aside-item non-requester-only" onclick="alert('PDF report generated!')"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h.01M12 13v4M15 15h.01"/></svg></span>PDF Reports</div>
-  <div class="aside-section admin-only non-requester-only">Admin</div>
-  <div class="aside-item admin-only non-requester-only" onclick="showView('users',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Manage Users</div>
-  <div class="aside-section non-requester-only">Integration</div>
-  <div class="aside-item admin-only non-requester-only" onclick="showView('sheets',this)" id="sheetsNavItem"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg></span>Google Sheets <span id="sheetsSyncBadge" class="aside-badge" style="display:none;background:var(--gold)">!</span></div>
-</aside>
+<aside id="mainAside"></aside>
 
 <main>
 
   <!-- -- DASHBOARD -- -->
-  <div id="view-dashboard" class="view">
+  <div id="view-dashboard" class="view active">
     <div class="page-header"><h1>Dashboard</h1><p>Monthly cycle overview -- June 2026</p></div>
     <div class="process-bar">
       <div class="ps"><div class="ps-dot done">OK</div><span class="ps-label done">Approved Budgets</span></div>
@@ -1064,27 +983,21 @@
 
   <!-- -- STEP 1: APPROVED BUDGETS -- -->
   <div id="view-budgets" class="view">
-    <div class="page-header">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
-        <div>
-          <h1>Approved Budgets</h1>
-          <p>SMT-approved budgets &mdash; read-only. Click any project to see line-by-line detail.</p>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn btn-secondary btn-sm" onclick="toggleAllBudgetGroups(true)">Expand All</button>
-          <button class="btn btn-secondary btn-sm" onclick="toggleAllBudgetGroups(false)">Collapse All</button>
-        </div>
+    <div class="page-header"><h1>Approved Budgets</h1><p>SMT-approved project budgets for June 2026 -- read-only. All downstream data is linked to these budgets.</p></div>
+    <div id="budgetStatsRow" class="stats" style="grid-template-columns:repeat(4,1fr)"></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Approved Project Budgets -- June 2026</div>
+        <span class="badge badge-teal" id="budgetApprovedBy">Approved by SMT</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table>
+          <thead><tr><th>Category</th><th>Cost Summary</th><th>Cost Item</th><th>Unit</th><th>CCY</th><th style="text-align:right">Budgeted</th><th style="text-align:right">Actual (KES)</th><th style="text-align:right">Remaining</th><th>Utilisation</th></tr></thead>
+          <tbody id="budgetDetailBody"></tbody>
+        </table>
       </div>
     </div>
-
-    <!-- Summary stat row -->
-    <div id="budgetStatsRow" class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px"></div>
-
-    <!-- Project cards container -->
-    <div id="budgetProjectCards" style="display:grid;gap:16px;min-width:0"></div>
-
-    <!-- Hidden legacy tbody for compat -->
-    <table style="display:none"><tbody id="budgetDetailBody"></tbody></table>
+    <!-- Per-project line item breakdown -->
     <div id="budgetLineCards"></div>
   </div>
 
@@ -1106,7 +1019,11 @@
         <div class="card-header"><div class="card-title">Money-In Ledger</div></div>
         <div class="card-body" style="padding:0">
           <table><thead><tr><th>Project</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
-          <tbody id="fundsLedger"></tbody></table>
+          <tbody id="fundsLedger">
+            <tr><td>Nairobi Field Ops</td><td class="currency">1,800,000</td><td>01 Jun</td><td><span class="badge badge-teal">Posted</span></td></tr>
+            <tr><td>Mombasa Survey</td><td class="currency">1,200,000</td><td>01 Jun</td><td><span class="badge badge-teal">Posted</span></td></tr>
+            <tr><td>Kisumu Training</td><td class="currency">800,000</td><td>03 Jun</td><td><span class="badge badge-teal">Posted</span></td></tr>
+          </tbody></table>
           <div style="padding:14px 16px;font-size:13px;color:var(--teal);font-weight:600;border-top:1px solid var(--border);">Total Money-In: <span class="currency" id="totalIn">0</span></div>
         </div>
       </div>
@@ -1132,7 +1049,7 @@
         </div>
         <span class="req-tab-badge" id="badge-drafts">0</span>
       </button>
-      <button class="req-tab non-requester-only" id="tab-queue" onclick="switchReqTab('queue')">
+      <button class="req-tab" id="tab-queue" onclick="switchReqTab('queue')">
         <div class="req-tab-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
         </div>
@@ -1142,7 +1059,7 @@
         </div>
         <span class="req-tab-badge" id="badge-queue">0</span>
       </button>
-      <button class="req-tab non-requester-only" id="tab-paid" onclick="switchReqTab('paid')">
+      <button class="req-tab" id="tab-paid" onclick="switchReqTab('paid')">
         <div class="req-tab-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </div>
@@ -1159,18 +1076,14 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">Requests</div>
-          <div class="flex gap-2" style="align-items:center">
-            <button class="btn btn-ghost btn-sm admin-only" id="delSelDrafts" onclick="deleteSelected('drafts')" style="display:none;color:var(--danger);border-color:var(--danger)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-              Delete Selected (<span id="delCountDrafts">0</span>)
-            </button>
+          <div class="flex gap-2">
             <button class="btn btn-secondary btn-sm" onclick="downloadRequestsPDF()">Download PDF</button>
             <button class="btn btn-primary btn-sm" onclick="openNewRequestModal()">+ New Request</button>
           </div>
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table id="tblDrafts"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllDrafts" onchange="toggleAllChecks('drafts',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Date</th><th>Action</th></tr></thead>
+            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Date</th><th>Action</th></tr></thead>
             <tbody id="bodyDrafts"></tbody></table>
           </div>
         </div>
@@ -1182,17 +1095,13 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">Payment Queue</div>
-          <div class="flex gap-2" style="align-items:center">
-            <button class="btn btn-ghost btn-sm admin-only" id="delSelQueue" onclick="deleteSelected('queue')" style="display:none;color:var(--danger);border-color:var(--danger)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-              Delete Selected (<span id="delCountQueue">0</span>)
-            </button>
+          <div class="flex gap-2">
             <button class="btn btn-secondary btn-sm" onclick="openBulkApprove()">Mark All Paid</button>
           </div>
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table id="tblQueue"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllQueue" onchange="toggleAllChecks('queue',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Approved</th><th>Action</th></tr></thead>
+            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Approved</th><th>Action</th></tr></thead>
             <tbody id="bodyQueue"></tbody></table>
           </div>
         </div>
@@ -1204,21 +1113,11 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">Paid Requests</div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <button class="btn btn-secondary btn-sm admin-only" onclick="downloadAcknowledgedPDF()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Download Acknowledged PDF
-            </button>
-            <button class="btn btn-ghost btn-sm admin-only" id="delSelPaid" onclick="deleteSelected('paid')" style="display:none;color:var(--danger);border-color:var(--danger)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-              Delete Selected (<span id="delCountPaid">0</span>)
-            </button>
-            <span class="badge badge-teal" id="paidTotal">0</span>
-          </div>
+          <span class="badge badge-teal" id="paidTotal">0</span>
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table id="tblPaid"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllPaid" onchange="toggleAllChecks('paid',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Finance Signatory</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
+            <table><thead><tr><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Signed By</th><th>Paid Date</th><th>Action</th></tr></thead>
             <tbody id="bodyPaid"></tbody></table>
           </div>
         </div>
@@ -1289,7 +1188,11 @@
         <div class="card-header"><div class="card-title">Weekly Expense Log</div></div>
         <div class="card-body" style="padding:0">
           <table><thead><tr><th>Date</th><th>Project</th><th>Amount</th><th>Signature</th></tr></thead>
-          <tbody id="expenseLog"></tbody></table>
+          <tbody id="expenseLog">
+            <tr><td>02 Jun</td><td>Nairobi Field Ops</td><td class="currency">320,000</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
+            <tr><td>03 Jun</td><td>Mombasa Survey</td><td class="currency">180,000</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
+            <tr><td>05 Jun</td><td>Nairobi Field Ops</td><td class="currency">130,000</td><td><span class="badge badge-gold">Pending</span></td></tr>
+          </tbody></table>
           <div style="padding:14px 16px;font-size:13px;color:var(--purple);font-weight:600;border-top:1px solid var(--border);">Total Expensed: <span class="currency">0</span></div>
         </div>
       </div>
@@ -1326,8 +1229,12 @@
     <div class="card">
       <div class="card-header"><div class="card-title">All Transactions -- June 2026</div><button class="btn btn-secondary btn-sm" onclick="toast('PDF with signatures downloaded!')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download with Signatures</button></div>
       <div class="card-body" style="padding:0">
-        <table><thead><tr><th>Ref</th><th>Type</th><th>Project</th><th>Description</th><th>Amount</th><th>Date</th><th>Signed By</th><th>Status</th></tr></thead><tbody id="transactionsBody">
-          <tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No transactions yet</td></tr>
+        <table><thead><tr><th>Ref</th><th>Type</th><th>Project</th><th>Description</th><th>Amount</th><th>Date</th><th>Signed By</th><th>Status</th></tr></thead><tbody>
+          <tr><td class="text-muted">TXN-001</td><td><span class="badge badge-teal">Money-In</span></td><td>Nairobi Field Ops</td><td>Monthly load</td><td class="currency">1,800,000</td><td>01 Jun</td><td>Finance Officer</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
+          <tr><td class="text-muted">TXN-002</td><td><span class="badge badge-teal">Money-In</span></td><td>Mombasa Survey</td><td>Monthly load</td><td class="currency">1,200,000</td><td>01 Jun</td><td>Finance Officer</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
+          <tr><td class="text-muted">TXN-003</td><td><span class="badge badge-teal">Money-In</span></td><td>Kisumu Training</td><td>Partial load</td><td class="currency">800,000</td><td>03 Jun</td><td>Finance Officer</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
+          <tr><td class="text-muted">TXN-004</td><td><span class="badge badge-purple">Money-Out</span></td><td>Nairobi Field Ops</td><td>Field allowances</td><td class="currency">450,000</td><td>04 Jun</td><td>J. Kamau</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
+          <tr><td class="text-muted">TXN-005</td><td><span class="badge badge-purple">Money-Out</span></td><td>Mombasa Survey</td><td>Transport costs</td><td class="currency">320,000</td><td>05 Jun</td><td>A. Ali</td><td><span class="badge badge-teal">OK Signed</span></td></tr>
         </tbody></table>
       </div>
     </div>
@@ -1523,11 +1430,11 @@
             </select>
           </div>
           <div class="form-group" id="countryFieldGroup">
-            <label>Country Access</label>
+            <label>Country Access <span style="color:var(--muted);font-weight:400">(Requesters only)</span></label>
             <select id="newUserCountry">
               <option value="">-- All Countries (no restriction) --</option>
             </select>
-            <div style="font-size:11.5px;color:var(--muted);margin-top:5px">User can only view, submit or approve requests for this country. Leave blank for full access.</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:5px">Requesters can only submit requests for their assigned country's projects.</div>
           </div>
           <div class="form-group"><label>Password</label><input id="newUserPass" type="password" placeholder="Min 6 characters"></div>
           <div class="form-group"><label>Confirm Password</label><input id="newUserPass2" type="password" placeholder="Repeat password"></div>
@@ -1543,63 +1450,10 @@
         </div>
         <div class="card-body" style="padding:0">
           <table>
-            <thead><tr><th>Name / Email</th><th>Role</th><th>Country</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Country</th><th></th></tr></thead>
             <tbody id="usersTableBody">
               <tr><td colspan="4" class="text-muted text-sm" style="padding:20px;text-align:center">No users yet -- add one to get started</td></tr>
             </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- -- MY SUBMISSIONS (Requesters only) -- -->
-  <div id="view-history" class="view">
-    <div class="page-header">
-      <h1>My Submissions</h1>
-      <p>All requests you have submitted &mdash; track approval and payment status in real time.</p>
-    </div>
-
-    <!-- Summary stat row -->
-    <div id="historyStats" class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px"></div>
-
-    <!-- Filter tabs -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-      <button class="btn btn-primary btn-sm" id="hfilt-all"    onclick="filterHistory('all')">All</button>
-      <button class="btn btn-ghost btn-sm"   id="hfilt-draft"  onclick="filterHistory('draft')">Drafts</button>
-      <button class="btn btn-ghost btn-sm"   id="hfilt-approved" onclick="filterHistory('approved')">In Queue</button>
-      <button class="btn btn-ghost btn-sm"   id="hfilt-paid"   onclick="filterHistory('paid')">Paid</button>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Submission History</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <button class="btn btn-secondary btn-sm" id="signAllPaidBtn" onclick="openAckModal('all')" style="display:none">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
-            Sign All Paid
-          </button>
-          <span class="badge badge-gray" id="historyCount">0 requests</span>
-        </div>
-      </div>
-      <div class="card-body" style="padding:0">
-        <div class="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Ref #</th>
-                <th>Project</th>
-                <th>Type</th>
-                <th>Category / Line</th>
-                <th>Amount</th>
-                <th>Submitted</th>
-                <th>Approval</th>
-                <th>Payment</th>
-                <th>My Acknowledgement</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="historyBody"></tbody>
           </table>
         </div>
       </div>
@@ -1610,9 +1464,8 @@
   <div id="view-ai" class="view">
     <div class="page-header">
       <h1>AI Cost Intelligence</h1>
-      <p>Powered by Groq &amp; Llama 3.3 — instant financial insights from your live data</p>
+      <p>Powered by Groq &amp; Llama 3.3 &mdash; instant financial insights from your live data</p>
     </div>
-
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;margin-bottom:24px">
       <div class="ai-type-card active" onclick="selectAIType(this,'overview')" data-type="overview"><div class="ai-type-icon">📊</div><div class="ai-type-label">Cost Overview</div></div>
       <div class="ai-type-card" onclick="selectAIType(this,'anomalies')" data-type="anomalies"><div class="ai-type-icon">🔍</div><div class="ai-type-label">Anomalies</div></div>
@@ -1621,7 +1474,6 @@
       <div class="ai-type-card" onclick="selectAIType(this,'forecast')" data-type="forecast"><div class="ai-type-icon">🔮</div><div class="ai-type-label">Forecast</div></div>
       <div class="ai-type-card" onclick="selectAIType(this,'recommendations')" data-type="recommendations"><div class="ai-type-icon">💡</div><div class="ai-type-label">Recommendations</div></div>
     </div>
-
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <button class="btn btn-primary" onclick="runAIInsight()" id="aiInsightBtn" style="gap:8px;padding:10px 24px;font-size:14px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -1629,8 +1481,7 @@
       </button>
       <span id="aiInsightStatus" style="font-size:12px;color:var(--muted)"></span>
     </div>
-
-    <div class="card" id="aiResponseCard">
+    <div class="card">
       <div class="card-header" style="background:linear-gradient(135deg,#1C1008,#2E1A0E);border-radius:var(--radius-lg) var(--radius-lg) 0 0">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#C75B2A,#E07040);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">✦</div>
@@ -1653,68 +1504,6 @@
 </div>
 
 <!-- -- MODALS -- -->
-
-<!-- Acknowledge Receipt Modal -->
-<div id="ackModal" class="modal-overlay" onclick="closeModalOutside(event,'ackModal')">
-  <div class="modal">
-    <div class="modal-header">
-      <div>
-        <strong>Acknowledge Receipt of Funds</strong>
-        <div id="ackModalSub" style="font-size:12px;color:var(--muted);margin-top:2px">Sign to confirm you received the funds</div>
-      </div>
-      <button class="close-btn" onclick="closeModal('ackModal')">×</button>
-    </div>
-    <div class="modal-body">
-
-      <!-- Applied sig display -->
-      <div id="ackSigApplied" style="display:none;margin-bottom:16px" class="sig-applied">
-        <img id="ackSigImg" src="" style="height:48px;object-fit:contain;max-width:160px">
-        <div class="sig-applied-info">
-          <div class="sig-applied-name" id="ackSigName"></div>
-          <div class="sig-applied-time">Your saved signature</div>
-        </div>
-        <span class="sig-stamp">Ready</span>
-        <button class="btn btn-ghost btn-sm" onclick="clearAckSig()" style="margin-left:8px">Change</button>
-      </div>
-
-      <div id="ackSigWidget">
-        <div class="alert alert-info" style="margin-bottom:14px;font-size:12.5px">
-          Your signature is saved <strong>only on this device</strong> and is never shared with other users. You can only have one signature at a time.
-        </div>
-
-        <div class="sig-tabs">
-          <button class="sig-tab active" onclick="switchSigTab(this,'ack-saved')">💾 My Saved Signature</button>
-          <button class="sig-tab" onclick="switchSigTab(this,'ack-draw')">✏️ Draw</button>
-          <button class="sig-tab" onclick="switchSigTab(this,'ack-upload')">📷 Upload</button>
-        </div>
-
-        <div id="ack-saved" class="sig-panel active">
-          <div id="ackSavedPreview" style="margin-bottom:10px"></div>
-          <p class="text-sm text-muted" style="margin-top:4px">
-            No saved signature? Draw one or upload a photo below, then save it to your account first via <strong>My Signatures</strong>.
-          </p>
-        </div>
-
-        <div id="ack-draw" class="sig-panel">
-          <canvas id="ackCanvas" width="900" height="160" style="width:100%;height:160px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none;"></canvas>
-          <div class="flex gap-2" style="margin-top:8px">
-            <button class="btn btn-ghost btn-sm" onclick="clearCanvas('ackCanvas')">Clear</button>
-            <button class="btn btn-secondary btn-sm" onclick="saveAndApplyAckSig('draw')">Save & Use This Signature</button>
-          </div>
-        </div>
-
-        <div id="ack-upload" class="sig-panel">
-          <div class="upload-zone" onclick="document.getElementById('ackSigFile').click()">📷 Upload photo of your signature</div>
-          <input type="file" id="ackSigFile" accept="image/*" style="display:none" onchange="saveAndApplyAckSigFromFile(event)">
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('ackModal')">Cancel</button>
-      <button class="btn btn-primary" id="confirmAckBtn" onclick="confirmAck()" disabled style="opacity:.5">Confirm & Sign</button>
-    </div>
-  </div>
-</div>
 
 <!-- Request Modal -->
 <div id="requestModal" class="modal-overlay" onclick="closeModalOutside(event,'requestModal')">
@@ -1940,43 +1729,13 @@ function getActualForLine(proj, type, cat, summary, costItem) {
 
 // -- State --------------------------------------------------
 // Signatures persist in localStorage so you never re-upload
-// Signatures are user-scoped: each user has their own key in localStorage.
-// They are NEVER synced to Sheets -- only visible on the device of the owner.
-function sigStorageKey() {
-  // Use logged-in user email as key; fall back to shared key if not yet logged in
-  var email = currentUser ? currentUser.email.toLowerCase().trim() : '';
-  return email ? 'mrv_sig_' + email : 'mrv_saved_signatures';
-}
 function loadSigsFromStorage() {
-  try {
-    // Try user-scoped key first, then legacy shared key
-    var key = sigStorageKey();
-    var s = localStorage.getItem(key);
-    if (!s && key !== 'mrv_saved_signatures') {
-      // Check for demo sig in old shared key; ignore it (id===1 was seeded)
-      var legacy = localStorage.getItem('mrv_saved_signatures');
-      if (legacy) {
-        var parsed = JSON.parse(legacy);
-        var valid  = parsed.filter(function(x){ return x.id !== 1 && x.label !== 'Finance Officer'; });
-        return valid;
-      }
-    }
-    return s ? JSON.parse(s) : [];
-  } catch(e) { return []; }
+  try { const s = localStorage.getItem('mrv_saved_signatures'); return s ? JSON.parse(s) : []; }
+  catch(e) { return []; }
 }
 function persistSigsToStorage() {
-  try { localStorage.setItem(sigStorageKey(), JSON.stringify(savedSigs)); } catch(e) {}
+  try { localStorage.setItem('mrv_saved_signatures', JSON.stringify(savedSigs)); } catch(e) {}
 }
-// Clean up old shared demo signature
-(function() {
-  try {
-    var raw = localStorage.getItem('mrv_saved_signatures');
-    if (!raw) return;
-    var sigs = JSON.parse(raw);
-    var cleaned = sigs.filter(function(s){ return s.id !== 1 && s.label !== 'Finance Officer'; });
-    if (cleaned.length !== sigs.length) localStorage.setItem('mrv_saved_signatures', JSON.stringify(cleaned));
-  } catch(e) {}
-})();
 let savedSigs = loadSigsFromStorage();
 // Requests store -- Sheets is source of truth, localStorage is cache
 function loadRequestsFromStorage() {
@@ -2028,26 +1787,6 @@ function getCurrency(project, type) {
     return (!project || l.project === project) && (!type || l.type === type);
   });
   return line ? String(line.currency || 'KES').trim() : getDefaultCurrency();
-}
-
-// Format date strings for display -- handles ISO, Sheets serial numbers, and text dates
-function fmtDate(val) {
-  if (!val || val === '--' || val === 'null') return '--';
-  // Sheets serial number (days since 1899-12-30)
-  if (typeof val === 'number' || (!isNaN(Number(val)) && String(val).length < 6)) {
-    var d = new Date((Number(val) - 25569) * 86400000);
-    if (!isNaN(d)) return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  }
-  // Already a formatted string
-  var s = String(val).trim();
-  if (!s) return '--';
-  // Try parsing ISO or common formats
-  var d = new Date(s);
-  if (!isNaN(d) && d.getFullYear() > 2000) {
-    return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  }
-  // Return as-is if already readable (e.g. "01 Jun 2026 09:30")
-  return s;
 }
 
 // Format number with currency symbol
@@ -2269,74 +2008,6 @@ function renderReconciliation() {
 }
 
 // ============================================================
-// TRANSACTIONS VIEW -- live from requestsStore + fundsLedger
-// ============================================================
-function renderTransactions() {
-  var tbody = document.getElementById('transactionsBody');
-  if (!tbody) return;
-
-  var rows = [];
-
-  // Money-Out: all requests (any status)
-  requestsStore.forEach(function(r) {
-    rows.push({
-      ref:    r.ref,
-      type:   'Money-Out',
-      badge:  'badge-purple',
-      project: r.project,
-      desc:   r.description || (r.category + ' -- ' + r.costSummary),
-      amount: r.amount,
-      ccy:    getCurrency(r.project, r.type),
-      date:   r.date || '--',
-      signer: r.sigLabel || (r.status === 'Paid' ? r.approvedBy||'--' : '--'),
-      status: r.status,
-      statusBadge: {Paid:'badge-teal', Approved:'badge-gold', Draft:'badge-gray', Pending:'badge-gold'}[r.status] || 'badge-gray'
-    });
-  });
-
-  // Money-In: from fundsLedger DOM rows
-  document.querySelectorAll('#fundsLedger tr').forEach(function(tr) {
-    var cells = tr.querySelectorAll('td');
-    if (cells.length >= 3) {
-      rows.push({
-        ref:    'FND',
-        type:   'Money-In',
-        badge:  'badge-teal',
-        project: cells[0].textContent.trim(),
-        desc:   'Fund load',
-        amount: parseFloat(cells[1].textContent.replace(/[^0-9.-]/g,'')) || 0,
-        ccy:    getDefaultCurrency(),
-        date:   cells[2].textContent.trim(),
-        signer: '--',
-        status: 'Posted',
-        statusBadge: 'badge-teal'
-      });
-    }
-  });
-
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No transactions yet</td></tr>';
-    return;
-  }
-
-  // Sort newest first (by date string -- best effort)
-  rows.reverse();
-
-  tbody.innerHTML = rows.map(function(r) {
-    return '<tr>'
-      + '<td class="text-muted">' + r.ref + '</td>'
-      + '<td><span class="badge ' + r.badge + '">' + r.type + '</span></td>'
-      + '<td>' + r.project + '</td>'
-      + '<td class="text-muted text-sm">' + r.desc + '</td>'
-      + '<td class="currency">' + r.ccy + ' ' + fmt(r.amount) + '</td>'
-      + '<td>' + r.date + '</td>'
-      + '<td>' + r.signer + '</td>'
-      + '<td><span class="badge ' + r.statusBadge + '">' + r.status + '</span></td>'
-      + '</tr>';
-  }).join('');
-}
-
-// ============================================================
 // DROPDOWNS
 // ============================================================
 function populateAllDropdowns() {
@@ -2355,210 +2026,120 @@ function populateAllDropdowns() {
 // groups with live actuals calculated from requestsStore.
 // ============================================================
 
-// ============================================================
-// APPROVED BUDGETS VIEW
-// ============================================================
 function renderBudgetView() {
-  var container = document.getElementById('budgetProjectCards');
-  if (!container) return;
+  var tbody = document.getElementById('budgetDetailBody');
+  if (!tbody) return;
 
+  // If no budget lines loaded yet and Sheets connected, pull first
   if (budgetLines.length === 0 && gsWebAppUrl) {
-    container.innerHTML = '<div style="text-align:center;padding:56px 24px;color:var(--muted)">'
-      + '<div style="font-size:28px;margin-bottom:10px">⏳</div>'
-      + '<div style="font-weight:600;color:var(--ink);margin-bottom:4px">Loading budgets&hellip;</div>'
-      + '<div style="font-size:12px">Pulling from Google Sheets</div></div>';
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">Loading budgets from Google Sheets...</td></tr>';
     pullBudgetLinesFromSheets().then(function() { renderBudgetView(); });
     return;
   }
 
   if (budgetLines.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:56px 24px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);color:var(--muted)">'
-      + '<div style="font-size:28px;margin-bottom:10px">📋</div>'
-      + '<div style="font-weight:600;color:var(--ink);margin-bottom:6px">No budgets found</div>'
-      + '<div style="font-size:12.5px">Check your Budgets tab has data with the correct headers.</div></div>';
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">No budget lines. Connect Google Sheets and ensure your Budgets tab has data.</td></tr>';
     return;
   }
 
-  // Group by Project + Type (preserving sheet order)
-  var groups = {}, groupOrder = [];
+  // Group by Project + Type
+  var groups = {};
+  var groupOrder = [];
   budgetLines.forEach(function(l) {
     var k = l.project + '||' + l.type;
     if (!groups[k]) {
       groups[k] = { project:l.project, type:l.type, dept:l.dept,
-                    country:l.country, month:l.month, year:l.year,
-                    currency:l.currency||'KES', lines:[] };
+                    country:l.country, month:l.month, year:l.year, lines:[] };
       groupOrder.push(k);
     }
     groups[k].lines.push(l);
   });
 
-  // Overall summary stats
-  var allTotal  = budgetLines.reduce(function(s,l){ return s+(parseFloat(l.budgetedAmount)||0); }, 0);
-  var allActual = groupOrder.reduce(function(s,k){
-    var g = groups[k];
-    return s + g.lines.reduce(function(ss,l){ return ss+getActualForLine(g.project,g.type,l.category,l.costSummary,l.costItem); }, 0);
-  }, 0);
-  var allRemain = allTotal - allActual;
-  var allPct    = allTotal ? Math.round(allActual/allTotal*100) : 0;
-  var topCcy    = groups[groupOrder[0]] ? groups[groupOrder[0]].currency : 'KES';
-
-  var statsEl = document.getElementById('budgetStatsRow');
-  if (statsEl) {
-    statsEl.innerHTML =
-      '<div class="stat-card"><div class="stat-label">Total Approved</div>'
-        +'<div class="stat-value teal">'+fmtK(allTotal,topCcy)+'</div>'
-        +'<div class="stat-sub">'+budgetLines.length+' lines &middot; '+groupOrder.length+' project'+(groupOrder.length===1?'':'s')+'</div></div>'
-      +'<div class="stat-card"><div class="stat-label">Spent to Date</div>'
-        +'<div class="stat-value purple">'+fmtK(allActual,topCcy)+'</div>'
-        +'<div class="stat-sub">Paid requests only</div></div>'
-      +'<div class="stat-card"><div class="stat-label">Remaining</div>'
-        +'<div class="stat-value" style="color:'+(allRemain<0?'var(--danger)':'var(--success)')+'">'+fmtK(Math.abs(allRemain),topCcy)+'</div>'
-        +'<div class="stat-sub">'+(allRemain<0?'Over budget':'Available')+'</div></div>'
-      +'<div class="stat-card"><div class="stat-label">Usage</div>'
-        +'<div class="stat-value" style="color:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--ink)')+'">'+allPct+'%</div>'
-        +'<div class="stat-sub"><div class="progress-wrap" style="margin-top:8px"><div class="progress-fill" style="width:'+Math.min(100,allPct)+'%;background:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--amber)')+'"></div></div></div></div>';
-  }
-
-  // One card per project+type group
-  container.innerHTML = '';
+  // Use a DocumentFragment for fast batch DOM insertion
+  var frag = document.createDocumentFragment();
 
   groupOrder.forEach(function(k, gi) {
     var g      = groups[k];
-    var gid    = 'bgc' + gi;
-    var ccy    = g.currency;
-    var total  = g.lines.reduce(function(s,l){ return s+(parseFloat(l.budgetedAmount)||0); }, 0);
-    var actual = g.lines.reduce(function(s,l){ return s+getActualForLine(g.project,g.type,l.category,l.costSummary,l.costItem); }, 0);
+    var gid    = 'bg' + gi;
+    var total  = g.lines.reduce(function(s,l){ return s + (parseFloat(l.budgetedAmount)||0); }, 0);
+    var actual = g.lines.reduce(function(s,l){ return s + getActualForLine(g.project, g.type, l.category, l.costSummary, l.costItem); }, 0);
     var remain = total - actual;
-    var pct    = total ? Math.min(100,Math.round(actual/total*100)) : 0;
-    var barClr = pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--amber)';
+    var pct    = total ? Math.round(actual / total * 100) : 0;
+    var pc     = pct>85?'#f87171':pct>60?'#fbbf24':'#4ade80';
 
-    // Build line rows exactly as they appear in the sheet
-    var lineRows = g.lines.map(function(l) {
-      var a  = getActualForLine(g.project,g.type,l.category,l.costSummary,l.costItem);
+    // Header row — light on dark, good contrast
+    var htr = document.createElement('tr');
+    htr.style.cssText = 'color:#fff;cursor:pointer;user-select:none;border-bottom:2px solid #0f1c2e';
+    htr.className = 'budget-header';
+    htr.addEventListener('click', (function(id){ return function(){ toggleBudgetGroup(id); }; })(gid));
+    htr.style.background = '#1a2f45';
+    htr.innerHTML =
+      '<td colspan="5" style="padding:12px 16px;font-weight:600;font-size:13px;color:#fff">'
+        + '<span id="' + gid + '-arr" style="margin-right:10px;font-size:10px;opacity:.7">&#9658;</span>'
+        + '<span style="color:#fcd34d;font-size:14px">' + g.project + '</span>'
+        + ' <span style="color:rgba(255,255,255,.55);font-size:12px;font-weight:400;margin-left:6px">'
+          + g.type
+          + (g.dept    ? ' &nbsp;&middot;&nbsp; ' + g.dept    : '')
+          + (g.country ? ' &nbsp;&middot;&nbsp; ' + g.country : '')
+          + (g.month   ? ' &nbsp;&middot;&nbsp; ' + g.month + ' ' + (g.year||'') : '')
+        + '</span>'
+      + '</td>'
+      + '<td style="padding:12px 16px;text-align:right;font-weight:700;color:#fff;font-family:DM Serif Display,serif">' + (g.lines[0]&&g.lines[0].currency||'KES') + ' ' + fmt(total) + '</td>'
+      + '<td style="padding:12px 16px;text-align:right;font-weight:700;color:#86efac;font-family:DM Serif Display,serif">' + (g.lines[0]&&g.lines[0].currency||'KES') + ' ' + fmt(actual) + '</td>'
+      + '<td style="padding:12px 16px;text-align:right;font-weight:700;font-family:DM Serif Display,serif;color:' + (remain<0?'#fca5a5':'#bfdbfe') + '">' + (g.lines[0]&&g.lines[0].currency||'KES') + ' ' + fmt(remain) + '</td>'
+      + '<td style="padding:12px 16px">'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+          + '<div style="flex:1;height:5px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden">'
+            + '<div style="width:' + Math.min(100,pct) + '%;height:100%;background:' + pc + '"></div>'
+          + '</div>'
+          + '<span style="font-size:11px;color:rgba(255,255,255,.8);white-space:nowrap">' + pct + '%</span>'
+        + '</div>'
+      + '</td>';
+    frag.appendChild(htr);
+
+    // Detail rows — collapsed by default
+    g.lines.forEach(function(l) {
+      var a  = getActualForLine(g.project, g.type, l.category, l.costSummary, l.costItem);
       var r  = (parseFloat(l.budgetedAmount)||0) - a;
-      var p  = l.budgetedAmount ? Math.min(100,Math.round(a/l.budgetedAmount*100)) : 0;
-      var pc = p>85?'var(--danger)':p>60?'var(--warn)':'var(--teal)';
-      return '<tr style="border-bottom:1px solid var(--surface-2)">'
-        + '<td style="padding:10px 12px 10px 20px;font-size:12.5px;color:var(--muted)">'+(l.category||'')+'</td>'
-        + '<td style="padding:10px 12px;font-size:13px;font-weight:500;color:var(--ink)">'+(l.costSummary||'')+'</td>'
-        + '<td style="padding:10px 12px;font-size:12.5px;color:var(--muted)">'+(l.costItem||'')+'</td>'
-        + '<td style="padding:10px 12px;font-size:11.5px;color:var(--muted);white-space:nowrap">'+(l.unitOfMeasure||'')+'</td>'
-        + '<td style="padding:10px 12px;font-size:11.5px;color:var(--muted);text-align:center">'+(l.currency||ccy)+'</td>'
-        + '<td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;color:var(--ink-mid);white-space:nowrap">'+fmt(parseFloat(l.budgetedAmount)||0)+'</td>'
-        + '<td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;color:var(--success);white-space:nowrap">'+fmt(a)+'</td>'
-        + '<td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;color:'+(r<0?'var(--danger)':'var(--ink-mid)')+';white-space:nowrap">'+(r<0?'−':'')+fmt(Math.abs(r))+'</td>'
-        + '<td style="padding:10px 20px 10px 12px;width:130px">'
-          + '<div style="display:flex;align-items:center;gap:8px">'
-            + '<div style="flex:1;height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden">'
-              + '<div style="width:'+p+'%;height:100%;background:'+pc+';border-radius:3px"></div>'
+      var p  = l.budgetedAmount ? Math.min(100, Math.round(a / l.budgetedAmount * 100)) : 0;
+      var c  = p>85?'var(--danger)':p>60?'var(--warn)':'var(--teal)';
+
+      var dtr = document.createElement('tr');
+      dtr.className = 'budgetLine-' + gid + ' budget-detail';
+      dtr.style.display = 'none';
+      dtr.innerHTML =
+        '<td style="padding:9px 16px 9px 30px;font-size:12px;color:var(--muted)">' + (l.category||'') + '</td>'
+        + '<td style="padding:9px 16px;font-weight:500">' + (l.costSummary||'') + '</td>'
+        + '<td style="padding:9px 16px;font-size:12px;color:var(--muted)">' + (l.costItem||'') + '</td>'
+        + '<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">' + (l.unitOfMeasure||'') + '</td>'
+        + '<td style="padding:9px 16px;font-size:11.5px;color:var(--muted)">' + (l.currency||'KES') + '</td>'
+        + '<td style="padding:9px 16px;text-align:right;font-weight:600;font-family:DM Serif Display,serif">' + (l.currency||'KES') + ' ' + fmt(parseFloat(l.budgetedAmount)||0) + '</td>'
+        + '<td style="padding:9px 16px;text-align:right;font-weight:600;color:var(--success);font-family:DM Serif Display,serif">' + (l.currency||'KES') + ' ' + fmt(a) + '</td>'
+        + '<td style="padding:9px 16px;text-align:right;font-weight:600;font-family:DM Serif Display,serif;color:' + (r<0?'var(--danger)':'inherit') + '">' + (l.currency||'KES') + ' ' + fmt(r) + '</td>'
+        + '<td style="padding:9px 16px">'
+          + '<div style="display:flex;align-items:center;gap:6px">'
+            + '<div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">'
+              + '<div style="width:' + p + '%;height:100%;background:' + c + '"></div>'
             + '</div>'
-            + '<span style="font-size:11.5px;font-weight:600;color:'+pc+';min-width:30px;text-align:right">'+p+'%</span>'
+            + '<span style="font-size:10px;color:var(--muted)">' + p + '%</span>'
           + '</div>'
-        + '</td>'
-      + '</tr>';
-    }).join('');
-
-    var card = document.createElement('div');
-    card.className = 'budget-project-card';
-    card.innerHTML =
-
-      // Header -- always visible, click to expand
-      // Header row -- project name, badges, arrow only
-      '<div class="bpc-header" data-gid="'+gid+'" onclick="toggleBudgetCard(this.dataset.gid)">'
-        + '<div style="font-family:DM Serif Display,serif;font-size:15px;font-weight:600;color:var(--ink)">'+g.project+'</div>'
-        + '<span class="badge badge-gray">'+g.type+'</span>'
-        + (g.country ? '<span class="badge badge-blue">'+g.country+'</span>' : '')
-        + (g.dept    ? '<span class="badge" style="background:var(--amber-lt);color:var(--amber)">'+g.dept+'</span>' : '')
-        + '<div style="margin-left:auto;display:flex;align-items:center;gap:12px">'
-          + (g.month ? '<span style="font-size:11px;color:var(--muted)">'+g.month+(g.year?' '+g.year:'')+'</span>' : '')
-          + '<span style="font-size:11px;color:var(--muted)">'+g.lines.length+' line'+(g.lines.length===1?'':'s')+'</span>'
-          + '<div id="'+gid+'-arr" style="color:var(--muted);font-size:16px;transition:transform .25s">&#8964;</div>'
-        + '</div>'
-      + '</div>'
-
-      // Expandable body -- summary figures + table
-      + '<div id="'+gid+'-body" style="display:none">'
-
-        // Summary figures
-        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">'
-          + '<div style="padding:12px 18px;border-right:1px solid var(--border)">'
-            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Budget</div>'
-            + '<div style="font-size:14px;font-weight:700;color:var(--ink)">'+ccy+' '+fmt(total)+'</div>'
-          + '</div>'
-          + '<div style="padding:12px 18px;border-right:1px solid var(--border)">'
-            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Spent</div>'
-            + '<div style="font-size:14px;font-weight:700;color:var(--purple)">'+ccy+' '+fmt(actual)+'</div>'
-          + '</div>'
-          + '<div style="padding:12px 18px;border-right:1px solid var(--border)">'
-            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Remaining</div>'
-            + '<div style="font-size:14px;font-weight:700;color:'+(remain<0?'var(--danger)':'var(--success)')+';">'+(remain<0?'−':'')+ccy+' '+fmt(Math.abs(remain))+'</div>'
-          + '</div>'
-          + '<div style="padding:12px 18px;background:'+(pct>85?'#fef2f2':pct>60?'#fffbeb':'#f0fdf4')+'">'
-            + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Usage</div>'
-            + '<div style="display:flex;align-items:center;gap:8px">'
-              + '<div style="flex:1;height:5px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden">'
-                + '<div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+barClr+'"></div>'
-              + '</div>'
-              + '<span style="font-size:14px;font-weight:700;color:'+barClr+'">'+pct+'%</span>'
-            + '</div>'
-          + '</div>'
-        + '</div>'
-
-        // Line items table
-        + '<div style="overflow-x:auto">'
-        + '<table style="width:100%;border-collapse:collapse;min-width:700px">'
-          + '<thead>'
-            + '<tr style="background:var(--surface)">'
-              + '<th style="padding:9px 12px 9px 20px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Category</th>'
-              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Cost Summary</th>'
-              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Cost Item</th>'
-              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Unit</th>'
-              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:center;border-bottom:2px solid var(--border);white-space:nowrap">CCY</th>'
-              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:right;border-bottom:2px solid var(--border);white-space:nowrap">Budgeted</th>'
-              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:right;border-bottom:2px solid var(--border);white-space:nowrap">Actual</th>'
-              + '<th style="padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:right;border-bottom:2px solid var(--border);white-space:nowrap">Remaining</th>'
-              + '<th style="padding:9px 20px 9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Utilisation</th>'
-            + '</tr>'
-          + '</thead>'
-          + '<tbody>'+lineRows+'</tbody>'
-          // Totals row
-          + '<tfoot>'
-            + '<tr style="background:var(--surface);border-top:2px solid var(--border)">'
-              + '<td colspan="5" style="padding:10px 12px 10px 20px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Total</td>'
-              + '<td style="padding:10px 12px;text-align:right;font-size:13.5px;font-weight:700;color:var(--ink)">'+fmt(total)+'</td>'
-              + '<td style="padding:10px 12px;text-align:right;font-size:13.5px;font-weight:700;color:var(--success)">'+fmt(actual)+'</td>'
-              + '<td style="padding:10px 12px;text-align:right;font-size:13.5px;font-weight:700;color:'+(remain<0?'var(--danger)':'var(--ink)')+'">'+fmt(remain)+'</td>'
-              + '<td style="padding:10px 20px 10px 12px;font-size:12px;font-weight:700;color:'+barClr+'">'+pct+'% used</td>'
-            + '</tr>'
-          + '</tfoot>'
-        + '</table>'
-        + '</div>' // end overflow-x:auto
-      + '</div>'; // end expandable body
-
-    container.appendChild(card);
+        + '</td>';
+      frag.appendChild(dtr);
+    });
   });
+
+  // Single DOM write — much faster than appending one by one
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
 }
 
-function toggleBudgetCard(gid) {
-  var body = document.getElementById(gid+'-body');
-  var arr  = document.getElementById(gid+'-arr');
-  if (!body) return;
-  var open = body.style.display !== 'none';
-  body.style.display = open ? 'none' : '';
-  if (arr) arr.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+function toggleBudgetGroup(gid) {
+  var rows = document.querySelectorAll('.budgetLine-' + gid);
+  var arr  = document.getElementById(gid + '-arr');
+  var open = rows.length && rows[0].style.display !== 'none';
+  rows.forEach(function(r) { r.style.display = open ? 'none' : ''; });
+  if (arr) arr.innerHTML = open ? '&#9658;' : '&#9660;';
 }
-
-function toggleAllBudgetGroups(expand) {
-  document.querySelectorAll('[id$="-body"][id^="bgc"]').forEach(function(el){
-    el.style.display = expand ? '' : 'none';
-  });
-  document.querySelectorAll('[id$="-arr"][id^="bgc"]').forEach(function(el){
-    el.style.transform = expand ? 'rotate(180deg)' : 'rotate(0deg)';
-  });
-}
-
-// Legacy stub
-function toggleBudgetGroup(gid) {}
 
 // Pull budget lines from Google Sheet (READ ONLY -- never written by app)
 // Maps EXACTLY to your sheet column names as shown in the image:
@@ -2652,223 +2233,6 @@ async function pullBudgetLinesFromSheets() {
 
 
 // -- PDF GENERATION -----------------------------------------
-
-// Download PDF of paid+acknowledged requests (for expense clearing)
-async function downloadAcknowledgedPDF() {
-  const { jsPDF } = window.jspdf;
-  const paid = requestsStore.filter(function(r){ return r.status === 'Paid'; });
-
-  if (!paid.length) { toast('No paid requests to export'); return; }
-
-  const doc  = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-  const pw   = doc.internal.pageSize.getWidth();
-  const ph   = doc.internal.pageSize.getHeight();
-  const now  = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
-
-  const NAVY   = [15, 28, 46];
-  const TEAL   = [15, 110, 86];
-  const PURPLE = [67, 56, 202];
-  const GOLD   = [200, 135, 42];
-  const MUTED  = [107, 122, 153];
-  const WHITE  = [255, 255, 255];
-  const BORDER = [221, 226, 235];
-  const SUCCESS= [22, 163, 74];
-
-  // Count acknowledged vs unacknowledged
-  const acked   = paid.filter(function(r){ return r.requesterSigName; });
-  const unacked = paid.filter(function(r){ return !r.requesterSigName; });
-
-  function drawHeader(isFirstPage) {
-    // Header bar
-    doc.setFillColor(...NAVY);
-    doc.rect(0, 0, pw, 22, 'F');
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(14);
-    doc.setTextColor(...WHITE);
-    doc.text('MRV Platform — Paid Requests & Acknowledgements', 14, 9);
-    doc.setFont('helvetica','normal');
-    doc.setFontSize(8);
-    doc.setTextColor(180, 200, 220);
-    doc.text('For expense clearing — includes approver and requester signatures', 14, 15);
-    doc.text('Generated: ' + now, pw - 14, 15, {align:'right'});
-
-    if (isFirstPage) {
-      // Summary row
-      const sW = (pw - 28) / 4;
-      const summaries = [
-        { label:'Total Paid', value: paid.length + ' requests',          color:NAVY   },
-        { label:'Acknowledged', value: acked.length + ' signed',         color:SUCCESS},
-        { label:'Pending Ack', value: unacked.length + ' unsigned',      color:GOLD   },
-        { label:'Total Amount', value: getDefaultCurrency()+' '+paid.reduce(function(s,r){return s+(r.amount||0);},0).toLocaleString(), color:TEAL },
-      ];
-      summaries.forEach(function(s, i) {
-        const bx = 14 + i * (sW + 2.3);
-        doc.setFillColor(245, 247, 250);
-        doc.roundedRect(bx, 25, sW, 14, 2, 2, 'F');
-        doc.setFont('helvetica','bold');
-        doc.setFontSize(6.5);
-        doc.setTextColor(...MUTED);
-        doc.text(s.label.toUpperCase(), bx + 4, 30);
-        doc.setFont('helvetica','bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...s.color);
-        doc.text(s.value, bx + 4, 36);
-      });
-    }
-  }
-
-  // Table columns
-  const COL = {
-    ref:    { x:14,  w:18  },
-    proj:   { x:32,  w:44  },
-    cat:    { x:76,  w:36  },
-    amt:    { x:112, w:28  },
-    date:   { x:140, w:22  },
-    approv: { x:162, w:50  },
-    ack:    { x:212, w:70  },
-  };
-  const HEADERS = ['Ref #','Project / Type','Category / Line','Amount','Date','Approved By (Finance)','Requester Acknowledgement'];
-
-  function drawTableHeader(y) {
-    doc.setFillColor(...NAVY);
-    doc.rect(14, y, pw - 28, 8, 'F');
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(6.5);
-    doc.setTextColor(...WHITE);
-    Object.values(COL).forEach(function(c, i) {
-      doc.text(HEADERS[i], c.x + 2, y + 5.2);
-    });
-    return y + 8;
-  }
-
-  let y = 42;
-  drawHeader(true);
-  y = drawTableHeader(y);
-
-  for (let ri = 0; ri < paid.length; ri++) {
-    const r      = paid[ri];
-    const hasSig = !!r.sigDataUrl;
-    const hasAck = !!r.requesterSigName;
-    const localSig = r.requesterSig || null;  // image from Sheets, visible to all
-
-    // Row height: taller rows for signed entries so sig + name + timestamp fit cleanly
-    const rowH = (hasSig || hasAck) ? 28 : 13;
-
-    if (y + rowH > ph - 14) {
-      doc.addPage();
-      y = 5;
-      drawHeader(false);
-      y = drawTableHeader(y + 22);
-    }
-
-    // Alternating row background
-    if (ri % 2 === 0) {
-      doc.setFillColor(248, 250, 252);
-      doc.rect(14, y, pw - 28, rowH, 'F');
-    }
-
-    // Row border
-    doc.setDrawColor(...BORDER);
-    doc.setLineWidth(0.2);
-    doc.rect(14, y, pw - 28, rowH, 'S');
-
-    const mid = y + rowH / 2;
-
-    // Ref #
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...TEAL);
-    doc.text('#' + r.ref, COL.ref.x + 2, mid + 1, {baseline:'middle'});
-
-    // Project + type
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...NAVY);
-    doc.text(r.project || '', COL.proj.x + 2, mid, {baseline:'middle', maxWidth: COL.proj.w - 4});
-    if (r.type) {
-      doc.setFontSize(6); doc.setTextColor(...MUTED);
-      doc.text(r.type, COL.proj.x + 2, mid + 4, {baseline:'middle'});
-    }
-
-    // Category / line
-    doc.setFontSize(6.5); doc.setTextColor(...NAVY);
-    doc.text((r.category || r.description || ''), COL.cat.x + 2, mid - 1, {baseline:'middle', maxWidth: COL.cat.w - 4});
-    if (r.costSummary) {
-      doc.setFontSize(5.5); doc.setTextColor(...MUTED);
-      doc.text(r.costSummary, COL.cat.x + 2, mid + 3.5, {baseline:'middle', maxWidth: COL.cat.w - 4});
-    }
-
-    // Amount
-    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...NAVY);
-    doc.text((r.amount||0).toLocaleString(), COL.amt.x + 2, mid + 1, {baseline:'middle'});
-
-    // Date
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
-    doc.text(r.date || '', COL.date.x + 2, mid + 1, {baseline:'middle'});
-
-    // Approver signature (finance officer)
-    const aSigX = COL.approv.x + 2;
-    if (hasSig) {
-      try {
-        const fmt = r.sigDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        var imgH = rowH - 10;
-        doc.addImage(r.sigDataUrl, fmt, aSigX, y + 2, 28, imgH, undefined, 'FAST');
-        doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(...NAVY);
-        doc.text(r.sigLabel || '', aSigX, y + imgH + 5);
-        doc.setFont('helvetica','normal'); doc.setFontSize(5); doc.setTextColor(...MUTED);
-        if (r.sigTime) doc.text(String(r.sigTime), aSigX, y + imgH + 9.5);
-      } catch(e) {
-        doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...SUCCESS);
-        doc.text('[Signature on file]', aSigX, mid + 1, {baseline:'middle'});
-      }
-    } else {
-      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...MUTED);
-      doc.text('Not signed', aSigX, mid + 1, {baseline:'middle'});
-    }
-
-    // Requester acknowledgement signature
-    const rSigX = COL.ack.x + 2;
-    if (hasAck && localSig) {
-      try {
-        const fmt2 = localSig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        var imgH2 = rowH - 10;
-        doc.addImage(localSig, fmt2, rSigX, y + 2, 34, imgH2, undefined, 'FAST');
-        doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(...SUCCESS);
-        doc.text('✓ ' + (r.requesterSigName || ''), rSigX, y + imgH2 + 5);
-        doc.setFont('helvetica','normal'); doc.setFontSize(5); doc.setTextColor(...MUTED);
-        if (r.requesterSigTime) doc.text(String(r.requesterSigTime), rSigX, y + imgH2 + 9.5);
-      } catch(e) {
-        doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...SUCCESS);
-        doc.text('✓ Acknowledged: ' + (r.requesterSigName || ''), rSigX, mid + 1, {baseline:'middle'});
-      }
-    } else if (hasAck) {
-      doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...SUCCESS);
-      doc.text('✓ ' + (r.requesterSigName || ''), rSigX, y + 8, {baseline:'middle'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED);
-      if (r.requesterSigTime) doc.text(String(r.requesterSigTime), rSigX, y + 14, {baseline:'middle'});
-    } else {
-      // Blank signature box
-      doc.setDrawColor(...BORDER);
-      doc.setLineWidth(0.3);
-      doc.setLineDashPattern([1, 1], 0);
-      doc.rect(rSigX, y + 3, 48, rowH - 6, 'S');
-      doc.setLineDashPattern([], 0);
-      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...MUTED);
-      doc.text('Awaiting acknowledgement', rSigX + 24, mid + 1, {align:'center', baseline:'middle'});
-    }
-
-    y += rowH;
-  }
-
-  // Footer
-  const footerY = ph - 8;
-  doc.setDrawColor(...BORDER); doc.setLineWidth(0.3);
-  doc.line(14, footerY - 4, pw - 14, footerY - 4);
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
-  doc.text('MRV Platform — Confidential. For expense clearing only.', 14, footerY);
-  doc.text('Page ' + doc.getCurrentPageInfo().pageNumber + ' of ' + doc.getNumberOfPages(), pw - 14, footerY, {align:'right'});
-  doc.text(acked.length + ' of ' + paid.length + ' requests acknowledged by requester.', pw / 2, footerY, {align:'center'});
-
-  doc.save('MRV_Acknowledged_Requests_' + new Date().toISOString().slice(0,10) + '.pdf');
-  toast('PDF downloaded — ' + paid.length + ' paid requests');
-}
-
 async function downloadRequestsPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -3097,8 +2461,6 @@ function showView(id, el) {
   if (id === 'budgets')        { renderBudgetView(); if (gsWebAppUrl && window._budgetPulled !== true) { window._budgetPulled = true; pullBudgetLinesFromSheets().then(function(){ renderBudgetView(); }); } }
   if (id === 'reconciliation') renderReconciliation();
   if (id === 'dashboard')      renderDashboard();
-  if (id === 'transactions')   renderTransactions();
-  if (id === 'history')        renderHistory();
 }
 
 // -- Modals -------------------------------------------------
@@ -3260,15 +2622,13 @@ function saveNewSig(mode) {
     if (!dataUrl || dataUrl === window.location.href) { toast('Please upload an image first'); return; }
   }
   const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  // One signature per user -- replace any existing
-  savedSigs = [{label, dataUrl, date: now, id: Date.now()}];
+  savedSigs.push({label, dataUrl, date: now, id: Date.now()});
   persistSigsToStorage();
   clearCanvas('newCanvas');
   document.getElementById('newSigLabel').value = '';
   clearUpload();
   renderSavedSigs();
-  refreshSigGrids();
-  toast('Signature saved');
+  toast('Signature saved OK');
 }
 
 function previewUpload(e) {
@@ -3412,12 +2772,14 @@ function confirmSignAndApprove() {
   persistRequestsToStorage();
   rebuildRequestsTable();
   renderDashboard();
+  // Pause auto-sync, push, then restart
   clearInterval(gsAutoSyncTimer);
   if (gsWebAppUrl) {
     pushToSheets().then(function() {
-      pushSigImages(); // push images after metadata
       startAutoSync();
-    }).catch(function() { startAutoSync(); });
+    }).catch(function() {
+      startAutoSync();
+    });
   }
   toast('Payment confirmed & signed');
 }
@@ -3610,17 +2972,10 @@ function submitRequest() {
     status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today
   });
   persistRequestsToStorage();
-  closeModal('requestModal');
-  rebuildRequestsTable();
-  renderDashboard();
-  renderHistory();
   populateAllDropdowns();
-  // Stop auto-sync, push immediately, restart — same as approve
-  clearInterval(gsAutoSyncTimer);
-  if (gsWebAppUrl) {
-    pushToSheets().then(function(){ startAutoSync(); }).catch(function(){ startAutoSync(); });
-  }
-  toast('Request submitted -- ' + num);
+  closeModal('requestModal');
+  syncAfterChange();
+  toast('Request submitted -- REQ-'+String(reqCounter).padStart(3,'0'));
 }
 
 function submitExpense() {
@@ -3659,115 +3014,32 @@ function closeAdvance() {
 }
 
 function showReceipt(ref, amount, signer) {
-  const now   = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
-  const entry = requestsStore.find(function(r){ return r.ref === ref; });
-  if (!entry) { toast('Receipt not found'); return; }
-
-  const ccy = getCurrency(entry.project, entry.type);
-
-  // ── Approver signature block ──
-  const approvLabel = entry.sigLabel || signer || 'Finance Officer';
-  const approvImg   = entry.sigDataUrl;  // base64 from Sheets if available
-  var approverBlock;
-  if (approvImg) {
-    approverBlock =
-      '<div style="padding:14px 16px;border-top:1px solid var(--border)">'
-      + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Authorised by (Finance)</div>'
-      + '<div style="display:flex;align-items:center;gap:14px">'
-        + '<img src="'+approvImg+'" style="height:48px;max-width:160px;object-fit:contain;border:1px solid var(--border);border-radius:6px;padding:4px;background:#fff">'
-        + '<div>'
-          + '<div style="font-size:13px;font-weight:600;color:var(--ink)">'+approvLabel+'</div>'
-          + '<div style="font-size:11px;color:var(--muted)">'+(entry.sigTime||now)+'</div>'
-        + '</div>'
-      + '</div>'
-    + '</div>';
-  } else {
-    approverBlock =
-      '<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
-      + '<span style="font-size:12px;color:var(--muted)">Authorised by</span>'
-      + '<div style="text-align:right">'
-        + '<div style="font-size:13px;font-weight:600;color:var(--success)">&#10003; '+approvLabel+'</div>'
-        + '<div style="font-size:11px;color:var(--muted)">'+(entry.sigTime||now)+'</div>'
-      + '</div>'
-    + '</div>';
-  }
-
-  // ── Requester acknowledgement block ──
-  // requesterSig image comes from Sheets via full pull; may not be in lightweight pull
-  // Show it if available, fall back to name+timestamp only
-  var ackBlock = '';
-  if (entry.requesterSigName) {
-    var ackImg = entry.requesterSig || null;
-    var ackName = entry.requesterSigName;
-    var ackTime = fmtDate(entry.requesterSigTime || '');
-    ackBlock =
-      '<div style="padding:16px;border-top:2px solid var(--border);background:var(--surface)">'
-      + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">Received by (Requester)</div>'
-      + '<div style="display:flex;align-items:flex-start;gap:16px">'
-        + (ackImg
-            ? '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;flex-shrink:0">'
-                + '<img src="'+ackImg+'" style="height:52px;max-width:160px;object-fit:contain;display:block">'
-              + '</div>'
-            : '<div style="width:140px;height:52px;border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'
-                + '<span style="font-size:22px;color:var(--success)">&#10003;</span>'
-              + '</div>'
-          )
-        + '<div style="padding-top:4px">'
-          + '<div style="font-size:14px;font-weight:600;color:var(--ink)">'+ackName+'</div>'
-          + '<div style="font-size:11.5px;color:var(--muted);margin-top:3px">'+ackTime+'</div>'
-          + '<div style="margin-top:6px"><span class="badge badge-teal" style="font-size:10px">&#10003; Acknowledged</span></div>'
-        + '</div>'
-      + '</div>'
-    + '</div>';
-  } else {
-    ackBlock =
-      '<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
-      + '<span style="font-size:12px;color:var(--muted)">Received by</span>'
-      + '<span class="badge badge-gray" style="font-size:11px">Awaiting acknowledgement</span>'
-      + '</div>';
-  }
-
-  document.getElementById('receiptBody').innerHTML =
-    '<div style="text-align:center;margin-bottom:20px">'
-      + '<div style="font-size:22px;font-weight:700;color:var(--ink);font-family:DM Serif Display,serif;letter-spacing:-.3px">MRV Platform</div>'
-      + '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Payment Receipt</div>'
-    + '</div>'
-    + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
-      // Details
-      + '<div style="padding:14px 16px;display:grid;gap:10px">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center">'
-          + '<span style="font-size:12px;color:var(--muted)">Reference</span>'
-          + '<strong style="font-family:IBM Plex Mono,monospace;font-size:13px">#'+entry.ref+'</strong>'
-        + '</div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center">'
-          + '<span style="font-size:12px;color:var(--muted)">Date</span>'
-          + '<span style="font-size:13px">'+(entry.sigTime||entry.date||now)+'</span>'
-        + '</div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center">'
-          + '<span style="font-size:12px;color:var(--muted)">Amount</span>'
-          + '<strong style="font-size:20px;color:var(--success);font-family:DM Serif Display,serif">'+ccy+' '+(entry.amount||0).toLocaleString()+'</strong>'
-        + '</div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center">'
-          + '<span style="font-size:12px;color:var(--muted)">Project</span>'
-          + '<span style="font-size:13px;font-weight:500">'+entry.project+'</span>'
-        + '</div>'
-        + (entry.type ? '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--muted)">Type</span><span class="badge badge-gray">'+entry.type+'</span></div>' : '')
-        + '<div style="display:flex;justify-content:space-between;align-items:center">'
-          + '<span style="font-size:12px;color:var(--muted)">Category</span>'
-          + '<span style="font-size:12.5px">'+(entry.category||entry.description||'--')+'</span>'
-        + '</div>'
-        + (entry.costSummary ? '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--muted)">Cost Line</span><span style="font-size:12.5px">'+entry.costSummary+'</span></div>' : '')
-        + '<div style="display:flex;justify-content:space-between;align-items:center">'
-          + '<span style="font-size:12px;color:var(--muted)">Requester</span>'
-          + '<span style="font-size:13px;font-weight:500">'+(entry.requester||'--')+'</span>'
-        + '</div>'
-      + '</div>'
-      // Signatures
-      + approverBlock
-      + ackBlock
-    + '</div>'
-    + '<div style="margin-top:12px;font-size:11px;color:var(--muted);text-align:center">System-generated receipt &mdash; MRV Platform audit trail</div>';
-
+  const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const entry = requestsStore.find(r => r.ref === ref);
+  const sigImg = entry && entry.sigDataUrl;
+  const sigLabel = (entry && entry.sigLabel) || signer || 'Digitally signed';
+  const sigLine = sigImg
+    ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+         <div class="text-muted text-sm" style="margin-bottom:4px;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Authorised by</div>
+         <img src="${sigImg}" style="height:44px;object-fit:contain;max-width:160px;display:block;margin-bottom:4px">
+         <div style="font-size:11px;color:var(--muted)">${sigLabel}${entry && entry.sigTime ? '  .  '+entry.sigTime : ''}</div>
+       </div>`
+    : `<div class="flex justify-between"><span class="text-muted text-sm">Signed by</span><span>OK ${sigLabel}</span></div>`;
+  document.getElementById('receiptBody').innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--teal)">MRV Platform</div>
+      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Official Payment Receipt</div>
+    </div>
+    <div style="background:var(--teal-pale);border-radius:10px;padding:16px 20px;display:grid;gap:10px">
+      <div class="flex justify-between"><span class="text-muted text-sm">Reference</span><strong>#${ref}</strong></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Date</span><span>${now}</span></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Amount</span><strong class="currency" style="font-size:18px;color:var(--teal)">${parseInt(amount||entry&&entry.amount||0).toLocaleString()}</strong></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Project</span><span>${entry ? entry.project : '--'}</span></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Description</span><span>${entry ? entry.description : '--'}</span></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Platform</span><span>MRV Money-In/Out</span></div>
+      ${sigLine}
+    </div>
+    <div style="margin-top:14px;font-size:11px;color:var(--muted);text-align:center">System-generated receipt -- MRV Platform audit trail</div>`;
   openModal('receiptModal');
 }
 
@@ -3783,10 +3055,8 @@ function showReceipt(ref, amount, signer) {
 const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyw93mFocIR4Ee3EUPTg3Gm2-NUkmfuTZTtHzHRZP9453OKORb7-k_EOzAOl_BKErQ/exec';
 // ════════════════════════════════════════════════════════════
 
-// State -- use hardcoded URL if set, otherwise fall back to localStorage
-// Treat placeholder as not set
-const _hw = (HARDCODED_WEB_APP_URL && HARDCODED_WEB_APP_URL !== 'YOUR_WEB_APP_URL_HERE') ? HARDCODED_WEB_APP_URL : '';
-let gsWebAppUrl  = _hw || localStorage.getItem('mrv_webapp_url') || '';
+// State -- always use hardcoded URL so all devices share the same data
+let gsWebAppUrl  = HARDCODED_WEB_APP_URL || localStorage.getItem('mrv_webapp_url') || '';
 let gsConnected  = !!gsWebAppUrl;
 let gsAutoSyncTimer= null;
 
@@ -3841,69 +3111,48 @@ function disconnectWebApp() {
 
 // -- Core fetch wrapper --------------------------------------
 async function gasCall(payload) {
-  const url = gsWebAppUrl || (document.getElementById('webAppUrl') && document.getElementById('webAppUrl').value.trim());
+  const url = gsWebAppUrl || document.getElementById('webAppUrl').value.trim();
   if (!url) throw new Error('No Web App URL set');
-
-  // 30-second timeout -- prevents hanging on Apps Script cold starts
-  const controller = new AbortController();
-  const timer = setTimeout(function() { controller.abort(); }, 45000);
-
-  try {
-    let resp;
-    if (payload.action === 'ping') {
-      resp = await fetch(url + '?action=ping', { redirect:'follow', signal:controller.signal });
-    } else {
-      resp = await fetch(url, {
-        method:  'POST',
-        redirect:'follow',
-        headers: { 'Content-Type': 'text/plain' },
-        body:    JSON.stringify(payload),
-        signal:  controller.signal,
-      });
-    }
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    return await resp.json();
-  } catch(e) {
-    if (e.name === 'AbortError') throw new Error('Request timed out (30s) -- Apps Script may be slow');
-    throw e;
-  } finally {
-    clearTimeout(timer);
+  // Apps Script requires GET for ping, POST for data
+  let resp;
+  if (payload.action === 'ping') {
+    resp = await fetch(url + '?action=ping', { redirect: 'follow' });
+  } else {
+    resp = await fetch(url, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain' }, // avoid CORS preflight
+      body: JSON.stringify(payload),
+    });
   }
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  return await resp.json();
 }
 
 // -- Push all data to Sheets ---------------------------------
 async function pushToSheets() {
-  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') {
-    if (currentUser && currentUser.role === 'admin') toast('Connect Google Sheets first');
-    return;
-  }
+  if (!gsWebAppUrl) { toast('Connect Google Sheets first'); return; }
   window._pushInProgress = true;
-  // Safety: force-clear the flag after 15s in case of silent failure
-  var _pushSafetyTimer = setTimeout(function(){ window._pushInProgress = false; }, 15000);
   appendSyncLog('Pushing to Sheets...');
   try {
     // Requests
-    // Strip image fields from main push -- sent separately via pushSigData
     const reqRows = requestsStore.map(function(r) {
       return {
-        ref:              r.ref              || '',
-        project:          r.project          || '',
-        type:             r.type             || '',
-        category:         r.category         || '',
-        costSummary:      r.costSummary      || '',
-        costItem:         r.costItem         || '',
-        description:      r.description      || '',
-        amount:           r.amount           || 0,
-        requester:        r.requester        || '',
-        status:           r.status           || '',
-        date:             r.date             || '',
-        sigLabel:         r.sigLabel         || '',
-        sigTime:          r.sigTime          || '',
-        approvedBy:       r.approvedBy       || '',
-        approvedAt:       r.approvedAt       || '',
-        requesterSigName: r.requesterSigName || '',
-        requesterSigTime: r.requesterSigTime || '',
-        // sigDataUrl and requesterSig pushed separately (large images)
+        ref:         r.ref         || '',
+        project:     r.project     || '',
+        type:        r.type        || '',
+        category:    r.category    || '',
+        costSummary: r.costSummary || '',
+        costItem:    r.costItem    || '',
+        description: r.description || '',
+        amount:      r.amount      || 0,
+        requester:   r.requester   || '',
+        status:      r.status      || '',
+        date:        r.date        || '',
+        sigLabel:    r.sigLabel    || '',
+        sigTime:     r.sigTime     || '',
+        approvedBy:  r.approvedBy  || '',
+        approvedAt:  r.approvedAt  || '',
       };
     });
 
@@ -3935,8 +3184,10 @@ async function pushToSheets() {
       if (cells.length >= 3) expRows.push({ date:cells[0], project:cells[1], amount:cells[2], signed:cells[3]||'' });
     });
 
-    // Signatures are private per-user (local only) -- never sent to Sheets
-    const sigRows = [];
+    // Signatures
+    const sigRows = savedSigs.map(function(s) {
+      return { id:s.id, label:s.label, date:s.date, dataUrl:s.dataUrl||'' };
+    });
 
     // Deleted requests (archived)
     const deletedRows = deletedStore.map(function(r) {
@@ -3970,125 +3221,32 @@ async function pushToSheets() {
 
     if (!res.ok) throw new Error(res.error || 'Push failed');
 
-    // Update local version so we don't re-pull our own write
-    if (res.version) _lastKnownVersion = res.version;
-
     const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
     ['syncTimeRequests','syncTimeBudgets','syncTimeFunds','syncTimeExpenses','syncTimeSigs'].forEach(function(id) {
       const el = document.getElementById(id);
       if (el) el.textContent = now;
     });
     updateSheetStatusPill(true);
-    appendSyncLog('Pushed: ' + reqRows.length + ' requests, ' + actualsData.filter(function(a){return a.actual>0;}).length + ' actuals');
+    appendSyncLog('Pushed: ' + reqRows.length + ' requests, ' + actualsData.filter(function(a){return a.actual>0;}).length + ' actuals, ' + fundRows.length + ' funds');
   } catch(e) {
     appendSyncLog('Push failed: ' + e.message);
-    if (currentUser && currentUser.role === 'admin') toast('Push failed -- see sync log');
+    toast('Push failed');
   } finally {
-    clearTimeout(_pushSafetyTimer);
     window._pushInProgress = false;
-    // Version is returned directly in the push response -- no extra call needed
   }
 }
 
-// -- Lightweight pull: requests only, no images -- used by auto-sync ----
-// -- Push signature images separately (not part of main push) --------
-async function pushSigImages() {
-  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
-  var sigs = requestsStore
-    .filter(function(r){ return r.sigDataUrl || r.requesterSig; })
-    .map(function(r){ return { ref:r.ref, sigDataUrl:r.sigDataUrl||'', requesterSig:r.requesterSig||'' }; });
-  if (!sigs.length) return;
-  try {
-    await gasCall({ action:'pushSigData', sigs:sigs });
-  } catch(e) {
-    appendSyncLog('Sig push error: ' + e.message);
-  }
-}
-
-// Status rank: higher = more advanced in workflow. Pull can never downgrade.
-var STATUS_RANK = { 'Draft':0, 'Pending':1, 'Approved':2, 'Paid':3 };
-
-async function pullRequestsOnly() {
-  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
-  // Never pull while a push is in flight -- would overwrite local changes
-  if (window._pushInProgress) return;
-  try {
-    var res = await gasCall({ action: 'getRequests' });
-    if (!res || !res.ok || !res.requests || !res.requests.length) return;
-
-    // Build lookup of current local state
-    var localByRef = {};
-    requestsStore.forEach(function(r){ localByRef[r.ref] = r; });
-
-    var imported = res.requests.map(function(r) {
-      var ref    = String(r['Ref #'] || r.ref || '').trim();
-      var local  = localByRef[ref];
-      var sheetsStatus = String(r['Status'] || r.status || 'Draft').trim();
-
-      // Never downgrade status -- if local is more advanced, keep it
-      // This prevents Paid -> Approved revert when push is still propagating
-      var finalStatus = sheetsStatus;
-      if (local) {
-        var localRank  = STATUS_RANK[local.status]  || 0;
-        var sheetsRank = STATUS_RANK[sheetsStatus]  || 0;
-        if (localRank > sheetsRank) finalStatus = local.status;
-      }
-
-      return {
-        ref:              ref,
-        project:          String(r['Project']          || '').trim(),
-        type:             String(r['Type']              || '').trim(),
-        category:         String(r['Category']          || '').trim(),
-        costSummary:      String(r['Cost Summary']      || '').trim(),
-        costItem:         String(r['Cost Item']         || '').trim(),
-        description:      String(r['Description']       || '').trim(),
-        amount:           parseFloat(r['Amount (KES)']  || r['Amount'] || 0) || 0,
-        requester:        String(r['Requester']         || '').trim(),
-        status:           finalStatus,
-        date:             String(r['Date']              || '').trim(),
-        sigLabel:         r['Signed By']                || (local && local.sigLabel)         || null,
-        sigTime:          r['Sign Time']                || (local && local.sigTime)           || null,
-        approvedBy:       r['Approved By']              || (local && local.approvedBy)        || null,
-        approvedAt:       r['Approved At']              || (local && local.approvedAt)        || null,
-        requesterSigName: r['Requester Sig Name']       || (local && local.requesterSigName)  || null,
-        requesterSigTime: r['Requester Sig Time']       || (local && local.requesterSigTime)  || null,
-        // Always preserve local image fields (not in lightweight pull)
-        sigDataUrl:       local ? local.sigDataUrl   : null,
-        requesterSig:     local ? local.requesterSig : null,
-      };
-    }).filter(function(r){ return r.ref; });
-
-    if (!imported.length) return;
-
-    // Keep local-only refs (submitted but push not yet complete)
-    var sheetsRefs = new Set(imported.map(function(r){ return r.ref; }));
-    var localOnly  = requestsStore.filter(function(r){ return !sheetsRefs.has(r.ref); });
-    requestsStore  = imported.concat(localOnly);
-    reqCounter     = calcReqCounter();
-    persistRequestsToStorage();
-    rebuildRequestsTable();
-    renderHistory();
-    renderDashboard();
-  } catch(e) {
-    // Silent -- don't interrupt user
-  }
-}
-
-// -- Full pull: all sheets including images -- used on login --------
-async function pullFromSheets(silent) {
-  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') { 
-    if (!silent) toast('Please connect a Web App URL first'); 
-    appendSyncLog('pullFromSheets: no URL, skipping');
-    return; 
-  }
-  if (!silent) appendSyncLog('Pulling... url=' + gsWebAppUrl.slice(0,40));
+// -- Pull data from Sheets -----------------------------------
+async function pullFromSheets() {
+  if (!gsWebAppUrl) { toast('Please connect a Web App URL first'); return; }
+  appendSyncLog('Pulling from Sheets...');
   try {
     const res = await gasCall({ action: 'getAll' });
     if (!res.ok) throw new Error(res.error || 'Pull failed');
-    if (!silent) appendSyncLog('Pull OK, requests=' + (res.requests ? res.requests.length : 0));
 
-    // -- Requests -- STATUS_RANK protection prevents status downgrade
-    if (res.requests && res.requests.length > 0) {
+    // -- Requests -- map ALL fields including type/category/costSummary
+    // Skip if a push is in progress (prevents auto-sync reverting local changes)
+    if (res.requests && res.requests.length > 0 && !window._pushInProgress) {
       const imported = res.requests.map(r => ({
         ref:         String(r['Ref #']        || r.ref         || '').trim(),
         project:     String(r['Project']      || r.project     || '').trim(),
@@ -4099,52 +3257,19 @@ async function pullFromSheets(silent) {
         description: String(r['Description']  || r.description || '').trim(),
         amount:      parseFloat(r['Amount (KES)'] || r['Amount'] || r.amount) || 0,
         requester:   String(r['Requester']    || r.requester   || '').trim(),
-        status:      (function(){
-          var s = String(r['Status'] || r.status || 'Draft').trim();
-          var loc = requestsStore.find(function(x){ return x.ref===String(r['Ref #']||r.ref||'').trim(); });
-          if (loc && (STATUS_RANK[loc.status]||0) > (STATUS_RANK[s]||0)) return loc.status;
-          return s;
-        })(),
+        status:      String(r['Status']       || r.status      || 'Draft').trim(),
         date:        String(r['Date']         || r.date        || '').trim(),
-        sigLabel:         r['Signed By']          || r.sigLabel         || null,
-        sigTime:          r['Sign Time']          || r.sigTime          || null,
-        approvedBy:       r['Approved By']        || r.approvedBy       || null,
-        approvedAt:       r['Approved At']        || r.approvedAt       || null,
-        sigDataUrl:       r['Sig Data']           || r.sigDataUrl       || null,
-        requesterSig:     r['Requester Sig']      || r.requesterSig     || null,
-        requesterSigName: r['Requester Sig Name'] || r.requesterSigName || null,
-        requesterSigTime: r['Requester Sig Time'] || r.requesterSigTime || null,
+        sigLabel:    r['Signed By']  || r.sigLabel  || null,
+        sigTime:     r['Sign Time']  || r.sigTime   || null,
+        approvedBy:  r['Approved By']|| r.approvedBy|| null,
+        approvedAt:  r['Approved At']|| r.approvedAt|| null,
+        sigDataUrl:  null,
       })).filter(r => r.ref);
       if (imported.length > 0) {
-        // Smart merge: Sheets is authoritative for existing refs.
-        // For each imported record, preserve local-only fields (sigDataUrl, requesterSig)
-        // that may not yet be in Sheets (push in flight) or are stored locally.
-        var localByRef = {};
-        requestsStore.forEach(function(r){ localByRef[r.ref] = r; });
-
-        var merged = imported.map(function(r) {
-          var local = localByRef[r.ref];
-          if (local) {
-            // Prefer Sheets value but fall back to local for image fields
-            r.sigDataUrl   = r.sigDataUrl   || local.sigDataUrl   || null;
-            r.requesterSig = r.requesterSig || local.requesterSig || null;
-          }
-          return r;
-        });
-
-        // Keep local-only refs (submitted but not yet in Sheets)
-        var sheetsRefs = new Set(imported.map(function(r){ return r.ref; }));
-        var localOnly  = requestsStore.filter(function(r){ return !sheetsRefs.has(r.ref); });
-        var newStore = merged.concat(localOnly);
-
-        requestsStore = newStore;
+        requestsStore = imported;
         reqCounter = calcReqCounter();
         persistRequestsToStorage();
-
-        // Always re-render -- 3s interval is fast enough, change detection was buggy
         rebuildRequestsTable();
-        renderHistory();
-        renderDashboard();
       }
     }
 
@@ -4227,18 +3352,31 @@ async function pullFromSheets(silent) {
       }
     }
 
-    // Signatures are user-scoped (private, never synced from Sheets)
+    // -- Signatures -- restore from sheet --
+    if (res.signatures && res.signatures.length > 0) {
+      // Merge: add any from sheet not already in localStorage (match by id)
+      let changed = false;
+      res.signatures.forEach(s => {
+        if (s.dataUrl && !savedSigs.find(x => String(x.id) === String(s.id))) {
+          savedSigs.push({ id: s.id, label: s.label || 'Signature', date: s.date || '', dataUrl: s.dataUrl });
+          changed = true;
+        }
+      });
+      if (changed) {
+        persistSigsToStorage();
+        refreshSigGrids();
+        appendSyncLog(`OK Restored ${res.signatures.length} signature(s) from Sheets.`);
+      }
+    }
 
     renderDashboard();
     populateAllDropdowns();
     updateSheetStatusPill(true);
     appendSyncLog('OK Pull complete at ' + now);
+    toast('Pulled latest data from Sheets OK');
   } catch(e) {
     appendSyncLog('X Pull failed: ' + e.message);
-    // Only show toast to admin -- non-admins and background syncs stay silent
-    if (!silent && currentUser && currentUser.role === 'admin') {
-      toast('Sync error -- see sync log');
-    }
+    toast('Pull failed -- see sync log');
   }
 }
 
@@ -4263,11 +3401,11 @@ function rebuildRequestsTable() {
   // Requesters can only delete their own drafts
   var canDelete  = role === 'admin' || role === 'approver';
 
-  // Country filter: all roles respect their assigned country (blank = all)
+  // Country filter: requesters see only their country; approvers see their country (or all if blank)
   var ctryFilter = function(r) {
-    if (!userCtry) return true;
+    if (!userCtry) return true;          // no restriction
     return (r.project && budgetLines.some(function(l){
-      return l.project === r.project && l.country === userCtry;
+      return l.project === r.project && l.type === r.type && l.country === userCtry;
     }));
   };
   var allFiltered = requestsStore.filter(ctryFilter);
@@ -4279,9 +3417,6 @@ function rebuildRequestsTable() {
   var bd = document.getElementById('badge-drafts'); if(bd) bd.textContent = drafts.length;
   var bq = document.getElementById('badge-queue');  if(bq) bq.textContent = queue.length;
   var bp = document.getElementById('badge-paid');   if(bp) bp.textContent = paid.length;
-  // Sidebar badge = pending drafts + queue
-  var sb = document.getElementById('sidebarReqBadge');
-  if(sb) { var tot = drafts.length + queue.length; sb.textContent = tot; sb.style.display = tot ? '' : 'none'; }
 
   // Paid total
   var paidAmt = paid.reduce(function(s,r){ return s+(parseFloat(r.amount)||0); },0);
@@ -4296,16 +3431,13 @@ function rebuildRequestsTable() {
   };
 
   var cols = function(r, extra) {
-    var chkCell = canDelete
-      ? '<td style="padding:6px 6px 6px 14px"><input type="checkbox" class="req-chk" data-ref="'+r.ref+'" onchange="onReqCheckChange()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--danger)"></td>'
-      : '<td></td>';
-    return chkCell + '<td style="font-family:IBM Plex Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
+    return '<td style="font-family:IBM Plex Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
       +'<td style="font-weight:500">'+r.project+'</td>'
       +'<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
-      +'<td style="font-size:12.5px">'+(r.category||'--')+'</td>'
+      +'<td>'+(r.category||'--')+'</td>'
       +'<td style="color:var(--muted);font-size:12px">'+(r.costSummary||r.description||'--')+'</td>'
-      +'<td class="currency" style="font-weight:600;white-space:nowrap">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
-      +'<td style="font-size:12.5px">'+(r.requester||'')+'</td>'
+      +'<td class="currency" style="font-weight:600">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
+      +'<td>'+(r.requester||'')+'</td>'
       + extra;
   };
 
@@ -4318,7 +3450,7 @@ function rebuildRequestsTable() {
           ? '<button class="btn btn-primary btn-sm" data-aref="'+r.ref+'" onclick="approveRequest(this.dataset.aref)">Approve</button>'
           : '<span class="badge badge-gray">Awaiting approval</span>';
         return '<tr>'
-          + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.date)+'</td>')
+          + cols(r, '<td>'+(r.date||'--')+'</td>')
           + '<td style="display:flex;gap:4px;align-items:center">'+approveBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
       }).join('');
@@ -4332,7 +3464,7 @@ function rebuildRequestsTable() {
           ? '<button class="btn btn-amber btn-sm" data-mref="'+r.ref+'" data-mreq="'+r.requester+'" onclick="openSignAndApprove(this,this.dataset.mref,this.dataset.mreq)">Mark Paid</button>'
           : '<span class="badge badge-gold">Awaiting payment</span>';
         return '<tr>'
-          + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.approvedAt||r.date)+'</td>')
+          + cols(r, '<td style="color:var(--muted);font-size:12px">'+(r.approvedAt||r.date||'--')+'</td>')
           + '<td style="display:flex;gap:4px;align-items:center">'+payBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
       }).join('');
@@ -4342,19 +3474,8 @@ function rebuildRequestsTable() {
   if (bp_el) bp_el.innerHTML = paid.length===0
     ? '<tr><td colspan="10" style="padding:24px;text-align:center;color:var(--muted)">No paid requests yet</td></tr>'
     : paid.map(function(r) {
-        var ackCell = r.requesterSigName
-          ? '<td><div style="display:flex;align-items:center;gap:6px">'
-              + '<span style="color:var(--success);font-size:11px">&#10003;</span>'
-              + '<div>'
-                + '<div style="font-size:12px;font-weight:500;color:var(--success)">'+r.requesterSigName+'</div>'
-                + '<div style="font-size:10.5px;color:var(--muted)">'+fmtDate(r.requesterSigTime||'')+'</div>'
-              + '</div>'
-            + '</div></td>'
-          : '<td><span class="badge badge-gray" style="font-size:10px">Pending</span></td>';
         return '<tr>'
-          + cols(r, '<td style="color:var(--success);font-size:12px;font-weight:500">'+(r.sigLabel||'--')+'</td>'
-                  + '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.sigTime||r.date)+'</td>')
-          + ackCell
+          + cols(r, '<td>'+(r.requester||'')+'</td><td style="color:var(--success);font-size:12px;font-weight:500">'+(r.sigLabel||'--')+'</td><td style="color:var(--muted);font-size:12px">'+(r.sigTime||r.date||'--')+'</td>')
           + '<td style="display:flex;gap:4px;align-items:center">'
             +'<button class="btn btn-ghost btn-sm" data-rref="'+r.ref+'" data-ramt="'+r.amount+'" data-rlab="'+(r.sigLabel||r.requester)+'" onclick="showReceipt(this.dataset.rref,this.dataset.ramt,this.dataset.rlab)">Receipt</button>'
             +delBtn(r.ref)
@@ -4365,9 +3486,6 @@ function rebuildRequestsTable() {
   // Keep legacy tbody in sync for PDF etc
   var leg = document.getElementById('requestsBody');
   if (leg) leg.innerHTML = requestsStore.map(function(r) { return '<tr><td>'+r.ref+'</td></tr>'; }).join('');
-  // Refresh history view if active
-  var hv = document.getElementById('view-history');
-  if (hv && hv.classList.contains('active')) renderHistory();
 }
 
 
@@ -4375,17 +3493,17 @@ function rebuildRequestsTable() {
 // Called after any data mutation.
 // Updates all views immediately then pushes to Sheets.
 function syncAfterChange() {
-  // Refresh all views immediately
+  // 1. Refresh all views with current in-memory data
   renderDashboard();
   rebuildRequestsTable();
-  if (document.getElementById('view-history') && document.getElementById('view-history').classList.contains('active')) renderHistory();
-  if (document.getElementById('view-budgets') && document.getElementById('view-budgets').classList.contains('active')) {
+  if (document.getElementById('view-budgets') &&
+      document.getElementById('view-budgets').classList.contains('active')) {
     renderBudgetView();
   }
-  // Push immediately — stop auto-sync to prevent race, restart after
+  // 2. Push to Sheets (debounced 800ms)
   if (gsWebAppUrl) {
-    clearInterval(gsAutoSyncTimer);
-    pushToSheets().then(function(){ startAutoSync(); }).catch(function(){ startAutoSync(); });
+    clearTimeout(window._gsPushTimer);
+    window._gsPushTimer = setTimeout(function() { pushToSheets(); }, 800);
   }
 }
 
@@ -4393,55 +3511,18 @@ function syncAfterChange() {
 function gsPushIfConnected() { syncAfterChange(); }
 
 // -- Auto-sync timer -----------------------------------------
-// Auto-sync: always on, 3s interval for near-instant cross-device reflection
-var AUTO_SYNC_INTERVAL = 2000; // 2 seconds -- version check is near-instant
-
-var _lastKnownVersion = -1;
-var _versionPollCount = 0;
-
-async function checkVersionAndSync() {
-  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
-  // Note: _pushInProgress is local-only; other devices won't have it set
-
-  try {
-    // Ultra-lightweight: just fetch the version number from CacheService
-    var res = await gasCall({ action: 'getVersion' });
-    if (!res || !res.ok) return;
-
-    var serverVersion = res.version;
-
-    if (_lastKnownVersion === -1) {
-      // First poll -- just store the version, do a full pull to init
-      _lastKnownVersion = serverVersion;
-      await pullRequestsOnly();
-      return;
-    }
-
-    if (serverVersion !== _lastKnownVersion) {
-      // Something changed -- pull requests now
-      _lastKnownVersion = serverVersion;
-      await pullRequestsOnly();
-    }
-
-    // Every 30s do a full pull to catch anything missed
-    _versionPollCount++;
-    if (_versionPollCount % 15 === 0) {
-      pullBudgetLinesFromSheets().catch(function(){});
-    }
-  } catch(e) {
-    // Silent -- version check failed, will retry next cycle
-  }
-}
+// Auto-sync: always on, 10s interval, survives page refresh
+var AUTO_SYNC_INTERVAL = 10000; // 10 seconds
 
 function startAutoSync() {
   clearInterval(gsAutoSyncTimer);
-  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
-  _lastKnownVersion = -1;
-  _versionPollCount = 0;
+  if (!gsWebAppUrl) return;
   gsAutoSyncTimer = setInterval(function() {
-    checkVersionAndSync();
+    pullFromSheets().catch(function(){});
+    // Reset budget pull flag so budget view refreshes too
+    window._budgetPulled = false;
   }, AUTO_SYNC_INTERVAL);
-  appendSyncLog('Auto-sync active (version poll every ' + (AUTO_SYNC_INTERVAL/1000) + 's)');
+  appendSyncLog('Auto-sync active (every 10s)');
 }
 
 function toggleAutoSync(on) {
@@ -4537,9 +3618,8 @@ function bootAuth() {
       return;
     }
   } catch(e) {}
-  // No valid session -- wipe session + user cache, show login
+  // No valid session -- clear and show login
   localStorage.removeItem(SESSION_KEY);
-  localStorage.removeItem('mrv_users');
   showLoginScreen();
   // Show URL field if no Sheets connection configured
   var noUrl = !gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE';
@@ -4683,14 +3763,11 @@ function loginSuccess(user) {
 
 // -- Logout -----------------------------------------------------
 function doLogout() {
-  clearInterval(gsAutoSyncTimer);
-  gsAutoSyncTimer = null;
   localStorage.removeItem(SESSION_KEY);
-  localStorage.removeItem('mrv_users');
   currentUser = null;
-  try { document.getElementById('loginEmail').value = ''; } catch(e){}
-  try { document.getElementById('loginPassword').value = ''; } catch(e){}
-  try { document.getElementById('loginError').style.display = 'none'; } catch(e){}
+  document.getElementById('loginEmail').value    = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').style.display = 'none';
   closeUserMenu();
   showLoginScreen();
 }
@@ -4740,9 +3817,9 @@ showView = function(id, el) {
   var role    = currentUser.role    || 'requester';
   var country = currentUser.country || '';
 
-  // Requester: only requests + history
+  // Requester: only requests view
   if (role === 'requester') {
-    if (id !== 'requests' && id !== 'history') {
+    if (id !== 'requests') {
       toast('Access restricted -- contact Admin for other sections');
       return;
     }
@@ -4754,6 +3831,20 @@ showView = function(id, el) {
     if (blocked.includes(id)) {
       toast('Access restricted -- Approvers cannot access this section');
       return;
+    }
+  }
+
+  // Viewer: read-only
+  if (role === 'viewer') {
+    if (!['dashboard','budgets','transactions','reconciliation','requests','history','ai'].includes(id)) {
+      toast('Access restricted -- Viewer accounts are read-only'); return;
+    }
+  }
+
+  // Manager: no users/sheets
+  if (role === 'manager') {
+    if (id === 'users' || id === 'sheets') {
+      toast('Access restricted -- contact the system Admin'); return;
     }
   }
 
@@ -4778,30 +3869,24 @@ showView = function(id, el) {
 
 // -- Users management --------------------------------------------
 function toggleCountryField() {
-  // Country applies to all roles -- always show
-  var grp = document.getElementById('countryFieldGroup');
-  if (grp) grp.style.display = '';
-}
-
-function getCountryOptions(selected) {
-  var countries = [...new Set(budgetLines.map(function(l){ return l.country; }).filter(Boolean))].sort();
-  return '<option value=""'+(selected===''?' selected':'')+'">-- All Countries --</option>'
-    + countries.map(function(c){
-        return '<option value="'+c+'"'+(c===selected?' selected':'')+'>'+c+'</option>';
-      }).join('');
+  var role = document.getElementById('newUserRole').value;
+  var grp  = document.getElementById('countryFieldGroup');
+  if (grp) grp.style.display = role === 'requester' ? '' : 'none';
 }
 
 function populateCountryDropdown() {
   var sel = document.getElementById('newUserCountry');
   if (!sel) return;
-  sel.innerHTML = getCountryOptions('');
+  var countries = [...new Set(budgetLines.map(function(l){ return l.country; }).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">-- All Countries (no restriction) --</option>'
+    + countries.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
 }
 
 async function addUser() {
   const name    = (document.getElementById('newUserName').value    || '').trim();
   const email   = (document.getElementById('newUserEmail').value   || '').trim().toLowerCase();
   const role    = document.getElementById('newUserRole').value;
-  const country = (document.getElementById('newUserCountry').value || '');
+  const country = role === 'requester' ? (document.getElementById('newUserCountry').value || '') : '';
   const pass    = (document.getElementById('newUserPass').value    || '');
   const pass2   = (document.getElementById('newUserPass2').value   || '');
   if (!name || !email || !pass) { toast('Please fill all fields'); return; }
@@ -4816,19 +3901,6 @@ async function addUser() {
   renderUsersTable();
   await pushUsersToSheets();
   toast('User added -- ' + (country ? 'restricted to ' + country : 'all countries'));
-}
-
-async function updateUserField(id, field, value) {
-  var user = usersStore.find(function(u){ return u.id === id; });
-  if (!user) return;
-  // Don't let admin demote themselves
-  if (field === 'role' && currentUser && currentUser.email === user.email && value !== 'admin') {
-    toast("Can't change your own role"); renderUsersTable(); return;
-  }
-  user[field] = value;
-  persistUsersToStorage();
-  await pushUsersToSheets();
-  toast('User updated');
 }
 
 async function deleteUser(id) {
@@ -4869,20 +3941,13 @@ function renderUsersTable() {
   }
 
   tbody.innerHTML = usersStore.map(function(u) {
-    var isSelf = currentUser && currentUser.email === (u.email||'').toLowerCase();
-    var countries = [...new Set(budgetLines.map(function(l){ return l.country; }).filter(Boolean))].sort();
-    var countryOpts = '<option value=""'+(u.country===''||!u.country?' selected':'')+'">All</option>'
-      + countries.map(function(c){ return '<option value="'+c+'"'+(c===u.country?' selected':'')+'>'+c+'</option>'; }).join('');
-    var roleOpts = ['requester','approver','admin'].map(function(r){
-      return '<option value="'+r+'"'+(r===(u.role||'requester')?' selected':'')+'>'+r.charAt(0).toUpperCase()+r.slice(1)+'</option>';
-    }).join('');
-    return '<tr id="urow-'+u.id+'">'
-      + '<td style="font-weight:500;color:var(--ink)">'+(u.name||'--')+'<div style="font-size:11px;color:var(--muted)">'+(u.email||'')+'</div></td>'
-      + '<td><select data-uid="'+u.id+'" data-field="role" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;'+(isSelf?'opacity:.5;pointer-events:none':'')+'">'+roleOpts+'</select></td>'
-      + '<td><select data-uid="'+u.id+'" data-field="country" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px">'+countryOpts+'</select></td>'
-      + '<td style="white-space:nowrap">'
-        + (isSelf ? '' : '<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser('+u.id+')">Remove</button>')
-      + '</td>'
+    var country = u.country ? u.country : '<span style="color:var(--muted);font-style:italic">All</span>';
+    return '<tr>'
+      + '<td style="font-weight:500;color:var(--ink)">'+(u.name||'--')+'</td>'
+      + '<td style="color:var(--muted);font-size:12.5px">'+(u.email||'--')+'</td>'
+      + '<td>'+badge(u.role||'requester')+'</td>'
+      + '<td style="font-size:12px">'+country+'</td>'
+      + '<td><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser('+u.id+')">Remove</button></td>'
       + '</tr>';
   }).join('');
 }
@@ -4957,333 +4022,28 @@ async function pullUsersFromSheets() {
 }
 
 // ==============================================================
-// MY SUBMISSIONS -- Requester history view
-// Shows only requests submitted by the currently logged-in user
-// ==============================================================
-
-var _historyFilter = 'all';
-
-function renderHistory() {
-  if (!currentUser) return;
-  var name  = (currentUser.name  || '').trim().toLowerCase();
-  var email = (currentUser.email || '').trim().toLowerCase();
-
-  // Match requests by requester name or email
-  var mine = requestsStore.filter(function(r) {
-    var rname = (r.requester || '').trim().toLowerCase();
-    return rname === name || rname === email;
-  });
-
-  // Stats
-  var total    = mine.length;
-  var drafts   = mine.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; }).length;
-  var approved = mine.filter(function(r){ return r.status==='Approved'; }).length;
-  var paid     = mine.filter(function(r){ return r.status==='Paid'; }).length;
-  var paidAmt  = mine.filter(function(r){ return r.status==='Paid'; }).reduce(function(s,r){ return s+(parseFloat(r.amount)||0); }, 0);
-
-  var statsEl = document.getElementById('historyStats');
-  if (statsEl) {
-    statsEl.innerHTML =
-      '<div class="stat-card"><div class="stat-label">Total Submitted</div>'
-        +'<div class="stat-value" style="color:var(--ink)">'+total+'</div>'
-        +'<div class="stat-sub">All time</div></div>'
-      +'<div class="stat-card"><div class="stat-label">Pending Approval</div>'
-        +'<div class="stat-value gold">'+drafts+'</div>'
-        +'<div class="stat-sub">Awaiting review</div></div>'
-      +'<div class="stat-card"><div class="stat-label">In Payment Queue</div>'
-        +'<div class="stat-value purple">'+approved+'</div>'
-        +'<div class="stat-sub">Approved, not yet paid</div></div>'
-      +'<div class="stat-card"><div class="stat-label">Paid Out</div>'
-        +'<div class="stat-value teal">'+paid+'</div>'
-        +'<div class="stat-sub">'+fmtK(paidAmt, getDefaultCurrency())+'</div></div>';
-  }
-
-  filterHistory(_historyFilter);
-}
-
-function filterHistory(filter) {
-  _historyFilter = filter;
-
-  // Update filter button styles
-  ['all','draft','approved','paid'].forEach(function(f) {
-    var btn = document.getElementById('hfilt-'+f);
-    if (!btn) return;
-    btn.className = filter === f ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
-  });
-
-  var name  = currentUser ? (currentUser.name  || '').trim().toLowerCase() : '';
-  var email = currentUser ? (currentUser.email || '').trim().toLowerCase() : '';
-
-  var mine = requestsStore.filter(function(r) {
-    var rname = (r.requester || '').trim().toLowerCase();
-    return rname === name || rname === email;
-  });
-
-  var filtered = mine.filter(function(r) {
-    if (filter === 'draft')    return r.status === 'Draft' || r.status === 'Pending';
-    if (filter === 'approved') return r.status === 'Approved';
-    if (filter === 'paid')     return r.status === 'Paid';
-    return true;
-  });
-
-  // Sort: newest first (by ref number)
-  filtered = filtered.slice().sort(function(a,b) {
-    var na = parseInt((a.ref||'').replace(/[^0-9]/g,'')) || 0;
-    var nb = parseInt((b.ref||'').replace(/[^0-9]/g,'')) || 0;
-    return nb - na;
-  });
-
-  var countEl = document.getElementById('historyCount');
-  if (countEl) countEl.textContent = filtered.length + ' request' + (filtered.length===1?'':'s');
-
-  // Show "Sign All Paid" only if there are paid-but-unsigned requests
-  var uname = currentUser ? (currentUser.name||'').toLowerCase().trim() : '';
-  var unsignedPaid = requestsStore.filter(function(r){
-    return r.status==='Paid'
-      && (r.requester||'').toLowerCase().trim() === uname
-      && !r.requesterSig;
-  });
-  var signAllBtn = document.getElementById('signAllPaidBtn');
-  if (signAllBtn) signAllBtn.style.display = unsignedPaid.length > 0 ? '' : 'none';
-
-  var tbody = document.getElementById('historyBody');
-  if (!tbody) return;
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="padding:32px;text-align:center;color:var(--muted)">'
-      + (mine.length === 0
-          ? 'You have not submitted any requests yet. Click <strong>+ New Request</strong> on the Requests tab to get started.'
-          : 'No requests match this filter.')
-      + '</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(function(r) {
-    // Status badge
-    var statusMap = {
-      Draft:    { cls:'badge-gray',   label:'Draft' },
-      Pending:  { cls:'badge-gold',   label:'Pending' },
-      Approved: { cls:'badge-blue',   label:'Approved' },
-      Paid:     { cls:'badge-teal',   label:'Paid' },
-    };
-    var s = statusMap[r.status] || { cls:'badge-gray', label:r.status };
-
-    // Approval column
-    var approvalHtml = r.approvedBy
-      ? '<div style="font-size:12px;font-weight:500;color:var(--success)">&#10003; '+r.approvedBy+'</div>'
-        + '<div style="font-size:10.5px;color:var(--muted)">'+(r.approvedAt||'')+'</div>'
-      : '<span style="color:var(--muted);font-size:12px">Awaiting</span>';
-
-    // Payment column
-    var paymentHtml = r.status === 'Paid'
-      ? '<div style="font-size:12px;font-weight:500;color:var(--success)">&#10003; Paid</div>'
-        + (r.sigLabel ? '<div style="font-size:10.5px;color:var(--muted)">'+r.sigLabel+'</div>' : '')
-        + (r.sigTime  ? '<div style="font-size:10.5px;color:var(--muted)">'+fmtDate(r.sigTime)+'</div>'  : '')
-      : r.status === 'Approved'
-        ? '<span style="font-size:12px;color:var(--warn)">&#9679; In Queue</span>'
-        : '<span style="color:var(--muted);font-size:12px">Not yet</span>';
-
-    // Acknowledgement column (only for paid requests)
-    var ackHtml = '';
-    if (r.status === 'Paid') {
-      if (r.requesterSig) {
-        ackHtml = '<div style="display:flex;align-items:center;gap:8px">'
-          + '<img src="'+r.requesterSig+'" style="height:32px;max-width:90px;object-fit:contain;border:1px solid var(--border);border-radius:4px;padding:2px;background:#fff">'
-          + '<button class="btn btn-ghost btn-sm" style="color:var(--danger);padding:3px 7px;font-size:11px" data-ackref="'+r.ref+'" onclick="clearAck(this.dataset.ackref)" title="Remove">✕</button>'
-          + '</div>';
-      } else {
-        ackHtml = '<button class="btn btn-secondary btn-sm" style="font-size:11.5px" data-aref="'+r.ref+'" onclick="openAckModal(this.dataset.aref)">'
-          + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>'
-          + ' Sign to Acknowledge</button>';
-      }
-    } else {
-      ackHtml = '<span style="color:var(--muted);font-size:12px">—</span>';
-    }
-
-    return '<tr>'
-      + '<td style="font-family:IBM Plex Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
-      + '<td style="font-weight:500">'+r.project+'</td>'
-      + '<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
-      + '<td>'
-        + '<div style="font-size:12.5px;color:var(--ink)">'+(r.category||r.description||'--')+'</div>'
-        + (r.costSummary ? '<div style="font-size:11px;color:var(--muted)">'+r.costSummary+'</div>' : '')
-      + '</td>'
-      + '<td class="currency" style="font-weight:600;white-space:nowrap">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
-      + '<td style="font-size:12px;color:var(--muted);white-space:nowrap">'+fmtDate(r.date)+'</td>'
-      + '<td>'+approvalHtml+'</td>'
-      + '<td>'+paymentHtml+'</td>'
-      + '<td>'+ackHtml+'</td>'
-      + '<td><span class="badge '+s.cls+'">'+s.label+'</span></td>'
-    + '</tr>';
-  }).join('');
-}
-
-// ==============================================================
-// ACKNOWLEDGEMENT -- Requester signs to confirm receipt of funds
-// ==============================================================
-
-var _ackTargetRef = null;  // 'all' or a specific ref
-var _pendingAckSig = null;
-
-function openAckModal(ref) {
-  _ackTargetRef = ref;
-  _pendingAckSig = null;
-
-  // Set subtitle
-  var sub = document.getElementById('ackModalSub');
-  if (sub) sub.textContent = ref === 'all'
-    ? 'Sign to acknowledge receipt of all paid requests'
-    : 'Signing for request #' + ref;
-
-  // Reset widget
-  document.getElementById('ackSigApplied').style.display = 'none';
-  document.getElementById('ackSigWidget').style.display = '';
-  var btn = document.getElementById('confirmAckBtn');
-  btn.disabled = true; btn.style.opacity = '.5';
-
-  // Load saved signature into ack-saved panel
-  var preview = document.getElementById('ackSavedPreview');
-  if (savedSigs.length > 0) {
-    var sig = savedSigs[0];
-    preview.innerHTML = '<div style="border:1.5px solid var(--amber);border-radius:8px;padding:12px 16px;background:var(--amber-lt);display:flex;align-items:center;gap:14px;cursor:pointer" onclick="useExistingAckSig()">'
-      + '<img src="'+sig.dataUrl+'" style="height:44px;object-fit:contain;max-width:140px;background:#fff;border-radius:4px;padding:4px;border:1px solid var(--border)">'
-      + '<div>'
-        + '<div style="font-size:13px;font-weight:600;color:var(--ink)">'+sig.label+'</div>'
-        + '<div style="font-size:11px;color:var(--muted)">Saved '+sig.date+' &mdash; click to use</div>'
-      + '</div>'
-    + '</div>';
-  } else {
-    preview.innerHTML = '<div style="padding:12px;background:var(--surface);border-radius:8px;font-size:12.5px;color:var(--muted)">No saved signature yet. Draw or upload one below.</div>';
-  }
-
-  openModal('ackModal');
-  setTimeout(function(){ initCanvas('ackCanvas'); }, 100);
-}
-
-function useExistingAckSig() {
-  if (!savedSigs.length) return;
-  _pendingAckSig = savedSigs[0].dataUrl;
-  document.getElementById('ackSigImg').src = _pendingAckSig;
-  document.getElementById('ackSigName').textContent = savedSigs[0].label;
-  document.getElementById('ackSigApplied').style.display = 'flex';
-  document.getElementById('ackSigWidget').style.display = 'none';
-  var btn = document.getElementById('confirmAckBtn');
-  btn.disabled = false; btn.style.opacity = '1';
-}
-
-function clearAckSig() {
-  _pendingAckSig = null;
-  document.getElementById('ackSigApplied').style.display = 'none';
-  document.getElementById('ackSigWidget').style.display = '';
-  var btn = document.getElementById('confirmAckBtn');
-  btn.disabled = true; btn.style.opacity = '.5';
-}
-
-function saveAndApplyAckSig(mode) {
-  var dataUrl;
-  if (mode === 'draw') {
-    if (isCanvasBlank('ackCanvas')) { toast('Please draw your signature first'); return; }
-    dataUrl = document.getElementById('ackCanvas').toDataURL();
-  }
-  if (!dataUrl) return;
-  // Save as the user's single signature
-  var label = currentUser ? currentUser.name : 'My Signature';
-  savedSigs = [{ label:label, dataUrl:dataUrl, date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}), id:Date.now() }];
-  persistSigsToStorage();
-  _pendingAckSig = dataUrl;
-  document.getElementById('ackSigImg').src = dataUrl;
-  document.getElementById('ackSigName').textContent = label;
-  document.getElementById('ackSigApplied').style.display = 'flex';
-  document.getElementById('ackSigWidget').style.display = 'none';
-  var btn = document.getElementById('confirmAckBtn');
-  btn.disabled = false; btn.style.opacity = '1';
-  refreshSigGrids();
-}
-
-function saveAndApplyAckSigFromFile(e) {
-  var file = e.target.files[0];
-  if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(ev) {
-    var dataUrl = ev.target.result;
-    var label = currentUser ? currentUser.name : 'My Signature';
-    savedSigs = [{ label:label, dataUrl:dataUrl, date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}), id:Date.now() }];
-    persistSigsToStorage();
-    _pendingAckSig = dataUrl;
-    document.getElementById('ackSigImg').src = dataUrl;
-    document.getElementById('ackSigName').textContent = label;
-    document.getElementById('ackSigApplied').style.display = 'flex';
-    document.getElementById('ackSigWidget').style.display = 'none';
-    var btn = document.getElementById('confirmAckBtn');
-    btn.disabled = false; btn.style.opacity = '1';
-    refreshSigGrids();
-  };
-  reader.readAsDataURL(file);
-}
-
-function confirmAck() {
-  if (!_pendingAckSig) { toast('Please provide your signature first'); return; }
-  var now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-    + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  var name = currentUser ? currentUser.name : 'Requester';
-
-  var targets;
-  if (_ackTargetRef === 'all') {
-    // Sign all paid requests belonging to this user that don't have ack yet
-    var uname = (currentUser ? currentUser.name : '').toLowerCase().trim();
-    targets = requestsStore.filter(function(r){
-      return r.status === 'Paid'
-        && (r.requester||'').toLowerCase().trim() === uname
-        && !r.requesterSig;
-    });
-  } else {
-    var entry = requestsStore.find(function(r){ return r.ref === _ackTargetRef; });
-    targets = entry ? [entry] : [];
-  }
-
-  targets.forEach(function(r){
-    r.requesterSig     = _pendingAckSig;  // base64 image -- stored in Sheets like approver sig
-    r.requesterSigName = name;
-    r.requesterSigTime = now;
-  });
-
-  persistRequestsToStorage();
-  closeModal('ackModal');
-
-  // Render immediately -- no waiting for Sheets
-  rebuildRequestsTable();   // updates admin Paid Requests view instantly
-  renderHistory();          // updates requester My Submissions view instantly
-  renderDashboard();
-
-  // Push metadata first, then images
-  clearInterval(gsAutoSyncTimer);
-  if (gsWebAppUrl) {
-    pushToSheets().then(function(){
-      pushSigImages();
-      startAutoSync();
-    }).catch(function(){ startAutoSync(); });
-  }
-
-  toast('Receipt acknowledged — ' + targets.length + ' request' + (targets.length===1?'':'s') + ' signed');
-}
-
-function clearAck(ref) {
-  var entry = requestsStore.find(function(r){ return r.ref === ref; });
-  if (!entry) return;
-  delete entry.requesterSig;
-  delete entry.requesterSigName;
-  delete entry.requesterSigTime;
-  persistRequestsToStorage();
-  renderHistory();
-  toast('Acknowledgement removed');
-}
-
-// ==============================================================
 // END AUTH SYSTEM
 // ==============================================================
 
 // -- Single consolidated DOMContentLoaded -------------------
 document.addEventListener('DOMContentLoaded', async () => {
+
+  // Seed demo signature if none saved
+  if (savedSigs.length === 0) {
+    const offscreen = document.createElement('canvas');
+    offscreen.width = 300; offscreen.height = 80;
+    const ctx = offscreen.getContext('2d');
+    ctx.strokeStyle = '#0D2B1E'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(20,50); ctx.bezierCurveTo(40,10,60,70,90,40);
+    ctx.bezierCurveTo(110,20,120,60,150,35);
+    ctx.bezierCurveTo(170,15,185,55,210,30);
+    ctx.moveTo(220,30); ctx.lineTo(260,30);
+    ctx.stroke();
+    const demoSig = offscreen.toDataURL();
+    savedSigs.push({label:'Finance Officer', dataUrl: demoSig, date: new Date().toLocaleDateString('en-GB'), id:1});
+    persistSigsToStorage();
+  }
 
   wrapTables();
 
@@ -5295,55 +4055,54 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Called by loginSuccess() after a successful sign-in
 async function afterLogin() {
-  // ── STEP 1: Render from cache immediately (instant) ──────────
-  savedSigs = loadSigsFromStorage();
-  renderDashboard();
-  rebuildRequestsTable();
-  populateAllDropdowns();
-  refreshSigGrids();
-  renderTransactions();
-  renderHistory();
-
-  // Route immediately -- user sees their view right away
-  if (currentUser.role === 'requester') {
-    showView('requests', null);   // Requesters land on Requests tab
-  } else {
-    showView('dashboard', null);
-  }
-
-  // ── STEP 2: Restore Sheets UI state ──────────────────────────
+  // Restore Sheets UI state
   if (gsWebAppUrl) {
     gsConnected = true;
-    var urlEl = document.getElementById('webAppUrl');
+    const urlEl = document.getElementById('webAppUrl');
     if (urlEl) urlEl.value = gsWebAppUrl;
-    var badge = document.getElementById('connStatusBadge');
+    const badge = document.getElementById('connStatusBadge');
     if (badge) { badge.className = 'badge badge-teal'; badge.textContent = 'Connected'; }
-    var urlDisplay = document.getElementById('connSuccessUrl');
+    const urlDisplay = document.getElementById('connSuccessUrl');
     if (urlDisplay) urlDisplay.textContent = gsWebAppUrl;
-    var box = document.getElementById('connSuccessBox');
+    const box = document.getElementById('connSuccessBox');
     if (box) box.style.display = 'flex';
-    var disc = document.getElementById('disconnectBtn');
+    const disc = document.getElementById('disconnectBtn');
     if (disc) disc.style.display = '';
-    var ctrl = document.getElementById('syncControlCard');
+    const ctrl = document.getElementById('syncControlCard');
     if (ctrl) ctrl.style.cssText = '';
     updateSheetStatusPill(true);
   }
 
-  // ── STEP 3: Pull from Sheets in background (non-blocking) ─────
+  // Pull live data from Sheets
   if (gsWebAppUrl) {
-    // Start auto-sync immediately -- it will pull within 3s
+    try {
+      appendSyncLog('Loading data from Google Sheets...');
+      await pullFromSheets();
+      await pullBudgetLinesFromSheets();
+      reqCounter = calcReqCounter();
+    } catch(e) {
+      appendSyncLog('Initial pull failed: ' + e.message);
+    }
+  }
+
+  // Render everything
+  renderDashboard();
+  rebuildRequestsTable();
+  populateAllDropdowns();
+  refreshSigGrids();
+
+  // Start auto-sync
+  if (gsWebAppUrl) {
     var chk = document.getElementById('autoSyncToggle');
     if (chk) chk.checked = true;
     startAutoSync();
+  }
 
-    // Also pull once right now in background -- don't await
-    Promise.all([
-      pullFromSheets(true).catch(function(e){ appendSyncLog('Pull failed: ' + e.message); }),
-      pullBudgetLinesFromSheets().catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); })
-    ]).then(function() {
-      reqCounter = calcReqCounter();
-      appendSyncLog('Initial sync complete');
-    });
+  // Route to correct starting view based on role
+  if (currentUser.role === 'requester') {
+    showView('requests', null);
+  } else {
+    showView('dashboard', null);
   }
 }
 
@@ -5352,69 +4111,6 @@ async function afterLogin() {
 // Deleted requests are archived to localStorage + Deleted sheet tab.
 // Requests sheet and actuals are updated immediately.
 // ============================================================
-
-// ── BULK DELETE ──────────────────────────────────────────────────────────────
-function toggleAllChecks(tab, checked) {
-  var chks = document.querySelectorAll('#body' + tab.charAt(0).toUpperCase() + tab.slice(1) + ' .req-chk');
-  chks.forEach(function(c){ c.checked = checked; });
-  onReqCheckChange();
-}
-
-function onReqCheckChange() {
-  var tabs = ['Drafts','Queue','Paid'];
-  tabs.forEach(function(tab) {
-    var lower = tab.toLowerCase();
-    var chks    = document.querySelectorAll('#body' + tab + ' .req-chk:checked');
-    var allChks = document.querySelectorAll('#body' + tab + ' .req-chk');
-    var btn     = document.getElementById('delSel' + tab);
-    var cnt     = document.getElementById('delCount' + tab);
-    var chkAll  = document.getElementById('chkAll' + tab);
-    if (cnt) cnt.textContent = chks.length;
-    if (btn) btn.style.display = chks.length > 0 ? '' : 'none';
-    if (chkAll) chkAll.indeterminate = chks.length > 0 && chks.length < allChks.length;
-    if (chkAll && chks.length === allChks.length && allChks.length > 0) chkAll.checked = true;
-    if (chkAll && chks.length === 0) chkAll.checked = false;
-  });
-}
-
-function deleteSelected(tab) {
-  var tbody = document.getElementById('body' + tab.charAt(0).toUpperCase() + tab.slice(1));
-  if (!tbody) return;
-  var chks = tbody.querySelectorAll('.req-chk:checked');
-  if (!chks.length) return;
-  var refs = Array.from(chks).map(function(c){ return c.dataset.ref; });
-  var word = refs.length === 1 ? '1 request' : refs.length + ' requests';
-  if (!confirm('Delete ' + word + '? This cannot be undone.')) return;
-
-  refs.forEach(function(ref) {
-    var idx = requestsStore.findIndex(function(r){ return r.ref === ref; });
-    if (idx < 0) return;
-    var entry = requestsStore[idx];
-    // Archive to deleted store
-    deletedStore.push(Object.assign({}, entry, { deletedAt: new Date().toISOString(), deletedBy: currentUser ? currentUser.name : 'Admin' }));
-    requestsStore.splice(idx, 1);
-  });
-
-  persistRequestsToStorage();
-  rebuildRequestsTable();
-  renderDashboard();
-  renderHistory();
-
-  // Reset select-all checkboxes
-  ['Drafts','Queue','Paid'].forEach(function(t){
-    var ca = document.getElementById('chkAll' + t);
-    if (ca) { ca.checked = false; ca.indeterminate = false; }
-    var btn = document.getElementById('delSel' + t);
-    if (btn) btn.style.display = 'none';
-  });
-
-  // Push to Sheets
-  clearInterval(gsAutoSyncTimer);
-  if (gsWebAppUrl) {
-    pushToSheets().then(function(){ startAutoSync(); }).catch(function(){ startAutoSync(); });
-  }
-  toast('Deleted ' + word);
-}
 
 var _pendingDeleteRef = null;
 
@@ -5623,139 +4319,261 @@ function wrapTables() {
 // Mobile nav sync is handled inside the auth showView override below
 
 // Run on load
-// ── AI COST INTELLIGENCE ──────────────────────────────────────
+// ==============================================================
+// DYNAMIC SIDEBAR
+// ==============================================================
+var ICONS = {
+  dashboard:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  budgets:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  funds:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>',
+  requests:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/>',
+  history:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  expenses:'<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  reconciliation:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  transactions:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  sheets:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/>',
+  ai:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+};
+function makeIcon(key){ return '<span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[key]||'')+'</svg></span>'; }
 
-var _aiType = 'overview';
-
-function selectAIType(el, type) {
-  document.querySelectorAll('.ai-type-card').forEach(function(c){ c.classList.remove('active'); });
-  el.classList.add('active');
-  _aiType = type;
-  var titles = {
-    overview:'Cost Overview', anomalies:'Anomaly Detection',
-    utilisation:'Utilisation Analysis', trends:'Spending Trends',
-    forecast:'Budget Forecast', recommendations:'Recommendations'
-  };
-  var titleEl = document.getElementById('aiResponseTitle');
-  if (titleEl) titleEl.textContent = titles[type] || type;
-}
-
-async function runAIInsight() {
-  var btn    = document.getElementById('aiInsightBtn');
-  var body   = document.getElementById('aiInsightBody');
-  var status = document.getElementById('aiInsightStatus');
-  var meta   = document.getElementById('aiResponseMeta');
-  if (!body) return;
-
-  // Build concise data snapshot
-  var groups = {};
-  budgetLines.forEach(function(l) {
-    var k = (l.project||'') + '||' + (l.type||'');
-    if (!groups[k]) groups[k] = { project:l.project, type:l.type, country:l.country||'', budget:0, actual:0 };
-    groups[k].budget += parseFloat(l.budgetedAmount)||0;
-    groups[k].actual += getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem);
-  });
-
-  var allPaid   = requestsStore.filter(function(r){ return r.status==='Paid'; });
-  var totalPaid = allPaid.reduce(function(s,r){ return s+(parseFloat(r.amount)||0); }, 0);
-  var allBudget = budgetLines.reduce(function(s,l){ return s+(parseFloat(l.budgetedAmount)||0); }, 0);
-
-  var catMap = {};
-  allPaid.forEach(function(r){
-    var k = r.category||'Uncategorised';
-    catMap[k] = (catMap[k]||0) + (parseFloat(r.amount)||0);
-  });
-
-  var projectLines = Object.values(groups).map(function(g){
-    var pct = g.budget ? Math.round(g.actual/g.budget*100) : 0;
-    return g.project+' ('+g.type+'): Budget='+g.budget.toLocaleString()+' Spent='+g.actual.toLocaleString()+' ('+pct+'%)';
-  }).join('\n');
-
-  var catLines = Object.entries(catMap).sort(function(a,b){return b[1]-a[1];})
-    .slice(0,8).map(function(e){ return e[0]+': '+e[1].toLocaleString(); }).join(', ');
-
-  var prompts = {
-    overview:        'Give a SHORT executive summary (max 6 bullet points) of cost performance. State total budget, total spent, overall utilisation %, and flag top 2 concerns.',
-    anomalies:       'In max 5 bullet points, identify ONLY the most significant cost anomalies or outliers. Be specific with numbers.',
-    utilisation:     'In max 6 bullet points, analyse budget utilisation. Flag projects at risk of overspending or severely underspent. Include percentages.',
-    trends:          'In max 5 bullet points, identify the clearest spending trends from the data. Be specific.',
-    forecast:        'In max 6 bullet points, forecast end-of-period outcome per project. State clearly: on track / at risk / overspend. Use numbers.',
-    recommendations: 'Give exactly 5 specific, actionable cost management recommendations. Number them 1-5. One sentence each. Use the actual data.'
-  };
-
-  var NL = String.fromCharCode(10);
-  var dataBlock = [
-    'FINANCIAL DATA:',
-    'Total Budget: KES ' + allBudget.toLocaleString(),
-    'Total Spent: KES '  + totalPaid.toLocaleString(),
-    'Utilisation: ' + (allBudget ? Math.round(totalPaid/allBudget*100) : 0) + '%',
-    'Paid Requests: ' + allPaid.length,
-    '', 'PROJECTS:',
-    projectLines || 'No budget data.',
-    '', 'TOP CATEGORIES BY SPEND:',
-    catLines || 'No paid requests yet.'
-  ].join(NL);
-
-    var promptText = prompts[_aiType] + NL+NL + 'Respond ONLY with bullet points. No preamble. No conclusion. Maximum 6 bullets. Each bullet max 20 words.' + NL+NL + dataBlock;
-
-  // Loading
-  btn.disabled = true;
-  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analysing…';
-  if (status) status.textContent = 'Sending data to AI…';
-  body.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:20px;color:var(--muted);font-size:13px"><div style="width:18px;height:18px;border:2px solid var(--amber);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div>Analysing your cost data…</div>';
-
-  try {
-    var res = await gasCall({ action:'aiInsight', prompt: promptText });
-    if (!res || !res.ok) throw new Error(res && res.error ? res.error : 'AI service unavailable');
-
-    var text = res.text || '';
-    var now  = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-
-    // Format response: convert markdown bullets to styled HTML
-    var html = text.split(NL).map(function(line) {
-      line = line.trim();
-      if (!line) return '';
-      // Bold
-      line = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-      // Bullet variants
-      if (/^[-•*]\s/.test(line)) {
-        return '<div class="ai-bullet"><span class="ai-bullet-dot">▸</span><span>'+line.slice(2)+'</span></div>';
-      }
-      if (/^\d+\.\s/.test(line)) {
-        var num = line.match(/^(\d+)\./)[1];
-        return '<div class="ai-bullet"><span class="ai-bullet-dot" style="min-width:18px">'+num+'.</span><span>'+line.replace(/^\d+\.\s/,'')+'</span></div>';
-      }
-      // Heading
-      if (line.startsWith('###') || line.startsWith('##')) {
-        return '<div class="ai-section-title">'+line.replace(/^#+\s*/,'')+'</div>';
-      }
-      return '<div style="margin:4px 0;font-size:13px">'+line+'</div>';
-    }).join('');
-
-    body.innerHTML = '<div style="padding:4px 20px 20px">' + (html || '<div style="color:var(--muted)">No insights returned.</div>') + '</div>';
-    if (status) status.textContent = 'Updated at ' + now;
-    if (meta)   meta.textContent   = 'Last run: ' + now + ' · Groq Llama 3.3';
-
-  } catch(e) {
-    body.innerHTML = '<div style="padding:20px;color:var(--danger);font-size:13px">⚠️ Analysis failed: '+e.message+'. Please check your connection and try again.</div>';
-    if (status) status.textContent = '';
+function buildSidebar() {
+  var role = currentUser ? (currentUser.role||'requester') : 'requester';
+  var aside = document.getElementById('mainAside');
+  if (!aside) return;
+  var nav = [];
+  if (role === 'requester') {
+    nav = [{type:'section',label:'My Work'},{type:'item',label:'System Requests',view:'requests',icon:'requests',badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>'},{type:'item',label:'My Submissions',view:'history',icon:'history'}];
+  } else if (role === 'viewer') {
+    nav = [{type:'section',label:'Overview'},{type:'item',label:'Dashboard',view:'dashboard',icon:'dashboard'},{type:'item',label:'Approved Budgets',view:'budgets',icon:'budgets'},{type:'section',label:'Reports'},{type:'item',label:'Paid Requests',view:'requests',icon:'requests'},{type:'item',label:'Transactions',view:'transactions',icon:'transactions'},{type:'item',label:'Reconciliation',view:'reconciliation',icon:'reconciliation'},{type:'item',label:'My Submissions',view:'history',icon:'history'}];
+  } else if (role === 'approver') {
+    nav = [{type:'section',label:'Cycle'},{type:'item',label:'Dashboard',view:'dashboard',icon:'dashboard'},{type:'item',label:'Approved Budgets',view:'budgets',icon:'budgets'},{type:'item',label:'Load Funds',view:'funds',icon:'funds'},{type:'item',label:'System Requests',view:'requests',icon:'requests',badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>'},{type:'item',label:'Weekly Expensing',view:'expenses',icon:'expenses'},{type:'item',label:'Reconciliation',view:'reconciliation',icon:'reconciliation'},{type:'section',label:'Reports'},{type:'item',label:'AI Intelligence',view:'ai',icon:'ai'},{type:'item',label:'Transactions',view:'transactions',icon:'transactions'},{type:'item',label:'My Submissions',view:'history',icon:'history'}];
+  } else if (role === 'manager') {
+    nav = [{type:'section',label:'Cycle'},{type:'item',label:'Dashboard',view:'dashboard',icon:'dashboard'},{type:'item',label:'Approved Budgets',view:'budgets',icon:'budgets'},{type:'item',label:'Load Funds',view:'funds',icon:'funds'},{type:'item',label:'System Requests',view:'requests',icon:'requests',badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>'},{type:'item',label:'Weekly Expensing',view:'expenses',icon:'expenses'},{type:'item',label:'Reconciliation',view:'reconciliation',icon:'reconciliation'},{type:'section',label:'Reports'},{type:'item',label:'AI Intelligence',view:'ai',icon:'ai'},{type:'item',label:'Transactions',view:'transactions',icon:'transactions'},{type:'item',label:'My Submissions',view:'history',icon:'history'}];
+  } else { // admin
+    nav = [{type:'section',label:'Cycle'},{type:'item',label:'Dashboard',view:'dashboard',icon:'dashboard'},{type:'item',label:'Approved Budgets',view:'budgets',icon:'budgets'},{type:'item',label:'Load Funds',view:'funds',icon:'funds'},{type:'item',label:'System Requests',view:'requests',icon:'requests',badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>'},{type:'item',label:'Weekly Expensing',view:'expenses',icon:'expenses'},{type:'item',label:'Reconciliation',view:'reconciliation',icon:'reconciliation'},{type:'section',label:'Reports'},{type:'item',label:'AI Intelligence',view:'ai',icon:'ai'},{type:'item',label:'Transactions',view:'transactions',icon:'transactions'},{type:'item',label:'My Submissions',view:'history',icon:'history'},{type:'section',label:'Admin'},{type:'item',label:'Manage Users',view:'users',icon:'users'},{type:'section',label:'Integration'},{type:'item',label:'Google Sheets',view:'sheets',icon:'sheets',id:'sheetsNavItem',badge:'<span id="sheetsSyncBadge" class="aside-badge" style="display:none;background:var(--gold)">!</span>'}];
   }
-
-  btn.disabled = false;
-  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Analysis';
+  aside.innerHTML = nav.map(function(n){
+    if (n.type==='section') return '<div class="aside-section">'+n.label+'</div>';
+    if (!n.view) return '';
+    return '<div class="aside-item"'+(n.id?' id="'+n.id+'"':'')+' data-view="'+n.view+'" onclick="showView(this.dataset.view,this)">'+makeIcon(n.icon)+n.label+(n.badge||'')+'</div>';
+  }).join('');
 }
 
+// ==============================================================
+// FONT SIZE
+// ==============================================================
 function setFontSize(size) {
   document.body.classList.remove('font-lg','font-xl');
   if (size==='lg') document.body.classList.add('font-lg');
   if (size==='xl') document.body.classList.add('font-xl');
   try { localStorage.setItem('mrv_fontsize',size); } catch(e) {}
-  ['normal','lg','xl'].forEach(function(s){
-    var b=document.getElementById('fst-'+s);
-    if(b) b.classList.toggle('active',s===size);
-  });
+  ['normal','lg','xl'].forEach(function(s){ var b=document.getElementById('fst-'+s); if(b) b.classList.toggle('active',s===size); });
 }
 (function(){ try{ var s=localStorage.getItem('mrv_fontsize'); if(s&&s!=='normal') setFontSize(s); }catch(e){} })();
+
+// ==============================================================
+// SORT PAID + REBUILD
+// ==============================================================
+var _paidSort = 'date-desc';
+function sortAndRebuild() { var sel=document.getElementById('paidSortSelect'); if(sel) _paidSort=sel.value; rebuildRequestsTable(); }
+function sortPaid(rows) {
+  return rows.slice().sort(function(a,b){
+    switch(_paidSort){
+      case 'date-asc':    return new Date(a.sigTime||a.date||0)-new Date(b.sigTime||b.date||0);
+      case 'date-desc':   return new Date(b.sigTime||b.date||0)-new Date(a.sigTime||a.date||0);
+      case 'amount-desc': return (parseFloat(b.amount)||0)-(parseFloat(a.amount)||0);
+      case 'amount-asc':  return (parseFloat(a.amount)||0)-(parseFloat(b.amount)||0);
+      case 'requester':   return (a.requester||'').localeCompare(b.requester||'');
+      case 'project':     return (a.project||'').localeCompare(b.project||'');
+      default:            return new Date(b.sigTime||b.date||0)-new Date(a.sigTime||a.date||0);
+    }
+  });
+}
+
+// ==============================================================
+// PAGINATION ENGINE
+// ==============================================================
+var _pageState = {};
+function paginateTable(tbodyId,pageSize){
+  pageSize=pageSize||20;
+  var tbody=document.getElementById(tbodyId); if(!tbody) return;
+  var rows=Array.from(tbody.querySelectorAll('tr'));
+  if(!rows.length){removePagination(tbodyId);return;}
+  _pageState[tbodyId]={page:(_pageState[tbodyId]?_pageState[tbodyId].page:1),pageSize:pageSize,allRows:rows,filter:(_pageState[tbodyId]?_pageState[tbodyId].filter:'')};
+  applyPageFilter(tbodyId);
+}
+function applyPageFilter(tbodyId){
+  var state=_pageState[tbodyId]; if(!state) return;
+  var term=(state.filter||'').toLowerCase();
+  var filtered=term?state.allRows.filter(function(r){return r.textContent.toLowerCase().includes(term);}):state.allRows;
+  var total=filtered.length; var pages=Math.max(1,Math.ceil(total/state.pageSize));
+  state.page=Math.min(state.page,pages);
+  var start=(state.page-1)*state.pageSize; var end=start+state.pageSize;
+  state.allRows.forEach(function(r){r.style.display='none';});
+  filtered.slice(start,end).forEach(function(r){r.style.display='';});
+  renderPaginationBar(tbodyId,state.page,pages,total,filtered.length);
+}
+function renderPaginationBar(tbodyId,page,pages,totalFiltered,totalAll){
+  var tbody=document.getElementById(tbodyId); if(!tbody) return;
+  var card=tbody.closest('.card'); if(!card) return;
+  var barId='pgbar-'+tbodyId; var existing=document.getElementById(barId); if(existing) existing.remove();
+  if(pages<=1&&totalFiltered===totalAll) return;
+  var bar=document.createElement('div'); bar.id=barId; bar.className='table-pagination';
+  var ps=_pageState[tbodyId]; var ps2=ps.pageSize;
+  var info='Showing '+Math.min((page-1)*ps2+1,totalFiltered)+'–'+Math.min(page*ps2,totalFiltered)+' of '+(totalFiltered<totalAll?totalFiltered+' (filtered from '+totalAll+')':totalAll);
+  var btns='<div class="pagination-controls">';
+  btns+='<button class="page-btn" data-tid="'+tbodyId+'" data-pg="'+(page-1)+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)" '+(page<=1?'disabled':'')+'>&#8249;</button>';
+  pageRange(page,pages).forEach(function(p){
+    if(p==='...'){btns+='<button class="page-btn" disabled style="border:none;background:none">…</button>';}
+    else{btns+='<button class="page-btn'+(p===page?' active':'')+'" data-tid="'+tbodyId+'" data-pg="'+p+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)">'+p+'</button>';}
+  });
+  btns+='<button class="page-btn" data-tid="'+tbodyId+'" data-pg="'+(page+1)+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)" '+(page>=pages?'disabled':'')+'>&#8250;</button></div>';
+  bar.innerHTML='<span style="white-space:nowrap">'+info+'</span>'+btns;
+  card.appendChild(bar);
+}
+function pageRange(current,total){
+  if(total<=7) return Array.from({length:total},function(_,i){return i+1;});
+  var pages=[1]; if(current>3) pages.push('...');
+  for(var i=Math.max(2,current-1);i<=Math.min(total-1,current+1);i++) pages.push(i);
+  if(current<total-2) pages.push('...'); pages.push(total); return pages;
+}
+function goPage(tbodyId,page){
+  var state=_pageState[tbodyId]; if(!state) return;
+  var pages=Math.ceil(state.allRows.filter(function(r){var t=(state.filter||'').toLowerCase();return!t||r.textContent.toLowerCase().includes(t);}).length/state.pageSize);
+  state.page=Math.max(1,Math.min(page,pages)); applyPageFilter(tbodyId);
+}
+function removePagination(tbodyId){var b=document.getElementById('pgbar-'+tbodyId);if(b)b.remove();delete _pageState[tbodyId];}
+function addTableFilter(tbodyId,placeholder){
+  var tbody=document.getElementById(tbodyId); if(!tbody) return;
+  var card=tbody.closest('.card'); if(!card) return;
+  var filterId='filter-'+tbodyId; if(document.getElementById(filterId)) return;
+  var header=card.querySelector('.card-header'); if(!header) return;
+  var bar=document.createElement('div'); bar.className='table-filter-bar';
+  bar.innerHTML='<div class="table-filter-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="'+filterId+'" class="table-filter-input" type="text" placeholder="'+(placeholder||'Search...')+'" data-tid="'+tbodyId+'" oninput="filterTable(this.dataset.tid,this.value)"></div><button class="btn btn-ghost btn-sm" style="font-size:11.5px" data-tid="'+tbodyId+'" onclick="clearFilter(this.dataset.tid)">Clear</button>';
+  header.insertAdjacentElement('afterend',bar);
+}
+function filterTable(tbodyId,value){
+  var state=_pageState[tbodyId];
+  if(!state){var tbody=document.getElementById(tbodyId);if(!tbody)return;var rows=Array.from(tbody.querySelectorAll('tr'));_pageState[tbodyId]={page:1,pageSize:20,allRows:rows,filter:value};}
+  else{state.filter=value;state.page=1;}
+  applyPageFilter(tbodyId);
+}
+function clearFilter(tbodyId){var el=document.getElementById('filter-'+tbodyId);if(el)el.value='';filterTable(tbodyId,'');}
+
+// ==============================================================
+// AI COST INTELLIGENCE (dedicated tab)
+// ==============================================================
+var _aiType = 'overview';
+function selectAIType(el,type){
+  document.querySelectorAll('.ai-type-card').forEach(function(c){c.classList.remove('active');});
+  el.classList.add('active'); _aiType=type;
+  var titles={overview:'Cost Overview',anomalies:'Anomaly Detection',utilisation:'Utilisation Analysis',trends:'Spending Trends',forecast:'Budget Forecast',recommendations:'Recommendations'};
+  var t=document.getElementById('aiResponseTitle'); if(t) t.textContent=titles[type]||type;
+}
+
+async function runAIInsight() {
+  var btn=document.getElementById('aiInsightBtn');
+  var body=document.getElementById('aiInsightBody');
+  var status=document.getElementById('aiInsightStatus');
+  var meta=document.getElementById('aiResponseMeta');
+  if(!body) return;
+
+  var groups={};
+  budgetLines.forEach(function(l){
+    var k=l.project+'||'+l.type;
+    if(!groups[k]) groups[k]={project:l.project,type:l.type,country:l.country||'',budget:0,actual:0};
+    groups[k].budget+=parseFloat(l.budgetedAmount)||0;
+    groups[k].actual+=getActualForLine(l.project,l.type,l.category,l.costSummary,l.costItem);
+  });
+
+  var NL=String.fromCharCode(10);
+  var projectLines=Object.values(groups).map(function(g){
+    var pct=g.budget?Math.round(g.actual/g.budget*100):0;
+    return g.project+'('+g.type+','+g.country+'): Budget='+g.budget.toLocaleString()+' Spent='+g.actual.toLocaleString()+' ('+pct+'%)';
+  }).join(NL);
+
+  var allPaid=requestsStore.filter(function(r){return r.status==='Paid';});
+  var totalPaid=allPaid.reduce(function(s,r){return s+(parseFloat(r.amount)||0);},0);
+  var allBudget=budgetLines.reduce(function(s,l){return s+(parseFloat(l.budgetedAmount)||0);},0);
+  var catMap={};
+  allPaid.forEach(function(r){var k=r.category||'Uncategorised';catMap[k]=(catMap[k]||0)+(parseFloat(r.amount)||0);});
+  var catLines=Object.entries(catMap).sort(function(a,b){return b[1]-a[1];}).slice(0,8).map(function(e){return e[0]+': '+e[1].toLocaleString();}).join(', ');
+
+  var prompts={
+    overview:'Give a SHORT executive summary (max 6 bullet points). State total budget, total spent, overall utilisation %, and flag top 2 concerns.',
+    anomalies:'In max 5 bullet points, identify ONLY the most significant cost anomalies. Be specific with numbers.',
+    utilisation:'In max 6 bullet points, analyse budget utilisation. Flag projects at risk. Include percentages.',
+    trends:'In max 5 bullet points, identify the clearest spending trends. Be specific.',
+    forecast:'In max 6 bullet points, forecast end-of-period outcome per project. State: on track / at risk / overspend.',
+    recommendations:'Give exactly 5 specific actionable recommendations. Number 1-5. One sentence each.'
+  };
+
+  var dataBlock=['FINANCIAL DATA:','Total Budget: KES '+allBudget.toLocaleString(),'Total Spent: KES '+totalPaid.toLocaleString(),'Utilisation: '+(allBudget?Math.round(totalPaid/allBudget*100):0)+'%','Paid Requests: '+allPaid.length,'','PROJECTS:',projectLines||'No budget data.','','TOP CATEGORIES:',catLines||'No paid requests yet.'].join(NL);
+  var promptText=prompts[_aiType]+NL+NL+'Respond ONLY with bullet points. No preamble. No conclusion. Max 6 bullets. Each bullet max 20 words.'+NL+NL+dataBlock;
+
+  btn.disabled=true;
+  btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analysing…';
+  if(status) status.textContent='Sending to Groq AI…';
+  body.innerHTML='<div style="display:flex;align-items:center;gap:12px;padding:20px;color:var(--muted);font-size:13px"><div style="width:18px;height:18px;border:2px solid var(--amber);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div>Analysing your cost data…</div>';
+
+  try {
+    var res=await gasCall({action:'aiInsight',prompt:promptText});
+    if(!res||!res.ok) throw new Error(res&&res.error?res.error:'AI service unavailable');
+    var text=res.text||'';
+    var now=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    var html=text.split(NL).map(function(line){
+      line=line.trim(); if(!line) return '';
+      line=line.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+      if(/^[-•*]\s/.test(line)) return '<div class="ai-bullet"><span class="ai-bullet-dot">▸</span><span>'+line.slice(2)+'</span></div>';
+      if(/^\d+\.\s/.test(line)){var num=line.match(/^(\d+)\./)[1];return '<div class="ai-bullet"><span class="ai-bullet-dot" style="min-width:18px">'+num+'.</span><span>'+line.replace(/^\d+\.\s/,'')+'</span></div>';}
+      if(line.startsWith('###')||line.startsWith('##')) return '<div class="ai-section-title">'+line.replace(/^#+\s*/,'')+'</div>';
+      return '<div style="margin:4px 0;font-size:13px">'+line+'</div>';
+    }).join('');
+    body.innerHTML='<div style="padding:4px 20px 20px">'+(html||'<div style="color:var(--muted)">No insights returned.</div>')+'</div>';
+    if(status) status.textContent='Updated '+now+' · Groq Llama 3.3';
+    if(meta)   meta.textContent='Last run: '+now+' · Groq Llama 3.3';
+  } catch(e) {
+    body.innerHTML='<div style="padding:20px;color:var(--danger);font-size:13px">⚠️ Analysis failed: '+e.message+'. Please check your connection and try again.</div>';
+    if(status) status.textContent='';
+  }
+  btn.disabled=false;
+  btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Analysis';
+}
+
+// ==============================================================
+// EXPORT TO EXCEL
+// ==============================================================
+function showExportModal(){openModal('exportModal');}
+function exportToExcel(type){
+  closeModal('exportModal');
+  if(typeof XLSX==='undefined'){toast('Excel library not loaded — refresh and try again');return;}
+  var wb=XLSX.utils.book_new(); var date=new Date().toISOString().slice(0,10);
+  if(type==='requests'||type==='paid'||type==='all'){
+    var rows=type==='paid'?requestsStore.filter(function(r){return r.status==='Paid';}):requestsStore;
+    var data=[['Ref #','Project','Type','Category','Cost Summary','Cost Item','Description','Amount','Currency','Requester','Status','Date','Approved By','Approved At','Signed By','Sign Time','Acknowledged By','Acknowledged At']];
+    rows.forEach(function(r){data.push([r.ref,r.project,r.type,r.category,r.costSummary,r.costItem,r.description,r.amount,getCurrency(r.project,r.type),r.requester,r.status,fmtDate(r.date),r.approvedBy||'',fmtDate(r.approvedAt||''),r.sigLabel||'',fmtDate(r.sigTime||''),r.requesterSigName||'',fmtDate(r.requesterSigTime||'')]);});
+    var ws=XLSX.utils.aoa_to_sheet(data);
+    ws['!cols']=[8,22,14,16,22,16,24,12,8,16,10,14,16,14,16,14,16,14].map(function(w){return{wch:w};});
+    XLSX.utils.book_append_sheet(wb,ws,type==='paid'?'Paid Requests':'All Requests');
+  }
+  if(type==='budgets'||type==='all'){
+    var bdata=[['Project','Type','Department','Country','Month','Year','Category','Cost Summary','Cost Item','Unit','Currency','Budgeted Amount','Actual Spent','Remaining','Utilisation %']];
+    budgetLines.forEach(function(l){var actual=getActualForLine(l.project,l.type,l.category,l.costSummary,l.costItem);var remain=(parseFloat(l.budgetedAmount)||0)-actual;var pct=l.budgetedAmount?Math.round(actual/l.budgetedAmount*100):0;bdata.push([l.project,l.type,l.dept||'',l.country||'',l.month||'',l.year||'',l.category,l.costSummary,l.costItem,l.unitOfMeasure||'',l.currency||'KES',parseFloat(l.budgetedAmount)||0,actual,remain,pct+'%']);});
+    var bws=XLSX.utils.aoa_to_sheet(bdata); bws['!cols']=[22,14,14,12,8,6,14,22,16,10,8,14,14,14,10].map(function(w){return{wch:w};});
+    XLSX.utils.book_append_sheet(wb,bws,'Approved Budgets');
+  }
+  if(type==='all'){
+    var total=budgetLines.reduce(function(s,l){return s+(parseFloat(l.budgetedAmount)||0);},0);
+    var spent=requestsStore.filter(function(r){return r.status==='Paid';}).reduce(function(s,r){return s+(parseFloat(r.amount)||0);},0);
+    var sdata=[['MRV Platform Export','','Generated:',new Date().toLocaleString('en-GB')],[],['Summary',''],['Total Budget',total],['Total Spent',spent],['Remaining',total-spent],['Utilisation %',total?Math.round(spent/total*100)+'%':'0%'],[],['Total Requests',requestsStore.length],['Paid',requestsStore.filter(function(r){return r.status==='Paid';}).length]];
+    var sws=XLSX.utils.aoa_to_sheet(sdata); sws['!cols']=[{wch:22},{wch:16},{wch:14},{wch:22}];
+    XLSX.utils.book_append_sheet(wb,sws,'Summary');
+  }
+  var filename='MRV_Export_'+date+'_'+{requests:'All_Requests',paid:'Paid_Requests',budgets:'Budgets',all:'Full_Workbook'}[type]+'.xlsx';
+  XLSX.writeFile(wb,filename);
+  toast('Excel downloaded — '+filename.split('_').slice(-1)[0].replace('.xlsx','').replace(/_/g,' '));
+}
 
 // wrapTables called from main DOMContentLoaded below
 
@@ -5845,7 +4663,7 @@ function setFontSize(size) {
 
 <!-- -- MOBILE BOTTOM NAV -- -->
 <nav id="mobileNav">
-  <div class="mob-nav-item active non-requester-only" id="mob-dashboard" onclick="showView('dashboard',null);setMobActive('mob-dashboard')">
+  <div class="mob-nav-item active" id="mob-dashboard" onclick="showView('dashboard',null);setMobActive('mob-dashboard')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
     <span>Home</span>
   </div>
@@ -5853,19 +4671,15 @@ function setFontSize(size) {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg>
     <span>Requests</span>
   </div>
-  <div class="mob-nav-item approver-only non-requester-only" id="mob-funds" onclick="showView('funds',null);setMobActive('mob-funds')">
+  <div class="mob-nav-item approver-only" id="mob-funds" onclick="showView('funds',null);setMobActive('mob-funds')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
     <span>Funds</span>
   </div>
-  <div class="mob-nav-item non-requester-only" id="mob-reconciliation" onclick="showView('reconciliation',null);setMobActive('mob-reconciliation')">
+  <div class="mob-nav-item" id="mob-reconciliation" onclick="showView('reconciliation',null);setMobActive('mob-reconciliation')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
     <span>Recon</span>
   </div>
-  <div class="mob-nav-item requester-only" id="mob-history" onclick="showView('history',null);setMobActive('mob-history')">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    <span>My History</span>
-  </div>
-  <div class="mob-nav-item non-requester-only" id="mob-more" onclick="toggleSidebar()">
+  <div class="mob-nav-item" id="mob-more" onclick="toggleSidebar()">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     <span>More</span>
   </div>
