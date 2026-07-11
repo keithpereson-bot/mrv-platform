@@ -3,65 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MRV Money Platform</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+
+
+<!-- BUILD: v4-ai-intelligence -->
+<title>MRV Finance Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-  /* -- ENTERPRISE TOKEN SYSTEM -- */
+  /* ── ERP DESIGN SYSTEM ─────────────────────────────────────── */
   :root {
-    /* Navy-slate primary -- authority, precision */
-    --ink:        #0F1C2E;
-    --ink-mid:    #2D3F55;
-    --ink-light:  #4A5E78;
+    /* Rich espresso sidebar */
+    --ink:        #1C1008;
+    --ink-mid:    #3D2B1A;
+    --ink-light:  #6B5240;
 
-    /* Amber accent -- warmth, African fintech energy */
-    --amber:      #C8872A;
-    --amber-lt:   #FDF3E3;
-    --amber-mid:  #E8A040;
+    /* Warm terracotta primary -- Oracle / NetSuite energy */
+    --amber:      #C75B2A;
+    --amber-lt:   #FEF0E8;
+    --amber-mid:  #E07040;
 
-    /* Surface system */
-    --surface:    #F4F6F9;
-    --surface-2:  #EAECF0;
-    --card:       #FFFFFF;
+    /* Warm cream surfaces */
+    --surface:    #F8F4EE;
+    --surface-2:  #EDE7DC;
+    --card:       #FFFDF9;
     --card-raised:#FFFFFF;
 
-    /* Borders */
-    --border:     #DDE2EB;
-    --border-mid: #C8D0DC;
+    /* Warm borders */
+    --border:     #E2D9CC;
+    --border-mid: #D0C4B4;
 
-    /* Semantic */
-    --success:    #16A34A;
-    --success-lt: #DCFCE7;
-    --warn:       #D97706;
+    /* Semantic -- warm tones */
+    --success:    #2D7A4F;
+    --success-lt: #E6F4ED;
+    --warn:       #B45309;
     --warn-lt:    #FEF3C7;
-    --danger:     #DC2626;
-    --danger-lt:  #FEE2E2;
-    --info:       #2563EB;
-    --info-lt:    #DBEAFE;
-    --muted:      #6B7A99;
+    --danger:     #B91C1C;
+    --danger-lt:  #FEE8E8;
+    --info:       #1D4ED8;
+    --info-lt:    #EEF2FF;
+    --muted:      #8C7A68;
 
-    /* Accent (kept for compatibility) */
-    --teal:       #1B5E4B;
-    --teal-mid:   #237A5F;
-    --teal-light: #E0F0EA;
-    --teal-pale:  #F0F8F5;
-    --purple:     #4338CA;
-    --purple-lt:  #EEF2FF;
-    --gold:       #C8872A;
+    /* ERP accent palette */
+    --teal:       #1B6B50;
+    --teal-mid:   #207D5E;
+    --teal-light: #E0F0E8;
+    --teal-pale:  #F0F8F2;
+    --purple:     #5B21B6;
+    --purple-lt:  #F0EBFF;
+    --gold:       #C75B2A;
 
-    /* Geometry */
-    --radius:     8px;
-    --radius-lg:  12px;
-    --shadow-sm:  0 1px 3px rgba(15,28,46,.06), 0 1px 2px rgba(15,28,46,.04);
-    --shadow:     0 4px 12px rgba(15,28,46,.08), 0 1px 4px rgba(15,28,46,.04);
-    --shadow-lg:  0 16px 48px rgba(15,28,46,.14), 0 4px 16px rgba(15,28,46,.06);
+    /* Geometry -- sharper, enterprise */
+    --radius:     6px;
+    --radius-lg:  10px;
+    --shadow-sm:  0 1px 4px rgba(28,16,8,.07), 0 1px 2px rgba(28,16,8,.05);
+    --shadow:     0 4px 16px rgba(28,16,8,.10), 0 1px 4px rgba(28,16,8,.06);
+    --shadow-lg:  0 20px 56px rgba(28,16,8,.16), 0 4px 16px rgba(28,16,8,.08);
   }
 
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 
   body {
-    font-family:'Inter',sans-serif;
+    font-family:'DM Sans',sans-serif;
     background:var(--surface);
     color:var(--ink);
     min-height:100vh;
@@ -72,31 +77,32 @@
 
   /* -- TOPNAV -- */
   nav {
-    background:var(--ink);
+    background:linear-gradient(135deg, #1C1008 0%, #2E1A0E 100%);
     color:#fff;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:0 16px;
-    height:56px;
-    min-height:56px;
+    padding:0 20px;
+    height:58px;
+    min-height:58px;
     position:sticky;
     top:0;
     z-index:100;
-    box-shadow:0 1px 0 rgba(255,255,255,.06), 0 4px 20px rgba(0,0,0,.25);
+    box-shadow:0 2px 0 rgba(199,91,42,.2), 0 4px 24px rgba(28,16,8,.35);
     overflow:hidden;
+    border-bottom:1px solid rgba(199,91,42,.25);
   }
   .nav-brand { display:flex;align-items:center;gap:12px; }
   .nav-logo {
     width:32px;height:32px;
-    background:var(--amber);
+    background:linear-gradient(135deg, #C75B2A, #E07040);
     border-radius:6px;
     display:flex;align-items:center;justify-content:center;
-    font-family:Playfair Display,serif;font-size:15px;font-weight:600;color:#fff;
+    font-family:'DM Serif Display',serif;font-size:15px;font-weight:600;color:#fff;
     letter-spacing:-.5px;
     flex-shrink:0;
   }
-  .nav-title { font-size:14px;font-weight:600;letter-spacing:.01em;color:#fff; }
+  .nav-title { font-size:14px;font-weight:600;letter-spacing:.02em;color:#FFF8F0;font-family:'DM Serif Display',serif; }
   .nav-sub {
     font-size:10.5px;opacity:.5;letter-spacing:.08em;text-transform:uppercase;
     font-weight:500;
@@ -120,24 +126,24 @@
   }
 
   aside {
-    width:220px;
-    min-width:180px;
-    background:var(--ink);
-    padding:16px 8px;
+    width:230px;
+    min-width:185px;
+    background:linear-gradient(180deg, #1C1008 0%, #271508 60%, #1C1008 100%);
+    padding:16px 10px;
     flex-shrink:0;
     display:flex;
     flex-direction:column;
     gap:2px;
-    border-right:1px solid rgba(255,255,255,.05);
+    border-right:1px solid rgba(199,91,42,.15);
     height:100%;
     overflow-y:auto;
     overflow-x:hidden;
   }
 
   .aside-section {
-    font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-    color:rgba(255,255,255,.3);
-    padding:14px 12px 6px;
+    font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+    color:rgba(199,91,42,.6);
+    padding:16px 12px 5px;
     margin-top:4px;
   }
   .aside-section:first-child { margin-top:0; }
@@ -160,22 +166,22 @@
     color:rgba(255,255,255,.9);
   }
   .aside-item.active {
-    background:rgba(200,135,42,.15);
-    color:#fff;
-    font-weight:500;
+    background:linear-gradient(90deg, rgba(199,91,42,.22) 0%, rgba(199,91,42,.08) 100%);
+    color:#FFF8F0;
+    font-weight:600;
   }
   .aside-item.active::before {
     content:'';
     position:absolute;
-    left:0;top:6px;bottom:6px;
+    left:0;top:5px;bottom:5px;
     width:3px;
-    background:var(--amber);
-    border-radius:0 3px 3px 0;
+    background:linear-gradient(180deg, #E07040, #C75B2A);
+    border-radius:0 4px 4px 0;
   }
   .aside-icon { width:18px;text-align:center;font-size:14px;opacity:.8;flex-shrink:0; }
   .aside-badge {
     margin-left:auto;
-    background:var(--amber);
+    background:linear-gradient(135deg, #C75B2A, #E07040);
     color:#fff;
     font-size:9px;font-weight:700;
     border-radius:20px;padding:2px 6px;
@@ -196,9 +202,9 @@
   .view.active { display:block; }
 
   /* -- PAGE HEADER -- */
-  .page-header { margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border); }
+  .page-header { margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--border); position:relative; }
   .page-header h1 {
-    font-family:Playfair Display,serif;
+    font-family:'DM Serif Display',serif;
     font-size:24px;font-weight:600;
     color:var(--ink);margin-bottom:4px;
     letter-spacing:-.3px;
@@ -229,10 +235,10 @@
     background:var(--border);
     border-radius:var(--radius-lg) var(--radius-lg) 0 0;
   }
-  .stat-card:nth-child(1)::after { background:var(--amber); }
-  .stat-card:nth-child(2)::after { background:var(--success); }
-  .stat-card:nth-child(3)::after { background:var(--info); }
-  .stat-card:nth-child(4)::after { background:var(--warn); }
+  .stat-card:nth-child(1)::after { background:linear-gradient(90deg,#C75B2A,#E07040); }
+  .stat-card:nth-child(2)::after { background:linear-gradient(90deg,#2D7A4F,#3DA066); }
+  .stat-card:nth-child(3)::after { background:linear-gradient(90deg,#1D4ED8,#3B6FE0); }
+  .stat-card:nth-child(4)::after { background:linear-gradient(90deg,#B45309,#D97706); }
 
   .stat-label {
     font-size:10.5px;font-weight:600;
@@ -240,7 +246,7 @@
     color:var(--muted);margin-bottom:10px;
   }
   .stat-value {
-    font-family:Playfair Display,serif;
+    font-family:'DM Serif Display',serif;
     font-size:26px;font-weight:600;
     color:var(--ink);line-height:1;
     letter-spacing:-.5px;
@@ -263,14 +269,16 @@
   }
   .card-header {
     display:flex;align-items:center;justify-content:space-between;
-    padding:16px 20px;
+    padding:14px 20px;
     border-bottom:1px solid var(--border);
-    background:var(--card);
+    background:linear-gradient(135deg, #FFFBF5 0%, #FFF8EE 100%);
     border-radius:var(--radius-lg) var(--radius-lg) 0 0;
   }
   .card-title {
-    font-size:13.5px;font-weight:600;
-    color:var(--ink);letter-spacing:.01em;
+    font-size:13px;font-weight:700;
+    color:var(--ink);letter-spacing:.02em;
+    text-transform:uppercase;
+    font-size:11.5px;
   }
   .card-body { padding:20px; }
 
@@ -278,7 +286,7 @@
   .btn {
     display:inline-flex;align-items:center;gap:6px;
     border-radius:6px;
-    font-family:'Inter',sans-serif;
+    font-family:'DM Sans',sans-serif;
     font-size:12.5px;font-weight:500;
     cursor:pointer;
     transition:all .15s;
@@ -300,7 +308,7 @@
   }
   .btn-secondary:hover:not(:disabled) { background:var(--surface);border-color:var(--border-mid); }
   .btn-amber {
-    background:var(--amber);color:#fff;
+    background:linear-gradient(135deg, #C75B2A, #E07040);color:#fff;
     box-shadow:0 1px 3px rgba(200,135,42,.3);
   }
   .btn-amber:hover:not(:disabled) { background:#b07520; }
@@ -314,7 +322,7 @@
   .btn-purple:hover:not(:disabled) { background:#3730a3; }
   /* Legacy compat */
   .btn-primary.amber, button.btn-primary[onclick*="sign"], button.btn-primary[onclick*="approve"] {
-    background:var(--amber);
+    background:linear-gradient(135deg, #C75B2A, #E07040);
   }
 
   /* -- FORMS -- */
@@ -330,7 +338,7 @@
     border:1px solid var(--border);
     border-radius:6px;
     padding:9px 12px;
-    font-family:'Inter',sans-serif;
+    font-family:'DM Sans',sans-serif;
     font-size:13.5px;
     color:var(--ink);
     background:#fff;
@@ -348,16 +356,38 @@
 
   /* -- TABLES -- */
   table { width:100%;border-collapse:collapse;min-width:0; }
-  .table-scroll { overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%; }
+
+  /* Scrollable table wrapper: both axes, frozen header */
+  .table-scroll {
+    overflow-x:auto;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    width:100%;
+    max-height:420px; /* vertical scroll kicks in */
+    position:relative;
+    /* custom scrollbars */
+    scrollbar-width:thin;
+    scrollbar-color:var(--border-mid) var(--surface);
+  }
+  .table-scroll::-webkit-scrollbar { width:7px; height:7px; }
+  .table-scroll::-webkit-scrollbar-track { background:var(--surface); }
+  .table-scroll::-webkit-scrollbar-thumb { background:var(--border-mid);border-radius:4px; }
+  .table-scroll::-webkit-scrollbar-thumb:hover { background:var(--amber); }
+  .table-scroll::-webkit-scrollbar-corner { background:var(--surface); }
+
   th {
     font-size:10.5px;font-weight:700;
     text-transform:uppercase;letter-spacing:.09em;
-    color:var(--muted);
-    padding:10px 16px;
+    color:rgba(255,240,225,.75);
+    padding:11px 16px;
     text-align:left;
-    border-bottom:2px solid var(--border);
-    background:var(--surface);
+    border-bottom:2px solid rgba(199,91,42,.3);
+    background:linear-gradient(135deg,#2E1A0E 0%,#3D2410 100%);
     white-space:nowrap;
+    /* Freeze header */
+    position:sticky;
+    top:0;
+    z-index:3;
   }
   td {
     padding:12px 16px;
@@ -366,40 +396,86 @@
     vertical-align:middle;
     color:var(--ink-mid);
   }
-  td:first-child { color:var(--muted);font-size:11.5px;font-family:'JetBrains Mono',monospace;font-weight:500; }
+  td:first-child { color:var(--muted);font-size:11.5px;font-family:'IBM Plex Mono',monospace;font-weight:500; }
   tr:last-child td { border-bottom:none; }
-  tr:hover td { background:var(--surface); }
+  tr:hover td { background:var(--amber-lt); }
 
-  /* -- AI TYPE CARDS -- */
-  .ai-type-card {
-    border:2px solid var(--border);
-    border-radius:10px;
-    padding:16px 12px;
-    background:var(--card);
-    cursor:pointer;
-    text-align:center;
-    transition:all .18s;
+  /* -- PAGINATION -- */
+  .table-pagination {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 20px;
+    border-top:1px solid var(--border);
+    background:var(--surface);
+    gap:12px;
+    flex-wrap:wrap;
+    font-size:12.5px;
+    color:var(--muted);
   }
-  .ai-type-card:hover {
-    border-color:var(--amber);
-    background:var(--amber-lt);
-    transform:translateY(-2px);
-    box-shadow:var(--shadow);
+  .pagination-controls { display:flex;align-items:center;gap:4px; }
+  .page-btn {
+    min-width:32px;height:32px;padding:0 8px;
+    border:1px solid var(--border);border-radius:6px;
+    background:var(--card);color:var(--ink-mid);
+    font-size:12.5px;font-weight:500;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s;font-family:'DM Sans',sans-serif;
   }
-  .ai-type-card.active {
-    border-color:var(--amber);
-    background:linear-gradient(135deg,#FEF0E8,#FFF8F0);
-    box-shadow:0 4px 16px rgba(199,91,42,.18);
-  }
-  .ai-type-icon { font-size:24px;margin-bottom:8px; }
-  .ai-type-label { font-size:12px;font-weight:600;color:var(--ink);letter-spacing:.02em; }
-  .ai-type-card.active .ai-type-label { color:var(--amber); }
+  .page-btn:hover { background:var(--amber-lt);border-color:var(--amber);color:var(--amber); }
+  .page-btn.active { background:var(--amber);border-color:var(--amber);color:#fff; }
+  .page-btn:disabled { opacity:.4;cursor:not-allowed; }
 
-  /* AI response bullet formatting */
-  .ai-bullet { display:flex;gap:10px;margin:6px 0;line-height:1.6; }
-  .ai-bullet-dot { color:var(--amber);font-weight:700;flex-shrink:0;margin-top:1px; }
-  .ai-section-title { font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border); }
-  .ai-highlight { background:var(--amber-lt);border-left:3px solid var(--amber);padding:8px 12px;border-radius:0 6px 6px 0;margin:10px 0;font-size:13px; }
+  /* -- TABLE FILTER BAR -- */
+  .table-filter-bar {
+    display:flex;align-items:center;gap:10px;
+    padding:10px 20px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
+    flex-wrap:wrap;
+  }
+  .table-filter-input {
+    flex:1;min-width:160px;max-width:280px;
+    padding:7px 12px 7px 32px;
+    border:1px solid var(--border);border-radius:6px;
+    font-size:12.5px;background:var(--card);
+    color:var(--ink);position:relative;
+    font-family:'DM Sans',sans-serif;
+  }
+  .table-filter-wrap { position:relative;display:flex;align-items:center; }
+  .table-filter-wrap svg { position:absolute;left:9px;color:var(--muted);pointer-events:none; }
+
+  /* -- ACCESSIBILITY: font size control -- */
+  body.font-lg { font-size:16px; }
+  body.font-lg td { font-size:15px; }
+  body.font-lg th { font-size:12px; }
+  body.font-lg .badge { font-size:12px;padding:4px 10px; }
+  body.font-lg .btn { font-size:14px; }
+  body.font-lg .stat-value { font-size:30px; }
+  body.font-lg .aside-item { font-size:15px; }
+  body.font-lg input, body.font-lg select, body.font-lg textarea { font-size:15px; }
+  body.font-xl { font-size:18px; }
+  body.font-xl td { font-size:17px; }
+  body.font-xl th { font-size:13px; }
+  body.font-xl .badge { font-size:13px;padding:5px 11px; }
+  body.font-xl .btn { font-size:16px;padding:12px 20px; }
+  body.font-xl .stat-value { font-size:34px; }
+  body.font-xl .aside-item { font-size:16px; }
+  body.font-xl input, body.font-xl select, body.font-xl textarea { font-size:16px; }
+
+  .font-size-toggle {
+    display:flex;align-items:center;gap:4px;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(199,91,42,.2);
+    border-radius:6px;padding:3px;
+  }
+  .fst-btn {
+    padding:3px 8px;border-radius:4px;cursor:pointer;
+    font-size:11px;font-weight:700;color:rgba(255,255,255,.6);
+    border:none;background:transparent;font-family:'DM Sans',sans-serif;
+    transition:all .15s;
+  }
+  .fst-btn:hover, .fst-btn.active { background:var(--amber);color:#fff; }
+
+  @keyframes spin { to { transform:rotate(360deg); } }
 
   /* -- BADGES -- */
   .badge {
@@ -532,7 +608,7 @@
   .mt-1 { margin-top:4px; } .mt-2 { margin-top:8px; } .mb-3 { margin-bottom:12px; }
   .text-sm { font-size:12px; } .text-muted { color:var(--muted); } .font-600 { font-weight:600; }
   .two-col { display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px; }
-  .currency { font-family:Playfair Display,serif;font-weight:600; }
+  .currency { font-family:DM Serif Display,serif;font-weight:600; }
 
   /* -- MODALS -- */
   .modal-overlay {
@@ -585,7 +661,7 @@
     text-align:center;cursor:pointer;
     background:var(--surface);color:var(--muted);
     border:none;transition:all .15s;
-    font-family:'Inter',sans-serif;
+    font-family:'DM Sans',sans-serif;
   }
   .sig-tab.active { background:var(--ink);color:#fff; }
 
@@ -615,7 +691,7 @@
   .sig-card .sig-check {
     position:absolute;top:6px;right:6px;
     width:17px;height:17px;
-    background:var(--amber);border-radius:50%;
+    background:linear-gradient(135deg, #C75B2A, #E07040);border-radius:50%;
     color:#fff;font-size:10px;
     display:none;align-items:center;justify-content:center;
   }
@@ -673,7 +749,7 @@
     position:fixed;inset:0;z-index:9999;
     background:linear-gradient(135deg, var(--ink) 0%, #1a2d47 60%, #0d1f35 100%);
     display:none;align-items:center;justify-content:center;
-    font-family:'Inter',sans-serif;
+    font-family:'DM Sans',sans-serif;
     transition:opacity .25s;
   }
   #loginScreen.visible {
@@ -699,13 +775,13 @@
   }
   .login-logo {
     width:40px;height:40px;border-radius:10px;
-    background:var(--amber);
-    color:#fff;font-family:Playfair Display,serif;font-size:18px;font-weight:600;
+    background:linear-gradient(135deg, #C75B2A, #E07040);
+    color:#fff;font-family:DM Serif Display,serif;font-size:18px;font-weight:600;
     display:flex;align-items:center;justify-content:center;
   }
   .login-brand-text { }
   .login-title {
-    font-family:Playfair Display,serif;
+    font-family:'DM Serif Display',serif;
     font-size:22px;font-weight:600;color:var(--ink);
     letter-spacing:-.3px;line-height:1;
   }
@@ -727,6 +803,7 @@
   .role-admin    { background:var(--info-lt);color:var(--info); }
   .role-approver { background:var(--success-lt);color:var(--success); }
   .role-requester{ background:var(--surface-2);color:var(--muted); }
+  .role-viewer    { background:#ede9fe;color:#6d28d9; }
 
 
   /* -- ICONS -- */
@@ -765,9 +842,9 @@
   /* -- MOBILE SIGN OUT BUTTON -- */
   #mobileSignOutBtn {
     display: none;
-    background: rgba(220,38,38,.15);
-    border: 1px solid rgba(220,38,38,.35);
-    color: #fca5a5;
+    background: rgba(185,28,28,.12);
+    border: 1px solid rgba(185,28,28,.3);
+    color: #f87171;
     border-radius: 6px;
     padding: 6px 12px;
     font-size: 11.5px;
@@ -926,6 +1003,7 @@
   }
 
 </style>
+
 </head>
 <body>
 
@@ -967,7 +1045,7 @@
     <div style="margin-top:6px" id="menuUserRole"></div>
   </div>
   <div class="aside-item admin-only" onclick="showView('users',this);closeUserMenu()" style="padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer"><span class="aside-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Manage Users</div>
-  <div class="aside-item" onclick="showView('signatures',this);closeUserMenu()" style="padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 17l4-4 4 4 4-8 4 8"/><path d="M21 21H3"/></svg></span>My Signatures</div>
+
   <div style="border-top:1px solid var(--border);margin:4px 0"></div>
   <div onclick="doLogout()" style="padding:8px 12px;border-radius:8px;font-size:13px;color:var(--danger);cursor:pointer;display:flex;align-items:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sign Out</div>
 </div>
@@ -983,6 +1061,12 @@
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
+    <!-- Font size accessibility toggle -->
+    <div class="font-size-toggle desktop-only" title="Adjust text size">
+      <button class="fst-btn active" id="fst-normal" onclick="setFontSize('normal')">A</button>
+      <button class="fst-btn" id="fst-lg"     onclick="setFontSize('lg')">A+</button>
+      <button class="fst-btn" id="fst-xl"     onclick="setFontSize('xl')">A++</button>
+    </div>
     <div id="sheetsStatusPill" onclick="showView('sheets',null)" style="display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:5px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);cursor:pointer;font-size:11.5px;font-weight:500;transition:background .15s;color:rgba(255,255,255,.7)" title="Google Sheets sync">
       <span id="sheetsStatusDot" style="width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0"></span>
       <span id="sheetsStatusLabel">Not connected</span>
@@ -999,26 +1083,7 @@
 
 <div id="sidebarOverlay" onclick="closeSidebar()"></div>
 <div class="layout">
-<aside>
-  <div class="aside-section non-requester-only">Cycle</div>
-  <div class="aside-item active non-requester-only" onclick="showView('dashboard',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Dashboard</div>
-  <div class="aside-item non-requester-only" onclick="showView('budgets',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>Approved Budgets</div>
-  <div class="aside-item approver-only non-requester-only" onclick="showView('funds',this)" data-role-required="admin"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span>Load Funds</div>
-  <div class="aside-section requester-only">My Work</div>
-  <div class="aside-item" onclick="showView('requests',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg></span>System Requests <span class="aside-badge" id="sidebarReqBadge">0</span></div>
-  <div class="aside-item requester-only" id="historyNavItem" onclick="showView('history',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>My Submissions</div>
-  <div class="aside-item non-requester-only" onclick="showView('expenses',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Weekly Expensing</div>
-  <div class="aside-item non-requester-only" onclick="showView('reconciliation',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>Reconciliation</div>
-  <div class="aside-section non-requester-only">Reports</div>
-  <div class="aside-item non-requester-only" onclick="showView('ai',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>AI Intelligence</div>
-  <div class="aside-item non-requester-only" onclick="showView('transactions',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Transactions</div>
-  <div class="aside-item non-requester-only" onclick="showView('signatures',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 17l4-4 4 4 4-8 4 8"/><path d="M21 21H3"/></svg></span>My Signatures</div>
-  <div class="aside-item non-requester-only" onclick="alert('PDF report generated!')"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h.01M12 13v4M15 15h.01"/></svg></span>PDF Reports</div>
-  <div class="aside-section admin-only non-requester-only">Admin</div>
-  <div class="aside-item admin-only non-requester-only" onclick="showView('users',this)"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Manage Users</div>
-  <div class="aside-section non-requester-only">Integration</div>
-  <div class="aside-item admin-only non-requester-only" onclick="showView('sheets',this)" id="sheetsNavItem"><span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg></span>Google Sheets <span id="sheetsSyncBadge" class="aside-badge" style="display:none;background:var(--gold)">!</span></div>
-</aside>
+<aside id="mainAside"></aside>
 
 <main>
 
@@ -1039,6 +1104,36 @@
       <div class="ps"><div class="ps-dot">6</div><span class="ps-label">Reconciliation</span></div>
     </div>
     <div id="dashStats" class="stats"></div>
+
+    <!-- AI Cost Intelligence -->
+    <div class="card" id="aiInsightsCard">
+      <div class="card-header" style="background:linear-gradient(135deg,#1C1008,#3D2410);border-radius:var(--radius-lg) var(--radius-lg) 0 0">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#C75B2A,#E07040);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">✦</div>
+          <div>
+            <div style="color:#FFF8F0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em">AI Cost Intelligence</div>
+            <div style="font-size:11px;color:rgba(255,240,225,.5);margin-top:1px">Powered by Claude</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="aiInsightType" style="font-size:11.5px;padding:5px 8px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:rgba(255,255,255,.08);color:#FFF8F0;cursor:pointer">
+            <option value="overview">Overall Cost Overview</option>
+            <option value="anomalies">Detect Anomalies</option>
+            <option value="utilisation">Utilisation Analysis</option>
+            <option value="trends">Spending Trends</option>
+            <option value="forecast">Budget Forecast</option>
+            <option value="recommendations">Cost Recommendations</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="runAIInsight()" id="aiInsightBtn">✦ Analyse</button>
+        </div>
+      </div>
+      <div id="aiInsightBody" style="padding:20px;min-height:80px">
+        <div style="text-align:center;color:var(--muted);padding:24px 0;font-size:13px">
+          <div style="font-size:28px;margin-bottom:8px;opacity:.4">✦</div>
+          Select an analysis type and click <strong>Analyse</strong> to get AI-powered insights into your cost data.
+        </div>
+      </div>
+    </div>
     <div class="two-col">
       <div class="card">
         <div class="card-header"><div class="card-title">Approved Projects</div><span class="badge badge-teal" id="dashProjCount"></span></div>
@@ -1115,7 +1210,7 @@
 
     <!-- Tab bar -->
     <div class="req-tabs">
-      <button class="req-tab active" id="tab-drafts" onclick="switchReqTab('drafts')">
+      <button class="req-tab active viewer-hidden" id="tab-drafts" onclick="switchReqTab('drafts')">
         <div class="req-tab-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
         </div>
@@ -1125,7 +1220,7 @@
         </div>
         <span class="req-tab-badge" id="badge-drafts">0</span>
       </button>
-      <button class="req-tab non-requester-only" id="tab-queue" onclick="switchReqTab('queue')">
+      <button class="req-tab non-requester-only viewer-hidden" id="tab-queue" onclick="switchReqTab('queue')">
         <div class="req-tab-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
         </div>
@@ -1158,7 +1253,11 @@
               Delete Selected (<span id="delCountDrafts">0</span>)
             </button>
             <button class="btn btn-secondary btn-sm" onclick="downloadRequestsPDF()">Download PDF</button>
-            <button class="btn btn-primary btn-sm" onclick="openNewRequestModal()">+ New Request</button>
+            <button class="btn btn-secondary btn-sm admin-only" onclick="showExportModal()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              Export Excel
+            </button>
+            <button class="btn btn-primary btn-sm viewer-hidden" onclick="openNewRequestModal()">+ New Request</button>
           </div>
         </div>
         <div class="card-body" style="padding:0">
@@ -1180,7 +1279,7 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
               Delete Selected (<span id="delCountQueue">0</span>)
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="openBulkApprove()">Mark All Paid</button>
+            <button class="btn btn-secondary btn-sm viewer-hidden" onclick="openBulkApprove()">Mark All Paid</button>
           </div>
         </div>
         <div class="card-body" style="padding:0">
@@ -1197,8 +1296,16 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">Paid Requests</div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <button class="btn btn-secondary btn-sm admin-only" onclick="downloadAcknowledgedPDF()">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <select id="paidSortSelect" style="font-size:11.5px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--ink);cursor:pointer" onchange="sortAndRebuild()">
+              <option value="date-desc">Date: Newest first</option>
+              <option value="date-asc">Date: Oldest first</option>
+              <option value="amount-desc">Amount: High to low</option>
+              <option value="amount-asc">Amount: Low to high</option>
+              <option value="requester">Requester A–Z</option>
+              <option value="project">Project A–Z</option>
+            </select>
+            <button class="btn btn-secondary btn-sm admin-only viewer-hidden" onclick="downloadAcknowledgedPDF()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Download Acknowledged PDF
             </button>
@@ -1256,11 +1363,10 @@
               <div class="sig-tabs">
                 <button class="sig-tab active" onclick="switchSigTab(this,'exp-saved')">💾 Saved Signatures</button>
                 <button class="sig-tab" onclick="switchSigTab(this,'exp-draw')">✏️ Draw</button>
-                <button class="sig-tab" onclick="switchSigTab(this,'exp-upload')">📷 Upload</button>
               </div>
               <div id="exp-saved" class="sig-panel active">
                 <div class="sig-grid" id="expSavedGrid"></div>
-                <p class="text-sm text-muted" style="margin-top:4px">No saved signature? <a href="#" onclick="showView('signatures',null);return false;" style="color:var(--teal)">Add one in My Signatures -></a></p>
+                <p class="text-sm text-muted" style="margin-top:4px">No saved signature yet. Draw one using the canvas below.</p>
               </div>
               <div id="exp-draw" class="sig-panel">
                 <canvas id="expCanvas" width="900" height="160" style="width:100%;height:160px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none;"></canvas>
@@ -1268,10 +1374,6 @@
                   <button class="btn btn-ghost btn-sm" onclick="clearCanvas('expCanvas')">Clear</button>
                   <button class="btn btn-primary btn-sm" onclick="applyDrawnSig('exp')">Apply Signature</button>
                 </div>
-              </div>
-              <div id="exp-upload" class="sig-panel">
-                <div class="upload-zone" onclick="document.getElementById('expSigUpload').click()">📷 Upload photo of your signature</div>
-                <input type="file" id="expSigUpload" accept="image/*" style="display:none" onchange="handleSigUpload(event,'exp')">
               </div>
             </div>
           </div>
@@ -1327,54 +1429,6 @@
   </div>
 
   <!-- -- MY SIGNATURES -- -->
-  <div id="view-signatures" class="view">
-    <div class="page-header"><h1>My Signatures</h1><p>Save your signature once -- draw, upload a photo, or both. Hit Sign to apply instantly on any document.</p></div>
-    <div class="two-col">
-      <div class="card">
-        <div class="card-header"><div class="card-title">Add New Signature</div></div>
-        <div class="card-body">
-          <div class="form-group"><label>Signature Label (name or role)</label><input type="text" id="newSigLabel" placeholder="e.g. J. Kamau -- Field Officer"></div>
-          <div class="sig-tabs" style="margin-bottom:16px">
-            <button class="sig-tab active" onclick="switchSigTab(this,'new-draw')">✏️ Draw</button>
-            <button class="sig-tab" onclick="switchSigTab(this,'new-upload')">📷 Upload Photo</button>
-          </div>
-          <div id="new-draw" class="sig-panel active">
-            <canvas id="newCanvas" width="900" height="180" style="width:100%;height:180px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none;"></canvas>
-            <p class="text-sm text-muted" style="margin-top:6px">Draw your signature above using your mouse or finger.</p>
-            <div class="flex gap-2" style="margin-top:10px">
-              <button class="btn btn-ghost btn-sm" onclick="clearCanvas('newCanvas')">Clear</button>
-              <button class="btn btn-primary" onclick="saveNewSig('draw')" style="margin-left:auto">Save Signature</button>
-            </div>
-          </div>
-          <div id="new-upload" class="sig-panel">
-            <div class="upload-zone" onclick="document.getElementById('newSigFile').click()" id="newUploadZone">
-              📷 Click to upload a photo of your handwritten signature<br>
-              <span style="font-size:11px;margin-top:4px;display:block">JPG, PNG -- best on white paper, good lighting</span>
-            </div>
-            <input type="file" id="newSigFile" accept="image/*" style="display:none" onchange="previewUpload(event)">
-            <div id="newUploadPreview" style="display:none;margin-top:12px;">
-              <img id="newPreviewImg" style="width:100%;max-height:160px;object-fit:contain;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px;">
-              <div class="flex gap-2" style="margin-top:10px">
-                <button class="btn btn-ghost btn-sm" onclick="clearUpload()">Clear</button>
-                <button class="btn btn-primary" onclick="saveNewSig('upload')" style="margin-left:auto">Save Signature</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header"><div class="card-title">Saved Signatures</div><span class="badge badge-teal" id="sigCount">0 saved</span></div>
-        <div class="card-body">
-          <div id="savedSigsGrid" style="display:grid;gap:14px;"></div>
-          <div id="noSigMsg" class="empty" style="padding:32px 0">
-            <div class="empty-icon">✍️</div>
-            <p>No signatures saved yet.<br>Draw or upload one to get started.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
   <!-- -- GOOGLE SHEETS / APPS SCRIPT INTEGRATION -- -->
   <div id="view-sheets" class="view">
     <div class="page-header"><h1>Google Sheets Integration</h1><p>Connect via Google Apps Script -- no OAuth setup, no Cloud Console, completely free.</p></div>
@@ -1511,7 +1565,9 @@
             <label>Role</label>
             <select id="newUserRole" onchange="toggleCountryField()">
               <option value="requester">Requester -- country-limited requests only</option>
+              <option value="viewer">Viewer -- read-only, dashboards & reports</option>
               <option value="approver">Approver -- all countries, approve & load funds</option>
+              <option value="manager">Manager -- full access except Users & Sheets</option>
               <option value="admin">Admin -- full access, all countries</option>
             </select>
           </div>
@@ -1599,53 +1655,44 @@
     </div>
   </div>
 
-  <!-- AI COST INTELLIGENCE VIEW -->
-  <div id="view-ai" class="view">
-    <div class="page-header">
-      <h1>AI Cost Intelligence</h1>
-      <p>Powered by Groq &amp; Llama 3.3 — instant financial insights from your live data</p>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;margin-bottom:24px">
-      <div class="ai-type-card active" onclick="selectAIType(this,'overview')" data-type="overview"><div class="ai-type-icon">📊</div><div class="ai-type-label">Cost Overview</div></div>
-      <div class="ai-type-card" onclick="selectAIType(this,'anomalies')" data-type="anomalies"><div class="ai-type-icon">🔍</div><div class="ai-type-label">Anomalies</div></div>
-      <div class="ai-type-card" onclick="selectAIType(this,'utilisation')" data-type="utilisation"><div class="ai-type-icon">📈</div><div class="ai-type-label">Utilisation</div></div>
-      <div class="ai-type-card" onclick="selectAIType(this,'trends')" data-type="trends"><div class="ai-type-icon">📉</div><div class="ai-type-label">Trends</div></div>
-      <div class="ai-type-card" onclick="selectAIType(this,'forecast')" data-type="forecast"><div class="ai-type-icon">🔮</div><div class="ai-type-label">Forecast</div></div>
-      <div class="ai-type-card" onclick="selectAIType(this,'recommendations')" data-type="recommendations"><div class="ai-type-icon">💡</div><div class="ai-type-label">Recommendations</div></div>
-    </div>
-
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <button class="btn btn-primary" onclick="runAIInsight()" id="aiInsightBtn" style="gap:8px;padding:10px 24px;font-size:14px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Run Analysis
-      </button>
-      <span id="aiInsightStatus" style="font-size:12px;color:var(--muted)"></span>
-    </div>
-
-    <div class="card" id="aiResponseCard">
-      <div class="card-header" style="background:linear-gradient(135deg,#1C1008,#2E1A0E);border-radius:var(--radius-lg) var(--radius-lg) 0 0">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#C75B2A,#E07040);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">✦</div>
-          <div>
-            <div style="color:#FFF8F0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em" id="aiResponseTitle">Cost Overview</div>
-            <div style="font-size:10.5px;color:rgba(255,240,225,.45);margin-top:1px" id="aiResponseMeta">Select a type and click Run Analysis</div>
-          </div>
-        </div>
-      </div>
-      <div id="aiInsightBody" style="padding:24px;min-height:120px">
-        <div style="text-align:center;color:var(--muted);padding:32px 0">
-          <div style="font-size:36px;margin-bottom:12px;opacity:.25">✦</div>
-          <div style="font-size:13.5px">Click <strong>Run Analysis</strong> to get AI-powered insights from your live cost data.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
 </main>
 </div>
 
 <!-- -- MODALS -- -->
+
+<!-- Export to Excel Modal -->
+<div id="exportModal" class="modal-overlay" onclick="closeModalOutside(event,'exportModal')">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div>
+        <strong>Export to Excel</strong>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Choose what to export</div>
+      </div>
+      <button class="close-btn" onclick="closeModal('exportModal')">×</button>
+    </div>
+    <div class="modal-body" style="display:grid;gap:10px">
+      <button class="btn btn-secondary" onclick="exportToExcel('requests')" style="justify-content:flex-start;gap:12px;padding:14px 16px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg>
+        <div style="text-align:left"><div style="font-weight:600">All Requests</div><div style="font-size:11.5px;color:var(--muted)">Every request across all statuses</div></div>
+      </button>
+      <button class="btn btn-secondary" onclick="exportToExcel('paid')" style="justify-content:flex-start;gap:12px;padding:14px 16px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+        <div style="text-align:left"><div style="font-weight:600">Paid Requests</div><div style="font-size:11.5px;color:var(--muted)">Only paid requests with signatories</div></div>
+      </button>
+      <button class="btn btn-secondary" onclick="exportToExcel('budgets')" style="justify-content:flex-start;gap:12px;padding:14px 16px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <div style="text-align:left"><div style="font-weight:600">Approved Budgets</div><div style="font-size:11.5px;color:var(--muted)">Budget lines with actuals and utilisation</div></div>
+      </button>
+      <button class="btn btn-secondary" onclick="exportToExcel('all')" style="justify-content:flex-start;gap:12px;padding:14px 16px;border-color:var(--teal)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <div style="text-align:left"><div style="font-weight:600;color:var(--teal)">Full Workbook</div><div style="font-size:11.5px;color:var(--muted)">All sheets in one Excel file</div></div>
+      </button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('exportModal')">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <!-- Acknowledge Receipt Modal -->
 <div id="ackModal" class="modal-overlay" onclick="closeModalOutside(event,'ackModal')">
@@ -1678,13 +1725,12 @@
         <div class="sig-tabs">
           <button class="sig-tab active" onclick="switchSigTab(this,'ack-saved')">💾 My Saved Signature</button>
           <button class="sig-tab" onclick="switchSigTab(this,'ack-draw')">✏️ Draw</button>
-          <button class="sig-tab" onclick="switchSigTab(this,'ack-upload')">📷 Upload</button>
         </div>
 
         <div id="ack-saved" class="sig-panel active">
           <div id="ackSavedPreview" style="margin-bottom:10px"></div>
           <p class="text-sm text-muted" style="margin-top:4px">
-            No saved signature? Draw one or upload a photo below, then save it to your account first via <strong>My Signatures</strong>.
+            No saved signature yet. Draw one using the canvas below and it will be saved automatically.
           </p>
         </div>
 
@@ -1696,10 +1742,6 @@
           </div>
         </div>
 
-        <div id="ack-upload" class="sig-panel">
-          <div class="upload-zone" onclick="document.getElementById('ackSigFile').click()">📷 Upload photo of your signature</div>
-          <input type="file" id="ackSigFile" accept="image/*" style="display:none" onchange="saveAndApplyAckSigFromFile(event)">
-        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1803,13 +1845,12 @@
         <div class="sig-tabs">
           <button class="sig-tab active" onclick="switchSigTab(this,'modal-saved')">💾 Saved Signatures</button>
           <button class="sig-tab" onclick="switchSigTab(this,'modal-draw')">✏️ Draw</button>
-          <button class="sig-tab" onclick="switchSigTab(this,'modal-upload')">📷 Upload</button>
         </div>
 
         <div id="modal-saved" class="sig-panel active">
           <div class="sig-grid" id="modalSavedGrid"></div>
           <p class="text-sm text-muted" style="margin-top:8px">
-            No saved signatures? <a href="#" onclick="closeModal('signApproveModal');showView('signatures',null);return false;" style="color:var(--teal)">Add one in My Signatures -></a>
+            No saved signature yet. Draw one using the canvas below.
           </p>
         </div>
 
@@ -1820,12 +1861,7 @@
             <button class="btn btn-primary btn-sm" onclick="applyDrawnSig('modal')">Use This Signature</button>
           </div>
         </div>
-
-        <div id="modal-upload" class="sig-panel">
-          <div class="upload-zone" onclick="document.getElementById('modalSigUpload').click()">📷 Upload photo of your signature</div>
-          <input type="file" id="modalSigUpload" accept="image/*" style="display:none" onchange="handleSigUpload(event,'modal')">
         </div>
-      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('signApproveModal')">Cancel</button>
@@ -1856,8 +1892,11 @@
 // project, type, year, month, dept, country, costItem,
 // unitOfMeasure, category, costSummary, budgetedAmount, currency, actual
 // budgetLines: populated from Google Sheets on load (read-only)
-// Empty on first load -- filled by pullBudgetLinesFromSheets()
-let budgetLines = [];
+// Cached in localStorage so refresh shows data instantly
+let budgetLines = (function(){
+  try { var s = localStorage.getItem('mrv_budget_lines'); return s ? JSON.parse(s) : []; }
+  catch(e) { return []; }
+})();
 
 // budgetStore derived from budgetLines (for legacy compat)
 function buildBudgetStore() {
@@ -2140,6 +2179,7 @@ function populateSelect(id, options, includeBlank) {
 // DASHBOARD
 // ============================================================
 function renderDashboard() {
+  if (!document.getElementById('dashStats')) return;
   var budgeted = totalBudgeted();
   var utilised = totalActuals();
   var loaded   = totalLoaded();
@@ -2219,6 +2259,7 @@ function renderDashboard() {
 // RECONCILIATION
 // ============================================================
 function renderReconciliation() {
+  if (!document.getElementById('reconStats')) return;
   var budgeted = totalBudgeted();
   var utilised = totalActuals();
   var loaded   = totalLoaded();
@@ -2458,7 +2499,7 @@ function renderBudgetView() {
       // Header -- always visible, click to expand
       // Header row -- project name, badges, arrow only
       '<div class="bpc-header" data-gid="'+gid+'" onclick="toggleBudgetCard(this.dataset.gid)">'
-        + '<div style="font-family:Playfair Display,serif;font-size:15px;font-weight:600;color:var(--ink)">'+g.project+'</div>'
+        + '<div style="font-family:DM Serif Display,serif;font-size:15px;font-weight:600;color:var(--ink)">'+g.project+'</div>'
         + '<span class="badge badge-gray">'+g.type+'</span>'
         + (g.country ? '<span class="badge badge-blue">'+g.country+'</span>' : '')
         + (g.dept    ? '<span class="badge" style="background:var(--amber-lt);color:var(--amber)">'+g.dept+'</span>' : '')
@@ -2539,6 +2580,15 @@ function toggleBudgetCard(gid) {
   var open = body.style.display !== 'none';
   body.style.display = open ? 'none' : '';
   if (arr) arr.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+  // Add filter to budget line table when expanded
+  if (!open) {
+    var tbl = body.querySelector('tbody');
+    if (tbl && !tbl.id) tbl.id = 'bgt-' + gid;
+    if (tbl && tbl.id) {
+      addTableFilter(tbl.id, 'Filter lines...');
+      paginateTable(tbl.id, 25);
+    }
+  }
 }
 
 function toggleAllBudgetGroups(expand) {
@@ -2596,10 +2646,14 @@ async function pullBudgetLinesFromSheets() {
       return;
     }
 
-    // REPLACE budgetLines with exactly what Sheets has
+    // REPLACE budgetLines with exactly what Sheets has and persist
     budgetLines = mapped;
+    try { localStorage.setItem('mrv_budget_lines', JSON.stringify(budgetLines)); } catch(e) {}
     budgetStore = buildBudgetStore();
     appendSyncLog('Budgets: loaded ' + mapped.length + ' lines across ' + getProjects().length + ' project(s)');
+    // Re-render tables now that budgetLines is populated (country filter was waiting)
+    rebuildRequestsTable();
+    populateAllDropdowns();
 
     // RECONCILE: check if app actuals match Sheet actuals
     // If mismatch, push corrections to Sheet
@@ -2646,220 +2700,228 @@ async function pullBudgetLinesFromSheets() {
 
 // -- PDF GENERATION -----------------------------------------
 
-// Download PDF of paid+acknowledged requests (for expense clearing)
+// Download PDF -- paid requests in a clean table with signatures
 async function downloadAcknowledgedPDF() {
   const { jsPDF } = window.jspdf;
-  const paid = requestsStore.filter(function(r){ return r.status === 'Paid'; });
-
+  const paid = sortPaid(requestsStore.filter(function(r){ return r.status === 'Paid'; }));
   if (!paid.length) { toast('No paid requests to export'); return; }
 
-  const doc  = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-  const pw   = doc.internal.pageSize.getWidth();
-  const ph   = doc.internal.pageSize.getHeight();
-  const now  = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const pw  = doc.internal.pageSize.getWidth();   // 297mm
+  const ph  = doc.internal.pageSize.getHeight();  // 210mm
+  const ML  = 10; const MR = 10;                  // margins
+  const W   = pw - ML - MR;                       // usable width: 277mm
+  const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const acked  = paid.filter(function(r){ return !!r.requesterSigName; });
+  const total  = paid.reduce(function(s,r){ return s+(parseFloat(r.amount)||0); }, 0);
+  const ccy    = paid.length ? getCurrency(paid[0].project, paid[0].type) : 'KES';
 
-  const NAVY   = [15, 28, 46];
-  const TEAL   = [15, 110, 86];
-  const PURPLE = [67, 56, 202];
-  const GOLD   = [200, 135, 42];
-  const MUTED  = [107, 122, 153];
-  const WHITE  = [255, 255, 255];
-  const BORDER = [221, 226, 235];
-  const SUCCESS= [22, 163, 74];
+  // Colours
+  const NAVY  = [13,  43,  46 ];
+  const TEAL  = [15,  110, 86 ];
+  const GREEN = [22,  163, 74 ];
+  const AMBER = [180, 120, 20 ];
+  const MUTED = [120, 135, 150];
+  const BRDR  = [210, 220, 225];
+  const WHITE = [255, 255, 255];
+  const ALT   = [247, 251, 249];
 
-  // Count acknowledged vs unacknowledged
-  const acked   = paid.filter(function(r){ return r.requesterSigName; });
-  const unacked = paid.filter(function(r){ return !r.requesterSigName; });
+  // Column layout (landscape 297mm, usable 277mm)
+  // Ref | Project/Type | Category | Amount | Requester | Date | Finance Sig | Requester Sig
+  const COLS = [
+    { label:'Ref #',            x:ML,       w:16  },
+    { label:'Project / Type',   x:ML+16,    w:46  },
+    { label:'Category',         x:ML+62,    w:34  },
+    { label:'Amount',           x:ML+96,    w:24  },
+    { label:'Requester',        x:ML+120,   w:28  },
+    { label:'Date',             x:ML+148,   w:22  },
+    { label:'Finance Signature',x:ML+170,   w:58  },
+    { label:'Acknowledgement',  x:ML+228,   w:59  },
+  ];
+  const ROW_TEXT = 22;   // fixed height for all rows
+  const ROW_SIG  = 22;   // same -- every row is equal height
 
-  function drawHeader(isFirstPage) {
-    // Header bar
+  // ── Page header ───────────────────────────────────────────────
+  function pageHeader(isFirst) {
     doc.setFillColor(...NAVY);
-    doc.rect(0, 0, pw, 22, 'F');
+    doc.rect(0, 0, pw, 18, 'F');
     doc.setFont('helvetica','bold');
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.setTextColor(...WHITE);
-    doc.text('MRV Platform — Paid Requests & Acknowledgements', 14, 9);
+    doc.text('MRV Platform — Paid Requests Report', ML, 8);
     doc.setFont('helvetica','normal');
-    doc.setFontSize(8);
-    doc.setTextColor(180, 200, 220);
-    doc.text('For expense clearing — includes approver and requester signatures', 14, 15);
-    doc.text('Generated: ' + now, pw - 14, 15, {align:'right'});
+    doc.setFontSize(7);
+    doc.setTextColor(180,215,205);
+    doc.text('Expense clearing document — includes finance and requester signatures', ML, 14);
+    doc.text('Generated: '+now, pw-MR, 14, {align:'right'});
 
-    if (isFirstPage) {
-      // Summary row
-      const sW = (pw - 28) / 4;
-      const summaries = [
-        { label:'Total Paid', value: paid.length + ' requests',          color:NAVY   },
-        { label:'Acknowledged', value: acked.length + ' signed',         color:SUCCESS},
-        { label:'Pending Ack', value: unacked.length + ' unsigned',      color:GOLD   },
-        { label:'Total Amount', value: getDefaultCurrency()+' '+paid.reduce(function(s,r){return s+(r.amount||0);},0).toLocaleString(), color:TEAL },
+    if (isFirst) {
+      // Summary strip
+      doc.setFillColor(235,245,240);
+      doc.rect(0, 18, pw, 10, 'F');
+      var items = [
+        ['Total Paid Requests', paid.length+''],
+        ['Acknowledged',        acked.length+' / '+paid.length],
+        ['Total Amount',        ccy+' '+(total).toLocaleString()],
       ];
-      summaries.forEach(function(s, i) {
-        const bx = 14 + i * (sW + 2.3);
-        doc.setFillColor(245, 247, 250);
-        doc.roundedRect(bx, 25, sW, 14, 2, 2, 'F');
-        doc.setFont('helvetica','bold');
-        doc.setFontSize(6.5);
-        doc.setTextColor(...MUTED);
-        doc.text(s.label.toUpperCase(), bx + 4, 30);
-        doc.setFont('helvetica','bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...s.color);
-        doc.text(s.value, bx + 4, 36);
+      var iw = pw / items.length;
+      items.forEach(function(it, i) {
+        var cx = i*iw + iw/2;
+        doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...TEAL);
+        doc.text(it[1], cx, 24, {align:'center'});
+        doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...MUTED);
+        doc.text(it[0].toUpperCase(), cx, 27, {align:'center'});
       });
+      return 30;
     }
+    return 20;
   }
 
-  // Table columns
-  const COL = {
-    ref:    { x:14,  w:18  },
-    proj:   { x:32,  w:44  },
-    cat:    { x:76,  w:36  },
-    amt:    { x:112, w:28  },
-    date:   { x:140, w:22  },
-    approv: { x:162, w:50  },
-    ack:    { x:212, w:70  },
-  };
-  const HEADERS = ['Ref #','Project / Type','Category / Line','Amount','Date','Approved By (Finance)','Requester Acknowledgement'];
-
-  function drawTableHeader(y) {
-    doc.setFillColor(...NAVY);
-    doc.rect(14, y, pw - 28, 8, 'F');
+  // ── Table header row ──────────────────────────────────────────
+  function tableHeader(y) {
+    doc.setFillColor(...TEAL);
+    doc.rect(ML, y, W, 8, 'F');
     doc.setFont('helvetica','bold');
     doc.setFontSize(6.5);
     doc.setTextColor(...WHITE);
-    Object.values(COL).forEach(function(c, i) {
-      doc.text(HEADERS[i], c.x + 2, y + 5.2);
+    COLS.forEach(function(c) {
+      doc.text(c.label, c.x+2, y+5.2);
     });
-    return y + 8;
+    return y+8;
   }
 
-  let y = 42;
-  drawHeader(true);
-  y = drawTableHeader(y);
-
-  for (let ri = 0; ri < paid.length; ri++) {
-    const r      = paid[ri];
-    const hasSig = !!r.sigDataUrl;
-    const hasAck = !!r.requesterSigName;
-    const localSig = r.requesterSig || null;  // image from Sheets, visible to all
-
-    // Row height: taller rows for signed entries so sig + name + timestamp fit cleanly
-    const rowH = (hasSig || hasAck) ? 28 : 13;
-
-    if (y + rowH > ph - 14) {
-      doc.addPage();
-      y = 5;
-      drawHeader(false);
-      y = drawTableHeader(y + 22);
+  // ── Draw one data row ─────────────────────────────────────────
+  function drawRow(r, y, rowH, isAlt) {
+    // Background
+    if (isAlt) {
+      doc.setFillColor(...ALT);
+      doc.rect(ML, y, W, rowH, 'F');
     }
-
-    // Alternating row background
-    if (ri % 2 === 0) {
-      doc.setFillColor(248, 250, 252);
-      doc.rect(14, y, pw - 28, rowH, 'F');
-    }
-
     // Row border
-    doc.setDrawColor(...BORDER);
-    doc.setLineWidth(0.2);
-    doc.rect(14, y, pw - 28, rowH, 'S');
+    doc.setDrawColor(...BRDR);
+    doc.setLineWidth(0.15);
+    doc.rect(ML, y, W, rowH, 'S');
+    // Vertical col dividers
+    COLS.forEach(function(c, i) {
+      if (i > 0) {
+        doc.setDrawColor(...BRDR);
+        doc.setLineWidth(0.1);
+        doc.line(c.x, y, c.x, y+rowH);
+      }
+    });
 
-    const mid = y + rowH / 2;
+    var mid = y + rowH/2;
+    var pad = 2;
 
-    // Ref #
+    // Ref
     doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...TEAL);
-    doc.text('#' + r.ref, COL.ref.x + 2, mid + 1, {baseline:'middle'});
+    doc.text('#'+r.ref, COLS[0].x+pad, mid, {baseline:'middle'});
 
-    // Project + type
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...NAVY);
-    doc.text(r.project || '', COL.proj.x + 2, mid, {baseline:'middle', maxWidth: COL.proj.w - 4});
+    // Project / Type
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...NAVY);
+    var projLines = doc.splitTextToSize(r.project||'', COLS[1].w-pad*2);
+    doc.text(projLines[0]||'', COLS[1].x+pad, rowH>ROW_TEXT ? y+5 : mid, {baseline:'middle'});
     if (r.type) {
-      doc.setFontSize(6); doc.setTextColor(...MUTED);
-      doc.text(r.type, COL.proj.x + 2, mid + 4, {baseline:'middle'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...MUTED);
+      doc.text(r.type, COLS[1].x+pad, rowH>ROW_TEXT ? y+10 : mid+4, {baseline:'middle'});
     }
 
-    // Category / line
-    doc.setFontSize(6.5); doc.setTextColor(...NAVY);
-    doc.text((r.category || r.description || ''), COL.cat.x + 2, mid - 1, {baseline:'middle', maxWidth: COL.cat.w - 4});
-    if (r.costSummary) {
-      doc.setFontSize(5.5); doc.setTextColor(...MUTED);
-      doc.text(r.costSummary, COL.cat.x + 2, mid + 3.5, {baseline:'middle', maxWidth: COL.cat.w - 4});
-    }
+    // Category
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...NAVY);
+    var catLines = doc.splitTextToSize((r.category||r.description||''), COLS[2].w-pad*2);
+    doc.text(catLines.slice(0,2), COLS[2].x+pad, rowH>ROW_TEXT ? y+5 : mid, {baseline:'middle'});
 
     // Amount
-    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...NAVY);
-    doc.text((r.amount||0).toLocaleString(), COL.amt.x + 2, mid + 1, {baseline:'middle'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...NAVY);
+    doc.text((parseFloat(r.amount)||0).toLocaleString(), COLS[3].x+pad, mid, {baseline:'middle'});
+
+    // Requester
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...NAVY);
+    doc.text(r.requester||'', COLS[4].x+pad, mid, {baseline:'middle', maxWidth:COLS[4].w-pad*2});
 
     // Date
     doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
-    doc.text(r.date || '', COL.date.x + 2, mid + 1, {baseline:'middle'});
+    doc.text(fmtDate(r.sigTime||r.date||''), COLS[5].x+pad, mid, {baseline:'middle'});
 
-    // Approver signature (finance officer)
-    const aSigX = COL.approv.x + 2;
-    if (hasSig) {
+    // Finance signature
+    var fx = COLS[6].x+pad;
+    if (r.sigDataUrl) {
       try {
-        const fmt = r.sigDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        var imgH = rowH - 10;
-        doc.addImage(r.sigDataUrl, fmt, aSigX, y + 2, 28, imgH, undefined, 'FAST');
-        doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(...NAVY);
-        doc.text(r.sigLabel || '', aSigX, y + imgH + 5);
-        doc.setFont('helvetica','normal'); doc.setFontSize(5); doc.setTextColor(...MUTED);
-        if (r.sigTime) doc.text(String(r.sigTime), aSigX, y + imgH + 9.5);
-      } catch(e) {
-        doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...SUCCESS);
-        doc.text('[Signature on file]', aSigX, mid + 1, {baseline:'middle'});
-      }
-    } else {
-      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...MUTED);
-      doc.text('Not signed', aSigX, mid + 1, {baseline:'middle'});
-    }
-
-    // Requester acknowledgement signature
-    const rSigX = COL.ack.x + 2;
-    if (hasAck && localSig) {
-      try {
-        const fmt2 = localSig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        var imgH2 = rowH - 10;
-        doc.addImage(localSig, fmt2, rSigX, y + 2, 34, imgH2, undefined, 'FAST');
-        doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(...SUCCESS);
-        doc.text('✓ ' + (r.requesterSigName || ''), rSigX, y + imgH2 + 5);
-        doc.setFont('helvetica','normal'); doc.setFontSize(5); doc.setTextColor(...MUTED);
-        if (r.requesterSigTime) doc.text(String(r.requesterSigTime), rSigX, y + imgH2 + 9.5);
-      } catch(e) {
-        doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...SUCCESS);
-        doc.text('✓ Acknowledged: ' + (r.requesterSigName || ''), rSigX, mid + 1, {baseline:'middle'});
-      }
-    } else if (hasAck) {
-      doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...SUCCESS);
-      doc.text('✓ ' + (r.requesterSigName || ''), rSigX, y + 8, {baseline:'middle'});
+        var f1 = r.sigDataUrl.startsWith('data:image/png')?'PNG':'JPEG';
+        var sh = rowH-6;
+        doc.addImage(r.sigDataUrl, f1, fx, y+3, Math.min(40, COLS[6].w-pad*2-2), sh, undefined, 'FAST');
+      } catch(e) {}
+      doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(...NAVY);
+      doc.text(r.sigLabel||'', fx, y+rowH-7);
       doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED);
-      if (r.requesterSigTime) doc.text(String(r.requesterSigTime), rSigX, y + 14, {baseline:'middle'});
+      doc.text(fmtDate(r.sigTime||''), fx, y+rowH-3.5);
     } else {
-      // Blank signature box
-      doc.setDrawColor(...BORDER);
-      doc.setLineWidth(0.3);
-      doc.setLineDashPattern([1, 1], 0);
-      doc.rect(rSigX, y + 3, 48, rowH - 6, 'S');
-      doc.setLineDashPattern([], 0);
-      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...MUTED);
-      doc.text('Awaiting acknowledgement', rSigX + 24, mid + 1, {align:'center', baseline:'middle'});
+      doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+      doc.text(r.sigLabel ? r.sigLabel : 'No signature', fx, mid, {baseline:'middle'});
+      if (r.sigLabel && r.sigTime) {
+        doc.setFont('helvetica','normal'); doc.setFontSize(5.5);
+        doc.text(fmtDate(r.sigTime), fx, mid+5, {baseline:'middle'});
+      }
     }
 
-    y += rowH;
+    // Acknowledgement
+    var ax = COLS[7].x+pad;
+    if (r.requesterSig) {
+      try {
+        var f2 = r.requesterSig.startsWith('data:image/png')?'PNG':'JPEG';
+        var sh2 = rowH-6;
+        doc.addImage(r.requesterSig, f2, ax, y+3, Math.min(40, COLS[7].w-pad*2-2), sh2, undefined, 'FAST');
+      } catch(e) {}
+      doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(...GREEN);
+      doc.text('✓ '+(r.requesterSigName||''), ax, y+rowH-7);
+      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED);
+      doc.text(fmtDate(r.requesterSigTime||''), ax, y+rowH-3.5);
+    } else if (r.requesterSigName) {
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...GREEN);
+      doc.text('✓', ax+4, mid-2, {baseline:'middle'});
+      doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...NAVY);
+      doc.text(r.requesterSigName, ax+10, mid-2, {baseline:'middle'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED);
+      doc.text(fmtDate(r.requesterSigTime||''), ax, mid+4, {baseline:'middle'});
+    } else {
+      doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor(...AMBER);
+      doc.text('Awaiting', ax, mid, {baseline:'middle'});
+    }
   }
 
-  // Footer
-  const footerY = ph - 8;
-  doc.setDrawColor(...BORDER); doc.setLineWidth(0.3);
-  doc.line(14, footerY - 4, pw - 14, footerY - 4);
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
-  doc.text('MRV Platform — Confidential. For expense clearing only.', 14, footerY);
-  doc.text('Page ' + doc.getCurrentPageInfo().pageNumber + ' of ' + doc.getNumberOfPages(), pw - 14, footerY, {align:'right'});
-  doc.text(acked.length + ' of ' + paid.length + ' requests acknowledged by requester.', pw / 2, footerY, {align:'center'});
+  // ── Render pages ──────────────────────────────────────────────
+  var y = pageHeader(true);
+  y = tableHeader(y);
+  var pageNum = 1;
 
-  doc.save('MRV_Acknowledged_Requests_' + new Date().toISOString().slice(0,10) + '.pdf');
-  toast('PDF downloaded — ' + paid.length + ' paid requests');
+  paid.forEach(function(r, i) {
+    var rowH   = ROW_SIG; // fixed height -- sigs force-fit
+
+    if (y + rowH > ph - 12) {
+      // Footer then new page
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+      doc.text('MRV Platform — Confidential', ML, ph-5);
+      doc.text('Page '+pageNum, pw-MR, ph-5, {align:'right'});
+      doc.addPage();
+      pageNum++;
+      y = pageHeader(false);
+      y = tableHeader(y);
+    }
+
+    drawRow(r, y, rowH, i%2===1);
+    y += rowH;
+  });
+
+  // Final footer
+  doc.setDrawColor(...BRDR); doc.setLineWidth(0.3);
+  doc.line(ML, ph-10, pw-MR, ph-10);
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+  doc.text('MRV Platform — Confidential. For expense clearing only.', ML, ph-5);
+  doc.text(acked.length+' of '+paid.length+' requests acknowledged.', pw/2, ph-5, {align:'center'});
+  doc.text('Page '+pageNum, pw-MR, ph-5, {align:'right'});
+
+  doc.save('MRV_Paid_Requests_'+new Date().toISOString().slice(0,10)+'.pdf');
+  toast('PDF downloaded — '+paid.length+' paid request'+(paid.length===1?'':'s'));
 }
 
 async function downloadRequestsPDF() {
@@ -3082,11 +3144,13 @@ async function downloadRequestsPDF() {
 
 // -- Navigation ---------------------------------------------
 function showView(id, el) {
+  if (!id || id === 'undefined') { console.warn('showView called with bad id:', id); return; }
+  var viewEl = document.getElementById('view-' + id);
+  if (!viewEl) { console.warn('showView: no element for view-' + id); return; }
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.aside-item').forEach(a => a.classList.remove('active'));
-  document.getElementById('view-' + id).classList.add('active');
+  viewEl.classList.add('active');
   if (el && el.classList) el.classList.add('active');
-  if (id === 'signatures')     renderSavedSigs();
   if (id === 'budgets')        { renderBudgetView(); if (gsWebAppUrl && window._budgetPulled !== true) { window._budgetPulled = true; pullBudgetLinesFromSheets().then(function(){ renderBudgetView(); }); } }
   if (id === 'reconciliation') renderReconciliation();
   if (id === 'dashboard')      renderDashboard();
@@ -3179,51 +3243,75 @@ function switchSigTab(btn, panelId) {
 
 // -- SAVED SIGNATURES --------------------------------------
 function renderSavedSigs() {
-  const grid = document.getElementById('savedSigsGrid');
-  const noMsg = document.getElementById('noSigMsg');
-  const count = document.getElementById('sigCount');
-  count.textContent = savedSigs.length + ' saved';
-  if (savedSigs.length === 0) { grid.innerHTML = ''; noMsg.style.display = ''; return; }
-  noMsg.style.display = 'none';
-  grid.innerHTML = savedSigs.map((s,i) => `
-    <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff;display:flex;align-items:center;gap:14px">
-      <img src="${s.dataUrl}" style="height:52px;object-fit:contain;max-width:160px;flex-shrink:0;border:1px solid var(--border);border-radius:8px;padding:4px;background:#fafaf8">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.label}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Added ${s.date}</div>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="deleteSig(${i})" style="color:var(--danger);flex-shrink:0">Delete</button>
-    </div>`).join('');
-  // also refresh inline grids
+  var grid  = document.getElementById('savedSigsGrid');
+  var noMsg = document.getElementById('noSigMsg');
+  var count = document.getElementById('sigCount');
+  if (!grid) return;
+  if (count) count.textContent = savedSigs.length > 0 ? '1 saved' : '0 saved';
+  if (savedSigs.length === 0) {
+    grid.innerHTML = '';
+    if (noMsg) noMsg.style.display = '';
+    return;
+  }
+  if (noMsg) noMsg.style.display = 'none';
+  // Only show the single signature -- no delete, use "Replace" instead
+  var s = savedSigs[0];
+  grid.innerHTML = '<div style="border:2px solid var(--teal);border-radius:10px;padding:16px;background:#fff;display:flex;align-items:center;gap:16px">'
+    + '<img src="' + s.dataUrl + '" style="height:60px;object-fit:contain;max-width:180px;flex-shrink:0;border:1px solid var(--border);border-radius:8px;padding:6px;background:#fafaf8">'
+    + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--ink)">' + s.label + '</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-top:3px">Saved ' + s.date + '</div>'
+      + '<div style="font-size:11px;color:var(--teal);margin-top:4px">&#10003; Active signature</div>'
+    + '</div>'
+    + '<button class="btn btn-ghost btn-sm" onclick="replaceSignature()" style="flex-shrink:0">Replace</button>'
+    + '</div>';
   refreshSigGrids();
 }
 
-function deleteSig(i) {
-  savedSigs.splice(i, 1);
+function replaceSignature() {
+  // Clear saved sig so canvas is fresh for a new one
+  savedSigs = [];
   persistSigsToStorage();
   renderSavedSigs();
-  toast('Signature removed');
+  clearCanvas('newCanvas');
+  toast('Draw your new signature and save');
+}
+
+function deleteSig(i) {
+  // One signature only -- clear and allow redraw
+  savedSigs = [];
+  persistSigsToStorage();
+  renderSavedSigs();
+  toast('Signature cleared -- draw a new one');
 }
 
 function refreshSigGrids() {
-  ['expSavedGrid','modalSavedGrid'].forEach(gridId => {
-    const grid = document.getElementById(gridId);
+  // Populate saved-sig grids in approval and payment modals
+  ['expSavedGrid','modalSavedGrid'].forEach(function(gridId) {
+    var grid = document.getElementById(gridId);
     if (!grid) return;
     if (savedSigs.length === 0) {
-      grid.innerHTML = '<p class="text-sm text-muted">No saved signatures yet.</p>';
+      grid.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px">'
+        + 'No saved signature yet. Draw one using the canvas in this modal.</div>';
       return;
     }
-    const context = gridId.startsWith('exp') ? 'exp' : 'modal';
-    grid.innerHTML = savedSigs.map((s,i) => `
-      <div class="sig-card" onclick="selectSavedSig(${i},'${context}',this)" id="${context}-sig-${i}">
-        <div class="sig-check">OK</div>
-        <img src="${s.dataUrl}" alt="${s.label}">
-        <div class="sig-name">${s.label}</div>
-      </div>`).join('') +
-      `<div class="sig-add-card" onclick="${context==='exp'?"showView('signatures',null)":"closeModal('signApproveModal');showView('signatures',null)"}">
-        <div class="sig-add-icon">+</div>
-        <div class="sig-add-text">Add signature</div>
-      </div>`;
+    // Only one signature -- show it prominently, auto-select it
+    var s = savedSigs[0];
+    var context = gridId.startsWith('exp') ? 'exp' : 'modal';
+    grid.innerHTML = '<div class="sig-card selected" id="' + context + '-sig-0" '
+      + 'data-ctx="' + context + '" onclick="selectSavedSig(0,this.dataset.ctx,this)" style="cursor:pointer">'
+      + '<div class="sig-check">&#10003;</div>'
+      + '<img src="' + s.dataUrl + '" alt="' + s.label + '">'
+      + '<div class="sig-name">' + s.label + '</div>'
+      + '</div>';
+    // Auto-apply the saved signature so it shows immediately
+    if (context === 'exp') {
+      pendingExpSig = s.dataUrl;
+      applyExpSig(s.dataUrl, s.label);
+    } else {
+      pendingModalSig = s.dataUrl;
+      applyModalSig(s.dataUrl, s.label);
+    }
   });
 }
 
@@ -3241,24 +3329,26 @@ function selectSavedSig(idx, context, el) {
   }
 }
 
-// -- Save new sig (from My Signatures page) ----------------
+// -- Save new sig --
 function saveNewSig(mode) {
-  const label = document.getElementById('newSigLabel').value.trim() || 'My Signature';
+  // Auto-label: full name + role (no manual entry)
+  var roleLabel = { admin:'Admin', manager:'Manager', approver:'Approver',
+                    requester:'Requester', viewer:'Viewer' };
+  const label = currentUser
+    ? (currentUser.name + ' \u2014 ' + (roleLabel[currentUser.role] || currentUser.role))
+    : 'My Signature';
   let dataUrl = null;
   if (mode === 'draw') {
     if (isCanvasBlank('newCanvas')) { toast('Please draw your signature first'); return; }
     dataUrl = document.getElementById('newCanvas').toDataURL();
   } else {
-    dataUrl = document.getElementById('newPreviewImg').src;
-    if (!dataUrl || dataUrl === window.location.href) { toast('Please upload an image first'); return; }
+    toast('Only drawn signatures are supported'); return;
   }
   const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
   // One signature per user -- replace any existing
   savedSigs = [{label, dataUrl, date: now, id: Date.now()}];
   persistSigsToStorage();
   clearCanvas('newCanvas');
-  document.getElementById('newSigLabel').value = '';
-  clearUpload();
   renderSavedSigs();
   refreshSigGrids();
   toast('Signature saved');
@@ -3277,10 +3367,12 @@ function previewUpload(e) {
 }
 
 function clearUpload() {
-  document.getElementById('newPreviewImg').src = '';
-  document.getElementById('newUploadPreview').style.display = 'none';
-  document.getElementById('newUploadZone').style.display = 'block';
-  document.getElementById('newSigFile').value = '';
+  // Upload removed -- draw only
+  var el;
+  el = document.getElementById('newPreviewImg');    if (el) el.src = '';
+  el = document.getElementById('newUploadPreview'); if (el) el.style.display = 'none';
+  el = document.getElementById('newUploadZone');    if (el) el.style.display = 'block';
+  el = document.getElementById('newSigFile');       if (el) el.value = '';
 }
 
 // -- Handle upload in inline contexts ----------------------
@@ -3722,7 +3814,7 @@ function showReceipt(ref, amount, signer) {
 
   document.getElementById('receiptBody').innerHTML =
     '<div style="text-align:center;margin-bottom:20px">'
-      + '<div style="font-size:22px;font-weight:700;color:var(--ink);font-family:Playfair Display,serif;letter-spacing:-.3px">MRV Platform</div>'
+      + '<div style="font-size:22px;font-weight:700;color:var(--ink);font-family:DM Serif Display,serif;letter-spacing:-.3px">MRV Platform</div>'
       + '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Payment Receipt</div>'
     + '</div>'
     + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
@@ -3730,7 +3822,7 @@ function showReceipt(ref, amount, signer) {
       + '<div style="padding:14px 16px;display:grid;gap:10px">'
         + '<div style="display:flex;justify-content:space-between;align-items:center">'
           + '<span style="font-size:12px;color:var(--muted)">Reference</span>'
-          + '<strong style="font-family:JetBrains Mono,monospace;font-size:13px">#'+entry.ref+'</strong>'
+          + '<strong style="font-family:IBM Plex Mono,monospace;font-size:13px">#'+entry.ref+'</strong>'
         + '</div>'
         + '<div style="display:flex;justify-content:space-between;align-items:center">'
           + '<span style="font-size:12px;color:var(--muted)">Date</span>'
@@ -3738,7 +3830,7 @@ function showReceipt(ref, amount, signer) {
         + '</div>'
         + '<div style="display:flex;justify-content:space-between;align-items:center">'
           + '<span style="font-size:12px;color:var(--muted)">Amount</span>'
-          + '<strong style="font-size:20px;color:var(--success);font-family:Playfair Display,serif">'+ccy+' '+(entry.amount||0).toLocaleString()+'</strong>'
+          + '<strong style="font-size:20px;color:var(--success);font-family:DM Serif Display,serif">'+ccy+' '+(entry.amount||0).toLocaleString()+'</strong>'
         + '</div>'
         + '<div style="display:flex;justify-content:space-between;align-items:center">'
           + '<span style="font-size:12px;color:var(--muted)">Project</span>'
@@ -3771,15 +3863,16 @@ function showReceipt(ref, amount, signer) {
 // Paste your Apps Script Web App URL below and deploy to GitHub.
 // ════════════════════════════════════════════════════════════
 // REQUIRED: Replace with your Apps Script Web App URL
-// All devices use this URL automatically -- no per-device setup
-// Get it from: Apps Script > Deploy > Manage Deployments > Copy URL
+// App configuration
+// Configuration
 const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyw93mFocIR4Ee3EUPTg3Gm2-NUkmfuTZTtHzHRZP9453OKORb7-k_EOzAOl_BKErQ/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- use hardcoded URL if set, otherwise fall back to localStorage
 // Treat placeholder as not set
 const _hw = (HARDCODED_WEB_APP_URL && HARDCODED_WEB_APP_URL !== 'YOUR_WEB_APP_URL_HERE') ? HARDCODED_WEB_APP_URL : '';
-let gsWebAppUrl  = _hw || localStorage.getItem('mrv_webapp_url') || '';
+function _decodeUrl(s) { try { return s ? decodeURIComponent(escape(atob(s))) : ''; } catch(e) { return s; } }
+let gsWebAppUrl  = _hw || _decodeUrl(localStorage.getItem('mrv_webapp_url')) || '';
 let gsConnected  = !!gsWebAppUrl;
 let gsAutoSyncTimer= null;
 
@@ -3797,7 +3890,7 @@ async function connectWebApp() {
     const res = await gasCall({ action: 'ping' });
     if (!res.ok) throw new Error(res.error || 'Unknown error');
     gsWebAppUrl = url;
-    localStorage.setItem('mrv_webapp_url', url);
+    localStorage.setItem('mrv_webapp_url', btoa(unescape(encodeURIComponent(url))));
     gsConnected = true;
     document.getElementById('connStatusBadge').className = 'badge badge-teal';
     document.getElementById('connStatusBadge').textContent = 'OK Connected';
@@ -3821,6 +3914,7 @@ function disconnectWebApp() {
   gsConnected = false;
   gsWebAppUrl = '';
   localStorage.removeItem('mrv_webapp_url');
+  localStorage.removeItem('mrv_webapp_url_raw');
   document.getElementById('connStatusBadge').className = 'badge badge-gray';
   document.getElementById('connStatusBadge').textContent = 'Not connected';
   document.getElementById('connSuccessBox').style.display = 'none';
@@ -3875,8 +3969,7 @@ async function pushToSheets() {
   var _pushSafetyTimer = setTimeout(function(){ window._pushInProgress = false; }, 15000);
   appendSyncLog('Pushing to Sheets...');
   try {
-    // Requests
-    // Strip image fields from main push -- sent separately via pushSigData
+    // Requests -- include sig images so they're stored in Sheets with each request
     const reqRows = requestsStore.map(function(r) {
       return {
         ref:              r.ref              || '',
@@ -3892,11 +3985,12 @@ async function pushToSheets() {
         date:             r.date             || '',
         sigLabel:         r.sigLabel         || '',
         sigTime:          r.sigTime          || '',
+        sigDataUrl:       r.sigDataUrl       || '',
         approvedBy:       r.approvedBy       || '',
         approvedAt:       r.approvedAt       || '',
+        requesterSig:     r.requesterSig     || '',
         requesterSigName: r.requesterSigName || '',
         requesterSigTime: r.requesterSigTime || '',
-        // sigDataUrl and requesterSig pushed separately (large images)
       };
     });
 
@@ -4045,17 +4139,19 @@ async function pullRequestsOnly() {
         approvedAt:       r['Approved At']              || (local && local.approvedAt)        || null,
         requesterSigName: r['Requester Sig Name']       || (local && local.requesterSigName)  || null,
         requesterSigTime: r['Requester Sig Time']       || (local && local.requesterSigTime)  || null,
-        // Always preserve local image fields (not in lightweight pull)
-        sigDataUrl:       local ? local.sigDataUrl   : null,
-        requesterSig:     local ? local.requesterSig : null,
+        // Sig images now included from Sheets (AppScript no longer skips them)
+        sigDataUrl:       r['Sig Data']      || (local && local.sigDataUrl)   || null,
+        requesterSig:     r['Requester Sig'] || (local && local.requesterSig) || null,
       };
     }).filter(function(r){ return r.ref; });
 
-    if (!imported.length) return;
-
-    // Keep local-only refs (submitted but push not yet complete)
-    var sheetsRefs = new Set(imported.map(function(r){ return r.ref; }));
-    var localOnly  = requestsStore.filter(function(r){ return !sheetsRefs.has(r.ref); });
+    // Keep local-only refs that are NOT deleted
+    // (prevents deleted requests from re-appearing via localOnly merge)
+    var sheetsRefs   = new Set(imported.map(function(r){ return r.ref; }));
+    var deletedRefs  = new Set(deletedStore.map(function(r){ return r.ref; }));
+    var localOnly    = requestsStore.filter(function(r){
+      return !sheetsRefs.has(r.ref) && !deletedRefs.has(r.ref);
+    });
     requestsStore  = imported.concat(localOnly);
     reqCounter     = calcReqCounter();
     persistRequestsToStorage();
@@ -4125,9 +4221,12 @@ async function pullFromSheets(silent) {
           return r;
         });
 
-        // Keep local-only refs (submitted but not yet in Sheets)
-        var sheetsRefs = new Set(imported.map(function(r){ return r.ref; }));
-        var localOnly  = requestsStore.filter(function(r){ return !sheetsRefs.has(r.ref); });
+        // Keep local-only refs that are NOT deleted
+        var sheetsRefs  = new Set(imported.map(function(r){ return r.ref; }));
+        var deletedRefs3 = new Set(deletedStore.map(function(r){ return r.ref; }));
+        var localOnly   = requestsStore.filter(function(r){
+          return !sheetsRefs.has(r.ref) && !deletedRefs3.has(r.ref);
+        });
         var newStore = merged.concat(localOnly);
 
         requestsStore = newStore;
@@ -4248,6 +4347,28 @@ function switchReqTab(tab) {
   if (panel) panel.style.display='';
 }
 
+var _paidSort = 'date-desc';
+
+function sortAndRebuild() {
+  var sel = document.getElementById('paidSortSelect');
+  if (sel) _paidSort = sel.value;
+  rebuildRequestsTable();
+}
+
+function sortPaid(rows) {
+  return rows.slice().sort(function(a, b) {
+    switch (_paidSort) {
+      case 'date-asc':    return new Date(a.sigTime||a.date||0) - new Date(b.sigTime||b.date||0);
+      case 'date-desc':   return new Date(b.sigTime||b.date||0) - new Date(a.sigTime||a.date||0);
+      case 'amount-desc': return (parseFloat(b.amount)||0) - (parseFloat(a.amount)||0);
+      case 'amount-asc':  return (parseFloat(a.amount)||0) - (parseFloat(b.amount)||0);
+      case 'requester':   return (a.requester||'').localeCompare(b.requester||'');
+      case 'project':     return (a.project||'').localeCompare(b.project||'');
+      default:            return new Date(b.sigTime||b.date||0) - new Date(a.sigTime||a.date||0);
+    }
+  });
+}
+
 function rebuildRequestsTable() {
   var role       = currentUser ? (currentUser.role||'requester') : 'requester';
   var userCtry   = currentUser ? (currentUser.country||'') : '';
@@ -4257,8 +4378,10 @@ function rebuildRequestsTable() {
   var canDelete  = role === 'admin' || role === 'approver';
 
   // Country filter: all roles respect their assigned country (blank = all)
+  // If budgetLines not loaded yet, show all (avoids blank tables on first render)
   var ctryFilter = function(r) {
     if (!userCtry) return true;
+    if (!budgetLines.length) return true; // budgets not loaded yet -- show all
     return (r.project && budgetLines.some(function(l){
       return l.project === r.project && l.country === userCtry;
     }));
@@ -4266,7 +4389,7 @@ function rebuildRequestsTable() {
   var allFiltered = requestsStore.filter(ctryFilter);
   var drafts   = allFiltered.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; });
   var queue    = allFiltered.filter(function(r){ return r.status==='Approved'; });
-  var paid     = allFiltered.filter(function(r){ return r.status==='Paid'; });
+  var paid     = sortPaid(allFiltered.filter(function(r){ return r.status==='Paid'; }));
 
   // Update tab badges
   var bd = document.getElementById('badge-drafts'); if(bd) bd.textContent = drafts.length;
@@ -4292,7 +4415,7 @@ function rebuildRequestsTable() {
     var chkCell = canDelete
       ? '<td style="padding:6px 6px 6px 14px"><input type="checkbox" class="req-chk" data-ref="'+r.ref+'" onchange="onReqCheckChange()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--danger)"></td>'
       : '<td></td>';
-    return chkCell + '<td style="font-family:JetBrains Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
+    return chkCell + '<td style="font-family:IBM Plex Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
       +'<td style="font-weight:500">'+r.project+'</td>'
       +'<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
       +'<td style="font-size:12.5px">'+(r.category||'--')+'</td>'
@@ -4361,6 +4484,14 @@ function rebuildRequestsTable() {
   // Refresh history view if active
   var hv = document.getElementById('view-history');
   if (hv && hv.classList.contains('active')) renderHistory();
+
+  // Apply pagination + filter to all three request tables
+  addTableFilter('bodyDrafts', 'Search requests...');
+  addTableFilter('bodyQueue',  'Search queue...');
+  addTableFilter('bodyPaid',   'Search paid requests...');
+  paginateTable('bodyDrafts', 20);
+  paginateTable('bodyQueue',  20);
+  paginateTable('bodyPaid',   20);
 }
 
 
@@ -4452,13 +4583,13 @@ function updateSheetStatusPill(connected) {
   const label = document.getElementById('sheetsStatusLabel');
   const badge = document.getElementById('sheetsSyncBadge');
   if (connected) {
-    dot.style.background = '#4ade80';
-    label.textContent    = 'Sheets synced';
-    badge.style.display  = 'none';
+    if (dot)   dot.style.background = '#4ade80';
+    if (label) label.textContent    = 'Sheets synced';
+    if (badge) badge.style.display  = 'none';
   } else {
-    dot.style.background = '#aaa';
-    label.textContent    = 'Not connected';
-    badge.style.display  = 'none';
+    if (dot)   dot.style.background = '#aaa';
+    if (label) label.textContent    = 'Not connected';
+    if (badge) badge.style.display  = 'none';
   }
 }
 
@@ -4550,7 +4681,7 @@ function applyLoginUrl() {
   if (!url.startsWith('https://')) { toast('Please enter a valid URL'); return; }
   gsWebAppUrl = url;
   gsConnected = true;
-  localStorage.setItem('mrv_webapp_url', url);
+  localStorage.setItem('mrv_webapp_url', btoa(unescape(encodeURIComponent(url))));
   var urlRow = document.getElementById('loginUrlRow');
   if (urlRow) urlRow.style.display = 'none';
   toast('Connected to Sheets');
@@ -4707,9 +4838,11 @@ function updateNavUser() {
     admin:     '<span class="login-role-badge role-admin">* Admin</span>',
     approver:  '<span class="login-role-badge role-approver">OK Approver</span>',
     requester: '<span class="login-role-badge role-requester">-> Requester</span>',
+    viewer:    '<span class="login-role-badge role-viewer">👁 Viewer</span>',
+    manager:   '<span class="login-role-badge role-admin">⬡ Manager</span>',
   }[currentUser.role] || '';
   const dot = document.getElementById('navRoleDot');
-  if (dot) dot.style.background = {admin:'#6D28D9',approver:'#059669',requester:'#2563EB'}[currentUser.role]||'#C89B2A';
+  if (dot) dot.style.background = {admin:'#6D28D9',approver:'#059669',requester:'#2563EB',viewer:'#7C3AED',manager:'#B45309'}[currentUser.role]||'#C89B2A';
 }
 
 // -- User menu ---------------------------------------------------
@@ -4741,11 +4874,31 @@ showView = function(id, el) {
     }
   }
 
-  // Approver: no funds, no admin, no sheets
+  // History (My Submissions) is accessible to ALL roles
+  // (each user only sees their own requests)
+
+  // Approver: no admin, no sheets
   if (role === 'approver') {
-    var blocked = ['funds','sheets','users'];
+    var blocked = ['sheets','users'];
     if (blocked.includes(id)) {
-      toast('Access restricted -- Approvers cannot access this section');
+      toast('Access restricted');
+      return;
+    }
+  }
+
+  // Viewer: read-only -- dashboard, budgets, paid requests, transactions, reconciliation only
+  if (role === 'viewer') {
+    var viewerAllowed = ['dashboard','budgets','transactions','reconciliation','requests','history'];
+    if (!viewerAllowed.includes(id)) {
+      toast('Access restricted -- Viewer accounts are read-only');
+      return;
+    }
+  }
+
+  // Manager: full access except Manage Users and Google Sheets
+  if (role === 'manager') {
+    if (id === 'users' || id === 'sheets') {
+      toast('Access restricted -- contact the system Admin');
       return;
     }
   }
@@ -4853,7 +5006,9 @@ function renderUsersTable() {
   const badge = r => ({
     admin:     '<span class="login-role-badge role-admin">Admin</span>',
     approver:  '<span class="login-role-badge role-approver">Approver</span>',
-    requester: '<span class="login-role-badge role-requester">Requester</span>'
+    requester: '<span class="login-role-badge role-requester">Requester</span>',
+    viewer:    '<span class="login-role-badge role-viewer">👁 Viewer</span>',
+    manager:   '<span class="login-role-badge role-admin">⬡ Manager</span>'
   }[r] || r);
 
   if (usersStore.length === 0) {
@@ -4866,7 +5021,7 @@ function renderUsersTable() {
     var countries = [...new Set(budgetLines.map(function(l){ return l.country; }).filter(Boolean))].sort();
     var countryOpts = '<option value=""'+(u.country===''||!u.country?' selected':'')+'">All</option>'
       + countries.map(function(c){ return '<option value="'+c+'"'+(c===u.country?' selected':'')+'>'+c+'</option>'; }).join('');
-    var roleOpts = ['requester','approver','admin'].map(function(r){
+    var roleOpts = ['requester','viewer','approver','manager','admin'].map(function(r){
       return '<option value="'+r+'"'+(r===(u.role||'requester')?' selected':'')+'>'+r.charAt(0).toUpperCase()+r.slice(1)+'</option>';
     }).join('');
     return '<tr id="urow-'+u.id+'">'
@@ -4958,6 +5113,7 @@ var _historyFilter = 'all';
 
 function renderHistory() {
   if (!currentUser) return;
+  if (!document.getElementById('historyStats')) return;
   var name  = (currentUser.name  || '').trim().toLowerCase();
   var email = (currentUser.email || '').trim().toLowerCase();
 
@@ -5029,6 +5185,10 @@ function filterHistory(filter) {
   var countEl = document.getElementById('historyCount');
   if (countEl) countEl.textContent = filtered.length + ' request' + (filtered.length===1?'':'s');
 
+  // Paginate history table
+  addTableFilter('historyBody', 'Search submissions...');
+  paginateTable('historyBody', 15);
+
   // Show "Sign All Paid" only if there are paid-but-unsigned requests
   var uname = currentUser ? (currentUser.name||'').toLowerCase().trim() : '';
   var unsignedPaid = requestsStore.filter(function(r){
@@ -5080,9 +5240,9 @@ function filterHistory(filter) {
     var ackHtml = '';
     if (r.status === 'Paid') {
       if (r.requesterSig) {
-        ackHtml = '<div style="display:flex;align-items:center;gap:8px">'
+        ackHtml = '<div style="display:flex;align-items:center;gap:6px">'
           + '<img src="'+r.requesterSig+'" style="height:32px;max-width:90px;object-fit:contain;border:1px solid var(--border);border-radius:4px;padding:2px;background:#fff">'
-          + '<button class="btn btn-ghost btn-sm" style="color:var(--danger);padding:3px 7px;font-size:11px" data-ackref="'+r.ref+'" onclick="clearAck(this.dataset.ackref)" title="Remove">✕</button>'
+          + '<span style="color:var(--success);font-size:11px;font-weight:600">✓ Signed</span>'
           + '</div>';
       } else {
         ackHtml = '<button class="btn btn-secondary btn-sm" style="font-size:11.5px" data-aref="'+r.ref+'" onclick="openAckModal(this.dataset.aref)">'
@@ -5094,7 +5254,7 @@ function filterHistory(filter) {
     }
 
     return '<tr>'
-      + '<td style="font-family:JetBrains Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
+      + '<td style="font-family:IBM Plex Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
       + '<td style="font-weight:500">'+r.project+'</td>'
       + '<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
       + '<td>'
@@ -5119,6 +5279,14 @@ var _ackTargetRef = null;  // 'all' or a specific ref
 var _pendingAckSig = null;
 
 function openAckModal(ref) {
+  // Check if this specific request is already acknowledged
+  if (ref !== 'all') {
+    var existing = requestsStore.find(function(r){ return r.ref === ref; });
+    if (existing && existing.requesterSigName) {
+      toast('This request is already acknowledged and cannot be changed');
+      return;
+    }
+  }
   _ackTargetRef = ref;
   _pendingAckSig = null;
 
@@ -5180,7 +5348,11 @@ function saveAndApplyAckSig(mode) {
   }
   if (!dataUrl) return;
   // Save as the user's single signature
-  var label = currentUser ? currentUser.name : 'My Signature';
+  var roleLabel2 = { admin:'Admin', manager:'Manager', approver:'Approver',
+                     requester:'Requester', viewer:'Viewer' };
+  var label = currentUser
+    ? (currentUser.name + ' — ' + (roleLabel2[currentUser.role] || currentUser.role))
+    : 'My Signature';
   savedSigs = [{ label:label, dataUrl:dataUrl, date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}), id:Date.now() }];
   persistSigsToStorage();
   _pendingAckSig = dataUrl;
@@ -5272,6 +5444,421 @@ function clearAck(ref) {
 }
 
 // ==============================================================
+// EXPORT TO EXCEL
+// ==============================================================
+
+function showExportModal() {
+  openModal('exportModal');
+}
+
+function exportToExcel(type) {
+  closeModal('exportModal');
+  if (typeof XLSX === 'undefined') {
+    toast('Excel library not loaded — please refresh and try again');
+    return;
+  }
+
+  var wb = XLSX.utils.book_new();
+  var date = new Date().toISOString().slice(0,10);
+
+  // ── Requests sheet ──
+  if (type === 'requests' || type === 'paid' || type === 'all') {
+    var rows = type === 'paid'
+      ? requestsStore.filter(function(r){ return r.status === 'Paid'; })
+      : requestsStore;
+
+    var data = [['Ref #','Project','Type','Category','Cost Summary','Cost Item',
+                 'Description','Amount','Currency','Requester','Status','Date',
+                 'Approved By','Approved At','Signed By','Sign Time',
+                 'Acknowledged By','Acknowledged At']];
+    rows.forEach(function(r) {
+      data.push([
+        r.ref, r.project, r.type, r.category, r.costSummary, r.costItem,
+        r.description, r.amount, getCurrency(r.project, r.type), r.requester,
+        r.status, fmtDate(r.date),
+        r.approvedBy||'', fmtDate(r.approvedAt||''), r.sigLabel||'', fmtDate(r.sigTime||''),
+        r.requesterSigName||'', fmtDate(r.requesterSigTime||'')
+      ]);
+    });
+    var ws = XLSX.utils.aoa_to_sheet(data);
+    // Column widths
+    ws['!cols'] = [8,22,14,16,22,16,24,12,8,16,10,14,16,14,16,14,16,14].map(function(w){ return {wch:w}; });
+    styleExcelSheet(ws, data[0].length);
+    XLSX.utils.book_append_sheet(wb, ws, type === 'paid' ? 'Paid Requests' : 'All Requests');
+  }
+
+  // ── Budgets sheet ──
+  if (type === 'budgets' || type === 'all') {
+    var bdata = [['Project','Type','Department','Country','Month','Year',
+                  'Category','Cost Summary','Cost Item','Unit','Currency',
+                  'Budgeted Amount','Actual Spent','Remaining','Utilisation %']];
+    budgetLines.forEach(function(l) {
+      var actual  = getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem);
+      var remain  = (parseFloat(l.budgetedAmount)||0) - actual;
+      var pct     = l.budgetedAmount ? Math.round(actual / l.budgetedAmount * 100) : 0;
+      bdata.push([
+        l.project, l.type, l.dept||'', l.country||'', l.month||'', l.year||'',
+        l.category, l.costSummary, l.costItem, l.unitOfMeasure||'', l.currency||'KES',
+        parseFloat(l.budgetedAmount)||0, actual, remain, pct + '%'
+      ]);
+    });
+    var bws = XLSX.utils.aoa_to_sheet(bdata);
+    bws['!cols'] = [22,14,14,12,8,6,14,22,16,10,8,14,14,14,10].map(function(w){ return {wch:w}; });
+    styleExcelSheet(bws, bdata[0].length);
+    XLSX.utils.book_append_sheet(wb, bws, 'Approved Budgets');
+  }
+
+  // ── Summary sheet (full workbook only) ──
+  if (type === 'all') {
+    var total   = budgetLines.reduce(function(s,l){ return s+(parseFloat(l.budgetedAmount)||0); }, 0);
+    var spent   = requestsStore.filter(function(r){ return r.status==='Paid'; })
+                               .reduce(function(s,r){ return s+(parseFloat(r.amount)||0); }, 0);
+    var pending = requestsStore.filter(function(r){ return r.status==='Approved'; }).length;
+    var sdata = [
+      ['MRV Platform Export','','Generated:', new Date().toLocaleString('en-GB')],
+      [],
+      ['Summary',''],
+      ['Total Budget',total],
+      ['Total Spent',spent],
+      ['Remaining',total-spent],
+      ['Utilisation %', total ? Math.round(spent/total*100)+'%' : '0%'],
+      [],
+      ['Requests',''],
+      ['Total Requests', requestsStore.length],
+      ['Pending Approval', requestsStore.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; }).length],
+      ['In Payment Queue', requestsStore.filter(function(r){ return r.status==='Approved'; }).length],
+      ['Paid', requestsStore.filter(function(r){ return r.status==='Paid'; }).length],
+    ];
+    var sws = XLSX.utils.aoa_to_sheet(sdata);
+    sws['!cols'] = [{wch:22},{wch:16},{wch:14},{wch:22}];
+    XLSX.utils.book_append_sheet(wb, sws, 'Summary');
+  }
+
+  // ── Download ──
+  var filename = 'MRV_Export_' + date + '_' +
+    { requests:'All_Requests', paid:'Paid_Requests', budgets:'Budgets', all:'Full_Workbook' }[type] +
+    '.xlsx';
+  XLSX.writeFile(wb, filename);
+  toast('Excel file downloaded — ' + filename.split('_').slice(-1)[0].replace('.xlsx','').replace(/_/g,' '));
+}
+
+function styleExcelSheet(ws, colCount) {
+  // Bold the header row
+  var range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  for (var c = range.s.c; c <= Math.min(range.e.c, colCount-1); c++) {
+    var addr = XLSX.utils.encode_cell({r:0, c:c});
+    if (!ws[addr]) continue;
+    ws[addr].s = { font:{ bold:true }, fill:{ fgColor:{ rgb:'0D2B1E' } }, font:{ bold:true, color:{ rgb:'FFFFFF' } } };
+  }
+}
+
+// ==============================================================
+// FONT SIZE ACCESSIBILITY
+// ==============================================================
+function setFontSize(size) {
+  document.body.classList.remove('font-lg','font-xl');
+  if (size === 'lg') document.body.classList.add('font-lg');
+  if (size === 'xl') document.body.classList.add('font-xl');
+  try { localStorage.setItem('mrv_fontsize', size); } catch(e) {}
+  ['normal','lg','xl'].forEach(function(s) {
+    var b = document.getElementById('fst-'+s);
+    if (b) b.classList.toggle('active', s === size);
+  });
+}
+// Restore font size on load
+(function(){
+  try {
+    var s = localStorage.getItem('mrv_fontsize');
+    if (s && s !== 'normal') setFontSize(s);
+  } catch(e) {}
+})();
+
+// ==============================================================
+// PAGINATION ENGINE
+// Wraps any tbody with page controls. Usage:
+//   paginateTable('bodyDrafts', 20);
+// ==============================================================
+var _pageState = {};  // { tbodyId: { page, pageSize, allRows } }
+
+function paginateTable(tbodyId, pageSize) {
+  pageSize = pageSize || 20;
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  var rows = Array.from(tbody.querySelectorAll('tr'));
+  if (rows.length === 0) { removePagination(tbodyId); return; }
+
+  _pageState[tbodyId] = {
+    page: (_pageState[tbodyId] && _pageState[tbodyId].filter === _pageState[tbodyId].filter)
+          ? (_pageState[tbodyId].page || 1) : 1,
+    pageSize: pageSize,
+    allRows: rows,
+    filter: (_pageState[tbodyId] && _pageState[tbodyId].filter) || ''
+  };
+
+  applyPageFilter(tbodyId);
+}
+
+function applyPageFilter(tbodyId) {
+  var state = _pageState[tbodyId];
+  if (!state) return;
+  var term  = (state.filter || '').toLowerCase();
+  var filtered = term
+    ? state.allRows.filter(function(r){ return r.textContent.toLowerCase().includes(term); })
+    : state.allRows;
+
+  var total = filtered.length;
+  var pages = Math.max(1, Math.ceil(total / state.pageSize));
+  state.page = Math.min(state.page, pages);
+  var start = (state.page - 1) * state.pageSize;
+  var end   = start + state.pageSize;
+
+  // Show/hide rows
+  state.allRows.forEach(function(r){ r.style.display = 'none'; });
+  filtered.slice(start, end).forEach(function(r){ r.style.display = ''; });
+
+  renderPaginationBar(tbodyId, state.page, pages, total, filtered.length);
+}
+
+function renderPaginationBar(tbodyId, page, pages, totalFiltered, totalAll) {
+  // Find the card containing this tbody
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  var card = tbody.closest('.card') || tbody.closest('[class*="card"]');
+  if (!card) return;
+
+  var barId = 'pgbar-' + tbodyId;
+  var existing = document.getElementById(barId);
+  if (existing) existing.remove();
+
+  if (pages <= 1 && totalFiltered === totalAll) return; // no bar needed for single page with no filter
+
+  var bar = document.createElement('div');
+  bar.id = barId;
+  bar.className = 'table-pagination';
+
+  var info = totalFiltered < totalAll
+    ? 'Showing ' + Math.min((page-1)*_pageState[tbodyId].pageSize+1, totalFiltered) + '–'
+      + Math.min(page*_pageState[tbodyId].pageSize, totalFiltered) + ' of ' + totalFiltered + ' (filtered from ' + totalAll + ')'
+    : 'Showing ' + Math.min((page-1)*_pageState[tbodyId].pageSize+1, totalFiltered) + '–'
+      + Math.min(page*_pageState[tbodyId].pageSize, totalFiltered) + ' of ' + totalAll;
+
+  // Page buttons (max 7 shown)
+  var btns = '<div class="pagination-controls">';
+  var tid = tbodyId;
+  btns += '<button class="page-btn" data-tid="'+tid+'" data-pg="'+(page-1)+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)" '+(page<=1?'disabled':'')+'>&#8249;</button>';
+  var range = pageRange(page, pages);
+  range.forEach(function(p) {
+    if (p === '...') {
+      btns += '<button class="page-btn" disabled style="border:none;background:none">…</button>';
+    } else {
+      btns += '<button class="page-btn'+(p===page?' active':'')+'" data-tid="'+tid+'" data-pg="'+p+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)">'+p+'</button>';
+    }
+  });
+  btns += '<button class="page-btn" data-tid="'+tid+'" data-pg="'+(page+1)+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)" '+(page>=pages?'disabled':'')+'>&#8250;</button>';
+  btns += '</div>';
+
+  bar.innerHTML = '<span style="white-space:nowrap">'+info+'</span>' + btns;
+  card.appendChild(bar);
+}
+
+function pageRange(current, total) {
+  if (total <= 7) return Array.from({length:total}, function(_,i){ return i+1; });
+  var pages = [1];
+  if (current > 3) pages.push('...');
+  for (var i = Math.max(2,current-1); i <= Math.min(total-1,current+1); i++) pages.push(i);
+  if (current < total-2) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
+function goPage(tbodyId, page) {
+  var state = _pageState[tbodyId];
+  if (!state) return;
+  var pages = Math.ceil(state.allRows.filter(function(r){
+    var term = (state.filter||'').toLowerCase();
+    return !term || r.textContent.toLowerCase().includes(term);
+  }).length / state.pageSize);
+  state.page = Math.max(1, Math.min(page, pages));
+  applyPageFilter(tbodyId);
+}
+
+function removePagination(tbodyId) {
+  var b = document.getElementById('pgbar-' + tbodyId);
+  if (b) b.remove();
+  delete _pageState[tbodyId];
+}
+
+// ==============================================================
+// TABLE FILTER BARS -- inject into card headers
+// ==============================================================
+function addTableFilter(tbodyId, placeholder) {
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  var card = tbody.closest('.card');
+  if (!card) return;
+  var filterId = 'filter-' + tbodyId;
+  if (document.getElementById(filterId)) return; // already added
+
+  var header = card.querySelector('.card-header');
+  if (!header) return;
+
+  var bar = document.createElement('div');
+  bar.className = 'table-filter-bar';
+  bar.innerHTML = '<div class="table-filter-wrap">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+    + '<input id="'+filterId+'" class="table-filter-input" type="text" placeholder="'+(placeholder||'Search...')+'" '
+    + 'data-tid="'+tbodyId+'" oninput="filterTable(this.dataset.tid,this.value)">'
+    + '</div>'
+    + '<button class="btn btn-ghost btn-sm" style="font-size:11.5px" data-tid="'+tbodyId+'" onclick="clearFilter(this.dataset.tid)">Clear</button>';
+  header.insertAdjacentElement('afterend', bar);
+}
+
+function filterTable(tbodyId, value) {
+  var state = _pageState[tbodyId];
+  if (!state) {
+    // Init pagination if not done yet
+    var tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    _pageState[tbodyId] = { page:1, pageSize:20, allRows:rows, filter:value };
+  } else {
+    state.filter = value;
+    state.page = 1;
+  }
+  applyPageFilter(tbodyId);
+}
+
+function clearFilter(tbodyId) {
+  var el = document.getElementById('filter-' + tbodyId);
+  if (el) el.value = '';
+  filterTable(tbodyId, '');
+}
+
+// ==============================================================
+// AI COST INTELLIGENCE -- Claude-powered analysis
+// ==============================================================
+
+async function runAIInsight() {
+  var btn  = document.getElementById('aiInsightBtn');
+  var body = document.getElementById('aiInsightBody');
+  var type = document.getElementById('aiInsightType').value;
+  if (!body) return;
+
+  // Build data snapshot for Claude
+  var groups = {};
+  budgetLines.forEach(function(l) {
+    var k = l.project + ' — ' + l.type;
+    if (!groups[k]) groups[k] = { project:l.project, type:l.type, country:l.country||'', budget:0, actual:0, lines:[] };
+    var budg = parseFloat(l.budgetedAmount) || 0;
+    var act  = getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem);
+    groups[k].budget += budg;
+    groups[k].actual += act;
+    groups[k].lines.push({
+      category: l.category, summary: l.costSummary, item: l.costItem,
+      budgeted: budg, actual: act, currency: l.currency || 'KES'
+    });
+  });
+
+  var projectSummary = Object.values(groups).map(function(g) {
+    var pct = g.budget ? Math.round(g.actual / g.budget * 100) : 0;
+    return g.project + ' (' + g.type + ', ' + (g.country||'All') + '): Budget='
+      + g.budget.toLocaleString() + ', Spent=' + g.actual.toLocaleString()
+      + ', Utilisation=' + pct + '%';
+  }).join(String.fromCharCode(10));
+
+  var allPaid   = requestsStore.filter(function(r){ return r.status === 'Paid'; });
+  var totalPaid = allPaid.reduce(function(s,r){ return s + (parseFloat(r.amount)||0); }, 0);
+  var allBudget = budgetLines.reduce(function(s,l){ return s + (parseFloat(l.budgetedAmount)||0); }, 0);
+
+  // Category breakdown
+  var catMap = {};
+  allPaid.forEach(function(r) {
+    var k = r.category || 'Uncategorised';
+    catMap[k] = (catMap[k] || 0) + (parseFloat(r.amount) || 0);
+  });
+  var catBreakdown = Object.entries(catMap).sort(function(a,b){ return b[1]-a[1]; })
+    .map(function(e){ return e[0] + ': ' + e[1].toLocaleString(); }).join(', ');
+
+  var prompts = {
+    overview:        'Provide a concise executive summary of cost performance across all projects. Highlight which projects are on track, over budget, or underspending. Use the data below.',
+    anomalies:       'Identify any cost anomalies, unusual spending patterns, or outliers in the data. Flag any projects or categories that look suspicious or need attention.',
+    utilisation:     'Analyse budget utilisation across projects. Which projects are at risk of overspending? Which are severely underspent? What does this suggest about planning accuracy?',
+    trends:          'Based on current spending patterns, identify trends. Are costs accelerating? Is spending front-loaded or back-loaded? What patterns emerge by category?',
+    forecast:        'Based on current utilisation rates, forecast whether each project will come in under, over, or on budget by period end. Quantify the risk.',
+    recommendations: 'Provide 3-5 specific, actionable cost management recommendations based on the data. Be practical and prioritised.'
+  };
+
+  var dataContext = [
+    'FINANCIAL PERIOD DATA:',
+    'Total Approved Budget: ' + allBudget.toLocaleString() + ' KES',
+    'Total Spent (Paid): ' + totalPaid.toLocaleString() + ' KES',
+    'Overall Utilisation: ' + (allBudget ? Math.round(totalPaid/allBudget*100) : 0) + '%',
+    'Total Paid Requests: ' + allPaid.length,
+    '',
+    'PROJECT BREAKDOWN:',
+    projectSummary || 'No project data loaded.',
+    '',
+    'SPENDING BY CATEGORY:',
+    catBreakdown || 'No paid requests yet.',
+  ].join(String.fromCharCode(10));
+
+  var promptText = prompts[type] + '\n\nRespond in clear, professional prose with bullet points where helpful. Be specific and use actual numbers. Keep it under 350 words.\n\n' + dataContext;
+
+  // Loading state
+  btn.disabled = true;
+  btn.textContent = '⏳ Analysing…';
+  body.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:20px;color:var(--muted)">'
+    + '<div style="width:20px;height:20px;border:2px solid var(--amber);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div>'
+    + 'Claude is analysing your cost data…'
+    + '</div>';
+
+  try {
+    // Route through Apps Script to avoid CORS and keep API key server-side
+    var data = await gasCall({ action: 'aiInsight', prompt: promptText });
+    if (!data || !data.ok) throw new Error(data && data.error ? data.error : 'AI service unavailable');
+    var text = data.text || 'No response received.';
+
+    // Format the response
+    var typeLabels = {
+      overview:'Overall Cost Overview', anomalies:'Anomaly Detection',
+      utilisation:'Utilisation Analysis', trends:'Spending Trends',
+      forecast:'Budget Forecast', recommendations:'Recommendations'
+    };
+
+    // Convert markdown to HTML
+    var formatted = text
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/^### (.+)$/gm, '<div style="font-size:13px;font-weight:700;color:var(--ink);margin:12px 0 4px">$1</div>')
+      .replace(/^## (.+)$/gm, '<div style="font-size:14px;font-weight:700;color:var(--amber);margin:14px 0 6px">$1</div>')
+      .replace(/^• (.+)$/gm, '<div style="display:flex;gap:8px;margin:4px 0"><span style="color:var(--amber);margin-top:1px">•</span><span>$1</span></div>')
+      .replace(/^- (.+)$/gm, '<div style="display:flex;gap:8px;margin:4px 0"><span style="color:var(--amber);margin-top:1px">•</span><span>$1</span></div>')
+      .replace(/^\d+\. (.+)$/gm, function(m, p1) {
+        return '<div style="display:flex;gap:8px;margin:5px 0"><span style="color:var(--amber);font-weight:700;flex-shrink:0">&#9679;</span><span>'+p1+'</span></div>';
+      })
+      ;
+
+    body.innerHTML = '<div style="padding:6px 20px 20px">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">'
+        + '<span style="font-size:18px">✦</span>'
+        + '<div>'
+          + '<div style="font-size:13px;font-weight:700;color:var(--ink)">' + typeLabels[type] + '</div>'
+          + '<div style="font-size:11px;color:var(--muted)">Generated by Claude · ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + '</div>'
+        + '</div>'
+      + '</div>'
+      + '<div style="font-size:13.5px;line-height:1.7;color:var(--ink-mid)">' + formatted + '</div>'
+    + '</div>';
+
+  } catch(e) {
+    body.innerHTML = '<div style="padding:20px;color:var(--danger);font-size:13px">'
+      + '⚠️ Analysis failed: ' + e.message + '. Please check your connection and try again.'
+      + '</div>';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '✦ Analyse';
+}
+
+// ==============================================================
 // END AUTH SYSTEM
 // ==============================================================
 
@@ -5286,25 +5873,118 @@ document.addEventListener('DOMContentLoaded', async () => {
   bootAuth();
 });
 
-// Called by loginSuccess() after a successful sign-in
-async function afterLogin() {
-  // ── STEP 1: Render from cache immediately (instant) ──────────
-  savedSigs = loadSigsFromStorage();
-  renderDashboard();
-  rebuildRequestsTable();
-  populateAllDropdowns();
-  refreshSigGrids();
-  renderTransactions();
-  renderHistory();
+// SVG icons store
+var ICONS = {
+  dashboard:      '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  budgets:        '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  funds:          '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>',
+  requests:       '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/>',
+  history:        '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  expenses:       '<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  reconciliation: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  transactions:   '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  users:          '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  sheets:         '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/>',
+};
 
-  // Route immediately -- user sees their view right away
-  if (currentUser.role === 'requester') {
-    showView('requests', null);   // Requesters land on Requests tab
-  } else {
-    showView('dashboard', null);
+function makeIcon(key) {
+  return '<span class="aside-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[key]||'')+'</svg></span>';
+}
+
+function buildSidebar() {
+  var role  = currentUser ? (currentUser.role || 'requester') : 'requester';
+  var aside = document.getElementById('mainAside');
+  if (!aside) return;
+
+  // Each entry: { type:'section'|'item', label, view, icon, badge, id }
+  var nav = [];
+
+  if (role === 'requester') {
+    nav = [
+      { type:'section', label:'My Work' },
+      { type:'item', label:'System Requests', view:'requests', icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'My Submissions',  view:'history',  icon:'history' },
+    ];
+
+  } else if (role === 'viewer') {
+    nav = [
+      { type:'section', label:'Overview' },
+      { type:'item', label:'Dashboard',       view:'dashboard',      icon:'dashboard' },
+      { type:'item', label:'Approved Budgets',view:'budgets',        icon:'budgets' },
+      { type:'section', label:'Reports' },
+      { type:'item', label:'Paid Requests',   view:'requests',       icon:'requests' },
+      { type:'item', label:'Transactions',    view:'transactions',   icon:'transactions' },
+      { type:'item', label:'Reconciliation',  view:'reconciliation', icon:'reconciliation' },
+      { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
+    ];
+
+  } else if (role === 'approver') {
+    nav = [
+      { type:'section', label:'Cycle' },
+      { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
+      { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
+      { type:'item', label:'Load Funds',       view:'funds',          icon:'funds' },
+      { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Weekly Expensing', view:'expenses',       icon:'expenses' },
+      { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
+      { type:'section', label:'Reports' },
+      { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
+      { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
+    ];
+
+  } else if (role === 'manager') {
+    nav = [
+      { type:'section', label:'Cycle' },
+      { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
+      { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
+      { type:'item', label:'Load Funds',       view:'funds',          icon:'funds' },
+      { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Weekly Expensing', view:'expenses',       icon:'expenses' },
+      { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
+      { type:'section', label:'Reports' },
+      { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
+      { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
+    ];
+
+  } else { // admin -- full access including Users + Sheets
+    nav = [
+      { type:'section', label:'Cycle' },
+      { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
+      { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
+      { type:'item', label:'Load Funds',       view:'funds',          icon:'funds' },
+      { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Weekly Expensing', view:'expenses',       icon:'expenses' },
+      { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
+      { type:'section', label:'Reports' },
+      { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
+      { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
+      { type:'section', label:'Admin' },
+      { type:'item', label:'Manage Users',     view:'users',          icon:'users' },
+      { type:'section', label:'Integration' },
+      { type:'item', label:'Google Sheets',    view:'sheets',         icon:'sheets', id:'sheetsNavItem',
+        badge:'<span id="sheetsSyncBadge" class="aside-badge" style="display:none;background:var(--gold)">!</span>' },
+    ];
   }
 
-  // ── STEP 2: Restore Sheets UI state ──────────────────────────
+  aside.innerHTML = nav.map(function(n) {
+    if (n.type === 'section') {
+      return '<div class="aside-section">'+n.label+'</div>';
+    }
+    if (!n.view) return '';
+    return '<div class="aside-item"'+(n.id?' id="'+n.id+'"':'')+' data-view="'+n.view+'" onclick="showView(this.dataset.view,this)">'
+      + makeIcon(n.icon)
+      + n.label
+      + (n.badge || '')
+      + '</div>';
+  }).join('');
+}
+
+// Called by loginSuccess() after a successful sign-in
+async function afterLogin() {
+  // ── STEP 0: Build sidebar for this role ─────────────────────
+  buildSidebar();
+
+  // ── STEP 1: Restore Sheets UI state ──────────────────────────
   if (gsWebAppUrl) {
     gsConnected = true;
     var urlEl = document.getElementById('webAppUrl');
@@ -5322,20 +6002,56 @@ async function afterLogin() {
     updateSheetStatusPill(true);
   }
 
-  // ── STEP 3: Pull from Sheets in background (non-blocking) ─────
+  // ── STEP 2: Load signatures ───────────────────────────────────
+  savedSigs = loadSigsFromStorage();
+
+  // ── STEP 3: Render from localStorage cache ──────────────────
+  var safeRender = function(fn, name) {
+    try { fn(); } catch(e) { console.error('Render error in ' + name + ':', e); }
+  };
+  safeRender(function(){ rebuildRequestsTable(); },  'rebuildRequestsTable');
+  safeRender(function(){ populateAllDropdowns(); },  'populateAllDropdowns');
+  safeRender(function(){ refreshSigGrids(); },       'refreshSigGrids');
+  safeRender(function(){ renderTransactions(); },    'renderTransactions');
+  safeRender(function(){ renderHistory(); },         'renderHistory');
+  safeRender(function(){ renderDashboard(); },       'renderDashboard');
+
+  // Route -- user sees correct view
+  var startView = (currentUser.role === 'requester') ? 'requests' : 'dashboard';
+  safeRender(function(){ showView(startView, null); }, 'showView:' + startView);
+
+  // ── STEP 4: Pull fresh data from Sheets in background ────────
   if (gsWebAppUrl) {
-    // Start auto-sync immediately -- it will pull within 3s
     var chk = document.getElementById('autoSyncToggle');
     if (chk) chk.checked = true;
-    startAutoSync();
 
-    // Also pull once right now in background -- don't await
-    Promise.all([
-      pullFromSheets(true).catch(function(e){ appendSyncLog('Pull failed: ' + e.message); }),
-      pullBudgetLinesFromSheets().catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); })
-    ]).then(function() {
-      reqCounter = calcReqCounter();
-      appendSyncLog('Initial sync complete');
+    // Pull deleted refs first so merge correctly excludes them
+    gasCall({ action:'getDeletedRefs' }).then(function(res) {
+      if (res && res.ok && res.refs && res.refs.length) {
+        // Add any server-deleted refs to local deletedStore so merge excludes them
+        var existingRefs = new Set(deletedStore.map(function(r){ return r.ref; }));
+        res.refs.forEach(function(ref) {
+          if (!existingRefs.has(ref)) {
+            deletedStore.push({ ref:ref, deletedAt:'', deletedBy:'server' });
+          }
+        });
+        try { localStorage.setItem('mrv_deleted', JSON.stringify(deletedStore)); } catch(e) {}
+        // Also remove from requestsStore immediately
+        var delSet = new Set(res.refs);
+        requestsStore = requestsStore.filter(function(r){ return !delSet.has(r.ref); });
+        persistRequestsToStorage();
+      }
+    }).catch(function(){}).finally(function() {
+      // Then pull budgets + requests
+      pullBudgetLinesFromSheets()
+        .catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); })
+        .finally(function() {
+          pullRequestsOnly()
+            .catch(function(e){ appendSyncLog('Pull failed: ' + e.message); })
+            .finally(function() {
+              startAutoSync();
+            });
+        });
     });
   }
 }
@@ -5422,7 +6138,7 @@ function promptDeleteRequest(ref) {
     + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Ref</div><div style="font-weight:600">#' + r.ref + '</div></div>'
     + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Status</div><div><span class="badge ' + ({Paid:'badge-teal',Pending:'badge-gold',Draft:'badge-gray'}[r.status]||'badge-gray') + '">' + r.status + '</span></div></div>'
     + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Project / Type</div><div>' + r.project + ' (' + (r.type||'--') + ')</div></div>'
-    + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Amount</div><div style="font-family:Playfair Display,serif;font-weight:600;color:var(--danger)">' + getCurrency(r.project,r.type) + ' ' + (r.amount||0).toLocaleString() + '</div></div>'
+    + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Amount</div><div style="font-family:DM Serif Display,serif;font-weight:600;color:var(--danger)">' + getCurrency(r.project,r.type) + ' ' + (r.amount||0).toLocaleString() + '</div></div>'
     + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Category / Line</div><div>' + (r.category||'--') + ' / ' + (r.costSummary||'--') + '</div></div>'
     + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Requester</div><div>' + (r.requester||'--') + '</div></div>'
     + '</div>';
@@ -5616,128 +6332,6 @@ function wrapTables() {
 // Mobile nav sync is handled inside the auth showView override below
 
 // Run on load
-// ── AI COST INTELLIGENCE ──────────────────────────────────────
-
-var _aiType = 'overview';
-
-function selectAIType(el, type) {
-  document.querySelectorAll('.ai-type-card').forEach(function(c){ c.classList.remove('active'); });
-  el.classList.add('active');
-  _aiType = type;
-  var titles = {
-    overview:'Cost Overview', anomalies:'Anomaly Detection',
-    utilisation:'Utilisation Analysis', trends:'Spending Trends',
-    forecast:'Budget Forecast', recommendations:'Recommendations'
-  };
-  var titleEl = document.getElementById('aiResponseTitle');
-  if (titleEl) titleEl.textContent = titles[type] || type;
-}
-
-async function runAIInsight() {
-  var btn    = document.getElementById('aiInsightBtn');
-  var body   = document.getElementById('aiInsightBody');
-  var status = document.getElementById('aiInsightStatus');
-  var meta   = document.getElementById('aiResponseMeta');
-  if (!body) return;
-
-  // Build concise data snapshot
-  var groups = {};
-  budgetLines.forEach(function(l) {
-    var k = (l.project||'') + '||' + (l.type||'');
-    if (!groups[k]) groups[k] = { project:l.project, type:l.type, country:l.country||'', budget:0, actual:0 };
-    groups[k].budget += parseFloat(l.budgetedAmount)||0;
-    groups[k].actual += getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem);
-  });
-
-  var allPaid   = requestsStore.filter(function(r){ return r.status==='Paid'; });
-  var totalPaid = allPaid.reduce(function(s,r){ return s+(parseFloat(r.amount)||0); }, 0);
-  var allBudget = budgetLines.reduce(function(s,l){ return s+(parseFloat(l.budgetedAmount)||0); }, 0);
-
-  var catMap = {};
-  allPaid.forEach(function(r){
-    var k = r.category||'Uncategorised';
-    catMap[k] = (catMap[k]||0) + (parseFloat(r.amount)||0);
-  });
-
-  var projectLines = Object.values(groups).map(function(g){
-    var pct = g.budget ? Math.round(g.actual/g.budget*100) : 0;
-    return g.project+' ('+g.type+'): Budget='+g.budget.toLocaleString()+' Spent='+g.actual.toLocaleString()+' ('+pct+'%)';
-  }).join('\n');
-
-  var catLines = Object.entries(catMap).sort(function(a,b){return b[1]-a[1];})
-    .slice(0,8).map(function(e){ return e[0]+': '+e[1].toLocaleString(); }).join(', ');
-
-  var prompts = {
-    overview:        'Give a SHORT executive summary (max 6 bullet points) of cost performance. State total budget, total spent, overall utilisation %, and flag top 2 concerns.',
-    anomalies:       'In max 5 bullet points, identify ONLY the most significant cost anomalies or outliers. Be specific with numbers.',
-    utilisation:     'In max 6 bullet points, analyse budget utilisation. Flag projects at risk of overspending or severely underspent. Include percentages.',
-    trends:          'In max 5 bullet points, identify the clearest spending trends from the data. Be specific.',
-    forecast:        'In max 6 bullet points, forecast end-of-period outcome per project. State clearly: on track / at risk / overspend. Use numbers.',
-    recommendations: 'Give exactly 5 specific, actionable cost management recommendations. Number them 1-5. One sentence each. Use the actual data.'
-  };
-
-  var NL = String.fromCharCode(10);
-  var dataBlock = [
-    'FINANCIAL DATA:',
-    'Total Budget: KES ' + allBudget.toLocaleString(),
-    'Total Spent: KES '  + totalPaid.toLocaleString(),
-    'Utilisation: ' + (allBudget ? Math.round(totalPaid/allBudget*100) : 0) + '%',
-    'Paid Requests: ' + allPaid.length,
-    '', 'PROJECTS:',
-    projectLines || 'No budget data.',
-    '', 'TOP CATEGORIES BY SPEND:',
-    catLines || 'No paid requests yet.'
-  ].join(NL);
-
-    var promptText = prompts[_aiType] + NL+NL + 'Respond ONLY with bullet points. No preamble. No conclusion. Maximum 6 bullets. Each bullet max 20 words.' + NL+NL + dataBlock;
-
-  // Loading
-  btn.disabled = true;
-  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analysing…';
-  if (status) status.textContent = 'Sending data to AI…';
-  body.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:20px;color:var(--muted);font-size:13px"><div style="width:18px;height:18px;border:2px solid var(--amber);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div>Analysing your cost data…</div>';
-
-  try {
-    var res = await gasCall({ action:'aiInsight', prompt: promptText });
-    if (!res || !res.ok) throw new Error(res && res.error ? res.error : 'AI service unavailable');
-
-    var text = res.text || '';
-    var now  = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-
-    // Format response: convert markdown bullets to styled HTML
-    var html = text.split(NL).map(function(line) {
-      line = line.trim();
-      if (!line) return '';
-      // Bold
-      line = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-      // Bullet variants
-      if (/^[-•*]\s/.test(line)) {
-        return '<div class="ai-bullet"><span class="ai-bullet-dot">▸</span><span>'+line.slice(2)+'</span></div>';
-      }
-      if (/^\d+\.\s/.test(line)) {
-        var num = line.match(/^(\d+)\./)[1];
-        return '<div class="ai-bullet"><span class="ai-bullet-dot" style="min-width:18px">'+num+'.</span><span>'+line.replace(/^\d+\.\s/,'')+'</span></div>';
-      }
-      // Heading
-      if (line.startsWith('###') || line.startsWith('##')) {
-        return '<div class="ai-section-title">'+line.replace(/^#+\s*/,'')+'</div>';
-      }
-      return '<div style="margin:4px 0;font-size:13px">'+line+'</div>';
-    }).join('');
-
-    body.innerHTML = '<div style="padding:4px 20px 20px">' + (html || '<div style="color:var(--muted)">No insights returned.</div>') + '</div>';
-    if (status) status.textContent = 'Updated at ' + now;
-    if (meta)   meta.textContent   = 'Last run: ' + now + ' · Groq Llama 3.3';
-
-  } catch(e) {
-    body.innerHTML = '<div style="padding:20px;color:var(--danger);font-size:13px">⚠️ Analysis failed: '+e.message+'. Please check your connection and try again.</div>';
-    if (status) status.textContent = '';
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Analysis';
-}
-
 // wrapTables called from main DOMContentLoaded below
 
 // ==============================================================
@@ -5842,7 +6436,7 @@ async function runAIInsight() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
     <span>Recon</span>
   </div>
-  <div class="mob-nav-item requester-only" id="mob-history" onclick="showView('history',null);setMobActive('mob-history')">
+  <div class="mob-nav-item" id="mob-history" onclick="showView('history',null);setMobActive('mob-history')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     <span>My History</span>
   </div>
