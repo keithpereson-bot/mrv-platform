@@ -1144,7 +1144,97 @@
 
   <!-- -- STEP 5: WEEKLY EXPENSING -- -->
   <div id="view-expenses" class="view">
-    <div class="page-header"><h1>Weekly Expensing</h1><p>Step 5 -- Upload receipts and supporting documents. Recipient signs digitally.</p></div>
+    <div class="page-header">
+      <h1>Weekly Expensing &amp; Expense Claim Form</h1>
+      <p>Record weekly expenses and auto-fill the Burn Manufacturing 2026 expense claim template from paid requests</p>
+    </div>
+
+    <!-- ── EXPENSE CLAIM FORM SECTION ──────────────────────── -->
+    <div style="margin-bottom:8px">
+      <h2 style="font-size:15px;font-weight:700;color:var(--gray-900);margin-bottom:4px">Expense Claim Form</h2>
+      <p style="font-size:12.5px;color:var(--muted)">Auto-fill the official template from paid requests, sign as admin, export to PDF</p>
+    </div>
+
+    <!-- Step 1: Select paid requests -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Step 1 &mdash; Select Paid Requests to Include</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(true)">All</button>
+          <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(false)">None</button>
+        </div>
+      </div>
+      <div id="ecfRequestList" style="max-height:260px;overflow-y:auto;border-top:1px solid var(--border)">
+        <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">No paid requests available. Mark requests as Paid in System Requests first.</div>
+      </div>
+    </div>
+
+    <!-- Step 2: Header fields -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Step 2 &mdash; Form Header</div>
+        <button class="btn btn-ghost btn-sm" onclick="ecfAutoHeader()">&#8635; Auto-fill from data</button>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px 20px">
+          <div class="form-group" style="margin:0"><label>Burn Entity</label><input id="ecfEntity" type="text" placeholder="e.g. BMTZ (Tanzania)"></div>
+          <div class="form-group" style="margin:0"><label>Date</label><input id="ecfDate" type="date"></div>
+          <div class="form-group" style="margin:0"><label>Profit Centre</label><input id="ecfProfitCentre" type="text" placeholder="e.g. 24 Carbon"></div>
+          <div class="form-group" style="margin:0"><label>Country Code</label><input id="ecfCountry" type="text" placeholder="e.g. TZ"></div>
+          <div class="form-group" style="margin:0"><label>Name of Claimant</label><input id="ecfClaimant" type="text" placeholder="Full name"></div>
+          <div class="form-group" style="margin:0"><label>Product Code</label><input id="ecfProductCode" type="text" placeholder="e.g. 52 Wood"></div>
+          <div class="form-group" style="margin:0"><label>Cost Centre</label><input id="ecfCostCentre" type="text" placeholder="e.g. 7CN (Carbon)"></div>
+          <div class="form-group" style="margin:0"><label>Job Title</label><input id="ecfJobTitle" type="text" placeholder="e.g. Finance Manager"></div>
+          <div class="form-group" style="margin:0"><label>R&amp;D Project Code</label><input id="ecfRdCode" type="text" placeholder="Optional"></div>
+          <div class="form-group" style="margin:0"><label>Dimension Code</label><input id="ecfDimCode" type="text" placeholder="e.g. 75CN-01 (Monitoring)"></div>
+          <div class="form-group" style="margin:0"><label>Bank / M-Pesa No.</label><input id="ecfBank" type="text" placeholder="Account or M-Pesa number"></div>
+          <div class="form-group" style="margin:0"><label>Carbon / Project Code</label><input id="ecfCarbonCode" type="text" placeholder="e.g. 005 (5642-VPA-001)"></div>
+          <div class="form-group" style="margin:0"><label>Currency</label><select id="ecfCurrency"><option value="TZS">TZS</option><option value="KES">KES</option><option value="USD">USD</option><option value="UGX">UGX</option></select></div>
+          <div class="form-group" style="margin:0"><label>Amount Advanced</label><input id="ecfAdvanced" type="number" value="0" min="0"></div>
+          <div class="form-group" style="margin:0"><label>Business Unit</label><input id="ecfBizUnit" type="text" placeholder="e.g. Biomass"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Preview -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Step 3 &mdash; Form Preview</div>
+        <button class="btn btn-secondary btn-sm" onclick="ecfRefreshPreview()">&#8635; Refresh Preview</button>
+      </div>
+      <div style="padding:16px;overflow-x:auto;background:#f5f5f5">
+        <div id="ecfPreview" style="min-width:800px;font-family:Arial,sans-serif;font-size:11px;background:#fff;padding:12px">
+          <div style="text-align:center;color:var(--muted);padding:24px">Click Refresh Preview to see the filled form.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Signature + Export -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Step 4 &mdash; Admin Signature &amp; Export PDF</div>
+      </div>
+      <div class="card-body">
+        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Your signature will appear in the <strong>Claimant</strong> box of the exported PDF.</p>
+        <canvas id="ecfSigCanvas" width="500" height="130"
+          style="border:1.5px solid var(--border);border-radius:var(--radius);cursor:crosshair;background:#FAFAFA;display:block;touch-action:none;max-width:100%;margin-bottom:10px"></canvas>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px">
+          <button class="btn btn-ghost btn-sm" onclick="ecfClearSig()">Clear</button>
+          <span id="ecfSigNote" style="font-size:11.5px;color:var(--muted)">Draw your signature above</span>
+        </div>
+        <button class="btn btn-primary" onclick="ecfExportPDF()" style="gap:8px;font-size:13.5px;padding:10px 24px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export to PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- ── WEEKLY EXPENSE LOG (existing) ────────────────────── -->
+    <div style="margin-top:32px;margin-bottom:8px;padding-top:24px;border-top:2px solid var(--border)">
+      <h2 style="font-size:15px;font-weight:700;color:var(--gray-900);margin-bottom:4px">Weekly Expense Log</h2>
+      <p style="font-size:12.5px;color:var(--muted)">Record individual expenses and collect recipient signatures</p>
+    </div>
+
     <div class="two-col">
       <div class="card">
         <div class="card-header"><div class="card-title">Record Expense</div></div>
@@ -1157,7 +1247,7 @@
             <div class="form-group form-full"><label>Description</label><input type="text" placeholder="Brief description of expense"></div>
             <div class="form-group form-full">
               <label>Receipt / Supporting Document</label>
-              <div class="upload-zone" onclick="toast('File upload simulated OK')">📎 Click to attach receipt or drag & drop</div>
+              <div class="upload-zone" onclick="toast('File upload simulated OK')">&#128206; Click to attach receipt or drag &amp; drop</div>
             </div>
           </div>
           <!-- Inline signature widget -->
@@ -1174,8 +1264,8 @@
             </div>
             <div id="expSigWidget">
               <div class="sig-tabs">
-                <button class="sig-tab active" onclick="switchSigTab(this,'exp-saved')">💾 Saved Signatures</button>
-                <button class="sig-tab" onclick="switchSigTab(this,'exp-draw')">✏️ Draw</button>
+                <button class="sig-tab active" onclick="switchSigTab(this,'exp-saved')">&#128190; Saved Signatures</button>
+                <button class="sig-tab" onclick="switchSigTab(this,'exp-draw')">&#9998;&#65039; Draw</button>
               </div>
               <div id="exp-saved" class="sig-panel active">
                 <div class="sig-grid" id="expSavedGrid"></div>
@@ -1533,148 +1623,7 @@
     </div>
   </div>
   
-  <!-- ── EXPENSE CLAIM FORM (admin only) ──────────────────────── -->
-  <div id="view-expense-form" class="view">
 
-    <div class="page-header">
-      <h1>Expense Claim Form</h1>
-      <p>Auto-fill the Burn Manufacturing 2026 template from paid requests, apply your signature, export to PDF</p>
-    </div>
-
-    <!-- ── STEP 1: Pick requests ── -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Step 1 &mdash; Select Paid Requests to Include</div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(true)">All</button>
-          <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(false)">None</button>
-        </div>
-      </div>
-      <div id="ecfRequestList" style="max-height:260px;overflow-y:auto;border-top:1px solid var(--border)">
-        <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">No paid requests available.</div>
-      </div>
-    </div>
-
-    <!-- ── STEP 2: Header fields ── -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Step 2 &mdash; Form Header</div>
-        <button class="btn btn-ghost btn-sm" onclick="ecfAutoHeader()">&#8635; Auto-fill</button>
-      </div>
-      <div class="card-body">
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px 20px">
-          <div class="form-group" style="margin:0">
-            <label>Burn Entity</label>
-            <input id="ecfEntity" type="text" placeholder="e.g. BMTZ (Tanzania)">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Date</label>
-            <input id="ecfDate" type="date">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Profit Centre</label>
-            <input id="ecfProfitCentre" type="text" placeholder="e.g. 24 Carbon">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Country Code</label>
-            <input id="ecfCountry" type="text" placeholder="e.g. TZ">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Name of Claimant</label>
-            <input id="ecfClaimant" type="text" placeholder="Full name">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Product Code</label>
-            <input id="ecfProductCode" type="text" placeholder="e.g. 52 Wood">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Cost Centre</label>
-            <input id="ecfCostCentre" type="text" placeholder="e.g. 7CN (Carbon)">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Job Title</label>
-            <input id="ecfJobTitle" type="text" placeholder="e.g. Finance Manager">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>R&amp;D Project Code</label>
-            <input id="ecfRdCode" type="text" placeholder="Optional">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Dimension Code</label>
-            <input id="ecfDimCode" type="text" placeholder="e.g. 75CN-01 (Monitoring)">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Bank / M-Pesa No.</label>
-            <input id="ecfBank" type="text" placeholder="Account or M-Pesa number">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Carbon / Project Code</label>
-            <input id="ecfCarbonCode" type="text" placeholder="e.g. 005 (5642-VPA-001)">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Currency</label>
-            <select id="ecfCurrency">
-              <option value="TZS">TZS</option>
-              <option value="KES">KES</option>
-              <option value="USD">USD</option>
-              <option value="UGX">UGX</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Amount Advanced</label>
-            <input id="ecfAdvanced" type="number" value="0" min="0">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Business Unit</label>
-            <input id="ecfBizUnit" type="text" placeholder="e.g. Biomass">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── STEP 3: Live preview ── -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Step 3 &mdash; Form Preview</div>
-        <button class="btn btn-secondary btn-sm" onclick="ecfRefreshPreview()">&#8635; Refresh</button>
-      </div>
-      <div style="padding:16px;overflow-x:auto;background:#f5f5f5">
-        <div id="ecfPreview" style="min-width:800px;font-family:Arial,sans-serif;font-size:11px;background:#fff;padding:12px">
-          <div style="text-align:center;color:var(--muted);padding:24px">Click Refresh to preview the filled form.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── STEP 4: Signature + Export ── -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Step 4 &mdash; Admin Signature &amp; Export PDF</div>
-      </div>
-      <div class="card-body">
-        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">
-          Your signature will appear in the <strong>Claimant</strong> box of the exported PDF.
-        </p>
-        <canvas id="ecfSigCanvas" width="500" height="130"
-          style="border:1.5px solid var(--border);border-radius:var(--radius);cursor:crosshair;
-                 background:#FAFAFA;display:block;touch-action:none;max-width:100%;margin-bottom:10px">
-        </canvas>
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px">
-          <button class="btn btn-ghost btn-sm" onclick="ecfClearSig()">Clear</button>
-          <span id="ecfSigNote" style="font-size:11.5px;color:var(--muted)">Draw your signature above</span>
-        </div>
-        <button class="btn btn-primary" onclick="ecfExportPDF()" style="gap:8px;font-size:13.5px;padding:10px 24px">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          Export to PDF
-        </button>
-      </div>
-    </div>
-
-  </div>
 </main>
 </div>
 
@@ -3300,7 +3249,7 @@ async function downloadRequestsPDF() {
 
 // -- Navigation ---------------------------------------------
 function showView(id, el) {
-  if (id === 'expense-form') { setTimeout(ecfInit, 80); }
+  if (id === 'expenses') { setTimeout(ecfInit, 80); }
   if (!id || id === 'undefined') { console.warn('showView called with bad id:', id); return; }
   var viewEl = document.getElementById('view-' + id);
   if (!viewEl) { console.warn('showView: no element for view-' + id); return; }
@@ -6103,7 +6052,6 @@ function buildSidebar() {
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
       { type:'item', label:'Weekly Expensing', view:'expenses',       icon:'expenses' },
       { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
-      { type:'item', label:'Expense Form',       view:'expense-form',   icon:'requests' },
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
       { type:'item', label:'AI Intelligence',  view:'ai',             icon:'ai' },
