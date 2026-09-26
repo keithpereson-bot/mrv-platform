@@ -6648,6 +6648,7 @@ function ecfExportPDF() {
   var sigDataUrl = ecfGetAdminSig();
   if (!sigDataUrl) { toast('No signature found — draw one below or save one in My Signatures'); return; }
 
+  // ── collect all values ──────────────────────────────────────────────────
   var entity   = document.getElementById('ecfEntity').value||'';
   var dateVal  = document.getElementById('ecfDate').value||new Date().toISOString().slice(0,10);
   var dStr     = new Date(dateVal).toLocaleDateString('en-GB');
@@ -6665,176 +6666,210 @@ function ecfExportPDF() {
   var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
   var d        = ecfBuildRows(sel,cur);
   var balance  = d.totalTZS - advanced;
-
-  var logoSrc = 'data:image/png;base64,'+ECF_LOGO_B64;
+  var logoSrc  = 'data:image/png;base64,'+ECF_LOGO_B64;
 
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+  // ── 11 data rows ─────────────────────────────────────────────────────────
   var dataRows = d.rows.map(function(r){
     return '<tr>'
-      +'<td>'+esc(r.date)+'</td>'
-      +'<td>'+esc(r.details)+'</td>'
-      +'<td style="text-align:center">'+esc(r.receipt)+'</td>'
-      +'<td style="text-align:right">'+esc(r.tzs?cur+' '+r.tzs:'')+'</td>'
-      +'<td style="text-align:right">'+esc(r.usd?'$'+r.usd:'')+'</td>'
-      +'<td>'+esc(r.bu)+'</td>'
-      +'<td>'+esc(r.acct)+'</td>'
+      +'<td style="width:8%">'+esc(r.date)+'</td>'
+      +'<td style="width:27%">'+esc(r.details)+'</td>'
+      +'<td style="width:6%;text-align:center">'+esc(r.receipt)+'</td>'
+      +'<td style="width:9%;text-align:right">'+esc(r.tzs?cur+' '+r.tzs:'')+'</td>'
+      +'<td style="width:7%;text-align:right">'+esc(r.usd?'$'+r.usd:'')+'</td>'
+      +'<td style="width:13%">'+esc(r.bu)+'</td>'
+      +'<td style="width:30%">'+esc(r.acct)+'</td>'
       +'</tr>';
   }).join('');
 
   var balColor = balance < 0 ? 'color:#B40000' : '';
   var balVal   = balance < 0
-    ? '('+cur+' '+Math.abs(balance).toLocaleString()+')'
-    : cur+' '+balance.toLocaleString();
+    ? '('+esc(cur)+' '+Math.abs(balance).toLocaleString()+')'
+    : esc(cur)+' '+balance.toLocaleString();
 
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Expense Claim Form</title><style>'
+  // ── build complete standalone HTML page ──────────────────────────────────
+  var css = [
+    '*{margin:0;padding:0;box-sizing:border-box;}',
+    'html,body{background:#fff;font-family:Arial,Helvetica,sans-serif;font-size:8.5pt;color:#000;}',
+    '@page{size:A4 landscape;margin:10mm 12mm 8mm 12mm;}',
+    '@media print{',
+    ' .no-print{display:none!important;}',
+    ' body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}',
+    '}',
 
-  // Reset everything — no color inheritance
-  +'*{margin:0;padding:0;box-sizing:border-box;color:#000!important;}'
-  +'body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;background:#fff;}'
-  +'@page{size:A4 landscape;margin:10mm 12mm 8mm 12mm;}'
-  +'@media print{.no-print{display:none!important;} body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}'
+    /* top bar */
+    '.topbar{display:flex;align-items:flex-start;justify-content:space-between;',
+    ' padding-bottom:5px;border-bottom:1.5px solid #888;margin-bottom:7px;}',
+    '.ref{font-size:6.5pt;color:#444;padding-top:2px;}',
+    '.title{font-size:15pt;font-weight:700;text-align:center;flex:1;}',
+    '.logo img{height:32px;}',
 
-  // Top bar
-  +'.topbar{display:grid;grid-template-columns:120px 1fr 120px;align-items:center;padding-bottom:5px;border-bottom:1.5px solid #999;margin-bottom:6px;}'
-  +'.ref{font-size:6.5pt;}'
-  +'.title{text-align:center;font-size:15pt;font-weight:700;}'
-  +'.logo{height:32px;justify-self:end;}'
+    /* header fields grid */
+    '.hdr{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:5px;}',
+    '.hf{display:flex;align-items:flex-end;padding:2px 8px 2px 0;gap:3px;}',
+    '.lbl{font-weight:700;font-size:7pt;white-space:nowrap;text-align:right;min-width:88px;flex-shrink:0;color:#000;}',
+    '.val{font-size:7.5pt;border-bottom:0.7px solid #777;flex:1;padding:0 2px 1px;',
+    ' min-height:12px;min-width:40px;color:#000;}',
 
-  // Header grid
-  +'.hdr{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:5px;}'
-  +'.hf{display:flex;align-items:flex-end;padding:2px 4px 2px 0;gap:4px;}'
-  +'.lbl{font-weight:700;font-size:7pt;white-space:nowrap;text-align:right;min-width:90px;flex-shrink:0;}'
-  +'.val{font-size:7.5pt;border-bottom:0.8px solid #888;flex:1;padding:0 2px 1px;min-height:13px;min-width:50px;}'
+    /* receipt note */
+    '.note-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}',
+    '.note{font-style:italic;font-size:6pt;color:#555;}',
+    '.erp{border:0.8px solid #888;background:#d9d9d9;font-weight:700;font-size:7pt;',
+    ' padding:1.5px 10px;color:#000;}',
 
-  // Note + ERP
-  +'.note-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}'
-  +'.note{font-style:italic;font-size:6pt;}'
-  +'.erp{border:1px solid #888;background:#d9d9d9;font-weight:700;font-size:7pt;padding:2px 10px;}'
+    /* table — ALL text forced black */
+    'table{width:100%;border-collapse:collapse;table-layout:fixed;color:#000;}',
+    'th,td{border:0.5px solid #999;vertical-align:middle;padding:2px 3px;',
+    ' overflow:hidden;font-size:7.5pt;color:#000;white-space:normal;word-break:break-word;}',
+    'thead th{background:#d9d9d9;font-weight:700;text-align:center;font-size:7pt;color:#000;}',
+    'thead th .sub{font-size:5.5pt;font-weight:400;display:block;}',
+    'tbody tr{background:#fff;}',
+    'tbody td{color:#000;}',
+    '.tr-tot td{background:#d9d9d9;font-weight:700;color:#000;}',
+    '.tr-adv td,.tr-bal td{background:#fff;color:#000;}',
 
-  // Table
-  +'table{width:100%;border-collapse:collapse;table-layout:fixed;}'
-  // Force ALL table text black — override any inherited color
-  +'table,th,td{color:#000!important;font-family:Arial,Helvetica,sans-serif;}'
-  +'th,td{border:0.5px solid #999;font-size:7.5pt;vertical-align:middle;padding:2px 3px;overflow:hidden;white-space:nowrap;}'
-  +'thead th{background:#d9d9d9!important;font-weight:700;text-align:center;font-size:7pt;}'
-  +'tbody td{background:#fff!important;}'
-  +'.sub{font-size:5.5pt;font-weight:400;display:block;}'
+    /* signature */
+    '.sig-wrap{margin-top:8px;}',
+    '.sig-name{font-size:9pt;font-weight:700;margin-bottom:2px;color:#000;}',
+    '.sig-img{height:32px;display:block;margin:2px 0;}',
+    '.sig-date{font-size:7.5pt;color:#000;margin-bottom:4px;}',
+    '.sig-lines{display:grid;grid-template-columns:1fr 1fr 1fr;}',
+    '.sig-col{border-top:0.8px solid #000;padding-top:3px;font-size:6.5pt;',
+    ' color:#444;padding-right:12px;}',
 
-  // Col widths
-  +'col.c1{width:8%}col.c2{width:26%}col.c3{width:7%}col.c4{width:9%}col.c5{width:7%}col.c6{width:13%}col.c7{width:30%}'
+    /* footer */
+    '.footer{display:flex;justify-content:space-between;margin-top:5px;',
+    ' font-size:6pt;color:#555;}',
 
-  // Totals rows
-  +'.tr-tot td{background:#d9d9d9!important;font-weight:700;}'
-  +'.tr-adv td,.tr-bal td{background:#fff!important;}'
+    /* print button */
+    '.print-btn{position:fixed;bottom:20px;right:20px;background:#F25C0A;color:#fff;',
+    ' border:none;padding:10px 22px;border-radius:6px;font-size:13px;font-weight:700;',
+    ' cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3);z-index:9999;}',
+  ].join('');
 
-  // Sig
-  +'.sig-wrap{margin-top:10px;}'
-  +'.sig-name{font-size:9pt;font-weight:600;margin-bottom:2px;}'
-  +'.sig-img{height:32px;display:block;margin-bottom:3px;}'
-  +'.sig-date{font-size:7.5pt;margin-bottom:4px;}'
-  +'.sig-lines{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:2px;}'
-  +'.sig-col{border-top:1px solid #000;padding-top:3px;font-size:6.5pt;padding-right:16px;}'
+  var body = [
+    '<button class="print-btn no-print" onclick="window.print()">',
+    '&#8659; Print / Save as PDF</button>',
 
-  // Footer
-  +'.footer{display:flex;justify-content:space-between;margin-top:5px;font-size:6pt;}'
+    '<div class="topbar">',
+    ' <div class="ref">REF: FIN_FM_003-F</div>',
+    ' <div class="title">EXPENSE CLAIM FORM</div>',
+    ' <div class="logo"><img src="'+logoSrc+'"></div>',
+    '</div>',
 
-  // Print button
-  +'.print-btn{position:fixed;top:10px;right:10px;background:#F25C0A;color:#fff!important;border:none;padding:9px 20px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:9999;}'
-  +'</style></head><body>'
+    '<div class="hdr">',
+    ecf_hf('BURN ENTITY:',esc(entity)),
+    ecf_hf('Date:',esc(dStr)),
+    ecf_hf('Profit Centre:',esc(pCentre)),
+    ecf_hf('Country Code:',esc(country)),
+    ecf_hf('Name of Claimant:',esc(claimant)),
+    ecf_hf('Product Code:',esc(prodCode)),
+    ecf_hf('Cost Centre:',esc(costCtr)),
+    ecf_hf('Job Title:',esc(jobTitle)),
+    ecf_hf('R&amp;D Project Code:',esc(rdCode)),
+    ecf_hf('Dimension Code:',esc(dimCode)),
+    ecf_hf('Bank Details/Mpesa No:',esc(bank)),
+    ecf_hf('Carbon / Project Code:',esc(carbCode)),
+    '</div>',
 
-  +'<button class="print-btn no-print" onclick="window.print()">⬇ Save as PDF</button>'
+    '<div class="note-row">',
+    ' <div class="note">Please number and attach all receipts, stating relevant number',
+    ' for each entry in &lsquo;Receipt No.&rsquo; column</div>',
+    ' <div class="erp">ERP</div>',
+    '</div>',
 
-  // TOP
-  +'<div class="topbar">'
-  +'<div class="ref">REF: FIN_FM_003-F</div>'
-  +'<div class="title">EXPENSE CLAIM FORM</div>'
-  +'<img class="logo" src="'+logoSrc+'">'
-  +'</div>'
+    '<table>',
+    '<thead><tr>',
+    '<th style="width:8%">Date</th>',
+    '<th style="width:27%">Details (Purpose, name of participants etc.)</th>',
+    '<th style="width:6%">Receipt No.</th>',
+    '<th style="width:9%;text-align:right">'+esc(cur)+'</th>',
+    '<th style="width:7%;text-align:right">US$</th>',
+    '<th style="width:13%">Business Unit</th>',
+    '<th style="width:30%">Expense Account<span class="sub">(to be filled by Finance)</span></th>',
+    '</tr></thead>',
+    '<tbody>',
+    dataRows,
 
-  // HEADER FIELDS
-  +'<div class="hdr">'
-  +hf2('BURN ENTITY:',esc(entity))+hf2('Date:',esc(dStr))+hf2('Profit Centre:',esc(pCentre))
-  +hf2('Country Code:',esc(country))+hf2('Name of Claimant:',esc(claimant))+hf2('Product Code:',esc(prodCode))
-  +hf2('Cost Centre:',esc(costCtr))+hf2('Job Title:',esc(jobTitle))+hf2('R&amp;D Project Code:',esc(rdCode))
-  +hf2('Dimension Code:',esc(dimCode))+hf2('Bank Details/Mpesa No:',esc(bank))+hf2('Carbon / Project Code:',esc(carbCode))
-  +'</div>'
+    // TOTALS
+    '<tr class="tr-tot">',
+    '<td colspan="2" style="border-right:none"></td>',
+    '<td style="text-align:right;border-left:none;border-right:none">TOTALS</td>',
+    '<td style="text-align:right;border-left:none">'+esc(cur)+' '+d.totalTZS.toLocaleString()+'</td>',
+    '<td style="text-align:right">$0.00</td>',
+    '<td style="text-align:right">$0.00</td>',
+    '<td></td>',
+    '</tr>',
 
-  // RECEIPT NOTE
-  +'<div class="note-row">'
-  +'<div class="note">Please number and attach all receipts, stating relevant number for each entry in \'Receipt No.\' column</div>'
-  +'<div class="erp">ERP</div>'
-  +'</div>'
+    // AMOUNT ADVANCED
+    '<tr class="tr-adv">',
+    '<td colspan="2" style="border-right:none"></td>',
+    '<td style="text-align:right;font-weight:700;border-left:none;border-right:none;white-space:nowrap">Amount Advanced</td>',
+    '<td style="text-align:right;border-left:none">'+esc(cur)+' '+advanced.toLocaleString()+'</td>',
+    '<td colspan="3"></td>',
+    '</tr>',
 
-  // TABLE
-  +'<table><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"></colgroup>'
-  +'<thead><tr>'
-  +'<th>Date</th>'
-  +'<th>Details (Purpose, name of participants etc.)</th>'
-  +'<th>Receipt No.</th>'
-  +'<th style="text-align:right">'+esc(cur)+'</th>'
-  +'<th style="text-align:right">US$</th>'
-  +'<th>Business Unit</th>'
-  +'<th>Expense Account<span class="sub">(to be filled by Finance)</span></th>'
-  +'</tr></thead>'
-  +'<tbody>'
-  +dataRows
-  // TOTALS
-  +'<tr class="tr-tot">'
-  +'<td colspan="2"></td>'
-  +'<td style="text-align:right;font-weight:700">TOTALS</td>'
-  +'<td style="text-align:right">'+esc(cur)+' '+d.totalTZS.toLocaleString()+'</td>'
-  +'<td style="text-align:right">$0.00</td>'
-  +'<td style="text-align:right">$0.00</td>'
-  +'<td></td>'
-  +'</tr>'
-  // AMOUNT ADVANCED
-  +'<tr class="tr-adv">'
-  +'<td colspan="2" style="border-right:none"></td>'
-  +'<td style="text-align:right;font-weight:700;border-left:none;border-right:none">Amount Advanced</td>'
-  +'<td style="text-align:right;border-left:none">'+esc(cur)+' '+advanced.toLocaleString()+'</td>'
-  +'<td colspan="3"></td>'
-  +'</tr>'
-  // BALANCE
-  +'<tr class="tr-bal">'
-  +'<td colspan="2" style="font-style:italic;font-size:6pt;border-right:none">Advance approved by (Name, &amp; Amount)</td>'
-  +'<td style="text-align:right;font-weight:700;border-left:none;border-right:none">Balance claimed/Returned</td>'
-  +'<td style="text-align:right;border-left:none;'+balColor+'">'+balVal+'</td>'
-  +'<td style="text-align:right">$0.00</td>'
-  +'<td style="text-align:right">0</td>'
-  +'<td></td>'
-  +'</tr>'
-  +'</tbody></table>'
+    // BALANCE
+    '<tr class="tr-bal">',
+    '<td colspan="2" style="font-style:italic;font-size:6pt;color:#666;border-right:none">',
+    'Advance approved by (Name, &amp; Amount)</td>',
+    '<td style="text-align:right;font-weight:700;border-left:none;border-right:none;white-space:nowrap">',
+    'Balance claimed/Returned</td>',
+    '<td style="text-align:right;border-left:none;'+balColor+'">'+balVal+'</td>',
+    '<td style="text-align:right">$0.00</td>',
+    '<td style="text-align:right">0</td>',
+    '<td></td>',
+    '</tr>',
 
-  // SIGNATURES
-  +'<div class="sig-wrap">'
-  +'<div class="sig-name">'+esc(claimant)+'</div>'
-  +'<img class="sig-img" src="'+sigDataUrl+'">'
-  +'<div class="sig-date">'+esc(dStr)+'</div>'
-  +'<div class="sig-lines">'
-  +'<div class="sig-col">Claimant (Name, Sign &amp; Date)</div>'
-  +'<div class="sig-col">1st Approver (Name, Sign &amp; Date)</div>'
-  +'<div class="sig-col">2nd Approver (Name, Sign &amp; Date)</div>'
-  +'</div>'
-  +'</div>'
+    '</tbody></table>',
 
-  // FOOTER
-  +'<div class="footer">'
-  +'<div>Author:FD<br>Approved By:CFO</div>'
-  +'<div>Release date: 8th Jan.2025</div>'
-  +'</div>'
+    // SIGNATURES
+    '<div class="sig-wrap">',
+    ' <div class="sig-name">'+esc(claimant)+'</div>',
+    ' <img class="sig-img" src="'+sigDataUrl+'">',
+    ' <div class="sig-date">'+esc(dStr)+'</div>',
+    ' <div class="sig-lines">',
+    '  <div class="sig-col">Claimant (Name, Sign &amp; Date)</div>',
+    '  <div class="sig-col">1st Approver (Name, Sign &amp; Date)</div>',
+    '  <div class="sig-col">2nd Approver (Name, Sign &amp; Date)</div>',
+    ' </div>',
+    '</div>',
 
-  +'</body></html>';
+    '<div class="footer">',
+    ' <div>Author:FD<br>Approved By:CFO</div>',
+    ' <div>Release date: 8th Jan.2025</div>',
+    '</div>',
+  ].join('');
 
-  var w = window.open('','_blank');
-  if (!w) { toast('Pop-up blocked — please allow pop-ups for this site'); return; }
-  w.document.write(html);
-  w.document.close();
+  var fullHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    +'<title>Expense Claim Form</title>'
+    +'<style>'+css+'</style>'
+    +'</head><body>'+body+'</body></html>';
+
+  // Write to blob URL — avoids popup blockers and cross-origin issues
+  var blob = new Blob([fullHtml], {type:'text/html'});
+  var url  = URL.createObjectURL(blob);
+  var w    = window.open(url, '_blank');
+  if (!w) {
+    // Fallback: write into a new tab
+    var w2 = window.open('about:blank','_blank');
+    if (w2) {
+      w2.document.open();
+      w2.document.write(fullHtml);
+      w2.document.close();
+    } else {
+      toast('Pop-up blocked — please allow pop-ups for this site and try again');
+    }
+  }
 }
 
-function hf2(label, val) {
-  return '<div class="hf"><div class="lbl">'+label+'</div><div class="val">'+(val||'')+'</div></div>';
+function ecf_hf(label, val) {
+  return '<div class="hf"><div class="lbl">'+label+'</div>'
+    +'<div class="val">'+(val||'')+'</div></div>';
 }
+
+
 
 
 
