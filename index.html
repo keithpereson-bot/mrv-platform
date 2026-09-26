@@ -1532,135 +1532,148 @@
       </div>
     </div>
   </div>
-
-  <!-- EXPENSE CLAIM FORM VIEW (admin only) -->
+  
+  <!-- ── EXPENSE CLAIM FORM (admin only) ──────────────────────── -->
   <div id="view-expense-form" class="view">
+
     <div class="page-header">
       <h1>Expense Claim Form</h1>
-      <p>Auto-fill the Burn Manufacturing expense claim template from paid request data, sign and export to PDF</p>
+      <p>Auto-fill the Burn Manufacturing 2026 template from paid requests, apply your signature, export to PDF</p>
     </div>
 
-    <!-- Step 1: Select requests to include -->
-    <div class="card" style="margin-bottom:20px">
+    <!-- ── STEP 1: Pick requests ── -->
+    <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 1 &mdash; Select Paid Requests</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn btn-ghost btn-sm" onclick="expSelectAll()">Select All</button>
-          <button class="btn btn-ghost btn-sm" onclick="expClearAll()">Clear</button>
+        <div class="card-title">Step 1 &mdash; Select Paid Requests to Include</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(true)">All</button>
+          <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(false)">None</button>
         </div>
       </div>
-      <div style="padding:4px 0 0">
-        <div id="expRequestList" style="max-height:280px;overflow-y:auto">
-          <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">
-            No paid requests found. Requests with status "Paid" will appear here.
-          </div>
-        </div>
+      <div id="ecfRequestList" style="max-height:260px;overflow-y:auto;border-top:1px solid var(--border)">
+        <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">No paid requests available.</div>
       </div>
     </div>
 
-    <!-- Step 2: Header fields -->
-    <div class="card" style="margin-bottom:20px">
+    <!-- ── STEP 2: Header fields ── -->
+    <div class="card">
       <div class="card-header">
         <div class="card-title">Step 2 &mdash; Form Header</div>
-        <button class="btn btn-ghost btn-sm" onclick="expAutoFillHeader()">Auto-fill from data</button>
+        <button class="btn btn-ghost btn-sm" onclick="ecfAutoHeader()">&#8635; Auto-fill</button>
       </div>
       <div class="card-body">
-        <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
-          <div class="form-group">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px 20px">
+          <div class="form-group" style="margin:0">
             <label>Burn Entity</label>
-            <input id="expEntity" type="text" value="BMTZ (Tanzania)" />
+            <input id="ecfEntity" type="text" placeholder="e.g. BMTZ (Tanzania)">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin:0">
             <label>Date</label>
-            <input id="expDate" type="date" />
+            <input id="ecfDate" type="date">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin:0">
             <label>Profit Centre</label>
-            <input id="expProfitCentre" type="text" placeholder="e.g. 24 Carbon" />
+            <input id="ecfProfitCentre" type="text" placeholder="e.g. 24 Carbon">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin:0">
             <label>Country Code</label>
-            <input id="expCountry" type="text" placeholder="e.g. TZ" />
+            <input id="ecfCountry" type="text" placeholder="e.g. TZ">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin:0">
             <label>Name of Claimant</label>
-            <input id="expClaimant" type="text" placeholder="Full name" />
+            <input id="ecfClaimant" type="text" placeholder="Full name">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin:0">
             <label>Product Code</label>
-            <input id="expProductCode" type="text" placeholder="e.g. 52 Wood" />
+            <input id="ecfProductCode" type="text" placeholder="e.g. 52 Wood">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin:0">
             <label>Cost Centre</label>
-            <input id="expCostCentre" type="text" placeholder="e.g. 7CN (Carbon)" />
+            <input id="ecfCostCentre" type="text" placeholder="e.g. 7CN (Carbon)">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin:0">
             <label>Job Title</label>
-            <input id="expJobTitle" type="text" placeholder="e.g. Accountant" />
+            <input id="ecfJobTitle" type="text" placeholder="e.g. Finance Manager">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin:0">
+            <label>R&amp;D Project Code</label>
+            <input id="ecfRdCode" type="text" placeholder="Optional">
+          </div>
+          <div class="form-group" style="margin:0">
             <label>Dimension Code</label>
-            <input id="expDimensionCode" type="text" placeholder="e.g. 75CN-01 (Monitoring)" />
+            <input id="ecfDimCode" type="text" placeholder="e.g. 75CN-01 (Monitoring)">
           </div>
-          <div class="form-group">
-            <label>Bank Details / M-Pesa No.</label>
-            <input id="expBankDetails" type="text" placeholder="M-Pesa or bank account" />
+          <div class="form-group" style="margin:0">
+            <label>Bank / M-Pesa No.</label>
+            <input id="ecfBank" type="text" placeholder="Account or M-Pesa number">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin:0">
             <label>Carbon / Project Code</label>
-            <input id="expProjectCode" type="text" placeholder="e.g. 005 (5642-VPA-001)" />
+            <input id="ecfCarbonCode" type="text" placeholder="e.g. 005 (5642-VPA-001)">
           </div>
-          <div class="form-group">
-            <label>Amount Advanced (TZS)</label>
-            <input id="expAmountAdvanced" type="number" value="0" />
+          <div class="form-group" style="margin:0">
+            <label>Currency</label>
+            <select id="ecfCurrency">
+              <option value="TZS">TZS</option>
+              <option value="KES">KES</option>
+              <option value="USD">USD</option>
+              <option value="UGX">UGX</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Amount Advanced</label>
+            <input id="ecfAdvanced" type="number" value="0" min="0">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Business Unit</label>
+            <input id="ecfBizUnit" type="text" placeholder="e.g. Biomass">
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Step 3: Preview -->
-    <div class="card" style="margin-bottom:20px">
+    <!-- ── STEP 3: Live preview ── -->
+    <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 3 &mdash; Preview</div>
-        <button class="btn btn-secondary btn-sm" onclick="expPreview()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          Refresh Preview
+        <div class="card-title">Step 3 &mdash; Form Preview</div>
+        <button class="btn btn-secondary btn-sm" onclick="ecfRefreshPreview()">&#8635; Refresh</button>
+      </div>
+      <div style="padding:16px;overflow-x:auto;background:#f5f5f5">
+        <div id="ecfPreview" style="min-width:800px;font-family:Arial,sans-serif;font-size:11px;background:#fff;padding:12px">
+          <div style="text-align:center;color:var(--muted);padding:24px">Click Refresh to preview the filled form.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 4: Signature + Export ── -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Step 4 &mdash; Admin Signature &amp; Export PDF</div>
+      </div>
+      <div class="card-body">
+        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">
+          Your signature will appear in the <strong>Claimant</strong> box of the exported PDF.
+        </p>
+        <canvas id="ecfSigCanvas" width="500" height="130"
+          style="border:1.5px solid var(--border);border-radius:var(--radius);cursor:crosshair;
+                 background:#FAFAFA;display:block;touch-action:none;max-width:100%;margin-bottom:10px">
+        </canvas>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px">
+          <button class="btn btn-ghost btn-sm" onclick="ecfClearSig()">Clear</button>
+          <span id="ecfSigNote" style="font-size:11.5px;color:var(--muted)">Draw your signature above</span>
+        </div>
+        <button class="btn btn-primary" onclick="ecfExportPDF()" style="gap:8px;font-size:13.5px;padding:10px 24px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export to PDF
         </button>
       </div>
-      <div id="expPreviewArea" style="padding:20px;overflow-x:auto">
-        <div style="text-align:center;color:var(--muted);padding:32px;font-size:13px">
-          Click <strong>Refresh Preview</strong> to see the filled form.
-        </div>
-      </div>
     </div>
 
-    <!-- Step 4: Sign & Export -->
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-header">
-        <div class="card-title">Step 4 &mdash; Admin Signature &amp; Export</div>
-      </div>
-      <div class="card-body">
-        <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Sign as the authorizing admin. This signature will appear in the Claimant field of the exported PDF.</p>
-        <div id="expSigArea">
-          <canvas id="expSigCanvas" width="400" height="120"
-            style="border:1.5px solid var(--border);border-radius:var(--radius);cursor:crosshair;background:#FAFAFA;display:block;touch-action:none;max-width:100%"></canvas>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="btn btn-ghost btn-sm" onclick="expClearSig()">Clear Signature</button>
-            <span id="expSigStatus" style="font-size:11.5px;color:var(--muted);align-self:center"></span>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="expExportPDF()" style="gap:8px">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            Export to PDF
-          </button>
-          <button class="btn btn-secondary" onclick="expPreview()" style="gap:8px">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            Preview Form
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </main>
 </div>
@@ -3287,7 +3300,7 @@ async function downloadRequestsPDF() {
 
 // -- Navigation ---------------------------------------------
 function showView(id, el) {
-  if (id === 'expense-form') { setTimeout(initExpView, 50); }
+  if (id === 'expense-form') { setTimeout(ecfInit, 80); }
   if (!id || id === 'undefined') { console.warn('showView called with bad id:', id); return; }
   var viewEl = document.getElementById('view-' + id);
   if (!viewEl) { console.warn('showView: no element for view-' + id); return; }
@@ -6089,8 +6102,8 @@ function buildSidebar() {
       { type:'item', label:'Load Funds',       view:'funds',          icon:'funds' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
       { type:'item', label:'Weekly Expensing', view:'expenses',       icon:'expenses' },
-      { type:'item', label:'Expense Form',       view:'expense-form',   icon:'expenses' },
       { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
+      { type:'item', label:'Expense Form',       view:'expense-form',   icon:'requests' },
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
       { type:'item', label:'AI Intelligence',  view:'ai',             icon:'ai' },
@@ -6500,770 +6513,569 @@ function wrapTables() {
 
 // Run on load
 
-// ══════════════════════════════════════════════════════════════
-// EXPENSE CLAIM FORM
-// ══════════════════════════════════════════════════════════════
-var expSigPad = null;
 
-function initExpView() {
-  // Populate request list from paid requests
-  var paid = (requestsStore || []).filter(function(r){ return r.status === 'Paid'; });
-  var list = document.getElementById('expRequestList');
+// ══════════════════════════════════════════════════════════════
+// EXPENSE CLAIM FORM  (admin only)
+// Maps exactly to the Burn Manufacturing 2026 template:
+//   Row 1: Title (C1)
+//   Row 3: Entity(C3) Date(E3) ProfitCentre(I3)
+//   Row 4: Country(C4) Claimant(E4) ProductCode(I4)
+//   Row 5: CostCentre(C5) JobTitle(E5) RD(I5)
+//   Row 6: DimCode(C6) Bank(E6) CarbonCode(I6)
+//   Rows 10-20: Date(B) Details(C:D) Receipt(E) TZS(F) USD(G) BU(H) ExpAcct(I)
+//   Row 21: Totals
+//   Row 22: Amount Advanced
+//   Row 23: Balance
+//   Row 27: Signatures
+// ══════════════════════════════════════════════════════════════
+
+// ── Signature canvas init ────────────────────────────────────
+function ecfInitSig() {
+  var cv = document.getElementById('ecfSigCanvas');
+  if (!cv || cv._ecfInited) return;
+  cv._ecfInited = true;
+  var ctx = cv.getContext('2d');
+  var drawing = false, lx = 0, ly = 0;
+  function pos(e) {
+    var r = cv.getBoundingClientRect();
+    var src = e.touches ? e.touches[0] : e;
+    return {
+      x: (src.clientX - r.left) * (cv.width / r.width),
+      y: (src.clientY - r.top)  * (cv.height / r.height)
+    };
+  }
+  function down(e) { e.preventDefault(); drawing = true; var p = pos(e); lx=p.x; ly=p.y; }
+  function move(e) {
+    if (!drawing) return; e.preventDefault();
+    var p = pos(e);
+    ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y);
+    ctx.strokeStyle='#111'; ctx.lineWidth=1.8; ctx.lineCap='round'; ctx.stroke();
+    lx=p.x; ly=p.y;
+  }
+  function up() { drawing=false; }
+  cv.addEventListener('mousedown', down); cv.addEventListener('mousemove', move);
+  cv.addEventListener('mouseup', up);    cv.addEventListener('mouseleave', up);
+  cv.addEventListener('touchstart', down, {passive:false});
+  cv.addEventListener('touchmove',  move, {passive:false});
+  cv.addEventListener('touchend',   up);
+}
+
+function ecfClearSig() {
+  var cv = document.getElementById('ecfSigCanvas');
+  if (cv) cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+  var n = document.getElementById('ecfSigNote');
+  if (n) n.textContent = 'Signature cleared — draw again above';
+}
+
+function ecfHasSig() {
+  var cv = document.getElementById('ecfSigCanvas');
+  if (!cv) return false;
+  var blank = document.createElement('canvas');
+  blank.width = cv.width; blank.height = cv.height;
+  return cv.toDataURL() !== blank.toDataURL();
+}
+
+// ── Populate request checklist ───────────────────────────────
+function ecfLoadRequests() {
+  var list = document.getElementById('ecfRequestList');
   if (!list) return;
+  var paid = (requestsStore||[]).filter(function(r){ return r.status==='Paid'; });
   if (!paid.length) {
-    list.innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">No paid requests found.</div>';
+    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">No paid requests found. Mark requests as Paid in System Requests first.</div>';
     return;
   }
   list.innerHTML = paid.map(function(r, i) {
-    var amt = parseFloat(r.amount) || 0;
-    var cur = getCurrency(r.project, r.type) || 'KES';
-    return '<label style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--gray-100);cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--gray-50)\'" onmouseout="this.style.background=\'\'">'
-      + '<input type="checkbox" class="exp-req-check" data-idx="' + i + '" style="width:16px;height:16px;accent-color:var(--brand);flex-shrink:0" checked>'
-      + '<div style="flex:1;min-width:0">'
-      + '<div style="font-size:12.5px;font-weight:600;color:var(--gray-900)">' + (r.description || r.costSummary || 'Request') + '</div>'
-      + '<div style="font-size:11px;color:var(--gray-500);margin-top:2px">' + (r.ref||'') + ' &bull; ' + (r.project||'') + ' &bull; ' + (r.category||'') + '</div>'
-      + '</div>'
-      + '<div style="font-size:13px;font-weight:600;color:var(--gray-900);white-space:nowrap">' + cur + ' ' + amt.toLocaleString() + '</div>'
-      + '</label>';
+    var amt = parseFloat(r.amount)||0;
+    var cur = (typeof getCurrency==='function') ? getCurrency(r.project, r.type)||'KES' : 'KES';
+    var desc = (r.costSummary || r.description || r.costItem || 'No description').replace(/</g,'&lt;');
+    var cat  = (r.category||'').replace(/</g,'&lt;');
+    return [
+      '<label style="display:flex;align-items:center;gap:12px;padding:10px 18px;',
+      'border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s"',
+      ' onmouseover="this.style.background=\'var(--gray-50)\'"',
+      ' onmouseout="this.style.background=\'\'">',
+      '<input type="checkbox" class="ecf-chk" data-i="'+i+'"',
+      ' style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0" checked>',
+      '<div style="flex:1;min-width:0">',
+      '<div style="font-size:12.5px;font-weight:600;color:var(--gray-900)">'+desc+'</div>',
+      '<div style="font-size:11px;color:var(--gray-500);margin-top:2px">',
+      (r.ref||'')+(cat?' &bull; '+cat:'')+' &bull; '+(r.project||'')+
+      (r.date?' &bull; '+(typeof fmtDate==='function'?fmtDate(r.date):r.date):''),
+      '</div></div>',
+      '<div style="font-size:13px;font-weight:700;color:var(--gray-900);white-space:nowrap;flex-shrink:0">',
+      cur+' '+amt.toLocaleString(),
+      '</div></label>'
+    ].join('');
   }).join('');
-
-  // Init signature canvas
-  initExpSig();
-
-  // Set default date to today
-  var dateEl = document.getElementById('expDate');
-  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
-
-  // Auto-fill header from first paid request
-  expAutoFillHeader();
 }
 
-function expSelectAll() {
-  document.querySelectorAll('.exp-req-check').forEach(function(c){ c.checked = true; });
-}
-function expClearAll() {
-  document.querySelectorAll('.exp-req-check').forEach(function(c){ c.checked = false; });
+function ecfSelAll(v) {
+  document.querySelectorAll('.ecf-chk').forEach(function(c){ c.checked=v; });
 }
 
-function expAutoFillHeader() {
-  // Pull from current user + first paid request
+// ── Auto-fill header from data ───────────────────────────────
+function ecfAutoHeader() {
+  if (!document.getElementById('ecfDate').value)
+    document.getElementById('ecfDate').value = new Date().toISOString().slice(0,10);
+
   if (currentUser) {
-    var nameEl = document.getElementById('expClaimant');
-    if (nameEl && !nameEl.value) nameEl.value = currentUser.name || '';
-    var jobEl = document.getElementById('expJobTitle');
-    if (jobEl && !jobEl.value) jobEl.value = currentUser.role ? (currentUser.role.charAt(0).toUpperCase()+currentUser.role.slice(1)) : '';
+    var cEl = document.getElementById('ecfClaimant');
+    if (cEl && !cEl.value) cEl.value = currentUser.name||'';
+    var jEl = document.getElementById('ecfJobTitle');
+    if (jEl && !jEl.value) {
+      var roleMap={admin:'Finance Manager',approver:'Senior Officer',manager:'Manager',requester:'Officer',viewer:'Viewer'};
+      jEl.value = roleMap[currentUser.role]||currentUser.role||'';
+    }
   }
-  var paid = (requestsStore || []).filter(function(r){ return r.status === 'Paid'; });
-  if (paid.length) {
-    var r = paid[0];
-    var pEl = document.getElementById('expProfitCentre');
-    if (pEl && !pEl.value) pEl.value = r.type || '';
-    var ccEl = document.getElementById('expCountry');
-    if (ccEl && !ccEl.value) ccEl.value = r.country || r.project || '';
-    var projEl = document.getElementById('expProjectCode');
-    if (projEl && !projEl.value) projEl.value = r.project || '';
+
+  var paid = (requestsStore||[]).filter(function(r){ return r.status==='Paid'; });
+  if (!paid.length) return;
+  var r = paid[0];
+
+  function setIfEmpty(id, val) {
+    var el = document.getElementById(id);
+    if (el && !el.value && val) el.value = val;
   }
+
+  // Pull from budget lines for the first request's project+type
+  var bl = (budgetLines||[]).find(function(l){ return l.project===r.project && l.type===r.type; });
+  if (bl) {
+    setIfEmpty('ecfEntity',      bl.country||'');
+    setIfEmpty('ecfProfitCentre',bl.type||'');
+    setIfEmpty('ecfCountry',     bl.country||'');
+    setIfEmpty('ecfCostCentre',  bl.dept||'');
+    setIfEmpty('ecfDimCode',     bl.costItem||'');
+    setIfEmpty('ecfCarbonCode',  bl.costSummary||'');
+    if (bl.currency) {
+      var sel = document.getElementById('ecfCurrency');
+      if (sel) sel.value = bl.currency;
+    }
+  }
+  setIfEmpty('ecfBizUnit', r.type||r.category||'');
 }
 
-function getSelectedExpRequests() {
-  var paid = (requestsStore || []).filter(function(r){ return r.status === 'Paid'; });
-  var selected = [];
-  document.querySelectorAll('.exp-req-check').forEach(function(c) {
+// ── Get selected requests in order ──────────────────────────
+function ecfGetSelected() {
+  var paid = (requestsStore||[]).filter(function(r){ return r.status==='Paid'; });
+  var out  = [];
+  document.querySelectorAll('.ecf-chk').forEach(function(c) {
     if (c.checked) {
-      var idx = parseInt(c.dataset.idx);
-      if (paid[idx]) selected.push(paid[idx]);
+      var i = parseInt(c.dataset.i);
+      if (paid[i]) out.push(paid[i]);
     }
   });
-  return selected;
+  return out;
 }
 
-function expPreview() {
-  var rows = getSelectedExpRequests();
-  var area = document.getElementById('expPreviewArea');
+// ── Build table rows data ────────────────────────────────────
+function ecfBuildRows(selected, cur) {
+  var rows = [], totalTZS = 0, totalUSD = 0;
+  selected.slice(0,11).forEach(function(r, ri) {
+    var amt = parseFloat(r.amount)||0;
+    var isTZS = (cur==='TZS'||cur==='KES'||cur==='UGX');
+    var tzs = isTZS ? amt : 0;
+    var usd = cur==='USD' ? amt : 0;
+    totalTZS += tzs; totalUSD += usd;
+    rows.push({
+      date:    (typeof fmtDate==='function') ? fmtDate(r.date||'') : (r.date||''),
+      details: (r.description||r.costSummary||r.costItem||'').slice(0,60),
+      receipt: (ri+1).toString(),
+      tzs:     tzs ? tzs.toLocaleString() : '',
+      usd:     usd ? usd.toLocaleString() : '',
+      bu:      r.category||r.type||'',
+      acct:    r.costSummary||''
+    });
+  });
+  // Pad to 11 rows
+  while (rows.length < 11) rows.push({date:'',details:'',receipt:'',tzs:'',usd:'',bu:'',acct:''});
+  return {rows:rows, totalTZS:totalTZS, totalUSD:totalUSD};
+}
+
+// ── HTML preview ─────────────────────────────────────────────
+function ecfRefreshPreview() {
+  var area = document.getElementById('ecfPreview');
   if (!area) return;
-  if (!rows.length) {
-    area.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Select at least one request above.</div>';
+  var selected = ecfGetSelected();
+  if (!selected.length) {
+    area.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted)">Select at least one request in Step 1.</div>';
     return;
   }
 
-  var entity       = document.getElementById('expEntity').value || '';
-  var date         = document.getElementById('expDate').value || '';
-  var profitCentre = document.getElementById('expProfitCentre').value || '';
-  var country      = document.getElementById('expCountry').value || '';
-  var claimant     = document.getElementById('expClaimant').value || '';
-  var productCode  = document.getElementById('expProductCode').value || '';
-  var costCentre   = document.getElementById('expCostCentre').value || '';
-  var jobTitle     = document.getElementById('expJobTitle').value || '';
-  var dimCode      = document.getElementById('expDimensionCode').value || '';
-  var bankDetails  = document.getElementById('expBankDetails').value || '';
-  var projCode     = document.getElementById('expProjectCode').value || '';
-  var advanced     = parseFloat(document.getElementById('expAmountAdvanced').value) || 0;
+  var entity   = document.getElementById('ecfEntity').value||'';
+  var dateVal  = document.getElementById('ecfDate').value||'';
+  var dStr     = dateVal ? new Date(dateVal).toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+  var pCentre  = document.getElementById('ecfProfitCentre').value||'';
+  var country  = document.getElementById('ecfCountry').value||'';
+  var claimant = document.getElementById('ecfClaimant').value||'';
+  var prodCode = document.getElementById('ecfProductCode').value||'';
+  var costCtr  = document.getElementById('ecfCostCentre').value||'';
+  var jobTitle = document.getElementById('ecfJobTitle').value||'';
+  var rdCode   = document.getElementById('ecfRdCode').value||'';
+  var dimCode  = document.getElementById('ecfDimCode').value||'';
+  var bank     = document.getElementById('ecfBank').value||'';
+  var carbCode = document.getElementById('ecfCarbonCode').value||'';
+  var cur      = document.getElementById('ecfCurrency').value||'TZS';
+  var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
+  var bizUnit  = document.getElementById('ecfBizUnit').value||'';
 
-  var totalTZS = 0, totalUSD = 0;
-  var dataRows = rows.slice(0, 11).map(function(r) {
-    var cur = getCurrency(r.project, r.type) || 'KES';
-    var amt = parseFloat(r.amount) || 0;
-    var tzs = (cur === 'TZS' || cur === 'KES') ? amt : 0;
-    var usd = cur === 'USD' ? amt : 0;
-    totalTZS += tzs; totalUSD += usd;
+  var d = ecfBuildRows(selected, cur);
+  var balance  = d.totalTZS - advanced;
+  var balUSD   = d.totalUSD;
+
+  // Cell style helpers
+  var TH = 'border:1px solid #999;padding:4px 6px;background:#e8e8e8;font-weight:700;font-size:10px';
+  var TD = 'border:1px solid #ccc;padding:4px 6px;font-size:10px';
+  var TDr = TD+';text-align:right';
+  var LBL = TD+';font-weight:700;background:#f5f5f5;white-space:nowrap';
+
+  // Sig: show canvas if drawn
+  var sigHtml = '';
+  if (ecfHasSig()) {
+    var cv = document.getElementById('ecfSigCanvas');
+    sigHtml = '<img src="'+cv.toDataURL()+'" style="height:35px;display:block;margin-top:4px">';
+  }
+
+  var dataRows = d.rows.map(function(r,i){
     return '<tr>'
-      + '<td style="border:1px solid #ccc;padding:5px 8px;font-size:11px">' + (r.date ? fmtDate(r.date) : '') + '</td>'
-      + '<td style="border:1px solid #ccc;padding:5px 8px;font-size:11px">' + (r.description || r.costSummary || r.costItem || '') + '</td>'
-      + '<td style="border:1px solid #ccc;padding:5px 8px;font-size:11px;text-align:center">' + (r.ref || '') + '</td>'
-      + '<td style="border:1px solid #ccc;padding:5px 8px;font-size:11px;text-align:right">' + (tzs ? tzs.toLocaleString() : '') + '</td>'
-      + '<td style="border:1px solid #ccc;padding:5px 8px;font-size:11px;text-align:right">' + (usd ? usd.toLocaleString() : '') + '</td>'
-      + '<td style="border:1px solid #ccc;padding:5px 8px;font-size:11px">' + (r.category || '') + '</td>'
-      + '<td style="border:1px solid #ccc;padding:5px 8px;font-size:11px"></td>'
-      + '</tr>';
+     +'<td style="'+TD+'">'+r.date+'</td>'
+     +'<td style="'+TD+'" colspan="2">'+r.details+'</td>'
+     +'<td style="'+TD+';text-align:center">'+r.receipt+'</td>'
+     +'<td style="'+TDr+'">'+r.tzs+'</td>'
+     +'<td style="'+TDr+'">'+r.usd+'</td>'
+     +'<td style="'+TD+'">'+r.bu+'</td>'
+     +'<td style="'+TD+'">'+r.acct+'</td>'
+     +'</tr>';
   }).join('');
 
-  // Pad to 11 rows
-  for (var i = rows.length; i < 11; i++) {
-    dataRows += '<tr>' + '<td style="border:1px solid #ccc;padding:5px 8px;height:22px"></td>'.repeat(7) + '</tr>';
-  }
-
-  var balance = (totalTZS - advanced);
-  var fmtD = date ? new Date(date).toLocaleDateString('en-GB') : '';
-
-  area.innerHTML = '<div id="expFormPreview" style="font-family:Arial,sans-serif;font-size:12px;min-width:700px">'
-    + '<table style="width:100%;border-collapse:collapse;border:2px solid #000">'
-    + '<tr><td colspan="7" style="text-align:center;font-size:15px;font-weight:700;padding:8px;border:1px solid #ccc">EXPENSE CLAIM FORM</td></tr>'
-    + '<tr>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px;font-weight:600;width:12%">BURN ENTITY:</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px;width:18%">' + entity + '</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px;font-weight:600;width:8%">Date:</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px;width:18%">' + fmtD + '</td>'
-    + '<td colspan="2" style="border:1px solid #ccc;padding:4px 6px;font-weight:600;width:14%">Profit Centre:</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px">' + profitCentre + '</td>'
-    + '</tr>'
-    + '<tr>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px;font-weight:600">Country Code:</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px">' + country + '</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px;font-weight:600">Name:</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px">' + claimant + '</td>'
-    + '<td colspan="2" style="border:1px solid #ccc;padding:4px 6px;font-weight:600">Product Code:</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px">' + productCode + '</td>'
-    + '</tr>'
-    + '<tr>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px;font-weight:600">Cost Centre:</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px">' + costCentre + '</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px;font-weight:600">Job Title:</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px">' + jobTitle + '</td>'
-    + '<td colspan="2" style="border:1px solid #ccc;padding:4px 6px;font-weight:600">R&amp;D Project Code:</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px"></td>'
-    + '</tr>'
-    + '<tr>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px;font-weight:600">Dimension Code:</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px">' + dimCode + '</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px;font-weight:600">M-Pesa/Bank:</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px">' + bankDetails + '</td>'
-    + '<td colspan="2" style="border:1px solid #ccc;padding:4px 6px;font-weight:600">Carbon/Project Code:</td>'
-    + '<td style="border:1px solid #ccc;padding:4px 6px">' + projCode + '</td>'
-    + '</tr>'
-    + '<tr style="background:#f0f0f0">'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;font-weight:700">Date</td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;font-weight:700">Details</td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;font-weight:700">Receipt No.</td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;font-weight:700;text-align:right">TZS</td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;font-weight:700;text-align:right">US$</td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;font-weight:700">Business Unit</td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;font-weight:700">Expense Account</td>'
-    + '</tr>'
-    + dataRows
-    + '<tr style="background:#f9f0e0">'
-    + '<td colspan="2" style="border:1px solid #ccc;padding:5px 8px"></td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;font-weight:700;text-align:right">TOTALS</td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;font-weight:700;text-align:right">' + totalTZS.toLocaleString() + '</td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;font-weight:700;text-align:right">' + totalUSD.toLocaleString() + '</td>'
-    + '<td colspan="2" style="border:1px solid #ccc;padding:5px 8px"></td>'
-    + '</tr>'
-    + '<tr>'
-    + '<td colspan="3" style="border:1px solid #ccc;padding:5px 8px"></td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;font-weight:600">Amount Advanced</td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;text-align:right">' + advanced.toLocaleString() + '</td>'
-    + '<td colspan="2" style="border:1px solid #ccc;padding:5px 8px"></td>'
-    + '</tr>'
-    + '<tr>'
-    + '<td colspan="2" style="border:1px solid #ccc;padding:5px 8px;font-size:10px">Advance approved by (Name &amp; Amount):</td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;font-weight:600">Balance Claimed</td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;text-align:right;color:#B91C1C;font-weight:700">' + balance.toLocaleString() + '</td>'
-    + '<td style="border:1px solid #ccc;padding:5px 8px;text-align:right;color:#B91C1C;font-weight:700">' + totalUSD.toLocaleString() + '</td>'
-    + '<td colspan="2" style="border:1px solid #ccc;padding:5px 8px"></td>'
-    + '</tr>'
-    + '<tr style="height:70px">'
-    + '<td colspan="2" style="border:1px solid #ccc;padding:8px;font-weight:600;vertical-align:top">Claimant (Name, Sign &amp; Date):<br><span id="expSigPreviewLabel" style="font-size:10px;color:#666">' + claimant + '</span><br><img id="expSigPreviewImg" src="" style="height:40px;display:none"></td>'
-    + '<td colspan="2" style="border:1px solid #ccc;padding:8px;font-weight:600;vertical-align:top">1st Approver (Name, Sign &amp; Date):</td>'
-    + '<td colspan="3" style="border:1px solid #ccc;padding:8px;font-weight:600;vertical-align:top">2nd Approver (Name, Sign &amp; Date):</td>'
-    + '</tr>'
-    + '</table>'
-    + '</div>';
-
-  // Show sig in preview if already drawn
-  var cv = document.getElementById('expSigCanvas');
-  if (cv) {
-    var blank = document.createElement('canvas'); blank.width=cv.width; blank.height=cv.height;
-    if (cv.toDataURL() !== blank.toDataURL()) {
-      var img = document.getElementById('expSigPreviewImg');
-      if (img) { img.src = cv.toDataURL(); img.style.display = 'block'; }
-    }
-  }
-}
-
-// Signature canvas
-function initExpSig() {
-  var canvas = document.getElementById('expSigCanvas');
-  if (!canvas) return;
-  var ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  var drawing = false, lastX = 0, lastY = 0;
-
-  function getPos(e) {
-    var rect = canvas.getBoundingClientRect();
-    var src = e.touches ? e.touches[0] : e;
-    return { x: (src.clientX - rect.left) * (canvas.width / rect.width),
-             y: (src.clientY - rect.top)  * (canvas.height / rect.height) };
-  }
-  function start(e) { e.preventDefault(); drawing = true; var p = getPos(e); lastX = p.x; lastY = p.y; }
-  function draw(e)  {
-    if (!drawing) return; e.preventDefault();
-    var p = getPos(e);
-    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y);
-    ctx.strokeStyle = '#1A1A1A'; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
-    ctx.stroke(); lastX = p.x; lastY = p.y;
-  }
-  function stop() { drawing = false; }
-  canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', draw);
-  canvas.addEventListener('mouseup', stop);   canvas.addEventListener('mouseleave', stop);
-  canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', draw);
-  canvas.addEventListener('touchend', stop);
-  document.getElementById('expSigStatus').textContent = 'Draw your signature above';
-}
-
-function expClearSig() {
-  var canvas = document.getElementById('expSigCanvas');
-  if (!canvas) return;
-  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
-  document.getElementById('expSigStatus').textContent = 'Signature cleared';
-}
-
-function expExportPDF() {
-  // First refresh preview
-  expPreview();
-
-  var rows = getSelectedExpRequests();
-  if (!rows.length) { toast('Select at least one request'); return; }
-
-  var claimant = document.getElementById('expClaimant').value || 'Claimant';
-  var dateStr  = document.getElementById('expDate').value || new Date().toISOString().slice(0,10);
-
-  // Check jsPDF is loaded
-  if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') {
-    toast('PDF library not loaded — refresh and try again'); return;
-  }
-
-  var jsPDFCls = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : jsPDF;
-  var doc = new jsPDFCls({ orientation:'landscape', unit:'mm', format:'a4' });
-
-  // Get sig data URL
-  var canvas = document.getElementById('expSigCanvas');
-  var blankC = document.createElement('canvas'); blankC.width=canvas.width; blankC.height=canvas.height;
-  var sigDataUrl = (canvas.toDataURL() !== blankC.toDataURL()) ? canvas.toDataURL('image/png') : null;
-
-  // Header values
-  var entity       = document.getElementById('expEntity').value || '';
-  var date         = document.getElementById('expDate').value || '';
-  var profitCentre = document.getElementById('expProfitCentre').value || '';
-  var country      = document.getElementById('expCountry').value || '';
-  var productCode  = document.getElementById('expProductCode').value || '';
-  var costCentre   = document.getElementById('expCostCentre').value || '';
-  var jobTitle     = document.getElementById('expJobTitle').value || '';
-  var dimCode      = document.getElementById('expDimensionCode').value || '';
-  var bankDetails  = document.getElementById('expBankDetails').value || '';
-  var projCode     = document.getElementById('expProjectCode').value || '';
-  var advanced     = parseFloat(document.getElementById('expAmountAdvanced').value) || 0;
-  var fmtD         = date ? new Date(date).toLocaleDateString('en-GB') : '';
-
-  var totalTZS = 0, totalUSD = 0;
-  var expRows = rows.slice(0,11).map(function(r) {
-    var cur = getCurrency(r.project, r.type) || 'KES';
-    var amt = parseFloat(r.amount) || 0;
-    var tzs = (cur === 'TZS' || cur === 'KES') ? amt : 0;
-    var usd = cur === 'USD' ? amt : 0;
-    totalTZS += tzs; totalUSD += usd;
-    return [fmtDate(r.date||''), (r.description||r.costSummary||r.costItem||'').slice(0,40), r.ref||'',
-            tzs ? tzs.toLocaleString() : '', usd ? usd.toLocaleString() : '', r.category||'', ''];
-  });
-  // Pad
-  while (expRows.length < 11) expRows.push(['','','','','','','']);
-
-  var balance = totalTZS - advanced;
-  var margin = 10, y = margin;
-  var pageW = 297, pageH = 210;
-  var cw = pageW - margin*2;
-
+  area.innerHTML = [
+  '<table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif">',
   // Title
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(14);
-  doc.text('EXPENSE CLAIM FORM', pageW/2, y + 6, {align:'center'});
-  doc.rect(margin, y, cw, 10); y += 10;
-
-  // Helper: draw a row of cells
-  function drawRow(cells, heights, fontSizes, bold) {
-    var x = margin;
-    var rowH = heights || 8;
-    cells.forEach(function(cell) {
-      doc.rect(x, y, cell.w, rowH);
-      if (bold || cell.bold) { doc.setFont('helvetica','bold'); } else { doc.setFont('helvetica','normal'); }
-      doc.setFontSize(fontSizes || 8);
-      var text = String(cell.v || '');
-      doc.text(text, x + 2, y + rowH/2 + 1.5, {maxWidth: cell.w - 4});
-      x += cell.w;
-    });
-    y += rowH;
-  }
-
-  // Row widths for 7 columns: Date(22) Details(60) Receipt(20) TZS(28) USD(22) BU(28) ExpAcc(37)
-  var C = {date:22, det:62, rec:20, tzs:28, usd:22, bu:28, exp:cw-22-62-20-28-22-28};
-
-  // Header rows
-  var hW = cw/4;
-  drawRow([{v:'BURN ENTITY:',w:hW*0.5,bold:true},{v:entity,w:hW*0.5},{v:'Date:',w:hW*0.3,bold:true},{v:fmtD,w:hW*0.7},{v:'Profit Centre:',w:hW*0.5,bold:true},{v:profitCentre,w:hW*0.5}], 8, 8);
-  drawRow([{v:'Country Code:',w:hW*0.5,bold:true},{v:country,w:hW*0.5},{v:'Name of Claimant:',w:hW*0.3,bold:true},{v:claimant,w:hW*0.7},{v:'Product Code:',w:hW*0.5,bold:true},{v:productCode,w:hW*0.5}], 8, 8);
-  drawRow([{v:'Cost Centre:',w:hW*0.5,bold:true},{v:costCentre,w:hW*0.5},{v:'Job Title:',w:hW*0.3,bold:true},{v:jobTitle,w:hW*0.7},{v:'R&D Project Code:',w:hW*0.5,bold:true},{v:'',w:hW*0.5}], 8, 8);
-  drawRow([{v:'Dimension Code:',w:hW*0.5,bold:true},{v:dimCode,w:hW*0.5},{v:'M-Pesa/Bank:',w:hW*0.3,bold:true},{v:bankDetails,w:hW*0.7},{v:'Carbon/Project Code:',w:hW*0.5,bold:true},{v:projCode,w:hW*0.5}], 8, 8);
-
+  '<tr><td colspan="8" style="text-align:center;font-weight:700;font-size:14px;padding:8px;border:2px solid #999;background:#fff">EXPENSE CLAIM FORM</td></tr>',
+  // Row 3
+  '<tr>',
+  '<td style="'+LBL+'">BURN ENTITY:</td><td style="'+TD+'">'+entity+'</td>',
+  '<td style="'+LBL+'">Date:</td><td style="'+TD+'">'+dStr+'</td>',
+  '<td style="'+LBL+'" colspan="2">Profit Centre:</td><td style="'+TD+'" colspan="2">'+pCentre+'</td>',
+  '</tr>',
+  // Row 4
+  '<tr>',
+  '<td style="'+LBL+'">Country Code:</td><td style="'+TD+'">'+country+'</td>',
+  '<td style="'+LBL+'">Name of Claimant:</td><td style="'+TD+'">'+claimant+'</td>',
+  '<td style="'+LBL+'" colspan="2">Product Code:</td><td style="'+TD+'" colspan="2">'+prodCode+'</td>',
+  '</tr>',
+  // Row 5
+  '<tr>',
+  '<td style="'+LBL+'">Cost Centre:</td><td style="'+TD+'">'+costCtr+'</td>',
+  '<td style="'+LBL+'">Job Title:</td><td style="'+TD+'">'+jobTitle+'</td>',
+  '<td style="'+LBL+'" colspan="2">R&amp;D Project Code:</td><td style="'+TD+'" colspan="2">'+rdCode+'</td>',
+  '</tr>',
+  // Row 6
+  '<tr>',
+  '<td style="'+LBL+'">Dimension Code:</td><td style="'+TD+'">'+dimCode+'</td>',
+  '<td style="'+LBL+'">Bank/M-Pesa:</td><td style="'+TD+'">'+bank+'</td>',
+  '<td style="'+LBL+'" colspan="2">Carbon/Project Code:</td><td style="'+TD+'" colspan="2">'+carbCode+'</td>',
+  '</tr>',
   // Column headers
-  doc.setFillColor(240,240,240);
-  var hx = margin, hH = 7;
-  [[C.date,'Date'],[C.det,'Details (Purpose / Participants)'],[C.rec,'Receipt No.'],[C.tzs,'TZS'],[C.usd,'US$'],[C.bu,'Business Unit'],[C.exp,'Expense Account']].forEach(function(col){
-    doc.rect(hx, y, col[0], hH, 'FD'); doc.setFont('helvetica','bold'); doc.setFontSize(7);
-    doc.text(col[1], hx+2, y+hH/2+1.2, {maxWidth:col[0]-4}); hx += col[0];
-  });
-  y += hH;
-
+  '<tr>',
+  '<td style="'+TH+'">Date</td>',
+  '<td style="'+TH+'" colspan="2">Details (Purpose, participants etc.)</td>',
+  '<td style="'+TH+'">Receipt No.</td>',
+  '<td style="'+TH+'">'+cur+'</td>',
+  '<td style="'+TH+'">US$</td>',
+  '<td style="'+TH+'">Business Unit</td>',
+  '<td style="'+TH+'">Expense Account</td>',
+  '</tr>',
   // Data rows
-  expRows.forEach(function(r) {
-    var rowH = 7;
-    var rx = margin;
-    [C.date, C.det, C.rec, C.tzs, C.usd, C.bu, C.exp].forEach(function(w, wi) {
-      doc.rect(rx, y, w, rowH);
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
-      var align = (wi === 3 || wi === 4) ? 'right' : 'left';
-      var tx = align === 'right' ? rx + w - 2 : rx + 2;
-      doc.text(String(r[wi]||''), tx, y + rowH/2 + 1.2, {align:align, maxWidth:w-4});
+  dataRows,
+  // Totals
+  '<tr style="background:#fef9ec">',
+  '<td style="'+TD+'" colspan="3"></td>',
+  '<td style="'+LBL+'">TOTALS</td>',
+  '<td style="'+TDr+';font-weight:700">'+d.totalTZS.toLocaleString()+'</td>',
+  '<td style="'+TDr+';font-weight:700">'+d.totalUSD.toLocaleString()+'</td>',
+  '<td style="'+TD+'" colspan="2"></td>',
+  '</tr>',
+  // Amount advanced
+  '<tr>',
+  '<td style="'+TD+'" colspan="3"></td>',
+  '<td style="'+LBL+'">Amount Advanced</td>',
+  '<td style="'+TDr+'">'+advanced.toLocaleString()+'</td>',
+  '<td style="'+TD+'" colspan="3"></td>',
+  '</tr>',
+  // Balance
+  '<tr>',
+  '<td style="'+TD+';font-size:9px" colspan="2">Advance approved by (Name &amp; Amount):</td>',
+  '<td style="'+TD+'"></td>',
+  '<td style="'+LBL+'">Balance Claimed</td>',
+  '<td style="'+TDr+';font-weight:700;color:'+(balance<0?'#B91C1C':'#059669')+'">'+balance.toLocaleString()+'</td>',
+  '<td style="'+TDr+';font-weight:700">'+balUSD.toLocaleString()+'</td>',
+  '<td style="'+TD+'" colspan="2"></td>',
+  '</tr>',
+  // Signature row
+  '<tr style="height:70px">',
+  '<td style="'+TD+';vertical-align:top;width:25%" colspan="2">',
+  '<div style="font-weight:700;font-size:9px;margin-bottom:4px">Claimant (Name, Sign &amp; Date):</div>',
+  '<div style="font-size:9px">'+claimant+'</div>',
+  sigHtml,
+  '<div style="font-size:9px;color:#888;margin-top:4px">'+dStr+'</div>',
+  '</td>',
+  '<td style="'+TD+';vertical-align:top" colspan="3">',
+  '<div style="font-weight:700;font-size:9px">1st Approver (Name, Sign &amp; Date):</div>',
+  '</td>',
+  '<td style="'+TD+';vertical-align:top" colspan="3">',
+  '<div style="font-weight:700;font-size:9px">2nd Approver (Name, Sign &amp; Date):</div>',
+  '</td>',
+  '</tr>',
+  '</table>'
+  ].join('');
+}
+
+// ── PDF export ───────────────────────────────────────────────
+function ecfExportPDF() {
+  // Refresh preview first so it's in sync
+  ecfRefreshPreview();
+
+  var selected = ecfGetSelected();
+  if (!selected.length) { toast('Select at least one request in Step 1'); return; }
+
+  if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
+    toast('PDF library not loaded — please refresh the page'); return;
+  }
+  var JsPDF = window.jspdf.jsPDF;
+
+  // Values
+  var entity   = document.getElementById('ecfEntity').value||'';
+  var dateVal  = document.getElementById('ecfDate').value||'';
+  var dStr     = dateVal ? new Date(dateVal).toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+  var pCentre  = document.getElementById('ecfProfitCentre').value||'';
+  var country  = document.getElementById('ecfCountry').value||'';
+  var claimant = document.getElementById('ecfClaimant').value||'';
+  var prodCode = document.getElementById('ecfProductCode').value||'';
+  var costCtr  = document.getElementById('ecfCostCentre').value||'';
+  var jobTitle = document.getElementById('ecfJobTitle').value||'';
+  var rdCode   = document.getElementById('ecfRdCode').value||'';
+  var dimCode  = document.getElementById('ecfDimCode').value||'';
+  var bank     = document.getElementById('ecfBank').value||'';
+  var carbCode = document.getElementById('ecfCarbonCode').value||'';
+  var cur      = document.getElementById('ecfCurrency').value||'TZS';
+  var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
+
+  var d = ecfBuildRows(selected, cur);
+  var balance = d.totalTZS - advanced;
+  var sigDataUrl = ecfHasSig() ? document.getElementById('ecfSigCanvas').toDataURL('image/png') : null;
+
+  // PDF setup — A4 landscape
+  var doc = new JsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+  var PW = 297, PH = 210;
+  var ML = 8, MR = 8, MT = 8;
+  var TW = PW - ML - MR;   // 281mm usable width
+  var y = MT;
+
+  // ── colours
+  var ORANGE = [242, 92, 10];
+  var DARK   = [30, 30, 30];
+  var GRAY   = [120, 120, 120];
+  var LGRAY  = [245, 245, 245];
+  var MGRAY  = [220, 220, 220];
+  var WHITE  = [255, 255, 255];
+  var GREEN  = [5, 150, 105];
+  var RED    = [185, 28, 28];
+  var AMBER  = [254, 243, 199];
+
+  // ── TITLE BAR
+  doc.setFillColor(...ORANGE);
+  doc.rect(ML, y, TW, 9, 'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(13);
+  doc.setTextColor(...WHITE);
+  doc.text('BURN MANUFACTURING — EXPENSE CLAIM FORM', PW/2, y+6, {align:'center'});
+  y += 9;
+
+  // ── HEADER GRID  (3 columns × 4 rows)
+  var colW = TW/3;
+  var hH   = 6.5;
+  var headerPairs = [
+    [['BURN ENTITY:', entity],  ['DATE:', dStr],              ['PROFIT CENTRE:', pCentre]],
+    [['COUNTRY CODE:', country],['NAME OF CLAIMANT:', claimant],['PRODUCT CODE:', prodCode]],
+    [['COST CENTRE:', costCtr], ['JOB TITLE:', jobTitle],     ['R&D PROJECT CODE:', rdCode]],
+    [['DIMENSION CODE:', dimCode],['BANK / M-PESA:', bank],  ['CARBON/PROJECT CODE:', carbCode]],
+  ];
+
+  headerPairs.forEach(function(row) {
+    var x = ML;
+    row.forEach(function(pair) {
+      // label bg
+      doc.setFillColor(...LGRAY);
+      doc.rect(x, y, colW*0.38, hH, 'FD');
+      doc.setDrawColor(...MGRAY);
+      doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...GRAY);
+      doc.text(pair[0], x+1.5, y+hH/2+1, {baseline:'middle'});
+      // value
+      doc.rect(x+colW*0.38, y, colW*0.62, hH);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...DARK);
+      doc.text(String(pair[1]||''), x+colW*0.38+1.5, y+hH/2+1, {baseline:'middle', maxWidth:colW*0.62-3});
+      x += colW;
+    });
+    y += hH;
+  });
+
+  // Receipt note
+  doc.setFillColor(255,251,235);
+  doc.rect(ML, y, TW, 5, 'F');
+  doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...GRAY);
+  doc.text('Please number and attach all receipts, stating relevant number for each entry in the Receipt No. column.', ML+2, y+3);
+  y += 5;
+
+  // ── COLUMN HEADERS
+  // Widths: Date(22) Details(80) Receipt(18) Currency(28) USD(22) BizUnit(30) ExpAcct(TW-200)
+  var CW = {date:20, det:82, rec:16, ccy:26, usd:22, bu:30, acct:TW-20-82-16-26-22-30};
+  var colDefs = [
+    {w:CW.date, label:'Date'},
+    {w:CW.det,  label:'Details (Purpose, name of participants etc.)'},
+    {w:CW.rec,  label:'Receipt\nNo.'},
+    {w:CW.ccy,  label:cur},
+    {w:CW.usd,  label:'US$'},
+    {w:CW.bu,   label:'Business Unit'},
+    {w:CW.acct, label:'Expense Account\n(Finance fills)'},
+  ];
+  var chH = 8;
+  doc.setFillColor(...DARK);
+  doc.rect(ML, y, TW, chH, 'F');
+  var cx = ML;
+  colDefs.forEach(function(col) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...WHITE);
+    // Handle two-line headers
+    var lines = col.label.split('\n');
+    if (lines.length===2) {
+      doc.text(lines[0], cx+col.w/2, y+3, {align:'center'});
+      doc.text(lines[1], cx+col.w/2, y+6, {align:'center'});
+    } else {
+      doc.text(col.label, cx+col.w/2, y+chH/2+1, {align:'center', maxWidth:col.w-2});
+    }
+    if (cx > ML) { doc.setDrawColor(...GRAY); doc.setLineWidth(0.2); doc.line(cx, y, cx, y+chH); }
+    cx += col.w;
+  });
+  y += chH;
+
+  // ── DATA ROWS
+  var rH = 7;
+  d.rows.forEach(function(r, ri) {
+    // alternating row tint
+    if (ri%2===0) { doc.setFillColor(252,252,252); doc.rect(ML, y, TW, rH, 'F'); }
+    doc.setDrawColor(...MGRAY); doc.setLineWidth(0.15);
+    doc.rect(ML, y, TW, rH);
+
+    var rx = ML;
+    var vals = [r.date, r.details, r.receipt, r.tzs, r.usd, r.bu, r.acct];
+    var widths = [CW.date, CW.det, CW.rec, CW.ccy, CW.usd, CW.bu, CW.acct];
+    var isRight = [false, false, true, true, true, false, false];
+
+    vals.forEach(function(v, vi) {
+      var w = widths[vi];
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...DARK);
+      var tx = isRight[vi] ? rx+w-2 : rx+2;
+      var align = isRight[vi] ? 'right' : 'left';
+      doc.text(String(v||''), tx, y+rH/2+1, {align:align, baseline:'middle', maxWidth:w-4});
+      if (vi>0) { doc.setDrawColor(...MGRAY); doc.setLineWidth(0.1); doc.line(rx, y, rx, y+rH); }
       rx += w;
     });
-    y += rowH;
+    y += rH;
   });
 
-  // Totals
-  doc.setFillColor(249,240,224);
-  var tx2 = margin;
-  [[C.date+C.det,''], [C.rec,'TOTALS'], [C.tzs, totalTZS.toLocaleString()], [C.usd, totalUSD.toLocaleString()], [C.bu+C.exp,'']].forEach(function(col){
-    doc.rect(tx2, y, col[0], 8, 'FD'); doc.setFont('helvetica','bold'); doc.setFontSize(8);
-    doc.text(col[1], tx2+2, y+5); tx2 += col[0];
-  });
-  y += 8;
+  // ── TOTALS ROW
+  doc.setFillColor(...AMBER);
+  doc.rect(ML, y, TW, 7, 'F');
+  doc.setDrawColor(...MGRAY); doc.rect(ML, y, TW, 7);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...DARK);
+  var tx = ML + CW.date + CW.det;
+  doc.text('TOTALS', tx+CW.rec/2, y+4.5, {align:'center'});
+  tx += CW.rec;
+  doc.text(d.totalTZS.toLocaleString(), tx+CW.ccy-2, y+4.5, {align:'right'});
+  tx += CW.ccy;
+  doc.text(d.totalUSD.toLocaleString(), tx+CW.usd-2, y+4.5, {align:'right'});
+  y += 7;
 
-  // Amount advanced + balance
-  drawRow([{v:'',w:C.date+C.det},{v:'Amount Advanced',w:C.rec+C.tzs,bold:true},{v:advanced.toLocaleString(),w:C.usd},{v:'',w:C.bu+C.exp}], 7, 8);
-  drawRow([{v:'Advance approved by (Name & Amount):',w:C.date+C.det},{v:'Balance Claimed',w:C.rec+C.tzs,bold:true},{v:balance.toLocaleString(),w:C.usd},{v:totalUSD.toLocaleString(),w:C.bu+C.exp}], 7, 8);
+  // ── AMOUNT ADVANCED
+  doc.setFillColor(...WHITE); doc.rect(ML, y, TW, 6);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...GRAY);
+  var aLabelX = ML + CW.date + CW.det;
+  doc.text('Amount Advanced', aLabelX+2, y+4);
+  doc.setFont('helvetica','normal'); doc.setTextColor(...DARK);
+  doc.text(advanced.toLocaleString(), aLabelX+CW.rec+CW.ccy-2, y+4, {align:'right'});
+  y += 6;
 
-  // Signature row
+  // ── BALANCE
+  doc.setFillColor(...WHITE); doc.rect(ML, y, TW, 6);
+  doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor(...GRAY);
+  doc.text('Advance approved by (Name & Amount):', ML+2, y+4);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+  doc.setTextColor(balance<0 ? RED[0] : GREEN[0], balance<0 ? RED[1] : GREEN[1], balance<0 ? RED[2] : GREEN[2]);
+  var bLabelX = ML + CW.date + CW.det;
+  doc.text('Balance Claimed / Returned', bLabelX+2, y+4);
+  doc.text(balance.toLocaleString(), bLabelX+CW.rec+CW.ccy-2, y+4, {align:'right'});
+  y += 6;
+
+  // ── SIGNATURE BOXES
   y += 3;
-  var sigH = 25;
-  var sigCols = [{w:cw*0.33,label:'Claimant (Name, Sign & Date):'},{w:cw*0.33,label:'1st Approver (Name, Sign & Date):'},{w:cw*0.34,label:'2nd Approver (Name, Sign & Date):'}];
-  var sx = margin;
-  sigCols.forEach(function(col, i) {
-    doc.rect(sx, y, col.w, sigH);
-    doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-    doc.text(col.label, sx+2, y+4);
-    if (i === 0) {
-      doc.setFont('helvetica','normal'); doc.setFontSize(7);
-      doc.text(claimant, sx+2, y+9);
+  var sigBoxH = PH - y - MT;  // remaining space
+  if (sigBoxH < 20) sigBoxH = 25;
+  var sigW = TW/3;
+
+  var sigLabels = [
+    'Claimant (Name, Sign & Date)',
+    '1st Approver (Name, Sign & Date)',
+    '2nd Approver (Name, Sign & Date)'
+  ];
+
+  doc.setFillColor(...LGRAY);
+  doc.rect(ML, y, TW, 5, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...ORANGE);
+  doc.text('AUTHORISATION', PW/2, y+3.5, {align:'center'});
+  y += 5;
+
+  sigLabels.forEach(function(label, i) {
+    var sx = ML + i*sigW;
+    doc.setDrawColor(...MGRAY); doc.setLineWidth(0.3);
+    doc.rect(sx, y, sigW, sigBoxH);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...GRAY);
+    doc.text(label, sx+2, y+5);
+
+    if (i===0) {
+      // Claimant box: name + signature image
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...DARK);
+      doc.text(claimant, sx+2, y+11);
       if (sigDataUrl) {
-        try { doc.addImage(sigDataUrl, 'PNG', sx+2, y+10, 35, 13); } catch(e){}
+        try {
+          var imgW = Math.min(sigW-8, 55);
+          var imgH = imgW * 130/500;  // maintain canvas aspect ratio
+          doc.addImage(sigDataUrl, 'PNG', sx+2, y+14, imgW, imgH);
+        } catch(e) {}
       }
-      doc.setFontSize(6.5);
-      doc.text(fmtD, sx+2, y+sigH-3);
+      doc.setFontSize(6.5); doc.setTextColor(...GRAY);
+      doc.text(dStr, sx+2, y+sigBoxH-3);
     }
-    sx += col.w;
+
+    // Divider between boxes
+    if (i>0) { doc.setLineWidth(0.5); doc.line(sx, y, sx, y+sigBoxH); }
   });
 
-  var filename = 'ExpenseClaim_' + claimant.replace(/\s+/g,'_') + '_' + dateStr + '.pdf';
+  // ── Footer
+  doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...GRAY);
+  doc.text('Generated by MRV Finance Platform  •  Burn Manufacturing  •  '+new Date().toLocaleDateString('en-GB'), ML, PH-3);
+
+  var filename = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+
+                 (dateVal||new Date().toISOString().slice(0,10))+'.pdf';
   doc.save(filename);
-  toast('PDF exported: ' + filename);
+  toast('PDF exported: '+filename);
 }
 
-
-// ============================================================
-// EXPENSE CLAIM FORM
-// Fills the Burn Manufacturing xlsx template from paid requests
-// Admin only — signature required — exports to xlsx via SheetJS
-// ============================================================
-
-var _ecPendingSig = null;
-
-function openExpenseClaimModal() {
-  _ecPendingSig = null;
-
-  // Set today's date
-  var today = new Date().toISOString().slice(0, 10);
-  var d = document.getElementById('ecDate');
-  if (d) d.value = today;
-
-  // Pre-fill claimant from current user
-  var cl = document.getElementById('ecClaimant');
-  if (cl && currentUser) cl.value = currentUser.name;
-
-  // Reset sig widget
-  var applied = document.getElementById('ecSigApplied');
-  var widget  = document.getElementById('ecSigWidget');
-  if (applied) applied.style.display = 'none';
-  if (widget)  widget.style.display  = '';
-
-  // Load saved signature into ec-saved panel
-  var preview = document.getElementById('ecSavedPreview');
-  if (preview) {
-    if (savedSigs.length > 0) {
-      var sig = savedSigs[0];
-      preview.innerHTML =
-        '<div style="border:1.5px solid var(--amber);border-radius:8px;padding:10px 14px;'
-        + 'background:var(--amber-lt);display:flex;align-items:center;gap:12px;cursor:pointer" '
-        + 'onclick="useEcSavedSig()">'
-        + '<img src="' + sig.dataUrl + '" style="height:40px;object-fit:contain;max-width:140px;'
-        + 'background:#fff;border-radius:4px;padding:4px;border:1px solid var(--border)">'
-        + '<div>'
-          + '<div style="font-size:13px;font-weight:600;color:var(--ink)">' + sig.label + '</div>'
-          + '<div style="font-size:11px;color:var(--muted);margin-top:2px">Tap to use as 1st Approver signature</div>'
-        + '</div></div>';
-    } else {
-      preview.innerHTML = '<div style="padding:10px;font-size:12.5px;color:var(--muted);'
-        + 'background:var(--surface);border-radius:8px">No saved signature — draw one below.</div>';
-    }
-  }
-
-  // Populate paid request checklist
-  var list = document.getElementById('ecRequestList');
-  if (list) {
-    var paid = requestsStore.filter(function(r){ return r.status === 'Paid'; });
-    if (paid.length === 0) {
-      list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">'
-        + 'No paid requests found.</div>';
-    } else {
-      list.innerHTML = paid.map(function(r, i) {
-        var ccy = getCurrency(r.project, r.type);
-        return '<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;'
-          + 'border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s" '
-          + 'onmouseenter="this.style.background=\'var(--surface)\'" '
-          + 'onmouseleave="this.style.background=\'\'">'
-          + '<input type="checkbox" class="ec-chk" data-ref="' + r.ref + '" '
-          + 'style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0" checked>'
-          + '<div style="flex:1;min-width:0">'
-            + '<div style="font-size:12.5px;font-weight:600;color:var(--ink)">'
-              + '#' + r.ref + ' — ' + (r.costSummary || r.description || r.category || '—')
-            + '</div>'
-            + '<div style="font-size:11px;color:var(--muted);margin-top:2px">'
-              + r.project + (r.type ? ' · ' + r.type : '') + ' · ' + r.requester
-            + '</div>'
-          + '</div>'
-          + '<div style="font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;flex-shrink:0">'
-            + ccy + ' ' + (r.amount || 0).toLocaleString()
-          + '</div>'
-        + '</label>';
-      }).join('');
-    }
-  }
-
-  openModal('expenseClaimModal');
-  setTimeout(function(){ initCanvas('ecCanvas'); }, 100);
+// ── Initialise when view opens ───────────────────────────────
+function ecfInit() {
+  ecfLoadRequests();
+  ecfInitSig();
+  ecfAutoHeader();
 }
 
-function ecSelectAll(checked) {
-  document.querySelectorAll('.ec-chk').forEach(function(c){ c.checked = checked; });
-}
-
-function useEcSavedSig() {
-  if (!savedSigs.length) return;
-  _ecPendingSig = savedSigs[0].dataUrl;
-  document.getElementById('ecSigImg').src  = _ecPendingSig;
-  document.getElementById('ecSigName').textContent = savedSigs[0].label;
-  document.getElementById('ecSigApplied').style.display = 'flex';
-  document.getElementById('ecSigWidget').style.display  = 'none';
-}
-
-function applyEcDrawnSig() {
-  if (isCanvasBlank('ecCanvas')) { toast('Please draw your signature first'); return; }
-  var label = currentUser ? (currentUser.name + ' — Admin') : 'Admin';
-  _ecPendingSig = document.getElementById('ecCanvas').toDataURL();
-  document.getElementById('ecSigImg').src  = _ecPendingSig;
-  document.getElementById('ecSigName').textContent = label;
-  document.getElementById('ecSigApplied').style.display = 'flex';
-  document.getElementById('ecSigWidget').style.display  = 'none';
-}
-
-function clearEcSig() {
-  _ecPendingSig = null;
-  document.getElementById('ecSigApplied').style.display = 'none';
-  document.getElementById('ecSigWidget').style.display  = '';
-}
-
-function generateExpenseClaim() {
-  if (typeof XLSX === 'undefined') {
-    toast('Excel library not loaded — refresh and try again'); return;
-  }
-
-  // ── Collect selected requests ──
-  var checked = Array.from(document.querySelectorAll('.ec-chk:checked'));
-  if (!checked.length) { toast('Select at least one paid request'); return; }
-
-  var selectedRefs = checked.map(function(c){ return c.dataset.ref; });
-  var rows = requestsStore.filter(function(r){
-    return selectedRefs.indexOf(r.ref) !== -1;
-  }).slice(0, 11); // max 11 data rows on the form
-
-  // ── Read header fields ──
-  function val(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
-
-  var burnEntity    = val('ecBurnEntity');
-  var dateVal       = val('ecDate');
-  var profitCentre  = val('ecProfitCentre');
-  var countryCode   = val('ecCountryCode');
-  var claimant      = val('ecClaimant');
-  var productCode   = val('ecProductCode');
-  var costCentre    = val('ecCostCentre');
-  var jobTitle      = val('ecJobTitle');
-  var rdCode        = val('ecRDCode');
-  var dimCode       = val('ecDimCode');
-  var mpesa         = val('ecMpesa');
-  var carbonCode    = val('ecCarbonCode');
-  var ccy           = val('ecCurrency');   // TZS or USD
-  var amtAdv        = parseFloat(val('ecAmountAdvanced')) || 0;
-
-  // Format date for display
-  var dateDisplay = dateVal
-    ? new Date(dateVal).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-    : new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-
-  // ── Build workbook ──
-  // We recreate the template structure faithfully using SheetJS aoa_to_sheet
-  // then add styling via cell metadata
-
-  var NL = String.fromCharCode(10);
-
-  // Helper: blank row
-  function blankRow(n){ return Array(n).fill(''); }
-
-  // Column layout matches the template:
-  // A(skip) B C  D  E  F(TZS) G(US$) H(BU) I(Exp Acct)
-  //         0 1  2  3  4      5      6     7
-  // We use an AOA where index 0 = col B
-
-  var aoa = [];
-
-  // Row 1: Title
-  var r1 = blankRow(9);
-  r1[1] = 'EXPENSE CLAIM FORM';
-  aoa.push(r1);
-
-  // Row 2: blank
-  aoa.push(blankRow(9));
-
-  // Row 3: BURN ENTITY | Date | Profit Centre
-  var r3 = blankRow(9);
-  r3[0] = 'BURN ENTITY:';    r3[1] = burnEntity;
-  r3[2] = 'Date:';            r3[3] = dateDisplay;
-  r3[6] = 'Profit Centre:';  r3[7] = profitCentre;
-  aoa.push(r3);
-
-  // Row 4: Country Code | Claimant | Product Code
-  var r4 = blankRow(9);
-  r4[0] = 'Country Code:';     r4[1] = countryCode;
-  r4[2] = 'Name of Claimant:'; r4[3] = claimant;
-  r4[6] = 'Product Code:';     r4[7] = productCode;
-  aoa.push(r4);
-
-  // Row 5: Cost Centre | Job Title | R&D Code
-  var r5 = blankRow(9);
-  r5[0] = 'Cost Centre:';    r5[1] = costCentre;
-  r5[2] = 'Job Title:';      r5[3] = jobTitle;
-  r5[6] = 'R&D Project Code:'; r5[7] = rdCode;
-  aoa.push(r5);
-
-  // Row 6: Dimension Code | Bank/Mpesa | Carbon Code
-  var r6 = blankRow(9);
-  r6[0] = 'Dimension Code:';       r6[1] = dimCode;
-  r6[2] = 'Bank Details/Mpesa No:'; r6[3] = mpesa;
-  r6[6] = 'Carbon / Project Code:'; r6[7] = carbonCode;
-  aoa.push(r6);
-
-  // Row 7: blank
-  aoa.push(blankRow(9));
-
-  // Row 8: Instructions
-  var r8 = blankRow(9);
-  r8[0] = 'Please number and attach all receipts, stating relevant number for each entry in the Receipt No. column';
-  aoa.push(r8);
-
-  // Row 9: Column headers
-  var r9 = blankRow(9);
-  r9[0] = 'Date'; r9[1] = 'Details (Purpose, name of participants etc.)';
-  r9[3] = 'Receipt No.'; r9[4] = 'TZS'; r9[5] = 'US$';
-  r9[6] = 'Business Unit'; r9[7] = 'Expense Account (to be filled by Finance)';
-  aoa.push(r9);
-
-  // Rows 10-20: Data rows (11 slots)
-  for (var i = 0; i < 11; i++) {
-    var dr = blankRow(9);
-    if (i < rows.length) {
-      var req = rows[i];
-      dr[0] = req.sigTime ? fmtDate(req.sigTime) : fmtDate(req.date);
-      dr[1] = req.costSummary || req.description || req.category || '';
-      dr[3] = i + 1; // receipt number
-      // Amount goes in TZS (col F, index 4) or USD (col G, index 5)
-      var amt = parseFloat(req.amount) || 0;
-      if (ccy === 'USD') { dr[5] = amt; } else { dr[4] = amt; }
-      dr[6] = req.type || req.project || '';
-    }
-    aoa.push(dr);
-  }
-
-  // Row 21: TOTALS
-  var r21 = blankRow(9);
-  r21[2] = 'TOTALS';
-  var totalTZS = rows.filter(function(r){ return ccy !== 'USD'; }).reduce(function(s,r){ return s+(parseFloat(r.amount)||0);},0);
-  var totalUSD = rows.filter(function(r){ return ccy === 'USD'; }).reduce(function(s,r){ return s+(parseFloat(r.amount)||0);},0);
-  r21[4] = totalTZS || '';
-  r21[5] = totalUSD || '';
-  aoa.push(r21);
-
-  // Row 22: Amount Advanced
-  var r22 = blankRow(9);
-  r22[3] = 'Amount Advanced'; r22[4] = amtAdv;
-  aoa.push(r22);
-
-  // Row 23: Balance
-  var total = (ccy === 'USD' ? totalUSD : totalTZS);
-  var r23 = blankRow(9);
-  r23[0] = 'Advance approved by (Name & Amount)';
-  r23[3] = 'Balance claimed/Returned';
-  r23[4] = total - amtAdv;
-  aoa.push(r23);
-
-  // Rows 24-25: blank
-  aoa.push(blankRow(9)); aoa.push(blankRow(9));
-
-  // Row 26: blank spacer
-  aoa.push(blankRow(9));
-
-  // Row 27: Signature labels
-  var r27 = blankRow(9);
-  r27[0] = 'Claimant (Name, Sign & Date)';
-  r27[3] = '1st Approver (Name, Sign & Date)';
-  r27[7] = '2nd Approver (Name, Sign & Date)';
-  aoa.push(r27);
-
-  // Row 28: Signature values
-  var r28 = blankRow(9);
-  r28[0] = claimant;
-  r28[3] = currentUser ? currentUser.name : '';
-  r28[4] = dateDisplay;
-  aoa.push(r28);
-
-  // ── Create sheet ──
-  var ws = XLSX.utils.aoa_to_sheet(aoa);
-
-  // ── Set column widths (approximate the template) ──
-  ws['!cols'] = [
-    {wch:2},   // A (skip)
-    {wch:16},  // B
-    {wch:42},  // C Details
-    {wch:36},  // D
-    {wch:12},  // E Receipt/Amount
-    {wch:14},  // F TZS
-    {wch:12},  // G USD
-    {wch:22},  // H Business Unit
-    {wch:34},  // I Expense Account
-  ];
-
-  // ── Merge cells to match template ──
-  ws['!merges'] = [
-    // Title: B1 span
-    {s:{r:0,c:1}, e:{r:0,c:8}},
-    // E3:G3 (date value spans)
-    {s:{r:2,c:3}, e:{r:2,c:5}},
-    // E4:G4
-    {s:{r:3,c:3}, e:{r:3,c:5}},
-    // E5:G5
-    {s:{r:4,c:3}, e:{r:4,c:5}},
-    // E6:G6
-    {s:{r:5,c:3}, e:{r:5,c:5}},
-    // C9:D9 (Details header)
-    {s:{r:8,c:1}, e:{r:8,c:2}},
-    // Data rows C:D merge (rows 10-20, indices 9-19)
-    {s:{r:9,c:1},  e:{r:9,c:2}},
-    {s:{r:10,c:1}, e:{r:10,c:2}},
-    {s:{r:11,c:1}, e:{r:11,c:2}},
-    {s:{r:12,c:1}, e:{r:12,c:2}},
-    {s:{r:13,c:1}, e:{r:13,c:2}},
-    {s:{r:14,c:1}, e:{r:14,c:2}},
-    {s:{r:15,c:1}, e:{r:15,c:2}},
-    {s:{r:16,c:1}, e:{r:16,c:2}},
-    {s:{r:17,c:1}, e:{r:17,c:2}},
-    {s:{r:18,c:1}, e:{r:18,c:2}},
-    {s:{r:19,c:1}, e:{r:19,c:2}},
-    // Instructions row B8 span
-    {s:{r:7,c:0}, e:{r:7,c:7}},
-    // Sig label row merges
-    {s:{r:26,c:0}, e:{r:26,c:2}},
-    {s:{r:26,c:3}, e:{r:26,c:5}},
-    {s:{r:26,c:6}, e:{r:26,c:8}},
-  ];
-
-  // ── Row heights ──
-  ws['!rows'] = [
-    {hpt:18},  // 1
-    {hpt:13},  // 2
-    {hpt:20},  // 3
-    {hpt:20},  // 4
-    {hpt:20},  // 5
-    {hpt:20},  // 6
-    {hpt:8},   // 7
-    {hpt:13},  // 8
-    {hpt:24},  // 9 header
-    {hpt:18},  // 10
-    {hpt:18},{hpt:18},{hpt:18},{hpt:18},{hpt:18},{hpt:18},
-    {hpt:18},{hpt:18},{hpt:18},{hpt:18},{hpt:18}, // 11-20
-    {hpt:18},  // 21 totals
-    {hpt:18},{hpt:18}, // 22-23
-    {hpt:13},{hpt:13}, // 24-25
-    {hpt:50},  // 26 signature space
-    {hpt:18},  // 27 sig labels
-    {hpt:30},  // 28 sig values
-  ];
-
-  // ── Add signature image as a note if present ──
-  // (SheetJS community edition cannot embed images, so we add a note instead)
-  if (_ecPendingSig) {
-    var sigNote = currentUser ? currentUser.name + ' — Signed ' + dateDisplay : 'Signed ' + dateDisplay;
-    // Add name to row 28 col D (1st Approver)
-    var sigCell = XLSX.utils.encode_cell({r:27, c:4});
-    if (!ws[sigCell]) ws[sigCell] = {};
-    ws[sigCell].v = sigNote;
-    ws[sigCell].t = 's';
-    toast('Note: Signature name added to cell. Image embedding requires xlsx Pro library.');
-  }
-
-  // ── Create workbook and download ──
-  var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Expense_Claim_Form');
-
-  var filename = 'Burn_Expense_Claim_' + (dateVal || new Date().toISOString().slice(0,10)) + '.xlsx';
-  XLSX.writeFile(wb, filename);
-
-  closeModal('expenseClaimModal');
-  toast('Expense Claim Form downloaded — ' + rows.length + ' item' + (rows.length===1?'':'s') + ' filled');
-}
 
 // wrapTables called from main DOMContentLoaded below
 
