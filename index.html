@@ -1215,7 +1215,7 @@
         <div class="card-title">Step 4 &mdash; Admin Signature &amp; Export PDF</div>
       </div>
       <div class="card-body">
-        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Your signature will appear in the <strong>Claimant</strong> box of the exported PDF.</p>
+        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Your <strong>saved signature</strong> will be used automatically as the Claimant signature. Draw below only if you have no saved signature.</p>
         <canvas id="ecfSigCanvas" width="500" height="130"
           style="border:1.5px solid var(--border);border-radius:var(--radius);cursor:crosshair;background:#FAFAFA;display:block;touch-action:none;max-width:100%;margin-bottom:10px"></canvas>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px">
@@ -6462,22 +6462,14 @@ function wrapTables() {
 // Run on load
 
 
+
 // ══════════════════════════════════════════════════════════════
 // EXPENSE CLAIM FORM  (admin only)
-// Maps exactly to the Burn Manufacturing 2026 template:
-//   Row 1: Title (C1)
-//   Row 3: Entity(C3) Date(E3) ProfitCentre(I3)
-//   Row 4: Country(C4) Claimant(E4) ProductCode(I4)
-//   Row 5: CostCentre(C5) JobTitle(E5) RD(I5)
-//   Row 6: DimCode(C6) Bank(E6) CarbonCode(I6)
-//   Rows 10-20: Date(B) Details(C:D) Receipt(E) TZS(F) USD(G) BU(H) ExpAcct(I)
-//   Row 21: Totals
-//   Row 22: Amount Advanced
-//   Row 23: Balance
-//   Row 27: Signatures
 // ══════════════════════════════════════════════════════════════
 
-// ── Signature canvas init ────────────────────────────────────
+// Burn logo (extracted from 2026_Expense_Claim_Form.xlsx)
+var ECF_LOGO_B64 = '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';
+
 function ecfInitSig() {
   var cv = document.getElementById('ecfSigCanvas');
   if (!cv || cv._ecfInited) return;
@@ -6487,25 +6479,16 @@ function ecfInitSig() {
   function pos(e) {
     var r = cv.getBoundingClientRect();
     var src = e.touches ? e.touches[0] : e;
-    return {
-      x: (src.clientX - r.left) * (cv.width / r.width),
-      y: (src.clientY - r.top)  * (cv.height / r.height)
-    };
+    return { x:(src.clientX-r.left)*(cv.width/r.width), y:(src.clientY-r.top)*(cv.height/r.height) };
   }
-  function down(e) { e.preventDefault(); drawing = true; var p = pos(e); lx=p.x; ly=p.y; }
-  function move(e) {
-    if (!drawing) return; e.preventDefault();
-    var p = pos(e);
-    ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y);
-    ctx.strokeStyle='#111'; ctx.lineWidth=1.8; ctx.lineCap='round'; ctx.stroke();
-    lx=p.x; ly=p.y;
-  }
-  function up() { drawing=false; }
-  cv.addEventListener('mousedown', down); cv.addEventListener('mousemove', move);
-  cv.addEventListener('mouseup', up);    cv.addEventListener('mouseleave', up);
-  cv.addEventListener('touchstart', down, {passive:false});
-  cv.addEventListener('touchmove',  move, {passive:false});
-  cv.addEventListener('touchend',   up);
+  function down(e){e.preventDefault();drawing=true;var p=pos(e);lx=p.x;ly=p.y;}
+  function move(e){if(!drawing)return;e.preventDefault();var p=pos(e);ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(p.x,p.y);ctx.strokeStyle='#111';ctx.lineWidth=1.8;ctx.lineCap='round';ctx.stroke();lx=p.x;ly=p.y;}
+  function up(){drawing=false;}
+  cv.addEventListener('mousedown',down);cv.addEventListener('mousemove',move);
+  cv.addEventListener('mouseup',up);cv.addEventListener('mouseleave',up);
+  cv.addEventListener('touchstart',down,{passive:false});
+  cv.addEventListener('touchmove',move,{passive:false});
+  cv.addEventListener('touchend',up);
 }
 
 function ecfClearSig() {
@@ -6519,11 +6502,20 @@ function ecfHasSig() {
   var cv = document.getElementById('ecfSigCanvas');
   if (!cv) return false;
   var blank = document.createElement('canvas');
-  blank.width = cv.width; blank.height = cv.height;
+  blank.width=cv.width; blank.height=cv.height;
   return cv.toDataURL() !== blank.toDataURL();
 }
 
-// ── Populate request checklist ───────────────────────────────
+// ── Get admin's saved signature from savedSigs ───────────────────────────────
+function ecfGetAdminSig() {
+  // Use the system-saved signature (savedSigs[0]) if available
+  if (savedSigs && savedSigs.length > 0) return savedSigs[0].dataUrl;
+  // Fallback: drawn on canvas
+  if (ecfHasSig()) return document.getElementById('ecfSigCanvas').toDataURL('image/png');
+  return null;
+}
+
+// ── Populate request checklist ───────────────────────────────────────────────
 function ecfLoadRequests() {
   var list = document.getElementById('ecfRequestList');
   if (!list) return;
@@ -6532,39 +6524,28 @@ function ecfLoadRequests() {
     list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">No paid requests found. Mark requests as Paid in System Requests first.</div>';
     return;
   }
-  list.innerHTML = paid.map(function(r, i) {
+  list.innerHTML = paid.map(function(r,i){
     var amt = parseFloat(r.amount)||0;
-    var cur = (typeof getCurrency==='function') ? getCurrency(r.project, r.type)||'KES' : 'KES';
-    var desc = (r.costSummary || r.description || r.costItem || 'No description').replace(/</g,'&lt;');
+    var cur = (typeof getCurrency==='function') ? getCurrency(r.project,r.type)||'KES' : 'KES';
+    var desc = (r.costSummary||r.description||r.costItem||'No description').replace(/</g,'&lt;');
     var cat  = (r.category||'').replace(/</g,'&lt;');
-    return [
-      '<label style="display:flex;align-items:center;gap:12px;padding:10px 18px;',
-      'border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s"',
-      ' onmouseover="this.style.background=\'var(--gray-50)\'"',
-      ' onmouseout="this.style.background=\'\'">',
-      '<input type="checkbox" class="ecf-chk" data-i="'+i+'"',
-      ' style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0" checked>',
-      '<div style="flex:1;min-width:0">',
-      '<div style="font-size:12.5px;font-weight:600;color:var(--gray-900)">'+desc+'</div>',
-      '<div style="font-size:11px;color:var(--gray-500);margin-top:2px">',
-      (r.ref||'')+(cat?' &bull; '+cat:'')+' &bull; '+(r.project||'')+
-      (r.date?' &bull; '+(typeof fmtDate==='function'?fmtDate(r.date):r.date):''),
-      '</div></div>',
-      '<div style="font-size:13px;font-weight:700;color:var(--gray-900);white-space:nowrap;flex-shrink:0">',
-      cur+' '+amt.toLocaleString(),
-      '</div></label>'
-    ].join('');
+    return '<label style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s"'
+      +' onmouseover="this.style.background=\'var(--gray-50)\'" onmouseout="this.style.background=\'\'">'
+      +'<input type="checkbox" class="ecf-chk" data-i="'+i+'" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0" checked>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:12.5px;font-weight:600;color:var(--gray-900)">'+desc+'</div>'
+        +'<div style="font-size:11px;color:var(--gray-500);margin-top:2px">'+(r.ref||'')+(cat?' &bull; '+cat:'')+' &bull; '+(r.project||'')+(r.date?' &bull; '+(typeof fmtDate==='function'?fmtDate(r.date):r.date):'')+'</div>'
+      +'</div>'
+      +'<div style="font-size:13px;font-weight:700;color:var(--gray-900);white-space:nowrap;flex-shrink:0">'+cur+' '+amt.toLocaleString()+'</div>'
+      +'</label>';
   }).join('');
 }
 
-function ecfSelAll(v) {
-  document.querySelectorAll('.ecf-chk').forEach(function(c){ c.checked=v; });
-}
+function ecfSelAll(v) { document.querySelectorAll('.ecf-chk').forEach(function(c){c.checked=v;}); }
 
-// ── Auto-fill header from data ───────────────────────────────
 function ecfAutoHeader() {
-  if (!document.getElementById('ecfDate').value)
-    document.getElementById('ecfDate').value = new Date().toISOString().slice(0,10);
+  var dateEl = document.getElementById('ecfDate');
+  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
 
   if (currentUser) {
     var cEl = document.getElementById('ecfClaimant');
@@ -6575,17 +6556,10 @@ function ecfAutoHeader() {
       jEl.value = roleMap[currentUser.role]||currentUser.role||'';
     }
   }
-
   var paid = (requestsStore||[]).filter(function(r){ return r.status==='Paid'; });
   if (!paid.length) return;
   var r = paid[0];
-
-  function setIfEmpty(id, val) {
-    var el = document.getElementById(id);
-    if (el && !el.value && val) el.value = val;
-  }
-
-  // Pull from budget lines for the first request's project+type
+  function setIfEmpty(id,val){var el=document.getElementById(id);if(el&&!el.value&&val)el.value=val;}
   var bl = (budgetLines||[]).find(function(l){ return l.project===r.project && l.type===r.type; });
   if (bl) {
     setIfEmpty('ecfEntity',      bl.country||'');
@@ -6594,64 +6568,54 @@ function ecfAutoHeader() {
     setIfEmpty('ecfCostCentre',  bl.dept||'');
     setIfEmpty('ecfDimCode',     bl.costItem||'');
     setIfEmpty('ecfCarbonCode',  bl.costSummary||'');
-    if (bl.currency) {
-      var sel = document.getElementById('ecfCurrency');
-      if (sel) sel.value = bl.currency;
-    }
+    if (bl.currency) { var sel=document.getElementById('ecfCurrency'); if(sel) sel.value=bl.currency; }
   }
   setIfEmpty('ecfBizUnit', r.type||r.category||'');
 }
 
-// ── Get selected requests in order ──────────────────────────
 function ecfGetSelected() {
   var paid = (requestsStore||[]).filter(function(r){ return r.status==='Paid'; });
   var out  = [];
-  document.querySelectorAll('.ecf-chk').forEach(function(c) {
-    if (c.checked) {
-      var i = parseInt(c.dataset.i);
-      if (paid[i]) out.push(paid[i]);
-    }
+  document.querySelectorAll('.ecf-chk').forEach(function(c){
+    if (c.checked) { var i=parseInt(c.dataset.i); if(paid[i]) out.push(paid[i]); }
   });
   return out;
 }
 
-// ── Build table rows data ────────────────────────────────────
 function ecfBuildRows(selected, cur) {
-  var rows = [], totalTZS = 0, totalUSD = 0;
-  selected.slice(0,11).forEach(function(r, ri) {
-    var amt = parseFloat(r.amount)||0;
-    var isTZS = (cur==='TZS'||cur==='KES'||cur==='UGX');
-    var tzs = isTZS ? amt : 0;
-    var usd = cur==='USD' ? amt : 0;
-    totalTZS += tzs; totalUSD += usd;
+  var rows=[],totalTZS=0,totalUSD=0;
+  selected.slice(0,11).forEach(function(r,ri){
+    var amt=parseFloat(r.amount)||0;
+    var isTZS=(cur==='TZS'||cur==='KES'||cur==='UGX');
+    var tzs=isTZS?amt:0, usd=cur==='USD'?amt:0;
+    totalTZS+=tzs; totalUSD+=usd;
     rows.push({
-      date:    (typeof fmtDate==='function') ? fmtDate(r.date||'') : (r.date||''),
-      details: (r.description||r.costSummary||r.costItem||'').slice(0,60),
-      receipt: (ri+1).toString(),
-      tzs:     tzs ? tzs.toLocaleString() : '',
-      usd:     usd ? usd.toLocaleString() : '',
-      bu:      r.category||r.type||'',
-      acct:    r.costSummary||''
+      date:   (typeof fmtDate==='function')?fmtDate(r.date||''):(r.date||''),
+      details:(r.description||r.costSummary||r.costItem||'').slice(0,55),
+      receipt:(ri+1).toString(),
+      tzs:    tzs?tzs.toLocaleString():'',
+      usd:    usd?usd.toLocaleString():'',
+      bu:     r.category||r.type||'',
+      acct:   r.costSummary||''
     });
   });
-  // Pad to 11 rows
-  while (rows.length < 11) rows.push({date:'',details:'',receipt:'',tzs:'',usd:'',bu:'',acct:''});
+  while(rows.length<11) rows.push({date:'',details:'',receipt:'',tzs:'',usd:'',bu:'',acct:''});
   return {rows:rows, totalTZS:totalTZS, totalUSD:totalUSD};
 }
 
-// ── HTML preview ─────────────────────────────────────────────
+// ── HTML Preview (matches template layout) ────────────────────────────────────
 function ecfRefreshPreview() {
   var area = document.getElementById('ecfPreview');
   if (!area) return;
   var selected = ecfGetSelected();
   if (!selected.length) {
-    area.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted)">Select at least one request in Step 1.</div>';
+    area.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted)">Select at least one request above.</div>';
     return;
   }
 
   var entity   = document.getElementById('ecfEntity').value||'';
   var dateVal  = document.getElementById('ecfDate').value||'';
-  var dStr     = dateVal ? new Date(dateVal).toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+  var dStr     = dateVal ? new Date(dateVal).toLocaleDateString('en-GB') : '';
   var pCentre  = document.getElementById('ecfProfitCentre').value||'';
   var country  = document.getElementById('ecfCountry').value||'';
   var claimant = document.getElementById('ecfClaimant').value||'';
@@ -6664,140 +6628,139 @@ function ecfRefreshPreview() {
   var carbCode = document.getElementById('ecfCarbonCode').value||'';
   var cur      = document.getElementById('ecfCurrency').value||'TZS';
   var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
-  var bizUnit  = document.getElementById('ecfBizUnit').value||'';
-
-  var d = ecfBuildRows(selected, cur);
+  var d        = ecfBuildRows(selected, cur);
   var balance  = d.totalTZS - advanced;
-  var balUSD   = d.totalUSD;
 
-  // Cell style helpers
-  var TH = 'border:1px solid #999;padding:4px 6px;background:#e8e8e8;font-weight:700;font-size:10px';
-  var TD = 'border:1px solid #ccc;padding:4px 6px;font-size:10px';
-  var TDr = TD+';text-align:right';
-  var LBL = TD+';font-weight:700;background:#f5f5f5;white-space:nowrap';
+  // Admin sig
+  var sigSrc   = ecfGetAdminSig();
+  var sigHtml  = sigSrc ? '<img src="'+sigSrc+'" style="height:32px;display:block;margin-top:3px">' : '<span style="color:#999;font-size:9px">No signature — draw above or save one in My Signatures</span>';
 
-  // Sig: show canvas if drawn
-  var sigHtml = '';
-  if (ecfHasSig()) {
-    var cv = document.getElementById('ecfSigCanvas');
-    sigHtml = '<img src="'+cv.toDataURL()+'" style="height:35px;display:block;margin-top:4px">';
-  }
+  var B  = 'border:1px solid #aaa;padding:4px 5px;font-size:9.5px';
+  var BL = B+';font-weight:700;background:#f0f0f0;white-space:nowrap';
+  var BR = B+';text-align:right';
+  var BH = 'border:1px solid #aaa;padding:4px 5px;font-size:9px;font-weight:700;background:#d0d0d0;text-align:center';
 
   var dataRows = d.rows.map(function(r,i){
-    return '<tr>'
-     +'<td style="'+TD+'">'+r.date+'</td>'
-     +'<td style="'+TD+'" colspan="2">'+r.details+'</td>'
-     +'<td style="'+TD+';text-align:center">'+r.receipt+'</td>'
-     +'<td style="'+TDr+'">'+r.tzs+'</td>'
-     +'<td style="'+TDr+'">'+r.usd+'</td>'
-     +'<td style="'+TD+'">'+r.bu+'</td>'
-     +'<td style="'+TD+'">'+r.acct+'</td>'
-     +'</tr>';
+    var bg = i%2===0?'':'background:#fafafa';
+    return '<tr style="'+bg+'">'
+      +'<td style="'+B+'">'+r.date+'</td>'
+      +'<td style="'+B+'" colspan="2">'+r.details+'</td>'
+      +'<td style="'+B+';text-align:center">'+r.receipt+'</td>'
+      +'<td style="'+BR+'">'+r.tzs+'</td>'
+      +'<td style="'+BR+'">'+r.usd+'</td>'
+      +'<td style="'+B+'">'+r.bu+'</td>'
+      +'<td style="'+B+'">'+r.acct+'</td>'
+      +'</tr>';
   }).join('');
 
-  area.innerHTML = [
-  '<table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif">',
-  // Title
-  '<tr><td colspan="8" style="text-align:center;font-weight:700;font-size:14px;padding:8px;border:2px solid #999;background:#fff">EXPENSE CLAIM FORM</td></tr>',
-  // Row 3
-  '<tr>',
-  '<td style="'+LBL+'">BURN ENTITY:</td><td style="'+TD+'">'+entity+'</td>',
-  '<td style="'+LBL+'">Date:</td><td style="'+TD+'">'+dStr+'</td>',
-  '<td style="'+LBL+'" colspan="2">Profit Centre:</td><td style="'+TD+'" colspan="2">'+pCentre+'</td>',
-  '</tr>',
-  // Row 4
-  '<tr>',
-  '<td style="'+LBL+'">Country Code:</td><td style="'+TD+'">'+country+'</td>',
-  '<td style="'+LBL+'">Name of Claimant:</td><td style="'+TD+'">'+claimant+'</td>',
-  '<td style="'+LBL+'" colspan="2">Product Code:</td><td style="'+TD+'" colspan="2">'+prodCode+'</td>',
-  '</tr>',
-  // Row 5
-  '<tr>',
-  '<td style="'+LBL+'">Cost Centre:</td><td style="'+TD+'">'+costCtr+'</td>',
-  '<td style="'+LBL+'">Job Title:</td><td style="'+TD+'">'+jobTitle+'</td>',
-  '<td style="'+LBL+'" colspan="2">R&amp;D Project Code:</td><td style="'+TD+'" colspan="2">'+rdCode+'</td>',
-  '</tr>',
-  // Row 6
-  '<tr>',
-  '<td style="'+LBL+'">Dimension Code:</td><td style="'+TD+'">'+dimCode+'</td>',
-  '<td style="'+LBL+'">Bank/M-Pesa:</td><td style="'+TD+'">'+bank+'</td>',
-  '<td style="'+LBL+'" colspan="2">Carbon/Project Code:</td><td style="'+TD+'" colspan="2">'+carbCode+'</td>',
-  '</tr>',
-  // Column headers
-  '<tr>',
-  '<td style="'+TH+'">Date</td>',
-  '<td style="'+TH+'" colspan="2">Details (Purpose, participants etc.)</td>',
-  '<td style="'+TH+'">Receipt No.</td>',
-  '<td style="'+TH+'">'+cur+'</td>',
-  '<td style="'+TH+'">US$</td>',
-  '<td style="'+TH+'">Business Unit</td>',
-  '<td style="'+TH+'">Expense Account</td>',
-  '</tr>',
-  // Data rows
-  dataRows,
-  // Totals
-  '<tr style="background:#fef9ec">',
-  '<td style="'+TD+'" colspan="3"></td>',
-  '<td style="'+LBL+'">TOTALS</td>',
-  '<td style="'+TDr+';font-weight:700">'+d.totalTZS.toLocaleString()+'</td>',
-  '<td style="'+TDr+';font-weight:700">'+d.totalUSD.toLocaleString()+'</td>',
-  '<td style="'+TD+'" colspan="2"></td>',
-  '</tr>',
-  // Amount advanced
-  '<tr>',
-  '<td style="'+TD+'" colspan="3"></td>',
-  '<td style="'+LBL+'">Amount Advanced</td>',
-  '<td style="'+TDr+'">'+advanced.toLocaleString()+'</td>',
-  '<td style="'+TD+'" colspan="3"></td>',
-  '</tr>',
-  // Balance
-  '<tr>',
-  '<td style="'+TD+';font-size:9px" colspan="2">Advance approved by (Name &amp; Amount):</td>',
-  '<td style="'+TD+'"></td>',
-  '<td style="'+LBL+'">Balance Claimed</td>',
-  '<td style="'+TDr+';font-weight:700;color:'+(balance<0?'#B91C1C':'#059669')+'">'+balance.toLocaleString()+'</td>',
-  '<td style="'+TDr+';font-weight:700">'+balUSD.toLocaleString()+'</td>',
-  '<td style="'+TD+'" colspan="2"></td>',
-  '</tr>',
-  // Signature row
-  '<tr style="height:70px">',
-  '<td style="'+TD+';vertical-align:top;width:25%" colspan="2">',
-  '<div style="font-weight:700;font-size:9px;margin-bottom:4px">Claimant (Name, Sign &amp; Date):</div>',
-  '<div style="font-size:9px">'+claimant+'</div>',
-  sigHtml,
-  '<div style="font-size:9px;color:#888;margin-top:4px">'+dStr+'</div>',
-  '</td>',
-  '<td style="'+TD+';vertical-align:top" colspan="3">',
-  '<div style="font-weight:700;font-size:9px">1st Approver (Name, Sign &amp; Date):</div>',
-  '</td>',
-  '<td style="'+TD+';vertical-align:top" colspan="3">',
-  '<div style="font-weight:700;font-size:9px">2nd Approver (Name, Sign &amp; Date):</div>',
-  '</td>',
-  '</tr>',
-  '</table>'
-  ].join('');
+  area.innerHTML =
+    '<div style="font-family:Arial,sans-serif;font-size:9.5px;position:relative;border:1.5px solid #999;padding:0">'
+    // Logo top-right
+    +'<div style="position:absolute;top:6px;right:8px">'
+      +'<img src="data:image/png;base64,'+ECF_LOGO_B64+'" style="height:32px">'
+    +'</div>'
+    // Title
+    +'<div style="text-align:center;font-size:13px;font-weight:700;padding:10px;border-bottom:1px solid #aaa">EXPENSE CLAIM FORM</div>'
+    // Header rows
+    +'<table style="width:100%;border-collapse:collapse">'
+    +'<tr>'
+      +'<td style="'+BL+'">BURN ENTITY:</td><td style="'+B+';width:18%">'+entity+'</td>'
+      +'<td style="'+BL+'">Date:</td><td style="'+B+';width:12%">'+dStr+'</td>'
+      +'<td style="'+BL+'">Profit Centre:</td><td style="'+B+'" colspan="3">'+pCentre+'</td>'
+    +'</tr>'
+    +'<tr>'
+      +'<td style="'+BL+'">Country Code:</td><td style="'+B+'">'+country+'</td>'
+      +'<td style="'+BL+'">Name of Claimant:</td><td style="'+B+'">'+claimant+'</td>'
+      +'<td style="'+BL+'">Product Code:</td><td style="'+B+'" colspan="3">'+prodCode+'</td>'
+    +'</tr>'
+    +'<tr>'
+      +'<td style="'+BL+'">Cost Centre:</td><td style="'+B+'">'+costCtr+'</td>'
+      +'<td style="'+BL+'">Job Title:</td><td style="'+B+'">'+jobTitle+'</td>'
+      +'<td style="'+BL+'">R&amp;D Project Code:</td><td style="'+B+'" colspan="3">'+rdCode+'</td>'
+    +'</tr>'
+    +'<tr>'
+      +'<td style="'+BL+'">Dimension Code:</td><td style="'+B+'">'+dimCode+'</td>'
+      +'<td style="'+BL+'">Bank / M-Pesa:</td><td style="'+B+'">'+bank+'</td>'
+      +'<td style="'+BL+'">Carbon / Project Code:</td><td style="'+B+'" colspan="3">'+carbCode+'</td>'
+    +'</tr>'
+    // Note row
+    +'<tr><td colspan="8" style="'+B+';font-size:8.5px;font-style:italic;background:#fffde7">Please number and attach all receipts, stating relevant number for each entry in the Receipt No. column</td></tr>'
+    // Column headers
+    +'<tr>'
+      +'<td style="'+BH+'">Date</td>'
+      +'<td style="'+BH+'" colspan="2">Details (Purpose, name of participants etc.)</td>'
+      +'<td style="'+BH+'">Receipt No.</td>'
+      +'<td style="'+BH+'">'+cur+'</td>'
+      +'<td style="'+BH+'">US$</td>'
+      +'<td style="'+BH+'">Business Unit</td>'
+      +'<td style="'+BH+'">Expense Account (Finance fills)</td>'
+    +'</tr>'
+    +dataRows
+    // Totals
+    +'<tr style="background:#fff9c4;font-weight:700">'
+      +'<td style="'+B+'" colspan="3"></td>'
+      +'<td style="'+B+';font-weight:700">TOTALS</td>'
+      +'<td style="'+BR+';font-weight:700">'+d.totalTZS.toLocaleString()+'</td>'
+      +'<td style="'+BR+';font-weight:700">'+d.totalUSD.toLocaleString()+'</td>'
+      +'<td style="'+B+'" colspan="2"></td>'
+    +'</tr>'
+    +'<tr>'
+      +'<td style="'+B+'" colspan="3"></td>'
+      +'<td style="'+BL+'">Amount Advanced</td>'
+      +'<td style="'+BR+'">'+advanced.toLocaleString()+'</td>'
+      +'<td style="'+B+'" colspan="3"></td>'
+    +'</tr>'
+    +'<tr>'
+      +'<td style="'+B+';font-size:8.5px" colspan="2">Advance approved by (Name &amp; Amount):</td>'
+      +'<td style="'+B+'"></td>'
+      +'<td style="'+BL+'">Balance Claimed / Returned</td>'
+      +'<td style="'+BR+';color:'+(balance<0?'#cc0000':'#006600')+';font-weight:700">'+balance.toLocaleString()+'</td>'
+      +'<td style="'+BR+'">'+d.totalUSD.toLocaleString()+'</td>'
+      +'<td style="'+B+'" colspan="2"></td>'
+    +'</tr>'
+    // Signature row
+    +'<tr style="height:60px">'
+      +'<td style="'+B+';vertical-align:top;padding:6px" colspan="2">'
+        +'<div style="font-weight:700;font-size:8.5px">Claimant (Name, Sign &amp; Date):</div>'
+        +'<div style="font-size:9px;margin-top:3px">'+claimant+'</div>'
+        +sigHtml
+        +'<div style="font-size:8px;color:#666;margin-top:3px">'+dStr+'</div>'
+      +'</td>'
+      +'<td style="'+B+';vertical-align:top;padding:6px" colspan="3">'
+        +'<div style="font-weight:700;font-size:8.5px">1st Approver (Name, Sign &amp; Date):</div>'
+      +'</td>'
+      +'<td style="'+B+';vertical-align:top;padding:6px" colspan="3">'
+        +'<div style="font-weight:700;font-size:8.5px">2nd Approver (Name, Sign &amp; Date):</div>'
+      +'</td>'
+    +'</tr>'
+    +'</table>'
+    +'</div>';
 }
 
-// ── PDF export ───────────────────────────────────────────────
+// ── PDF Export — exact template layout, logo, saved sig as Claimant ──────────
 function ecfExportPDF() {
-  // Refresh preview first so it's in sync
   ecfRefreshPreview();
-
   var selected = ecfGetSelected();
-  if (!selected.length) { toast('Select at least one request in Step 1'); return; }
+  if (!selected.length) { toast('Select at least one paid request in Step 1'); return; }
+
+  var sigDataUrl = ecfGetAdminSig();
+  if (!sigDataUrl) {
+    toast('No signature found. Draw one above or save one in My Signatures.');
+    return;
+  }
 
   if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
     toast('PDF library not loaded — please refresh the page'); return;
   }
   var JsPDF = window.jspdf.jsPDF;
 
-  // Values
+  // ── Field values ──
   var entity   = document.getElementById('ecfEntity').value||'';
-  var dateVal  = document.getElementById('ecfDate').value||'';
-  var dStr     = dateVal ? new Date(dateVal).toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+  var dateVal  = document.getElementById('ecfDate').value||new Date().toISOString().slice(0,10);
+  var dStr     = new Date(dateVal).toLocaleDateString('en-GB');
   var pCentre  = document.getElementById('ecfProfitCentre').value||'';
   var country  = document.getElementById('ecfCountry').value||'';
-  var claimant = document.getElementById('ecfClaimant').value||'';
+  var claimant = document.getElementById('ecfClaimant').value||(currentUser?currentUser.name:'')||'';
   var prodCode = document.getElementById('ecfProductCode').value||'';
   var costCtr  = document.getElementById('ecfCostCentre').value||'';
   var jobTitle = document.getElementById('ecfJobTitle').value||'';
@@ -6807,222 +6770,234 @@ function ecfExportPDF() {
   var carbCode = document.getElementById('ecfCarbonCode').value||'';
   var cur      = document.getElementById('ecfCurrency').value||'TZS';
   var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
+  var d        = ecfBuildRows(selected, cur);
+  var balance  = d.totalTZS - advanced;
 
-  var d = ecfBuildRows(selected, cur);
-  var balance = d.totalTZS - advanced;
-  var sigDataUrl = ecfHasSig() ? document.getElementById('ecfSigCanvas').toDataURL('image/png') : null;
+  // ── PDF init — A4 portrait ──
+  var doc = new JsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  var PW=210, PH=297, ML=12, MR=12, MT=10;
+  var TW = PW-ML-MR;  // 186mm
+  var y  = MT;
 
-  // PDF setup — A4 landscape
-  var doc = new JsPDF({orientation:'landscape', unit:'mm', format:'a4'});
-  var PW = 297, PH = 210;
-  var ML = 8, MR = 8, MT = 8;
-  var TW = PW - ML - MR;   // 281mm usable width
-  var y = MT;
+  // ── Colours (matching template) ──
+  var BLACK  = [0,0,0];
+  var GRAY   = [102,102,102];
+  var LGRAY  = [240,240,240];
+  var DGRAY  = [208,208,208];
+  var YELLOW = [255,249,196];
+  var WHITE  = [255,255,255];
+  var GREEN  = [0,100,0];
+  var RED    = [180,0,0];
+  var AMBER  = [255,253,231];
 
-  // ── colours
-  var ORANGE = [242, 92, 10];
-  var DARK   = [30, 30, 30];
-  var GRAY   = [120, 120, 120];
-  var LGRAY  = [245, 245, 245];
-  var MGRAY  = [220, 220, 220];
-  var WHITE  = [255, 255, 255];
-  var GREEN  = [5, 150, 105];
-  var RED    = [185, 28, 28];
-  var AMBER  = [254, 243, 199];
+  function setDraw(c){ doc.setDrawColor(c[0],c[1],c[2]); }
+  function setFill(c){ doc.setFillColor(c[0],c[1],c[2]); }
+  function setTxt(c) { doc.setTextColor(c[0],c[1],c[2]); }
 
-  // ── TITLE BAR
-  doc.setFillColor(...ORANGE);
-  doc.rect(ML, y, TW, 9, 'F');
+  // ── Burn logo — top-right ──
+  try {
+    // Logo sits in top-right corner: 40mm wide, ~13mm tall
+    doc.addImage('data:image/png;base64,'+ECF_LOGO_B64, 'PNG', PW-MR-42, y, 42, 14);
+  } catch(e) {}
+
+  // ── Title ──
   doc.setFont('helvetica','bold');
-  doc.setFontSize(13);
-  doc.setTextColor(...WHITE);
-  doc.text('BURN MANUFACTURING — EXPENSE CLAIM FORM', PW/2, y+6, {align:'center'});
-  y += 9;
+  doc.setFontSize(14);
+  setTxt(BLACK);
+  doc.text('EXPENSE CLAIM FORM', PW/2, y+8, {align:'center'});
+  setDraw([180,180,180]); doc.setLineWidth(0.4);
+  doc.line(ML, y+10, PW-MR, y+10);
+  y += 14;
 
-  // ── HEADER GRID  (3 columns × 4 rows)
-  var colW = TW/3;
-  var hH   = 6.5;
-  var headerPairs = [
-    [['BURN ENTITY:', entity],  ['DATE:', dStr],              ['PROFIT CENTRE:', pCentre]],
-    [['COUNTRY CODE:', country],['NAME OF CLAIMANT:', claimant],['PRODUCT CODE:', prodCode]],
-    [['COST CENTRE:', costCtr], ['JOB TITLE:', jobTitle],     ['R&D PROJECT CODE:', rdCode]],
-    [['DIMENSION CODE:', dimCode],['BANK / M-PESA:', bank],  ['CARBON/PROJECT CODE:', carbCode]],
+  // ── Header grid: 4 rows × 3 col-pairs ──
+  // Col pair widths:  left-label / left-val / mid-label / mid-val / right-label / right-val
+  // Total = TW = 186mm
+  // [label, value, label, value, label, value] widths
+  var LW1=28, VW1=30, LW2=28, VW2=32, LW3=28, VW3=TW-LW1-VW1-LW2-VW2-LW3;
+  var hH = 7.5;
+
+  var headerRows = [
+    [['BURN ENTITY:', entity], ['Date:', dStr], ['Profit Centre:', pCentre]],
+    [['Country Code:', country], ['Name of Claimant:', claimant], ['Product Code:', prodCode]],
+    [['Cost Centre:', costCtr], ['Job Title:', jobTitle], ['R&D Project Code:', rdCode]],
+    [['Dimension Code:', dimCode], ['Bank Details/Mpesa No:', bank], ['Carbon / Project Code:', carbCode]],
   ];
+  var hWidths = [[LW1,VW1],[LW2,VW2],[LW3,VW3]];
 
-  headerPairs.forEach(function(row) {
+  headerRows.forEach(function(row) {
     var x = ML;
-    row.forEach(function(pair) {
-      // label bg
-      doc.setFillColor(...LGRAY);
-      doc.rect(x, y, colW*0.38, hH, 'FD');
-      doc.setDrawColor(...MGRAY);
-      doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...GRAY);
-      doc.text(pair[0], x+1.5, y+hH/2+1, {baseline:'middle'});
-      // value
-      doc.rect(x+colW*0.38, y, colW*0.62, hH);
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...DARK);
-      doc.text(String(pair[1]||''), x+colW*0.38+1.5, y+hH/2+1, {baseline:'middle', maxWidth:colW*0.62-3});
-      x += colW;
+    row.forEach(function(pair, ci) {
+      var lw = hWidths[ci][0], vw = hWidths[ci][1];
+      // Label cell
+      setFill(LGRAY); setDraw([160,160,160]); doc.setLineWidth(0.2);
+      doc.rect(x, y, lw, hH, 'FD');
+      doc.setFont('helvetica','bold'); doc.setFontSize(6); setTxt(GRAY);
+      doc.text(pair[0], x+1.5, y+hH/2+0.8, {baseline:'middle', maxWidth:lw-2});
+      // Value cell
+      setFill(WHITE);
+      doc.rect(x+lw, y, vw, hH, 'FD');
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); setTxt(BLACK);
+      doc.text(String(pair[1]||''), x+lw+1.5, y+hH/2+0.8, {baseline:'middle', maxWidth:vw-3});
+      x += lw+vw;
     });
     y += hH;
   });
 
-  // Receipt note
-  doc.setFillColor(255,251,235);
-  doc.rect(ML, y, TW, 5, 'F');
-  doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...GRAY);
-  doc.text('Please number and attach all receipts, stating relevant number for each entry in the Receipt No. column.', ML+2, y+3);
+  // ── Receipt note ──
+  setFill(AMBER); doc.rect(ML, y, TW, 5, 'F');
+  doc.setFont('helvetica','italic'); doc.setFontSize(6.5); setTxt(GRAY);
+  doc.text('Please number and attach all receipts, stating relevant number for each entry in the \'Receipt No.\' column', ML+2, y+3.2);
   y += 5;
 
-  // ── COLUMN HEADERS
-  // Widths: Date(22) Details(80) Receipt(18) Currency(28) USD(22) BizUnit(30) ExpAcct(TW-200)
-  var CW = {date:20, det:82, rec:16, ccy:26, usd:22, bu:30, acct:TW-20-82-16-26-22-30};
+  // ── Column headers ──
+  // Cols: Date | Details | Receipt | TZS/KES | USD | Business Unit | Expense Account
+  var CW = {date:18, det:55, rec:14, ccy:22, usd:18, bu:25, acct:TW-18-55-14-22-18-25};
   var colDefs = [
     {w:CW.date, label:'Date'},
     {w:CW.det,  label:'Details (Purpose, name of participants etc.)'},
-    {w:CW.rec,  label:'Receipt\nNo.'},
+    {w:CW.rec,  label:'Receipt No.'},
     {w:CW.ccy,  label:cur},
     {w:CW.usd,  label:'US$'},
     {w:CW.bu,   label:'Business Unit'},
-    {w:CW.acct, label:'Expense Account\n(Finance fills)'},
+    {w:CW.acct, label:'Expense Account\n(to be filled by Finance)'},
   ];
-  var chH = 8;
-  doc.setFillColor(...DARK);
-  doc.rect(ML, y, TW, chH, 'F');
+  var chH = 9;
+  setFill(DGRAY); doc.rect(ML, y, TW, chH, 'F');
   var cx = ML;
   colDefs.forEach(function(col) {
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...WHITE);
-    // Handle two-line headers
+    doc.setFont('helvetica','bold'); doc.setFontSize(6); setTxt(BLACK);
+    setDraw([160,160,160]); doc.setLineWidth(0.2); doc.rect(cx, y, col.w, chH);
     var lines = col.label.split('\n');
-    if (lines.length===2) {
-      doc.text(lines[0], cx+col.w/2, y+3, {align:'center'});
-      doc.text(lines[1], cx+col.w/2, y+6, {align:'center'});
+    if (lines.length === 2) {
+      doc.text(lines[0], cx+col.w/2, y+3.2, {align:'center', maxWidth:col.w-2});
+      doc.text(lines[1], cx+col.w/2, y+6.5, {align:'center', maxWidth:col.w-2});
     } else {
-      doc.text(col.label, cx+col.w/2, y+chH/2+1, {align:'center', maxWidth:col.w-2});
+      doc.text(col.label, cx+col.w/2, y+chH/2+0.5, {align:'center', maxWidth:col.w-2});
     }
-    if (cx > ML) { doc.setDrawColor(...GRAY); doc.setLineWidth(0.2); doc.line(cx, y, cx, y+chH); }
     cx += col.w;
   });
   y += chH;
 
-  // ── DATA ROWS
+  // ── Data rows (11 rows, alternating shading) ──
   var rH = 7;
   d.rows.forEach(function(r, ri) {
-    // alternating row tint
-    if (ri%2===0) { doc.setFillColor(252,252,252); doc.rect(ML, y, TW, rH, 'F'); }
-    doc.setDrawColor(...MGRAY); doc.setLineWidth(0.15);
-    doc.rect(ML, y, TW, rH);
-
+    setFill(ri%2===0 ? WHITE : [250,250,250]);
+    doc.rect(ML, y, TW, rH, 'F');
+    setDraw([180,180,180]); doc.setLineWidth(0.1);
     var rx = ML;
     var vals = [r.date, r.details, r.receipt, r.tzs, r.usd, r.bu, r.acct];
-    var widths = [CW.date, CW.det, CW.rec, CW.ccy, CW.usd, CW.bu, CW.acct];
-    var isRight = [false, false, true, true, true, false, false];
-
-    vals.forEach(function(v, vi) {
-      var w = widths[vi];
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...DARK);
-      var tx = isRight[vi] ? rx+w-2 : rx+2;
-      var align = isRight[vi] ? 'right' : 'left';
-      doc.text(String(v||''), tx, y+rH/2+1, {align:align, baseline:'middle', maxWidth:w-4});
-      if (vi>0) { doc.setDrawColor(...MGRAY); doc.setLineWidth(0.1); doc.line(rx, y, rx, y+rH); }
-      rx += w;
+    var wids = [CW.date, CW.det, CW.rec, CW.ccy, CW.usd, CW.bu, CW.acct];
+    var rAlgn= [false, false, true, true, true, false, false];
+    vals.forEach(function(v,vi){
+      doc.rect(rx, y, wids[vi], rH);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); setTxt(BLACK);
+      var tx = rAlgn[vi] ? rx+wids[vi]-1.5 : rx+1.5;
+      doc.text(String(v||''), tx, y+rH/2+0.8, {align:rAlgn[vi]?'right':'left', baseline:'middle', maxWidth:wids[vi]-3});
+      rx += wids[vi];
     });
     y += rH;
   });
 
-  // ── TOTALS ROW
-  doc.setFillColor(...AMBER);
+  // ── Totals ──
+  setFill(YELLOW);
   doc.rect(ML, y, TW, 7, 'F');
-  doc.setDrawColor(...MGRAY); doc.rect(ML, y, TW, 7);
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...DARK);
-  var tx = ML + CW.date + CW.det;
-  doc.text('TOTALS', tx+CW.rec/2, y+4.5, {align:'center'});
-  tx += CW.rec;
-  doc.text(d.totalTZS.toLocaleString(), tx+CW.ccy-2, y+4.5, {align:'right'});
-  tx += CW.ccy;
-  doc.text(d.totalUSD.toLocaleString(), tx+CW.usd-2, y+4.5, {align:'right'});
+  setDraw([160,160,160]); doc.rect(ML, y, TW, 7);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setTxt(BLACK);
+  var tx2 = ML+CW.date+CW.det;
+  doc.text('TOTALS', tx2+CW.rec/2, y+4.5, {align:'center'});
+  tx2 += CW.rec;
+  doc.text(d.totalTZS.toLocaleString(), tx2+CW.ccy-1.5, y+4.5, {align:'right'});
+  tx2 += CW.ccy;
+  doc.text(d.totalUSD.toLocaleString(), tx2+CW.usd-1.5, y+4.5, {align:'right'});
   y += 7;
 
-  // ── AMOUNT ADVANCED
-  doc.setFillColor(...WHITE); doc.rect(ML, y, TW, 6);
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...GRAY);
-  var aLabelX = ML + CW.date + CW.det;
-  doc.text('Amount Advanced', aLabelX+2, y+4);
-  doc.setFont('helvetica','normal'); doc.setTextColor(...DARK);
-  doc.text(advanced.toLocaleString(), aLabelX+CW.rec+CW.ccy-2, y+4, {align:'right'});
+  // ── Amount Advanced ──
+  setFill(WHITE); doc.rect(ML, y, TW, 6, 'F');
+  setDraw([180,180,180]); doc.rect(ML, y, TW, 6);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); setTxt(GRAY);
+  doc.text('Amount Advanced', ML+CW.date+CW.det+1.5, y+4);
+  doc.setFont('helvetica','normal'); setTxt(BLACK);
+  doc.text(advanced.toLocaleString(), ML+CW.date+CW.det+CW.rec+CW.ccy-1.5, y+4, {align:'right'});
   y += 6;
 
-  // ── BALANCE
-  doc.setFillColor(...WHITE); doc.rect(ML, y, TW, 6);
-  doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor(...GRAY);
-  doc.text('Advance approved by (Name & Amount):', ML+2, y+4);
+  // ── Balance ──
+  setFill(WHITE); doc.rect(ML, y, TW, 6, 'F');
+  setDraw([180,180,180]); doc.rect(ML, y, TW, 6);
+  doc.setFont('helvetica','italic'); doc.setFontSize(6.5); setTxt(GRAY);
+  doc.text('Advance approved by (Name, & Amount)', ML+1.5, y+4);
   doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-  doc.setTextColor(balance<0 ? RED[0] : GREEN[0], balance<0 ? RED[1] : GREEN[1], balance<0 ? RED[2] : GREEN[2]);
-  var bLabelX = ML + CW.date + CW.det;
-  doc.text('Balance Claimed / Returned', bLabelX+2, y+4);
-  doc.text(balance.toLocaleString(), bLabelX+CW.rec+CW.ccy-2, y+4, {align:'right'});
+  setTxt(balance < 0 ? RED : GREEN);
+  doc.text('Balance claimed/Returned', ML+CW.date+CW.det+1.5, y+4);
+  doc.text(balance.toLocaleString(), ML+CW.date+CW.det+CW.rec+CW.ccy-1.5, y+4, {align:'right'});
   y += 6;
 
-  // ── SIGNATURE BOXES
-  y += 3;
-  var sigBoxH = PH - y - MT;  // remaining space
-  if (sigBoxH < 20) sigBoxH = 25;
-  var sigW = TW/3;
+  // ── Signature boxes ──
+  y += 4;
+  var remaining = PH - y - 10;
+  var sigH = Math.max(28, Math.min(38, remaining));
+  var sigW  = TW/3;
 
-  var sigLabels = [
+  setFill(LGRAY); doc.rect(ML, y, TW, 5, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); setTxt(GRAY);
+  doc.text('SIGNATURES', PW/2, y+3.5, {align:'center'});
+  y += 5;
+
+  var sigBoxLabels = [
     'Claimant (Name, Sign & Date)',
     '1st Approver (Name, Sign & Date)',
     '2nd Approver (Name, Sign & Date)'
   ];
 
-  doc.setFillColor(...LGRAY);
-  doc.rect(ML, y, TW, 5, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...ORANGE);
-  doc.text('AUTHORISATION', PW/2, y+3.5, {align:'center'});
-  y += 5;
-
-  sigLabels.forEach(function(label, i) {
+  setDraw([160,160,160]); doc.setLineWidth(0.3);
+  sigBoxLabels.forEach(function(label, i) {
     var sx = ML + i*sigW;
-    doc.setDrawColor(...MGRAY); doc.setLineWidth(0.3);
-    doc.rect(sx, y, sigW, sigBoxH);
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...GRAY);
+    setFill(WHITE); doc.rect(sx, y, sigW, sigH, 'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); setTxt(GRAY);
     doc.text(label, sx+2, y+5);
 
-    if (i===0) {
-      // Claimant box: name + signature image
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...DARK);
-      doc.text(claimant, sx+2, y+11);
-      if (sigDataUrl) {
-        try {
-          var imgW = Math.min(sigW-8, 55);
-          var imgH = imgW * 130/500;  // maintain canvas aspect ratio
-          doc.addImage(sigDataUrl, 'PNG', sx+2, y+14, imgW, imgH);
-        } catch(e) {}
-      }
-      doc.setFontSize(6.5); doc.setTextColor(...GRAY);
-      doc.text(dStr, sx+2, y+sigBoxH-3);
+    if (i === 0) {
+      // Claimant = admin signed as claimant
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); setTxt(BLACK);
+      doc.text(claimant, sx+2, y+10);
+      // Place signature image
+      try {
+        var imgW = Math.min(sigW-6, 48);
+        var imgH = imgW * (130/500);  // canvas aspect ratio
+        doc.addImage(sigDataUrl, 'PNG', sx+2, y+13, imgW, imgH);
+      } catch(e) {}
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); setTxt(GRAY);
+      doc.text(dStr, sx+2, y+sigH-3);
     }
-
-    // Divider between boxes
-    if (i>0) { doc.setLineWidth(0.5); doc.line(sx, y, sx, y+sigBoxH); }
   });
 
-  // ── Footer
-  doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...GRAY);
-  doc.text('Generated by MRV Finance Platform  •  Burn Manufacturing  •  '+new Date().toLocaleDateString('en-GB'), ML, PH-3);
+  // ── Footer ──
+  doc.setFont('helvetica','normal'); doc.setFontSize(6); setTxt(GRAY);
+  doc.text('Generated by MRV Finance Platform  •  Burn Manufacturing  •  '+new Date().toLocaleDateString('en-GB'), ML, PH-5);
 
-  var filename = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+
-                 (dateVal||new Date().toISOString().slice(0,10))+'.pdf';
+  var filename = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal+'.pdf';
   doc.save(filename);
   toast('PDF exported: '+filename);
 }
 
-// ── Initialise when view opens ───────────────────────────────
+// ── Called when Weekly Expensing tab opens ────────────────────────────────────
 function ecfInit() {
   ecfLoadRequests();
   ecfInitSig();
   ecfAutoHeader();
+  // Show admin's saved sig status
+  var note = document.getElementById('ecfSigNote');
+  if (note) {
+    if (savedSigs && savedSigs.length > 0) {
+      note.textContent = 'Using saved signature: ' + savedSigs[0].label;
+      note.style.color = 'var(--success)';
+    } else {
+      note.textContent = 'No saved signature found — draw one below or save one in My Signatures';
+      note.style.color = 'var(--muted)';
+    }
+  }
 }
+
+
 
 
 // wrapTables called from main DOMContentLoaded below
@@ -7165,4 +7140,304 @@ function ecfInit() {
 </div>
 
 </body>
-</html>
+</html// ── PDF export — exact template match ──────────────────────
+function ecfExportPDF() {
+  var selected = ecfGetSelected();
+  if (!selected.length) { toast('Select at least one request in Step 1'); return; }
+
+  if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
+    toast('PDF library not loaded — please refresh the page'); return;
+  }
+  var JsPDF = window.jspdf.jsPDF;
+
+  // ── Use admin's saved signature ──────────────────────────
+  // savedSigs is the app's global signature store
+  var sigDataUrl = null;
+  var sigLabel   = '';
+  if (typeof savedSigs !== 'undefined' && savedSigs.length > 0) {
+    sigDataUrl = savedSigs[0].dataUrl;
+    sigLabel   = savedSigs[0].label;
+  }
+  // Fall back to canvas if drawn
+  if (!sigDataUrl) {
+    var cv = document.getElementById('ecfSigCanvas');
+    if (cv && ecfHasSig()) {
+      sigDataUrl = cv.toDataURL('image/png');
+      sigLabel   = currentUser ? currentUser.name : 'Admin';
+    }
+  }
+  if (!sigDataUrl) {
+    toast('No signature found. Draw one in Step 4 or save one in My Signatures.');
+    return;
+  }
+
+  // ── Values ───────────────────────────────────────────────
+  var entity   = document.getElementById('ecfEntity').value        || '';
+  var dateVal  = document.getElementById('ecfDate').value          || '';
+  var pCentre  = document.getElementById('ecfProfitCentre').value  || '';
+  var country  = document.getElementById('ecfCountry').value       || '';
+  var claimant = document.getElementById('ecfClaimant').value      || (currentUser ? currentUser.name : '');
+  var prodCode = document.getElementById('ecfProductCode').value   || '';
+  var costCtr  = document.getElementById('ecfCostCentre').value    || '';
+  var jobTitle = document.getElementById('ecfJobTitle').value      || '';
+  var rdCode   = document.getElementById('ecfRdCode').value        || '';
+  var dimCode  = document.getElementById('ecfDimCode').value       || '';
+  var bank     = document.getElementById('ecfBank').value          || '';
+  var carbCode = document.getElementById('ecfCarbonCode').value    || '';
+  var cur      = document.getElementById('ecfCurrency').value      || 'TZS';
+  var advanced = parseFloat(document.getElementById('ecfAdvanced').value) || 0;
+
+  var dStr = dateVal
+    ? new Date(dateVal).toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'})
+    : new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  var d = ecfBuildRows(selected, cur);
+  var balance = d.totalTZS - advanced;
+
+  // ── PDF: A4 portrait to match template ──────────────────
+  var doc = new JsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  var PW = 210, PH = 297;
+  var ML = 12, MR = 12, MT = 8;
+  var TW = PW - ML - MR;   // 186mm
+
+  // ── Colours from template ────────────────────────────────
+  var BLACK   = [0, 0, 0];
+  var DARK    = [30, 30, 30];
+  var GRAY    = [100, 100, 100];
+  var LGRAY   = [242, 242, 242];
+  var MGRAY   = [180, 180, 180];
+  var WHITE   = [255, 255, 255];
+  var ORANGE  = [242, 92, 10];   // Burn orange
+  var THEADBG = [166, 166, 166]; // template header gray
+  var GREEN   = [5, 150, 105];
+  var RED     = [185, 28, 28];
+
+  // ── LOGO top-right ────────────────────────────────────────
+  var LOGO_B64 =  + logo_b64 + r;
+  try {
+    doc.addImage(LOGO_B64, 'PNG', PW - MR - 52, MT, 52, 18);
+  } catch(e) { console.warn('Logo load failed:', e); }
+
+  // ── TITLE ────────────────────────────────────────────────
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(...DARK);
+  doc.text('EXPENSE CLAIM FORM', ML, MT + 12);
+  var y = MT + 24;
+
+  // ── HELPER: draw a bordered cell ─────────────────────────
+  function cell(x, yy, w, h, text, opts) {
+    opts = opts || {};
+    // Background
+    if (opts.bg) { doc.setFillColor(...opts.bg); doc.rect(x, yy, w, h, 'F'); }
+    // Border
+    doc.setDrawColor(...(opts.borderColor || MGRAY));
+    doc.setLineWidth(opts.lw || 0.3);
+    doc.rect(x, yy, w, h, 'S');
+    // Text
+    if (text !== null && text !== undefined && text !== '') {
+      doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
+      doc.setFontSize(opts.fs || 8);
+      doc.setTextColor(...(opts.color || DARK));
+      var tx = opts.align === 'right' ? x + w - 1.5 : x + 2;
+      var ty = yy + h / 2 + (opts.fs || 8) * 0.18;
+      var lines = doc.splitTextToSize(String(text), w - 3);
+      doc.text(lines[0] || '', tx, ty, { align: opts.align || 'left', baseline: 'middle' });
+    }
+    return yy + h;
+  }
+
+  function label(x, yy, w, h, lbl, val, lw, vw) {
+    // label cell + value cell side by side
+    lw = lw || w * 0.42;
+    vw = vw || w - lw;
+    cell(x,     yy, lw, h, lbl, { bold: true, fs: 8, bg: LGRAY, borderColor: MGRAY });
+    cell(x + lw, yy, vw, h, val, { bold: false, fs: 8.5, borderColor: MGRAY });
+  }
+
+  var rH = 7.5; // standard row height
+
+  // ── HEADER ROWS (rows 3–6 of template) ───────────────────
+  // Row 3: BURN ENTITY | Date | Profit Centre
+  var colA = TW * 0.28, colB = TW * 0.22, colC = TW * 0.14, colD = TW * 0.36;
+  // Layout: [Label|Value] [Label|Value] [Label|Value]
+  var hRowW = TW / 3;
+
+  var headerRows = [
+    [ ['BURN ENTITY:',entity], ['Date:',dStr], ['Profit Centre:',pCentre] ],
+    [ ['Country Code:',country], ['Name of Claimant:',claimant], ['Product Code:',prodCode] ],
+    [ ['Cost Centre:',costCtr], ['Job Title:',jobTitle], ['R&D Project Code:',rdCode] ],
+    [ ['Dimension Code:',dimCode], ['Bank Details/Mpesa No:',bank], ['Carbon / Project Code:',carbCode] ],
+  ];
+
+  headerRows.forEach(function(row) {
+    var x = ML;
+    row.forEach(function(pair, i) {
+      var lw2 = hRowW * 0.44;
+      var vw2 = hRowW - lw2;
+      cell(x,        y, lw2, rH, pair[0], { bold:true, fs:7.5, bg:LGRAY, borderColor:MGRAY });
+      cell(x + lw2,  y, vw2, rH, pair[1], { bold:false, fs:8,  borderColor:MGRAY });
+      x += hRowW;
+    });
+    y += rH;
+  });
+
+  // ── INSTRUCTION LINE (row 8) ──────────────────────────────
+  y += 2;
+  doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(...GRAY);
+  doc.text('Please number and attach all receipts, stating relevant number for each entry in 'Receipt No.' column', ML, y + 3);
+  y += 6;
+
+  // ── COLUMN HEADERS (row 9) ───────────────────────────────
+  // Cols: Date | Details | Receipt No. | TZS | US$ | Business Unit | Expense Account
+  var CW = {
+    date: TW * 0.10,
+    det:  TW * 0.32,
+    rec:  TW * 0.09,
+    tzs:  TW * 0.13,
+    usd:  TW * 0.10,
+    bu:   TW * 0.13,
+    acct: TW - TW*0.10 - TW*0.32 - TW*0.09 - TW*0.13 - TW*0.10 - TW*0.13
+  };
+  var colHH = 9;
+  doc.setFillColor(...THEADBG);
+  doc.rect(ML, y, TW, colHH, 'F');
+  doc.setDrawColor(...MGRAY); doc.setLineWidth(0.3);
+  doc.rect(ML, y, TW, colHH, 'S');
+
+  var headers = [
+    {w:CW.date, label:'Date'},
+    {w:CW.det,  label:'Details (Purpose, name of participants etc.)'},
+    {w:CW.rec,  label:'Receipt No.'},
+    {w:CW.tzs,  label:cur},
+    {w:CW.usd,  label:'US$'},
+    {w:CW.bu,   label:'Business Unit'},
+    {w:CW.acct, label:'Expense Account
+(to be filled by Finance)'},
+  ];
+  var hx = ML;
+  headers.forEach(function(h, i) {
+    if (i > 0) { doc.setDrawColor(...MGRAY); doc.setLineWidth(0.2); doc.line(hx, y, hx, y + colHH); }
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
+    var lines2 = h.label.split('
+');
+    if (lines2.length > 1) {
+      doc.text(lines2[0], hx + h.w/2, y + 3.5, {align:'center'});
+      doc.text(lines2[1], hx + h.w/2, y + 7,   {align:'center'});
+    } else {
+      doc.text(h.label, hx + h.w/2, y + colHH/2 + 1, {align:'center', maxWidth: h.w - 2});
+    }
+    hx += h.w;
+  });
+  y += colHH;
+
+  // ── DATA ROWS (rows 10–20, 11 rows) ─────────────────────
+  var dRowH = 8;
+  d.rows.forEach(function(r, ri) {
+    if (ri % 2 === 1) { doc.setFillColor(250,250,250); doc.rect(ML, y, TW, dRowH, 'F'); }
+    doc.setDrawColor(...MGRAY); doc.setLineWidth(0.15); doc.rect(ML, y, TW, dRowH, 'S');
+    var rx2 = ML;
+    var vals2 = [r.date, r.details, r.receipt, r.tzs, r.usd, r.bu, r.acct];
+    var ws2   = [CW.date, CW.det, CW.rec, CW.tzs, CW.usd, CW.bu, CW.acct];
+    var right2 = [false, false, true, true, true, false, false];
+    vals2.forEach(function(v, vi) {
+      if (vi > 0) { doc.setDrawColor(...MGRAY); doc.setLineWidth(0.1); doc.line(rx2, y, rx2, y+dRowH); }
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...DARK);
+      var align2 = right2[vi] ? 'right' : 'left';
+      var tx2    = right2[vi] ? rx2 + ws2[vi] - 1.5 : rx2 + 1.5;
+      doc.text(String(v||''), tx2, y + dRowH/2 + 1, {align:align2, baseline:'middle', maxWidth:ws2[vi]-3});
+      rx2 += ws2[vi];
+    });
+    y += dRowH;
+  });
+
+  // ── TOTALS ROW (row 21) ──────────────────────────────────
+  doc.setFillColor(...LGRAY);
+  doc.rect(ML, y, TW, dRowH, 'F');
+  doc.setDrawColor(...MGRAY); doc.rect(ML, y, TW, dRowH, 'S');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...DARK);
+  var totX = ML + CW.date + CW.det;
+  doc.text('TOTALS', totX + CW.rec/2, y + dRowH/2 + 1, {align:'center'});
+  doc.setLineWidth(0.15);
+  doc.line(totX, y, totX, y+dRowH);
+  totX += CW.rec;
+  doc.text(d.totalTZS ? d.totalTZS.toLocaleString() : '0', totX + CW.tzs - 1.5, y + dRowH/2 + 1, {align:'right'});
+  doc.line(totX, y, totX, y+dRowH); totX += CW.tzs;
+  doc.text(d.totalUSD ? d.totalUSD.toLocaleString() : '0', totX + CW.usd - 1.5, y + dRowH/2 + 1, {align:'right'});
+  y += dRowH;
+
+  // ── AMOUNT ADVANCED (row 22) ─────────────────────────────
+  doc.setFillColor(...WHITE); doc.rect(ML, y, TW, dRowH, 'F');
+  doc.setDrawColor(...MGRAY); doc.rect(ML, y, TW, dRowH, 'S');
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...DARK);
+  var advX = ML + CW.date + CW.det;
+  doc.setFont('helvetica','bold');
+  doc.text('Amount Advanced', advX + 1.5, y + dRowH/2 + 1);
+  doc.line(advX, y, advX, y+dRowH); advX += CW.rec;
+  doc.setFont('helvetica','normal');
+  doc.text(String(advanced||0), advX + CW.tzs - 1.5, y + dRowH/2 + 1, {align:'right'});
+  y += dRowH;
+
+  // ── BALANCE (row 23) ─────────────────────────────────────
+  doc.setFillColor(...WHITE); doc.rect(ML, y, TW, dRowH, 'F');
+  doc.setDrawColor(...MGRAY); doc.rect(ML, y, TW, dRowH, 'S');
+  doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(...GRAY);
+  doc.text('Advance approved by (Name, & Amount)', ML + 1.5, y + dRowH/2 + 1);
+  var balX = ML + CW.date + CW.det;
+  doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.setTextColor(balance < 0 ? RED[0] : GREEN[0], balance < 0 ? RED[1] : GREEN[1], balance < 0 ? RED[2] : GREEN[2]);
+  doc.text('Balance claimed/Returned', balX + 1.5, y + dRowH/2 + 1);
+  doc.line(balX, y, balX, y+dRowH); balX += CW.rec;
+  doc.text(balance.toLocaleString(), balX + CW.tzs - 1.5, y + dRowH/2 + 1, {align:'right'});
+  doc.line(balX, y, balX, y+dRowH); balX += CW.tzs;
+  doc.text(d.totalUSD.toLocaleString(), balX + CW.usd - 1.5, y + dRowH/2 + 1, {align:'right'});
+  y += dRowH + 6;
+
+  // ── SIGNATURE SECTION (row 27) ───────────────────────────
+  var sigSectionH = Math.min(40, PH - y - 16);
+  var sigW3 = TW / 3;
+
+  // Header bar
+  doc.setFillColor(...LGRAY);
+  doc.rect(ML, y, TW, 5, 'F');
+  doc.setDrawColor(...MGRAY); doc.rect(ML, y, TW, 5, 'S');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...GRAY);
+  var sigLabels3 = [
+    'Claimant (Name, Sign & Date)',
+    '1st Approver (Name, Sign & Date)',
+    '2nd Approver (Name, Sign & Date)'
+  ];
+  sigLabels3.forEach(function(lbl, i) {
+    doc.text(lbl, ML + i * sigW3 + 2, y + 3.5);
+  });
+  y += 5;
+
+  // Three signature boxes
+  doc.setDrawColor(...MGRAY); doc.setLineWidth(0.3);
+  doc.rect(ML, y, TW, sigSectionH, 'S');
+  doc.line(ML + sigW3,     y, ML + sigW3,     y + sigSectionH);
+  doc.line(ML + sigW3 * 2, y, ML + sigW3 * 2, y + sigSectionH);
+
+  // Claimant box — admin name + saved signature
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...DARK);
+  doc.text(claimant, ML + 2, y + 6);
+  if (sigDataUrl) {
+    try {
+      var imgW3 = Math.min(sigW3 - 6, 48);
+      var imgH3 = imgW3 * 0.26; // aspect ratio of the sig canvas (500x130)
+      doc.addImage(sigDataUrl, 'PNG', ML + 2, y + 9, imgW3, imgH3);
+    } catch(e) { console.warn('Sig embed error:', e); }
+  }
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...GRAY);
+  doc.text(dStr, ML + 2, y + sigSectionH - 3);
+
+  // ── FOOTER ───────────────────────────────────────────────
+  var footY = PH - 8;
+  doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...GRAY);
+  doc.text('Generated by MRV Finance Platform  •  Burn Manufacturing  •  ' + new Date().toLocaleDateString('en-GB'), ML, footY);
+
+  var filename = 'ExpenseClaim_' + (claimant || 'Admin').replace(/\s+/g,'_') + '_' +
+                 (dateVal || new Date().toISOString().slice(0,10)) + '.pdf';
+  doc.save(filename);
+  toast('PDF exported: ' + filename);
+}>
