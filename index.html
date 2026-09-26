@@ -6663,198 +6663,179 @@ function ecfExportPDF() {
   var carbCode = document.getElementById('ecfCarbonCode').value||'';
   var cur      = document.getElementById('ecfCurrency').value||'KES';
   var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
-  var d        = ecfBuildRows(sel, cur);
+  var d        = ecfBuildRows(sel,cur);
   var balance  = d.totalTZS - advanced;
-  var balStr   = balance < 0
-    ? '(<span style="color:#B40000">'+cur+' '+Math.abs(balance).toLocaleString()+'</span>)'
-    : cur+' '+balance.toLocaleString();
 
-  var logoSrc = 'data:image/png;base64,' + ECF_LOGO_B64;
+  var logoSrc = 'data:image/png;base64,'+ECF_LOGO_B64;
 
-  // Build 11 data rows HTML
-  var dataRows = d.rows.map(function(r, i) {
-    var kesVal = r.tzs ? cur+' '+r.tzs : '';
-    var usdVal = r.usd ? '$'+r.usd : '';
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  var dataRows = d.rows.map(function(r){
     return '<tr>'
-      +'<td class="c-date">'+r.date+'</td>'
-      +'<td class="c-det">'+r.details+'</td>'
-      +'<td class="c-rec">'+r.receipt+'</td>'
-      +'<td class="c-ccy r">'+kesVal+'</td>'
-      +'<td class="c-usd r">'+usdVal+'</td>'
-      +'<td class="c-bu">'+r.bu+'</td>'
-      +'<td class="c-acct">'+r.acct+'</td>'
+      +'<td>'+esc(r.date)+'</td>'
+      +'<td>'+esc(r.details)+'</td>'
+      +'<td style="text-align:center">'+esc(r.receipt)+'</td>'
+      +'<td style="text-align:right">'+esc(r.tzs?cur+' '+r.tzs:'')+'</td>'
+      +'<td style="text-align:right">'+esc(r.usd?'$'+r.usd:'')+'</td>'
+      +'<td>'+esc(r.bu)+'</td>'
+      +'<td>'+esc(r.acct)+'</td>'
       +'</tr>';
   }).join('');
 
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
-  +'<title>Expense Claim Form</title>'
-  +'<style>'
-  +'*{margin:0;padding:0;box-sizing:border-box;}'
-  +'body{font-family:Arial,Helvetica,sans-serif;font-size:8.5pt;color:#000;background:#fff;}'
-  +'@page{size:A4 landscape;margin:10mm 12mm 10mm 12mm;}'
-  +'@media print{'
-  +'  body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
-  +'  .no-print{display:none!important;}'
-  +'}'
-  +'.page{width:100%;}'
+  var balColor = balance < 0 ? 'color:#B40000' : '';
+  var balVal   = balance < 0
+    ? '('+cur+' '+Math.abs(balance).toLocaleString()+')'
+    : cur+' '+balance.toLocaleString();
 
-  /* ── TOP BAR ── */
-  +'.topbar{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid #aaa;margin-bottom:8px;}'
-  +'.ref{font-size:7pt;color:#888;}'
-  +'.title{font-size:16pt;font-weight:700;text-align:center;flex:1;}'
-  +'.logo{height:36px;}'
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Expense Claim Form</title><style>'
 
-  /* ── HEADER FIELDS ── */
-  +'.hdr-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-bottom:6px;}'
-  +'.hdr-row{display:contents;}'
-  +'.hf{display:flex;align-items:flex-end;padding:3px 0 2px;}'
-  +'.hf-label{font-weight:700;font-size:7.5pt;white-space:nowrap;padding-right:4px;min-width:80px;text-align:right;}'
-  +'.hf-val{font-size:7.5pt;border-bottom:1px solid #999;flex:1;min-width:60px;padding:0 2px 1px;min-height:14px;}'
+  // Reset everything — no color inheritance
+  +'*{margin:0;padding:0;box-sizing:border-box;color:#000!important;}'
+  +'body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;background:#fff;}'
+  +'@page{size:A4 landscape;margin:10mm 12mm 8mm 12mm;}'
+  +'@media print{.no-print{display:none!important;} body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}'
 
-  /* ── RECEIPT NOTE ── */
-  +'.note-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}'
-  +'.note{font-style:italic;font-size:6.5pt;color:#666;}'
-  +'.erp-box{border:1px solid #aaa;background:#d9d9d9;font-weight:700;font-size:7.5pt;padding:2px 8px;}'
+  // Top bar
+  +'.topbar{display:grid;grid-template-columns:120px 1fr 120px;align-items:center;padding-bottom:5px;border-bottom:1.5px solid #999;margin-bottom:6px;}'
+  +'.ref{font-size:6.5pt;}'
+  +'.title{text-align:center;font-size:15pt;font-weight:700;}'
+  +'.logo{height:32px;justify-self:end;}'
 
-  /* ── TABLE ── */
+  // Header grid
+  +'.hdr{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:5px;}'
+  +'.hf{display:flex;align-items:flex-end;padding:2px 4px 2px 0;gap:4px;}'
+  +'.lbl{font-weight:700;font-size:7pt;white-space:nowrap;text-align:right;min-width:90px;flex-shrink:0;}'
+  +'.val{font-size:7.5pt;border-bottom:0.8px solid #888;flex:1;padding:0 2px 1px;min-height:13px;min-width:50px;}'
+
+  // Note + ERP
+  +'.note-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}'
+  +'.note{font-style:italic;font-size:6pt;}'
+  +'.erp{border:1px solid #888;background:#d9d9d9;font-weight:700;font-size:7pt;padding:2px 10px;}'
+
+  // Table
   +'table{width:100%;border-collapse:collapse;table-layout:fixed;}'
-  +'th,td{border:0.5px solid #aaa;font-size:7.5pt;vertical-align:middle;padding:2px 3px;overflow:hidden;}'
-  +'thead tr{background:#d9d9d9;}'
-  +'thead th{font-weight:700;text-align:center;padding:3px 2px;}'
-  +'thead th.sub{font-size:6pt;font-weight:normal;}'
-  +'tbody tr{background:#fff;}'
-  +'td.r,th.r{text-align:right;}'
-  +'td.c,th.c{text-align:center;}'
+  // Force ALL table text black — override any inherited color
+  +'table,th,td{color:#000!important;font-family:Arial,Helvetica,sans-serif;}'
+  +'th,td{border:0.5px solid #999;font-size:7.5pt;vertical-align:middle;padding:2px 3px;overflow:hidden;white-space:nowrap;}'
+  +'thead th{background:#d9d9d9!important;font-weight:700;text-align:center;font-size:7pt;}'
+  +'tbody td{background:#fff!important;}'
+  +'.sub{font-size:5.5pt;font-weight:400;display:block;}'
 
-  /* ── COLUMN WIDTHS (proportional) ── */
-  +'.c-date{width:8%;}'
-  +'.c-det{width:27%;}'
-  +'.c-rec{width:6%;text-align:center;}'
-  +'.c-ccy{width:9%;text-align:right;}'
-  +'.c-usd{width:7%;text-align:right;}'
-  +'.c-bu{width:13%;}'
-  +'.c-acct{width:30%;}'
+  // Col widths
+  +'col.c1{width:8%}col.c2{width:26%}col.c3{width:7%}col.c4{width:9%}col.c5{width:7%}col.c6{width:13%}col.c7{width:30%}'
 
-  /* ── TOTALS BLOCK ── */
-  +'.totals-row{background:#d9d9d9!important;font-weight:700;}'
-  +'.adv-row{background:#fff!important;}'
-  +'.bal-row{background:#fff!important;}'
-  +'.bal-label{font-weight:700;}'
+  // Totals rows
+  +'.tr-tot td{background:#d9d9d9!important;font-weight:700;}'
+  +'.tr-adv td,.tr-bal td{background:#fff!important;}'
 
-  /* ── SIG SECTION ── */
-  +'.sig-section{margin-top:12px;}'
-  +'.sig-claimant{display:inline-block;min-width:160px;}'
+  // Sig
+  +'.sig-wrap{margin-top:10px;}'
   +'.sig-name{font-size:9pt;font-weight:600;margin-bottom:2px;}'
-  +'.sig-img{height:35px;display:block;margin:2px 0;}'
-  +'.sig-date{font-size:8pt;margin-bottom:2px;}'
-  +'.sig-lines{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:0;margin-top:8px;}'
-  +'.sig-box{padding-top:4px;border-top:1px solid #000;font-size:7pt;color:#666;padding-right:20px;}'
+  +'.sig-img{height:32px;display:block;margin-bottom:3px;}'
+  +'.sig-date{font-size:7.5pt;margin-bottom:4px;}'
+  +'.sig-lines{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:2px;}'
+  +'.sig-col{border-top:1px solid #000;padding-top:3px;font-size:6.5pt;padding-right:16px;}'
 
-  /* ── FOOTER ── */
-  +'.footer{display:flex;justify-content:space-between;margin-top:6px;font-size:6.5pt;color:#888;}'
+  // Footer
+  +'.footer{display:flex;justify-content:space-between;margin-top:5px;font-size:6pt;}'
 
-  /* ── PRINT BUTTON ── */
-  +'.print-btn{position:fixed;top:12px;right:12px;padding:10px 22px;background:#F25C0A;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:999;}'
+  // Print button
+  +'.print-btn{position:fixed;top:10px;right:10px;background:#F25C0A;color:#fff!important;border:none;padding:9px 20px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:9999;}'
   +'</style></head><body>'
 
-  +'<button class="print-btn no-print" onclick="window.print()">⬇ Print / Save as PDF</button>'
+  +'<button class="print-btn no-print" onclick="window.print()">⬇ Save as PDF</button>'
 
-  +'<div class="page">'
-
-  /* TOP BAR */
+  // TOP
   +'<div class="topbar">'
   +'<div class="ref">REF: FIN_FM_003-F</div>'
   +'<div class="title">EXPENSE CLAIM FORM</div>'
-  +'<img class="logo" src="'+logoSrc+'" alt="burn">'
+  +'<img class="logo" src="'+logoSrc+'">'
   +'</div>'
 
-  /* HEADER FIELDS — 4 rows × 3 cols */
-  +'<div class="hdr-grid">'
-  +hf('BURN ENTITY:', entity)+hf('Date:', dStr)+hf('Profit Centre:', pCentre)
-  +hf('Country Code:', country)+hf('Name of Claimant:', claimant)+hf('Product Code:', prodCode)
-  +hf('Cost Centre:', costCtr)+hf('Job Title:', jobTitle)+hf('R&D Project Code:', rdCode)
-  +hf('Dimension Code:', dimCode)+hf('Bank Details/Mpesa No:', bank)+hf('Carbon / Project Code:', carbCode)
+  // HEADER FIELDS
+  +'<div class="hdr">'
+  +hf2('BURN ENTITY:',esc(entity))+hf2('Date:',esc(dStr))+hf2('Profit Centre:',esc(pCentre))
+  +hf2('Country Code:',esc(country))+hf2('Name of Claimant:',esc(claimant))+hf2('Product Code:',esc(prodCode))
+  +hf2('Cost Centre:',esc(costCtr))+hf2('Job Title:',esc(jobTitle))+hf2('R&amp;D Project Code:',esc(rdCode))
+  +hf2('Dimension Code:',esc(dimCode))+hf2('Bank Details/Mpesa No:',esc(bank))+hf2('Carbon / Project Code:',esc(carbCode))
   +'</div>'
 
-  /* RECEIPT NOTE */
+  // RECEIPT NOTE
   +'<div class="note-row">'
   +'<div class="note">Please number and attach all receipts, stating relevant number for each entry in \'Receipt No.\' column</div>'
-  +'<div class="erp-box">ERP</div>'
+  +'<div class="erp">ERP</div>'
   +'</div>'
 
-  /* TABLE */
-  +'<table>'
+  // TABLE
+  +'<table><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"></colgroup>'
   +'<thead><tr>'
-  +'<th class="c-date">Date</th>'
-  +'<th class="c-det">Details (Purpose, name of participants etc.)</th>'
-  +'<th class="c-rec">Receipt No.</th>'
-  +'<th class="c-ccy r">'+cur+'</th>'
-  +'<th class="c-usd r">US$</th>'
-  +'<th class="c-bu">Business Unit</th>'
-  +'<th class="c-acct">Expense Account<br><span class="sub">(to be filled by Finance)</span></th>'
+  +'<th>Date</th>'
+  +'<th>Details (Purpose, name of participants etc.)</th>'
+  +'<th>Receipt No.</th>'
+  +'<th style="text-align:right">'+esc(cur)+'</th>'
+  +'<th style="text-align:right">US$</th>'
+  +'<th>Business Unit</th>'
+  +'<th>Expense Account<span class="sub">(to be filled by Finance)</span></th>'
   +'</tr></thead>'
   +'<tbody>'
-  + dataRows
-  /* TOTALS */
-  +'<tr class="totals-row">'
+  +dataRows
+  // TOTALS
+  +'<tr class="tr-tot">'
   +'<td colspan="2"></td>'
-  +'<td class="c-rec c">TOTALS</td>'
-  +'<td class="c-ccy r">'+cur+' '+d.totalTZS.toLocaleString()+'</td>'
-  +'<td class="c-usd r">$0.00</td>'
-  +'<td class="c-bu r">$0.00</td>'
-  +'<td class="c-acct"></td>'
+  +'<td style="text-align:right;font-weight:700">TOTALS</td>'
+  +'<td style="text-align:right">'+esc(cur)+' '+d.totalTZS.toLocaleString()+'</td>'
+  +'<td style="text-align:right">$0.00</td>'
+  +'<td style="text-align:right">$0.00</td>'
+  +'<td></td>'
   +'</tr>'
-  /* AMOUNT ADVANCED */
-  +'<tr class="adv-row">'
-  +'<td colspan="2"></td>'
-  +'<td colspan="1" style="text-align:right;font-weight:700;border-right:none;">Amount Advanced</td>'
-  +'<td class="c-ccy r" style="border-left:none;">'+cur+' '+advanced.toLocaleString()+'</td>'
+  // AMOUNT ADVANCED
+  +'<tr class="tr-adv">'
+  +'<td colspan="2" style="border-right:none"></td>'
+  +'<td style="text-align:right;font-weight:700;border-left:none;border-right:none">Amount Advanced</td>'
+  +'<td style="text-align:right;border-left:none">'+esc(cur)+' '+advanced.toLocaleString()+'</td>'
   +'<td colspan="3"></td>'
   +'</tr>'
-  /* BALANCE */
-  +'<tr class="bal-row">'
-  +'<td colspan="2" style="font-style:italic;font-size:6.5pt;color:#888;">Advance approved by (Name, &amp; Amount)</td>'
-  +'<td style="text-align:right;font-weight:700;border-right:none;" class="bal-label">Balance claimed/Returned</td>'
-  +'<td class="c-ccy r" style="border-left:none;">'+balStr+'</td>'
-  +'<td class="c-usd r">$0.00</td>'
-  +'<td class="c-bu r">0</td>'
-  +'<td class="c-acct"></td>'
+  // BALANCE
+  +'<tr class="tr-bal">'
+  +'<td colspan="2" style="font-style:italic;font-size:6pt;border-right:none">Advance approved by (Name, &amp; Amount)</td>'
+  +'<td style="text-align:right;font-weight:700;border-left:none;border-right:none">Balance claimed/Returned</td>'
+  +'<td style="text-align:right;border-left:none;'+balColor+'">'+balVal+'</td>'
+  +'<td style="text-align:right">$0.00</td>'
+  +'<td style="text-align:right">0</td>'
+  +'<td></td>'
   +'</tr>'
   +'</tbody></table>'
 
-  /* SIGNATURES */
-  +'<div class="sig-section">'
-  +'<div class="sig-claimant">'
-  +'<div class="sig-name">'+claimant+'</div>'
-  +'<img class="sig-img" src="'+sigDataUrl+'" alt="signature">'
-  +'<div class="sig-date">'+dStr+'</div>'
-  +'</div>'
+  // SIGNATURES
+  +'<div class="sig-wrap">'
+  +'<div class="sig-name">'+esc(claimant)+'</div>'
+  +'<img class="sig-img" src="'+sigDataUrl+'">'
+  +'<div class="sig-date">'+esc(dStr)+'</div>'
   +'<div class="sig-lines">'
-  +'<div class="sig-box">Claimant (Name, Sign &amp; Date)</div>'
-  +'<div class="sig-box">1st Approver (Name, Sign &amp; Date)</div>'
-  +'<div class="sig-box">2nd Approver (Name, Sign &amp; Date)</div>'
+  +'<div class="sig-col">Claimant (Name, Sign &amp; Date)</div>'
+  +'<div class="sig-col">1st Approver (Name, Sign &amp; Date)</div>'
+  +'<div class="sig-col">2nd Approver (Name, Sign &amp; Date)</div>'
   +'</div>'
   +'</div>'
 
-  /* FOOTER */
+  // FOOTER
   +'<div class="footer">'
   +'<div>Author:FD<br>Approved By:CFO</div>'
   +'<div>Release date: 8th Jan.2025</div>'
   +'</div>'
 
-  +'</div>' // .page
   +'</body></html>';
 
-  var w = window.open('','_blank','width=1100,height=800');
-  if (!w) { toast('Pop-up blocked — please allow pop-ups and try again'); return; }
+  var w = window.open('','_blank');
+  if (!w) { toast('Pop-up blocked — please allow pop-ups for this site'); return; }
   w.document.write(html);
   w.document.close();
 }
 
-function hf(label, val) {
-  return '<div class="hf"><div class="hf-label">'+label+'</div><div class="hf-val">'+
-    (val||'&nbsp;')+'</div></div>';
+function hf2(label, val) {
+  return '<div class="hf"><div class="lbl">'+label+'</div><div class="val">'+(val||'')+'</div></div>';
 }
+
 
 
 function ecfInit() {
