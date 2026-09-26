@@ -6669,17 +6669,44 @@ function ecfExportPDF() {
   var balance  = d.totalTZS - advanced;
 
   var doc = new window.jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-  var PW=297, PH=210, ML=14, MR=14, MT=8, TW=269;
+  var PW=297, PH=210, ML=14, MR=14, MT=8;
+  // Table width = full page minus margins
+  var TW = PW - ML - MR; // 269mm
 
-  var BK=[0,0,0], GY=[100,100,100], LG=[220,220,220], DG=[180,180,180],
-      WH=[255,255,255], RD=[180,0,0], HDR=[50,50,50];
+  // ── Colours ──
+  var BK=[0,0,0], GY=[100,100,100], LG=[220,220,220], MG=[180,180,180],
+      WH=[255,255,255], RD=[180,0,0], HDRBG=[217,217,217];
 
   function sf(c){doc.setFillColor(c[0],c[1],c[2]);}
-  function sd(c,w){doc.setDrawColor(c[0],c[1],c[2]);if(w!==undefined)doc.setLineWidth(w);}
+  function sd(c,w){doc.setDrawColor(c[0],c[1],c[2]);doc.setLineWidth(w||0.2);}
   function st(c){doc.setTextColor(c[0],c[1],c[2]);}
   function fb(sz){doc.setFont('helvetica','bold');doc.setFontSize(sz);}
   function fn(sz){doc.setFont('helvetica','normal');doc.setFontSize(sz);}
   function fi(sz){doc.setFont('helvetica','italic');doc.setFontSize(sz);}
+
+  // ── Draw cell: fill + border + text ──
+  // borders: string of L/R/T/B/M (M=medium/thick)
+  function cell(x, y, w, h, fillColor, text, textOpts, borders, bold, fontSize) {
+    if (fillColor) { sf(fillColor); doc.rect(x,y,w,h,'F'); }
+    // Draw borders
+    if (borders) {
+      var thin=0.2, med=0.6;
+      if (borders.indexOf('T')>=0){sd(MG,borders.indexOf('TM')>=0?med:thin);doc.line(x,y,x+w,y);}
+      if (borders.indexOf('B')>=0){sd(MG,borders.indexOf('BM')>=0?med:thin);doc.line(x,y+h,x+w,y+h);}
+      if (borders.indexOf('L')>=0){sd(MG,borders.indexOf('LM')>=0?med:thin);doc.line(x,y,x,y+h);}
+      if (borders.indexOf('R')>=0){sd(MG,borders.indexOf('RM')>=0?med:thin);doc.line(x+w,y,x+w,y+h);}
+    }
+    if (text) {
+      if (bold) fb(fontSize||7.5); else fn(fontSize||7.5);
+      st(textOpts && textOpts.color ? textOpts.color : BK);
+      var tx = x+2, ty = y+h/2+0.8, align='left';
+      if (textOpts) {
+        if (textOpts.align==='right') { tx=x+w-2; align='right'; }
+        if (textOpts.align==='center') { tx=x+w/2; align='center'; }
+      }
+      doc.text(String(text), tx, ty, {align:align, baseline:'middle', maxWidth:w-4});
+    }
+  }
 
   var y = MT;
 
@@ -6688,41 +6715,42 @@ function ecfExportPDF() {
   fb(14); st(BK); doc.text('EXPENSE CLAIM FORM', PW/2, y+5, {align:'center'});
   try { doc.addImage('data:image/png;base64,'+ECF_LOGO_B64,'PNG',PW-MR-44,y-1,44,14); } catch(e){}
   y += 15;
-  sd(DG,0.4); doc.line(ML,y,PW-MR,y);
+  sd(MG, 0.4); doc.line(ML,y,PW-MR,y);
   y += 4;
 
-  // ── HEADER FIELDS: underline-only value boxes (bottom border only) ────────
-  // 3 col groups × 4 rows
-  // Col proportions from real template:
-  // Col1: label(~30mm) + underlined value(~57mm) = 87mm
-  // Col2: label(~42mm) + underlined value(~52mm) = 94mm  
-  // Col3: label(~40mm) + underlined value fills rest
-  var C1x=ML,      C1lw=32, C1vw=55;
-  var C2x=ML+87,   C2lw=42, C2vw=50;
-  var C3x=ML+87+92, C3lw=38, C3vw=TW-(87+92)-38;
+  // ── HEADER GRID ──────────────────────────────────────────────────────────
+  // Template: 3 col groups, each = bold-label + underlined-value
+  // Exact proportions from real PDF (doc 2):
+  // Col1 total ~87mm: label~32 + value~55
+  // Col2 total ~94mm: label~44 + value~50
+  // Col3 total fills rest
+  var C1lw=32, C1vw=55, C1x=ML;
+  var C2lw=44, C2vw=50, C2x=ML+87;
+  var C3lw=40, C3vw=TW-87-94-C3lw, C3x=ML+87+94;
+  // Ensure C3vw is reasonable
+  if (C3vw < 20) C3vw = TW - 87 - 94 - 40;
 
   function hField(x, lw, vw, label, value, fy, fh) {
-    // Bold label, right-aligned
+    // Bold label right-aligned up to value area
     fb(7.5); st(BK);
-    doc.text(label, x+lw-1, fy+fh-2, {align:'right'});
-    // Value: underline only (bottom border), no box
+    doc.text(label, x+lw-1, fy+fh-2, {align:'right', maxWidth:lw-1});
+    // Value with bottom-border underline only
     fn(7.5); st(BK);
     doc.text(String(value||''), x+lw+2, fy+fh-2, {maxWidth:vw-4});
-    sd(DG,0.3);
+    sd(MG, 0.3);
     doc.line(x+lw, fy+fh, x+lw+vw, fy+fh);
   }
 
   var hH = 7.5;
-  var hData = [
-    [['BURN ENTITY:',entity],      ['Date:',dStr],               ['Profit Centre:',pCentre]],
-    [['Country Code:',country],    ['Name of Claimant:',claimant],['Product Code:',prodCode]],
-    [['Cost Centre:',costCtr],     ['Job Title:',jobTitle],       ['R&D Project Code:',rdCode]],
-    [['Dimension Code:',dimCode],  ['Bank Details/Mpesa No:',bank],['Carbon / Project Code:',carbCode]],
-  ];
-  hData.forEach(function(row){
-    hField(C1x, C1lw, C1vw, row[0][0], row[0][1], y, hH);
-    hField(C2x, C2lw, C2vw, row[1][0], row[1][1], y, hH);
-    hField(C3x, C3lw, C3vw, row[2][0], row[2][1], y, hH);
+  [
+    [['BURN ENTITY:',entity],       ['Date:',dStr],                ['Profit Centre:',pCentre]],
+    [['Country Code:',country],     ['Name of Claimant:',claimant],['Product Code:',prodCode]],
+    [['Cost Centre:',costCtr],      ['Job Title:',jobTitle],       ['R&D Project Code:',rdCode]],
+    [['Dimension Code:',dimCode],   ['Bank Details/Mpesa No:',bank],['Carbon / Project Code:',carbCode]],
+  ].forEach(function(row){
+    hField(C1x,C1lw,C1vw,row[0][0],row[0][1],y,hH);
+    hField(C2x,C2lw,C2vw,row[1][0],row[1][1],y,hH);
+    hField(C3x,C3lw,C3vw,row[2][0],row[2][1],y,hH);
     y += hH;
   });
   y += 3;
@@ -6730,107 +6758,140 @@ function ecfExportPDF() {
   // ── RECEIPT NOTE + ERP ───────────────────────────────────────────────────
   fi(6.5); st(GY);
   doc.text("Please number and attach all receipts, stating relevant number for each entry in 'Receipt No.' column", ML, y+3);
-  var erpW=20; sd(DG,0.3); sf(LG);
-  doc.rect(PW-MR-erpW, y-1, erpW, 6, 'FD');
-  fb(7.5); st(BK);
-  doc.text('ERP', PW-MR-erpW/2, y+3, {align:'center'});
+  var erpW=20; sd(MG,0.4);
+  sf(HDRBG); doc.rect(PW-MR-erpW,y-1,erpW,6,'FD');
+  fb(7.5); st(BK); doc.text('ERP',PW-MR-erpW/2,y+3,{align:'center'});
   y += 7;
 
   // ── COLUMN HEADERS ───────────────────────────────────────────────────────
-  var CW = {date:22, det:72, rec:20, ccy:28, usd:20, bu:38, acct:TW-22-72-20-28-20-38};
-  var cols = [
-    {w:CW.date, t:'Date',           s:''},
+  // From template col widths (B=15.4, C=39.6, D=35.0, E=15.4, H=21.9, I=32.3 chars)
+  // Convert to mm proportionally — template total usable ≈ TW=269mm
+  // B:Date, C+D:Details(merged), E:Receipt, F:TZS, G:US$, H:BizUnit, I:ExpAcct
+  // Proportional: B=15.4, CD=74.6, E=15.4, F≈15, G≈12, H=21.9, I=32.3 → total≈186 chars
+  // Scale to 269mm
+  var charTotal = 15.4 + 74.6 + 15.4 + 15 + 12 + 21.9 + 32.3; // ≈186.6
+  var scale = TW / charTotal;
+  var CW = {
+    date: Math.round(15.4 * scale * 10)/10,   // ~22mm
+    det:  Math.round(74.6 * scale * 10)/10,   // ~107mm — largest (C+D merged)
+    rec:  Math.round(15.4 * scale * 10)/10,   // ~22mm
+    ccy:  Math.round(15.0 * scale * 10)/10,   // ~22mm
+    usd:  Math.round(12.0 * scale * 10)/10,   // ~17mm
+    bu:   Math.round(21.9 * scale * 10)/10,   // ~32mm
+  };
+  // acct fills remainder
+  CW.acct = TW - CW.date - CW.det - CW.rec - CW.ccy - CW.usd - CW.bu;
+
+  var chH = 11;
+  // Header background: grey fill like template
+  sf(HDRBG); doc.rect(ML, y, TW, chH, 'F');
+  // Draw header cell borders (medium on all sides matching template)
+  var hcx = ML;
+  var hcols = [
+    {w:CW.date, t:'Date',            s:''},
     {w:CW.det,  t:'Details (Purpose, name of participants etc.)', s:''},
-    {w:CW.rec,  t:'Receipt No.',    s:''},
-    {w:CW.ccy,  t:cur,              s:''},
-    {w:CW.usd,  t:'US$',           s:''},
-    {w:CW.bu,   t:'Business Unit',  s:''},
-    {w:CW.acct, t:'Expense Account',s:'(to be filled by Finance)'},
+    {w:CW.rec,  t:'Receipt No.',     s:''},
+    {w:CW.ccy,  t:cur,               s:''},
+    {w:CW.usd,  t:'US$',            s:''},
+    {w:CW.bu,   t:'Business Unit',   s:''},
+    {w:CW.acct, t:'Expense Account', s:'(to be filled by Finance)'},
   ];
-  var chH=11;
-  sf(HDR); sd(HDR,0); doc.rect(ML,y,TW,chH,'F');
-  var cx=ML;
-  cols.forEach(function(col){
-    sd(WH,0.2); doc.rect(cx,y,col.w,chH);
-    fb(7); st(WH);
-    if(col.s){
-      doc.text(col.t, cx+col.w/2, y+3.8, {align:'center',maxWidth:col.w-2});
-      fn(6); st(WH);
-      doc.text(col.s, cx+col.w/2, y+7.5, {align:'center',maxWidth:col.w-2});
+  hcols.forEach(function(col, ci){
+    // Medium border for first and last col, thin for inner
+    var lw = (ci===0||ci===hcols.length-1) ? 0.5 : 0.2;
+    sd(MG, lw); doc.rect(hcx, y, col.w, chH);
+    fb(7.5); st(BK);
+    if (col.s) {
+      doc.text(col.t, hcx+col.w/2, y+3.8, {align:'center', maxWidth:col.w-2});
+      fn(6.5); st(BK);
+      doc.text(col.s, hcx+col.w/2, y+7.8, {align:'center', maxWidth:col.w-2});
     } else {
-      doc.text(col.t, cx+col.w/2, y+chH/2+0.8, {align:'center',maxWidth:col.w-2});
+      doc.text(col.t, hcx+col.w/2, y+chH/2+0.8, {align:'center', maxWidth:col.w-2});
     }
-    cx += col.w;
+    hcx += col.w;
   });
   y += chH;
 
   // ── DATA ROWS ────────────────────────────────────────────────────────────
-  var rH=7.5;
-  d.rows.forEach(function(r,ri){
-    sf(WH); sd(DG,0.15); doc.rect(ML,y,TW,rH,'FD');
-    var rx=ML;
-    fn(7); st(BK);
-    // Date
-    doc.text(r.date, rx+2, y+rH/2+0.8, {baseline:'middle',maxWidth:CW.date-3});
-    rx+=CW.date; doc.line(rx,y,rx,y+rH);
-    // Details — allow full text (no truncation)
-    var detLines = doc.splitTextToSize(r.details, CW.det-3);
-    doc.text(detLines[0]||'', rx+2, y+rH/2+0.8, {baseline:'middle'});
-    rx+=CW.det; doc.line(rx,y,rx,y+rH);
-    // Receipt No
-    doc.text(r.receipt, rx+CW.rec/2, y+rH/2+0.8, {align:'center',baseline:'middle'});
-    rx+=CW.rec; doc.line(rx,y,rx,y+rH);
-    // KES amount
-    var kesStr = r.tzs ? cur+' '+r.tzs : '';
-    doc.text(kesStr, rx+CW.ccy-2, y+rH/2+0.8, {align:'right',baseline:'middle',maxWidth:CW.ccy-3});
-    rx+=CW.ccy; doc.line(rx,y,rx,y+rH);
-    // USD
-    doc.text(r.usd?'$'+r.usd:'', rx+CW.usd-2, y+rH/2+0.8, {align:'right',baseline:'middle'});
-    rx+=CW.usd; doc.line(rx,y,rx,y+rH);
-    // Business Unit
-    var buLines = doc.splitTextToSize(r.bu, CW.bu-3);
-    doc.text(buLines[0]||'', rx+2, y+rH/2+0.8, {baseline:'middle'});
-    rx+=CW.bu; doc.line(rx,y,rx,y+rH);
-    // Expense Account
-    var acLines = doc.splitTextToSize(r.acct, CW.acct-3);
-    doc.text(acLines[0]||'', rx+2, y+rH/2+0.8, {baseline:'middle'});
+  // Template: white fill, thin inner borders, medium outer borders
+  var rH = 7.5;
+  var wids = [CW.date, CW.det, CW.rec, CW.ccy, CW.usd, CW.bu, CW.acct];
+  d.rows.forEach(function(r, ri){
+    // White fill
+    sf(WH); doc.rect(ML, y, TW, rH, 'F');
+    // Outer border (medium L and R)
+    sd(MG, 0.5); doc.line(ML, y, ML, y+rH); doc.line(ML+TW, y, ML+TW, y+rH);
+    // Top and bottom (thin for data rows, medium for first row)
+    sd(MG, ri===0 ? 0.5 : 0.2);
+    doc.line(ML, y, ML+TW, y);
+    sd(MG, 0.2); doc.line(ML, y+rH, ML+TW, y+rH);
+
+    // Inner column dividers (thin)
+    var rx = ML;
+    fn(7.5); st(BK);
+    var vals = [r.date, r.details, r.receipt,
+                r.tzs ? cur+' '+r.tzs : '',
+                r.usd ? '$'+r.usd : '',
+                r.bu, r.acct];
+    var aligns = ['left','left','center','right','right','left','left'];
+    wids.forEach(function(w, vi){
+      // Inner divider
+      if (vi > 0) { sd(MG, 0.2); doc.line(rx, y, rx, y+rH); }
+      // Text
+      var v = vals[vi] || '';
+      var tx = aligns[vi]==='right' ? rx+w-2 : (aligns[vi]==='center' ? rx+w/2 : rx+2);
+      doc.text(String(v), tx, y+rH/2+0.8, {align:aligns[vi], baseline:'middle', maxWidth:w-3});
+      rx += w;
+    });
     y += rH;
   });
 
-  // ── TOTALS / AMOUNT / BALANCE ────────────────────────────────────────────
-  var tX = ML + CW.date + CW.det; // x where "Receipt No." col starts
+  // ── TOTALS / AMOUNT / BALANCE ─────────────────────────────────────────────
+  // Template: medium borders on T,B,L,R for totals block
+  // TOTALS starts at D col (after B,C which are blank in template)
+  // In our layout: left edge of "Receipt No." col
 
-  // TOTALS row
-  sf(WH); sd(DG,0.3); doc.rect(ML,y,TW,7,'FD');
+  // We put a medium-bordered block from ML to ML+TW for each row
+  var tX = ML + CW.date + CW.det;  // start of Receipt col
+
+  // TOTALS row — grey background for emphasis
+  sf(HDRBG); doc.rect(ML, y, TW, 7, 'F');
+  sd(MG, 0.5); doc.rect(ML, y, TW, 7);
+  // Inner dividers
+  sd(MG, 0.2);
+  var trx = ML + CW.date + CW.det;
+  [CW.rec, CW.ccy, CW.usd, CW.bu].forEach(function(w){
+    doc.line(trx, y, trx, y+7); trx += w;
+  });
   fb(8); st(BK);
   doc.text('TOTALS', tX+CW.rec-2, y+4.8, {align:'right'});
-  sd(DG,0.2);
-  doc.line(tX,y,tX,y+7); doc.line(tX+CW.rec,y,tX+CW.rec,y+7);
-  // KES total — right aligned in KES col
   doc.text(cur+' '+d.totalTZS.toLocaleString(), tX+CW.rec+CW.ccy-2, y+4.8, {align:'right'});
-  doc.line(tX+CW.rec+CW.ccy,y,tX+CW.rec+CW.ccy,y+7);
-  fn(8); st(BK);
+  fn(8);
   doc.text('$0.00', tX+CW.rec+CW.ccy+CW.usd-2, y+4.8, {align:'right'});
-  doc.line(tX+CW.rec+CW.ccy+CW.usd,y,tX+CW.rec+CW.ccy+CW.usd,y+7);
   doc.text('$0.00', tX+CW.rec+CW.ccy+CW.usd+CW.bu-2, y+4.8, {align:'right'});
   y += 7;
 
-  // AMOUNT ADVANCED row
-  sf(WH); sd(DG,0.2); doc.rect(ML,y,TW,6,'FD');
+  // AMOUNT ADVANCED — white
+  sf(WH); doc.rect(ML, y, TW, 6.5, 'F');
+  sd(MG, 0.5); doc.rect(ML, y, TW, 6.5);
+  sd(MG, 0.2); doc.line(tX+CW.rec, y, tX+CW.rec, y+6.5);
   fb(7.5); st(BK);
   doc.text('Amount Advanced', tX+CW.rec-2, y+4.2, {align:'right'});
-  fn(7.5); st(BK);
+  fn(7.5);
   doc.text(cur+' '+advanced.toLocaleString(), tX+CW.rec+CW.ccy-2, y+4.2, {align:'right'});
-  y += 6;
+  y += 6.5;
 
-  // BALANCE row
-  sf(WH); sd(DG,0.2); doc.rect(ML,y,TW,6,'FD');
+  // BALANCE — white, italic "Advance approved" on left, bold label+red value
+  sf(WH); doc.rect(ML, y, TW, 6.5, 'F');
+  sd(MG, 0.5); doc.rect(ML, y, TW, 6.5);
+  sd(MG, 0.2);
+  doc.line(tX+CW.rec, y, tX+CW.rec, y+6.5);
+  doc.line(tX+CW.rec+CW.ccy, y, tX+CW.rec+CW.ccy, y+6.5);
+  doc.line(tX+CW.rec+CW.ccy+CW.usd, y, tX+CW.rec+CW.ccy+CW.usd, y+6.5);
   fi(7); st(GY);
   doc.text('Advance approved by (Name, & Amount)', ML+2, y+4.2);
-  fb(7.5); st(BK);  // label is black bold
+  fb(7.5); st(BK);
   doc.text('Balance claimed/Returned', tX+CW.rec-2, y+4.2, {align:'right'});
-  // Value: red when negative, black when positive
-  st(balance < 0 ? RD : BK);
   var balStr = balance < 0
     ? '('+cur+' '+Math.abs(balance).toLocaleString()+')'
     : cur+' '+balance.toLocaleString();
@@ -6839,44 +6900,33 @@ function ecfExportPDF() {
   fn(7.5); st(BK);
   doc.text('$0.00', tX+CW.rec+CW.ccy+CW.usd-2, y+4.2, {align:'right'});
   doc.text('0', tX+CW.rec+CW.ccy+CW.usd+CW.bu-2, y+4.2, {align:'right'});
-  y += 6;
+  y += 6.5;
 
   // ── SIGNATURE SECTION ────────────────────────────────────────────────────
-  // Layout: claimant name → sig image → date (all above underline)
-  // Underline → label below underline
-  // Footer: Author:FD / Approved By:CFO at very bottom
-  y += 6;
-
+  y += 5;
   var sigW = TW / 3;
-  // Reserve space: we need sig content + underline + label + footer
-  // Footer sits at PH-10, labels at PH-14, underline at PH-18
   var ulY    = PH - 18;
   var labelY = PH - 13;
-  var footY  = PH - 7;
+  var footY  = PH - 6;
 
-  // Claimant content above underline
+  // Claimant: name + sig + date stacked above underline
   fn(9); st(BK);
   doc.text(claimant, ML, y+4);
-
-  // Signature image
+  var imgY = y+7;
   try {
-    var iW = Math.min(50, sigW-6), iH = iW * 0.26;
-    doc.addImage(sigDataUrl, 'PNG', ML, y+7, iW, iH);
-    // Date below sig, above underline
-    fn(8); st(BK);
-    doc.text(dStr, ML, y+7+iH+5);
-  } catch(e) {
-    fn(8); st(BK);
-    doc.text(dStr, ML, y+14);
-  }
+    var iW=Math.min(50,sigW-6), iH=iW*0.26;
+    doc.addImage(sigDataUrl,'PNG',ML,imgY,iW,iH);
+    imgY += iH+3;
+  } catch(e){}
+  fn(8); st(BK);
+  doc.text(dStr, ML, imgY+3);
 
-  // Three underlines
-  sd(BK,0.4);
-  doc.line(ML,            ulY, ML+sigW-4,       ulY);
-  doc.line(ML+sigW+4,     ulY, ML+sigW*2-4,     ulY);
-  doc.line(ML+sigW*2+4,   ulY, PW-MR,            ulY);
+  // Three signature underlines
+  sd(BK, 0.4);
+  doc.line(ML,          ulY, ML+sigW-4,     ulY);
+  doc.line(ML+sigW+4,   ulY, ML+sigW*2-4,   ulY);
+  doc.line(ML+sigW*2+4, ulY, PW-MR,          ulY);
 
-  // Labels below underlines
   fn(7); st(GY);
   doc.text('Claimant (Name, Sign & Date)',      ML,          labelY);
   doc.text('1st Approver (Name, Sign & Date)',  ML+sigW+4,   labelY);
