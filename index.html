@@ -6643,12 +6643,10 @@ function ecfRefreshPreview() {
 }
 
 function ecfExportPDF() {
-  ecfRefreshPreview();
   var sel = ecfGetSelected();
   if (!sel.length) { toast('Select at least one paid request'); return; }
   var sigDataUrl = ecfGetAdminSig();
-  if (!sigDataUrl) { toast('No signature — draw one below or save one in My Signatures'); return; }
-  if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) { toast('PDF library not loaded — refresh'); return; }
+  if (!sigDataUrl) { toast('No signature found — draw one below or save one in My Signatures'); return; }
 
   var entity   = document.getElementById('ecfEntity').value||'';
   var dateVal  = document.getElementById('ecfDate').value||new Date().toISOString().slice(0,10);
@@ -6665,243 +6663,199 @@ function ecfExportPDF() {
   var carbCode = document.getElementById('ecfCarbonCode').value||'';
   var cur      = document.getElementById('ecfCurrency').value||'KES';
   var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
-  var d        = ecfBuildRows(sel,cur);
+  var d        = ecfBuildRows(sel, cur);
   var balance  = d.totalTZS - advanced;
+  var balStr   = balance < 0
+    ? '(<span style="color:#B40000">'+cur+' '+Math.abs(balance).toLocaleString()+'</span>)'
+    : cur+' '+balance.toLocaleString();
 
-  var doc = new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-  var PW=297, PH=210, ML=14, MR=14, MT=8, TW=269;
+  var logoSrc = 'data:image/png;base64,' + ECF_LOGO_B64;
 
-  // ── All colors defined once ──────────────────────────────────────────────
-  var C_BLACK=[0,0,0], C_GREY=[100,100,100], C_MGREY=[160,160,160],
-      C_LGREY=[217,217,217], C_WHITE=[255,255,255], C_RED=[180,0,0];
+  // Build 11 data rows HTML
+  var dataRows = d.rows.map(function(r, i) {
+    var kesVal = r.tzs ? cur+' '+r.tzs : '';
+    var usdVal = r.usd ? '$'+r.usd : '';
+    return '<tr>'
+      +'<td class="c-date">'+r.date+'</td>'
+      +'<td class="c-det">'+r.details+'</td>'
+      +'<td class="c-rec">'+r.receipt+'</td>'
+      +'<td class="c-ccy r">'+kesVal+'</td>'
+      +'<td class="c-usd r">'+usdVal+'</td>'
+      +'<td class="c-bu">'+r.bu+'</td>'
+      +'<td class="c-acct">'+r.acct+'</td>'
+      +'</tr>';
+  }).join('');
 
-  // ── Helpers — always reset color explicitly ──────────────────────────────
-  function BLACK(){doc.setTextColor(0,0,0);}
-  function GREY(){doc.setTextColor(100,100,100);}
-  function RED(){doc.setTextColor(180,0,0);}
-  function DRAW_THIN(){doc.setDrawColor(160,160,160);doc.setLineWidth(0.2);}
-  function DRAW_MED(){doc.setDrawColor(160,160,160);doc.setLineWidth(0.5);}
-  function FILL_WHITE(){doc.setFillColor(255,255,255);}
-  function FILL_LGREY(){doc.setFillColor(217,217,217);}
-  function BOLD(sz){doc.setFont('helvetica','bold');doc.setFontSize(sz);}
-  function NORM(sz){doc.setFont('helvetica','normal');doc.setFontSize(sz);}
-  function ITAL(sz){doc.setFont('helvetica','italic');doc.setFontSize(sz);}
-  function txt(s,x,y,opts){doc.text(String(s||''),x,y,opts||{});}
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+  +'<title>Expense Claim Form</title>'
+  +'<style>'
+  +'*{margin:0;padding:0;box-sizing:border-box;}'
+  +'body{font-family:Arial,Helvetica,sans-serif;font-size:8.5pt;color:#000;background:#fff;}'
+  +'@page{size:A4 landscape;margin:10mm 12mm 10mm 12mm;}'
+  +'@media print{'
+  +'  body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
+  +'  .no-print{display:none!important;}'
+  +'}'
+  +'.page{width:100%;}'
 
-  var y = MT;
+  /* ── TOP BAR ── */
+  +'.topbar{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid #aaa;margin-bottom:8px;}'
+  +'.ref{font-size:7pt;color:#888;}'
+  +'.title{font-size:16pt;font-weight:700;text-align:center;flex:1;}'
+  +'.logo{height:36px;}'
 
-  // ── TOP BAR ──────────────────────────────────────────────────────────────
-  NORM(7); GREY(); txt('REF: FIN_FM_003-F', ML, y+4);
-  BOLD(14); BLACK(); txt('EXPENSE CLAIM FORM', PW/2, y+5, {align:'center'});
-  try{doc.addImage('data:image/png;base64,'+ECF_LOGO_B64,'PNG',PW-MR-44,y-1,44,14);}catch(e){}
-  y+=15;
-  DRAW_MED(); doc.line(ML,y,PW-MR,y);
-  y+=4;
+  /* ── HEADER FIELDS ── */
+  +'.hdr-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-bottom:6px;}'
+  +'.hdr-row{display:contents;}'
+  +'.hf{display:flex;align-items:flex-end;padding:3px 0 2px;}'
+  +'.hf-label{font-weight:700;font-size:7.5pt;white-space:nowrap;padding-right:4px;min-width:80px;text-align:right;}'
+  +'.hf-val{font-size:7.5pt;border-bottom:1px solid #999;flex:1;min-width:60px;padding:0 2px 1px;min-height:14px;}'
 
-  // ── HEADER FIELDS (underline only below value) ───────────────────────────
-  var C1x=ML,    C1lw=32, C1vw=55;
-  var C2x=ML+87, C2lw=44, C2vw=50;
-  var C3x=ML+181,C3lw=38, C3vw=TW-(181-ML)-38;
+  /* ── RECEIPT NOTE ── */
+  +'.note-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}'
+  +'.note{font-style:italic;font-size:6.5pt;color:#666;}'
+  +'.erp-box{border:1px solid #aaa;background:#d9d9d9;font-weight:700;font-size:7.5pt;padding:2px 8px;}'
 
-  function hField(x,lw,vw,label,val,fy,fh){
-    BOLD(7.5); BLACK();
-    txt(label, x+lw-1, fy+fh-2, {align:'right',maxWidth:lw-1});
-    NORM(7.5); BLACK();
-    txt(val, x+lw+2, fy+fh-2, {maxWidth:vw-4});
-    DRAW_THIN(); doc.line(x+lw, fy+fh, x+lw+vw, fy+fh);
-  }
+  /* ── TABLE ── */
+  +'table{width:100%;border-collapse:collapse;table-layout:fixed;}'
+  +'th,td{border:0.5px solid #aaa;font-size:7.5pt;vertical-align:middle;padding:2px 3px;overflow:hidden;}'
+  +'thead tr{background:#d9d9d9;}'
+  +'thead th{font-weight:700;text-align:center;padding:3px 2px;}'
+  +'thead th.sub{font-size:6pt;font-weight:normal;}'
+  +'tbody tr{background:#fff;}'
+  +'td.r,th.r{text-align:right;}'
+  +'td.c,th.c{text-align:center;}'
 
-  var hH=7.5;
-  [
-    [['BURN ENTITY:',entity],      ['Date:',dStr],              ['Profit Centre:',pCentre]],
-    [['Country Code:',country],    ['Name of Claimant:',claimant],['Product Code:',prodCode]],
-    [['Cost Centre:',costCtr],     ['Job Title:',jobTitle],     ['R&D Project Code:',rdCode]],
-    [['Dimension Code:',dimCode],  ['Bank Details/Mpesa No:',bank],['Carbon / Project Code:',carbCode]],
-  ].forEach(function(row){
-    hField(C1x,C1lw,C1vw,row[0][0],row[0][1],y,hH);
-    hField(C2x,C2lw,C2vw,row[1][0],row[1][1],y,hH);
-    hField(C3x,C3lw,C3vw,row[2][0],row[2][1],y,hH);
-    y+=hH;
-  });
-  y+=3;
+  /* ── COLUMN WIDTHS (proportional) ── */
+  +'.c-date{width:8%;}'
+  +'.c-det{width:27%;}'
+  +'.c-rec{width:6%;text-align:center;}'
+  +'.c-ccy{width:9%;text-align:right;}'
+  +'.c-usd{width:7%;text-align:right;}'
+  +'.c-bu{width:13%;}'
+  +'.c-acct{width:30%;}'
 
-  // ── RECEIPT NOTE + ERP BOX ───────────────────────────────────────────────
-  ITAL(6.5); GREY();
-  txt("Please number and attach all receipts, stating relevant number for each entry in 'Receipt No.' column", ML, y+3.2);
-  var erpW=20;
-  FILL_LGREY(); DRAW_THIN();
-  doc.rect(PW-MR-erpW, y-1, erpW, 6, 'FD');
-  BOLD(7.5); BLACK(); txt('ERP', PW-MR-erpW/2, y+3, {align:'center'});
-  y+=7;
+  /* ── TOTALS BLOCK ── */
+  +'.totals-row{background:#d9d9d9!important;font-weight:700;}'
+  +'.adv-row{background:#fff!important;}'
+  +'.bal-row{background:#fff!important;}'
+  +'.bal-label{font-weight:700;}'
 
-  // ── COLUMN WIDTHS (proportional from xlsx col widths) ────────────────────
-  // B=15.4, C+D(merged details)=74.6, E=15.4, F=15, G=12, H=21.9, I=32.3
-  // Total ≈186.6 chars → scale to TW=269mm
-  var sc=269/186.6;
-  var CW={
-    date: Math.round(15.4*sc*10)/10,
-    det:  Math.round(74.6*sc*10)/10,
-    rec:  Math.round(15.4*sc*10)/10,
-    ccy:  Math.round(15.0*sc*10)/10,
-    usd:  Math.round(12.0*sc*10)/10,
-    bu:   Math.round(21.9*sc*10)/10
-  };
-  CW.acct = TW-CW.date-CW.det-CW.rec-CW.ccy-CW.usd-CW.bu;
+  /* ── SIG SECTION ── */
+  +'.sig-section{margin-top:12px;}'
+  +'.sig-claimant{display:inline-block;min-width:160px;}'
+  +'.sig-name{font-size:9pt;font-weight:600;margin-bottom:2px;}'
+  +'.sig-img{height:35px;display:block;margin:2px 0;}'
+  +'.sig-date{font-size:8pt;margin-bottom:2px;}'
+  +'.sig-lines{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:0;margin-top:8px;}'
+  +'.sig-box{padding-top:4px;border-top:1px solid #000;font-size:7pt;color:#666;padding-right:20px;}'
 
-  // ── COLUMN HEADERS (grey fill, black bold text) ──────────────────────────
-  var chH=11;
-  FILL_LGREY();
-  doc.rect(ML, y, TW, chH, 'F');
-  // Outer medium border
-  DRAW_MED(); doc.rect(ML, y, TW, chH);
+  /* ── FOOTER ── */
+  +'.footer{display:flex;justify-content:space-between;margin-top:6px;font-size:6.5pt;color:#888;}'
 
-  var hcx=ML;
-  var hcols=[
-    {w:CW.date, t:'Date',s:''},
-    {w:CW.det,  t:'Details (Purpose, name of participants etc.)',s:''},
-    {w:CW.rec,  t:'Receipt No.',s:''},
-    {w:CW.ccy,  t:cur,s:''},
-    {w:CW.usd,  t:'US$',s:''},
-    {w:CW.bu,   t:'Business Unit',s:''},
-    {w:CW.acct, t:'Expense Account',s:'(to be filled by Finance)'},
-  ];
-  hcols.forEach(function(col,ci){
-    // Inner thin dividers (not first col — outer border handles it)
-    if(ci>0){DRAW_THIN();doc.line(hcx,y,hcx,y+chH);}
-    BOLD(7.5); BLACK();
-    if(col.s){
-      txt(col.t, hcx+col.w/2, y+3.8, {align:'center',maxWidth:col.w-2});
-      NORM(6.5); BLACK();
-      txt(col.s, hcx+col.w/2, y+7.8, {align:'center',maxWidth:col.w-2});
-    } else {
-      txt(col.t, hcx+col.w/2, y+chH/2+0.8, {align:'center',maxWidth:col.w-2});
-    }
-    hcx+=col.w;
-  });
-  y+=chH;
+  /* ── PRINT BUTTON ── */
+  +'.print-btn{position:fixed;top:12px;right:12px;padding:10px 22px;background:#F25C0A;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:999;}'
+  +'</style></head><body>'
 
-  // ── DATA ROWS (white fill, thin inner borders, medium outer L+R) ─────────
-  var rH=7.5;
-  var wids=[CW.date,CW.det,CW.rec,CW.ccy,CW.usd,CW.bu,CW.acct];
-  var aligns=['left','left','center','right','right','left','left'];
+  +'<button class="print-btn no-print" onclick="window.print()">⬇ Print / Save as PDF</button>'
 
-  d.rows.forEach(function(r,ri){
-    // White fill
-    FILL_WHITE(); doc.rect(ML,y,TW,rH,'F');
-    // Medium left and right outer borders
-    DRAW_MED();
-    doc.line(ML,y,ML,y+rH);
-    doc.line(ML+TW,y,ML+TW,y+rH);
-    // Thin top/bottom
-    DRAW_THIN();
-    doc.line(ML,y,ML+TW,y);
-    doc.line(ML,y+rH,ML+TW,y+rH);
+  +'<div class="page">'
 
-    var rx=ML;
-    var vals=[
-      r.date, r.details, r.receipt,
-      r.tzs?cur+' '+r.tzs:'',
-      r.usd?'$'+r.usd:'',
-      r.bu, r.acct
-    ];
-    NORM(7.5); BLACK(); // ← explicit reset before each row
-    vals.forEach(function(v,vi){
-      if(vi>0){DRAW_THIN();doc.line(rx,y,rx,y+rH);}
-      NORM(7.5); BLACK(); // ← explicit reset per cell
-      var tx=aligns[vi]==='right'?rx+wids[vi]-2:(aligns[vi]==='center'?rx+wids[vi]/2:rx+2);
-      txt(v, tx, y+rH/2+0.8, {align:aligns[vi],baseline:'middle',maxWidth:wids[vi]-3});
-      rx+=wids[vi];
-    });
-    y+=rH;
-  });
+  /* TOP BAR */
+  +'<div class="topbar">'
+  +'<div class="ref">REF: FIN_FM_003-F</div>'
+  +'<div class="title">EXPENSE CLAIM FORM</div>'
+  +'<img class="logo" src="'+logoSrc+'" alt="burn">'
+  +'</div>'
 
-  // ── TOTALS BLOCK ─────────────────────────────────────────────────────────
-  // tX = x where Receipt No. col starts
-  var tX=ML+CW.date+CW.det;
+  /* HEADER FIELDS — 4 rows × 3 cols */
+  +'<div class="hdr-grid">'
+  +hf('BURN ENTITY:', entity)+hf('Date:', dStr)+hf('Profit Centre:', pCentre)
+  +hf('Country Code:', country)+hf('Name of Claimant:', claimant)+hf('Product Code:', prodCode)
+  +hf('Cost Centre:', costCtr)+hf('Job Title:', jobTitle)+hf('R&D Project Code:', rdCode)
+  +hf('Dimension Code:', dimCode)+hf('Bank Details/Mpesa No:', bank)+hf('Carbon / Project Code:', carbCode)
+  +'</div>'
 
-  // TOTALS row — grey fill
-  FILL_LGREY(); doc.rect(ML,y,TW,7,'F');
-  DRAW_MED(); doc.rect(ML,y,TW,7);
-  DRAW_THIN();
-  doc.line(tX,y,tX,y+7);
-  doc.line(tX+CW.rec,y,tX+CW.rec,y+7);
-  doc.line(tX+CW.rec+CW.ccy,y,tX+CW.rec+CW.ccy,y+7);
-  doc.line(tX+CW.rec+CW.ccy+CW.usd,y,tX+CW.rec+CW.ccy+CW.usd,y+7);
-  BOLD(8); BLACK();
-  txt('TOTALS', tX+CW.rec-2, y+4.8, {align:'right'});
-  txt(cur+' '+d.totalTZS.toLocaleString(), tX+CW.rec+CW.ccy-2, y+4.8, {align:'right'});
-  NORM(8); BLACK();
-  txt('$0.00', tX+CW.rec+CW.ccy+CW.usd-2, y+4.8, {align:'right'});
-  txt('$0.00', tX+CW.rec+CW.ccy+CW.usd+CW.bu-2, y+4.8, {align:'right'});
-  y+=7;
+  /* RECEIPT NOTE */
+  +'<div class="note-row">'
+  +'<div class="note">Please number and attach all receipts, stating relevant number for each entry in \'Receipt No.\' column</div>'
+  +'<div class="erp-box">ERP</div>'
+  +'</div>'
 
-  // AMOUNT ADVANCED — white
-  FILL_WHITE(); doc.rect(ML,y,TW,6.5,'F');
-  DRAW_MED(); doc.rect(ML,y,TW,6.5);
-  DRAW_THIN(); doc.line(tX+CW.rec,y,tX+CW.rec,y+6.5);
-  BOLD(7.5); BLACK(); txt('Amount Advanced', tX+CW.rec-2, y+4.2, {align:'right'});
-  NORM(7.5); BLACK(); txt(cur+' '+advanced.toLocaleString(), tX+CW.rec+CW.ccy-2, y+4.2, {align:'right'});
-  y+=6.5;
+  /* TABLE */
+  +'<table>'
+  +'<thead><tr>'
+  +'<th class="c-date">Date</th>'
+  +'<th class="c-det">Details (Purpose, name of participants etc.)</th>'
+  +'<th class="c-rec">Receipt No.</th>'
+  +'<th class="c-ccy r">'+cur+'</th>'
+  +'<th class="c-usd r">US$</th>'
+  +'<th class="c-bu">Business Unit</th>'
+  +'<th class="c-acct">Expense Account<br><span class="sub">(to be filled by Finance)</span></th>'
+  +'</tr></thead>'
+  +'<tbody>'
+  + dataRows
+  /* TOTALS */
+  +'<tr class="totals-row">'
+  +'<td colspan="2"></td>'
+  +'<td class="c-rec c">TOTALS</td>'
+  +'<td class="c-ccy r">'+cur+' '+d.totalTZS.toLocaleString()+'</td>'
+  +'<td class="c-usd r">$0.00</td>'
+  +'<td class="c-bu r">$0.00</td>'
+  +'<td class="c-acct"></td>'
+  +'</tr>'
+  /* AMOUNT ADVANCED */
+  +'<tr class="adv-row">'
+  +'<td colspan="2"></td>'
+  +'<td colspan="1" style="text-align:right;font-weight:700;border-right:none;">Amount Advanced</td>'
+  +'<td class="c-ccy r" style="border-left:none;">'+cur+' '+advanced.toLocaleString()+'</td>'
+  +'<td colspan="3"></td>'
+  +'</tr>'
+  /* BALANCE */
+  +'<tr class="bal-row">'
+  +'<td colspan="2" style="font-style:italic;font-size:6.5pt;color:#888;">Advance approved by (Name, &amp; Amount)</td>'
+  +'<td style="text-align:right;font-weight:700;border-right:none;" class="bal-label">Balance claimed/Returned</td>'
+  +'<td class="c-ccy r" style="border-left:none;">'+balStr+'</td>'
+  +'<td class="c-usd r">$0.00</td>'
+  +'<td class="c-bu r">0</td>'
+  +'<td class="c-acct"></td>'
+  +'</tr>'
+  +'</tbody></table>'
 
-  // BALANCE — white
-  FILL_WHITE(); doc.rect(ML,y,TW,6.5,'F');
-  DRAW_MED(); doc.rect(ML,y,TW,6.5);
-  DRAW_THIN();
-  doc.line(tX+CW.rec,y,tX+CW.rec,y+6.5);
-  doc.line(tX+CW.rec+CW.ccy,y,tX+CW.rec+CW.ccy,y+6.5);
-  doc.line(tX+CW.rec+CW.ccy+CW.usd,y,tX+CW.rec+CW.ccy+CW.usd,y+6.5);
-  ITAL(7); GREY(); txt('Advance approved by (Name, & Amount)', ML+2, y+4.2);
-  BOLD(7.5); BLACK(); txt('Balance claimed/Returned', tX+CW.rec-2, y+4.2, {align:'right'});
-  var balStr=balance<0?'('+cur+' '+Math.abs(balance).toLocaleString()+')':cur+' '+balance.toLocaleString();
-  NORM(7.5);
-  if(balance<0){RED();}else{BLACK();}
-  txt(balStr, tX+CW.rec+CW.ccy-2, y+4.2, {align:'right'});
-  NORM(7.5); BLACK();
-  txt('$0.00', tX+CW.rec+CW.ccy+CW.usd-2, y+4.2, {align:'right'});
-  txt('0', tX+CW.rec+CW.ccy+CW.usd+CW.bu-2, y+4.2, {align:'right'});
-  y+=6.5;
+  /* SIGNATURES */
+  +'<div class="sig-section">'
+  +'<div class="sig-claimant">'
+  +'<div class="sig-name">'+claimant+'</div>'
+  +'<img class="sig-img" src="'+sigDataUrl+'" alt="signature">'
+  +'<div class="sig-date">'+dStr+'</div>'
+  +'</div>'
+  +'<div class="sig-lines">'
+  +'<div class="sig-box">Claimant (Name, Sign &amp; Date)</div>'
+  +'<div class="sig-box">1st Approver (Name, Sign &amp; Date)</div>'
+  +'<div class="sig-box">2nd Approver (Name, Sign &amp; Date)</div>'
+  +'</div>'
+  +'</div>'
 
-  // ── SIGNATURE SECTION ────────────────────────────────────────────────────
-  // Fixed positions from bottom of page:
-  // footY=PH-6 (footer text)
-  // labelY=PH-13 (Claimant/Approver labels)
-  // ulY=PH-18 (underlines)
-  // Claimant content (name + sig + date) stacks downward from y+5, must fit above ulY
-  var sigW=TW/3;
-  var ulY=PH-19, labelY=PH-14, footY=PH-7;
+  /* FOOTER */
+  +'<div class="footer">'
+  +'<div>Author:FD<br>Approved By:CFO</div>'
+  +'<div>Release date: 8th Jan.2025</div>'
+  +'</div>'
 
-  y+=6;
-  NORM(9); BLACK(); txt(claimant, ML, y+4);
-  var imgY=y+8;
-  try{
-    var iW=Math.min(48,sigW-8), iH=iW*0.26;
-    doc.addImage(sigDataUrl,'PNG',ML,imgY,iW,iH);
-    imgY+=iH+3;
-  }catch(e){imgY+=2;}
-  NORM(8); BLACK(); txt(dStr, ML, imgY+3);
+  +'</div>' // .page
+  +'</body></html>';
 
-  // Three underlines
-  DRAW_MED();
-  doc.line(ML,            ulY, ML+sigW-4,     ulY);
-  doc.line(ML+sigW+4,     ulY, ML+sigW*2-4,   ulY);
-  doc.line(ML+sigW*2+4,   ulY, PW-MR,          ulY);
-
-  // Labels below underlines
-  NORM(7); GREY();
-  txt('Claimant (Name, Sign & Date)',      ML,          labelY);
-  txt('1st Approver (Name, Sign & Date)',  ML+sigW+4,   labelY);
-  txt('2nd Approver (Name, Sign & Date)',  ML+sigW*2+4, labelY);
-
-  // ── FOOTER ───────────────────────────────────────────────────────────────
-  NORM(6.5); GREY();
-  txt('Author:FD',       ML, footY-3);
-  txt('Approved By:CFO', ML, footY);
-  txt('Release date: 8th Jan.2025', PW-MR, footY, {align:'right'});
-
-  var filename='ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal+'.pdf';
-  doc.save(filename);
-  toast('PDF exported: '+filename);
+  var w = window.open('','_blank','width=1100,height=800');
+  if (!w) { toast('Pop-up blocked — please allow pop-ups and try again'); return; }
+  w.document.write(html);
+  w.document.close();
 }
+
+function hf(label, val) {
+  return '<div class="hf"><div class="hf-label">'+label+'</div><div class="hf-val">'+
+    (val||'&nbsp;')+'</div></div>';
+}
+
 
 function ecfInit() {
   ecfLoadRequests();
