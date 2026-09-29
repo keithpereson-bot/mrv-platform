@@ -6699,8 +6699,8 @@ function ecfExportPDF() {
   // Col layout: B(label)+C:D(merged value) | D(label)+E:G(merged value) | H(label)+I(value)
   function hrow(l1,v1,l2,v2,l3,v3){
     return '<tr class="hrow">'
-      +'<td class="hl">'+e(l1)+'</td><td class="hv" colspan="2">'+e(v1)+'</td>'
-      +'<td class="hl">'+e(l2)+'</td><td class="hv" colspan="3">'+e(v2)+'</td>'
+      +'<td class="hl">'+e(l1)+'</td><td class="hv">'+e(v1)+'</td>'
+      +'<td class="hl">'+e(l2)+'</td><td class="hv">'+e(v2)+'</td>'
       +'<td class="hl">'+e(l3)+'</td><td class="hv">'+e(v3)+'</td>'
       +'</tr>';
   }
@@ -6753,10 +6753,10 @@ function ecfExportPDF() {
   +'.sig-wrap{margin-top:6px}'
   +'.sig-name{font-size:11pt;font-weight:700}'
   +'.sig-img{height:36px;display:block;margin:3px 0}'
-  +'.sig-date{font-size:10pt;margin-bottom:4px}'
+  +'.sig-date{font-size:10pt;margin-bottom:6px}'
   +'.sig-lines{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:4px}'
-  +'.sig-col{border-top:0.75pt solid #000;padding-top:3px;font-size:9pt}'
-  +'.footer{display:flex;justify-content:space-between;margin-top:4px;font-size:8pt}'
+  +'.sig-col{border-top:0.75pt solid #000;padding-top:3px;font-size:9pt;padding-right:8px}'
+  +'.footer{display:flex;justify-content:space-between;margin-top:6px;font-size:8pt;border-top:none}'
   +'.btn{position:fixed;bottom:16px;right:16px;background:#F25C0A;color:#fff;border:none;padding:10px 22px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3);z-index:9999}'
   +'</style></head><body>'
 
@@ -6770,11 +6770,12 @@ function ecfExportPDF() {
   +'<img src="'+logoSrc+'">'
   +'</div>'
 
-  /* HEADER FIELDS TABLE — uses same column structure as data table */
-  +'<table>'
+  /* HEADER FIELDS — 3-col grid, each col = label + underlined value */
+  +'<table style="width:100%;border-collapse:collapse;margin-bottom:3px">'
   +'<colgroup>'
-  +'<col class="cB"><col class="cC"><col class="cD"><col class="cE">'
-  +'<col class="cF"><col class="cG"><col class="cH"><col class="cI">'
+  +'<col style="width:11%"><col style="width:22%">'
+  +'<col style="width:12%"><col style="width:22%">'
+  +'<col style="width:13%"><col style="width:20%">'
   +'</colgroup>'
   +'<tbody>'
   +hrow('BURN ENTITY:',entity,'Date:',dStr,'Profit Centre:',pCentre)
