@@ -6646,7 +6646,7 @@ function ecfExportPDF() {
   var sel = ecfGetSelected();
   if (!sel.length) { toast('Select at least one paid request'); return; }
   var sigDataUrl = ecfGetAdminSig();
-  if (!sigDataUrl) { toast('No signature — draw one below or save one in My Signatures'); return; }
+  if (!sigDataUrl) { toast('No signature found — draw one below or save one in My Signatures'); return; }
 
   var entity   = document.getElementById('ecfEntity').value||'';
   var dateVal  = document.getElementById('ecfDate').value||new Date().toISOString().slice(0,10);
@@ -6663,214 +6663,62 @@ function ecfExportPDF() {
   var carbCode = document.getElementById('ecfCarbonCode').value||'';
   var cur      = document.getElementById('ecfCurrency').value||'KES';
   var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
-  var d        = ecfBuildRows(sel,cur);
-  var balance  = d.totalTZS - advanced;
-  var logoSrc  = 'data:image/png;base64,'+ECF_LOGO_B64;
+  var d        = ecfBuildRows(sel, cur);
 
-  function e(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var rows = d.rows.filter(function(r){ return r.details; }).map(function(r) {
+    return {
+      date:    r.date,
+      details: r.details,
+      receipt: r.receipt,
+      amount:  r.tzs ? r.tzs.replace(/,/g,'') : '0',
+      usd:     r.usd ? r.usd.replace(/,/g,'') : '0',
+      bizUnit: r.bu,
+      expAcct: r.acct
+    };
+  });
 
-  // Excel col widths: B=15.44, C=39.55, D=35.00, E=15.44, (F≈15,G≈12 not in dims), H=21.89, I=32.33
-  // Print area B1:I27, landscape, margins 0.25in all sides
-  // Columns: B=Date, C+D=Details(merged), E=Receipt, F=TZS, G=USD, H=BU, I=ExpAcct
-  // Total width: 15.44+39.55+35+15.44+15+12+21.89+32.33 = 186.65 char units
-  // As percentages of total: Date=8.3%, Det=40%, Rec=8.3%, TZS=10.3%, USD=8%, BU=11.7%, Acct=13.4% -- no F/G col widths given so use ratio
+  var params = {
+    entity: entity, date: dStr, profitCentre: pCentre,
+    country: country, claimant: claimant, productCode: prodCode,
+    costCentre: costCtr, jobTitle: jobTitle, rdCode: rdCode,
+    dimCode: dimCode, bank: bank, carbonCode: carbCode,
+    amountAdvanced: advanced, currency: cur,
+    rows: rows,
+    sigBase64: sigDataUrl
+  };
 
-  // Row heights in pt → convert to mm (1pt = 0.353mm)
-  // Row 9 (header): 31.2pt = 11mm
-  // Rows 10-20 (data): 21.0pt = 7.4mm
-  // Row 21,22,23 (totals): 21.0pt each
+  // Show loading state
+  var btn = document.querySelector('[onclick="ecfExportPDF()"]');
+  var origText = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Generating PDF...';
 
-  var dataRows = d.rows.map(function(r){
-    return '<tr>'
-      +'<td>'+e(r.date)+'</td>'
-      +'<td colspan="2">'+e(r.details)+'</td>'
-      +'<td class="tc">'+e(r.receipt)+'</td>'
-      +'<td class="tr">'+e(r.tzs?cur+' '+r.tzs:'')+'</td>'
-      +'<td class="tr">'+e(r.usd?'$'+r.usd:'')+'</td>'
-      +'<td>'+e(r.bu)+'</td>'
-      +'<td>'+e(r.acct)+'</td>'
-      +'</tr>';
-  }).join('');
-
-  var balStyle = balance<0?'color:#B40000':'' ;
-  var balVal   = balance<0?'('+e(cur)+' '+Math.abs(balance).toLocaleString()+')':e(cur)+' '+balance.toLocaleString();
-
-  // Header fields — exactly like xlsx: label in one cell, value spanning merged cells (underlined bottom border)
-  // Col layout: B(label)+C:D(merged value) | D(label)+E:G(merged value) | H(label)+I(value)
-  function hrow(l1,v1,l2,v2,l3,v3){
-    return '<tr class="hrow">'
-      +'<td class="hl">'+e(l1)+'</td><td class="hv">'+e(v1)+'</td>'
-      +'<td class="hl">'+e(l2)+'</td><td class="hv">'+e(v2)+'</td>'
-      +'<td class="hl">'+e(l3)+'</td><td class="hv">'+e(v3)+'</td>'
-      +'</tr>';
-  }
-
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Expense Claim Form</title>'
-  +'<style>'
-  +'*{margin:0;padding:0;box-sizing:border-box}'
-  +'html,body{background:#fff;font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#000}'
-  +'@page{size:A4 landscape;margin:6.35mm}'  /* 0.25in margins matching xlsx */
-  +'@media print{'
-  +' .btn{display:none!important}'
-  +' body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}'
-  +'}'
-  /* Layout */
-  +'.wrap{width:100%;}'
-  /* Title row */
-  +'.title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}'
-  +'.title-row .ref{font-size:8pt}'
-  +'.title-row h1{font-size:18pt;font-weight:700;text-align:center;flex:1}'
-  +'.title-row img{height:38px}'
-  /* Main table used for header fields + data */
-  +'table{width:100%;border-collapse:collapse;table-layout:fixed}'
-  +'td,th{border:0.75pt solid #000;font-size:10pt;color:#000;vertical-align:middle;padding:1px 3px;overflow:hidden}'
-  /* Column widths matching xlsx proportions */
-  +'.cB{width:8.3%}'   /* B: Date */
-  +'.cC{width:21.2%}'  /* C: Details part 1 */
-  +'.cD{width:18.8%}'  /* D: Details part 2 */
-  +'.cE{width:8.3%}'   /* E: Receipt */
-  +'.cF{width:10.3%}'  /* F: TZS */
-  +'.cG{width:8%}'     /* G: USD */
-  +'.cH{width:11.7%}'  /* H: Biz Unit */
-  +'.cI{width:13.4%}'  /* I: Expense Acct */
-  /* Header field rows — no border on cell sides, only bottom border for value */
-  +'.hrow td{border:none}'
-  +'.hl{font-weight:700;font-size:10pt;text-align:right;padding-right:4px;white-space:nowrap;width:auto}'
-  +'.hv{font-size:10pt;border-bottom:0.75pt solid #000!important;padding-bottom:1px}'
-  /* Note row */
-  +'.note{font-style:italic;font-size:8pt;padding:2px 0}'
-  +'.erp-cell{font-weight:700;font-size:10pt;text-align:center;border:0.75pt solid #000}'
-  /* Column header row */
-  +'thead th{font-weight:700;font-size:10pt;text-align:center;height:11mm;vertical-align:middle;border:0.75pt solid #000}'
-  /* Data rows */
-  +'tbody td{font-size:10pt;height:7.4mm;border:0.75pt solid #000}'
-  +'.tc{text-align:center}'
-  +'.tr{text-align:right}'
-  /* Totals rows */
-  +'.tot td{font-weight:700;font-size:11pt}'
-  +'.adv td,.bal td{font-size:10pt}'
-  /* Sig section */
-  +'.sig-wrap{margin-top:6px}'
-  +'.sig-name{font-size:11pt;font-weight:700}'
-  +'.sig-img{height:36px;display:block;margin:3px 0}'
-  +'.sig-date{font-size:10pt;margin-bottom:6px}'
-  +'.sig-lines{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:4px}'
-  +'.sig-col{border-top:0.75pt solid #000;padding-top:3px;font-size:9pt;padding-right:8px}'
-  +'.footer{display:flex;justify-content:space-between;margin-top:6px;font-size:8pt;border-top:none}'
-  +'.btn{position:fixed;bottom:16px;right:16px;background:#F25C0A;color:#fff;border:none;padding:10px 22px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3);z-index:9999}'
-  +'</style></head><body>'
-
-  +'<button class="btn" onclick="window.print()">&#8659; Print / Save as PDF</button>'
-  +'<div class="wrap">'
-
-  /* TITLE */
-  +'<div class="title-row">'
-  +'<span class="ref">REF: FIN_FM_003-F</span>'
-  +'<h1>EXPENSE CLAIM FORM</h1>'
-  +'<img src="'+logoSrc+'">'
-  +'</div>'
-
-  /* HEADER FIELDS — 3-col grid, each col = label + underlined value */
-  +'<table style="width:100%;border-collapse:collapse;margin-bottom:3px">'
-  +'<colgroup>'
-  +'<col style="width:11%"><col style="width:22%">'
-  +'<col style="width:12%"><col style="width:22%">'
-  +'<col style="width:13%"><col style="width:20%">'
-  +'</colgroup>'
-  +'<tbody>'
-  +hrow('BURN ENTITY:',entity,'Date:',dStr,'Profit Centre:',pCentre)
-  +hrow('Country Code:',country,'Name of Claimant:',claimant,'Product Code:',prodCode)
-  +hrow('Cost Centre:',costCtr,'Job Title:',jobTitle,'R&D Project Code:',rdCode)
-  +hrow('Dimension Code:',dimCode,'Bank Details/Mpesa No:',bank,'Carbon / Project Code:',carbCode)
-  +'</tbody></table>'
-
-  /* RECEIPT NOTE */
-  +'<div style="display:flex;justify-content:space-between;align-items:center;margin:3px 0">'
-  +'<div class="note">Please number and attach all receipts, stating relevant number for each entry in &lsquo;Receipt No.&rsquo; column</div>'
-  +'<div class="erp-cell" style="padding:1px 8px">ERP</div>'
-  +'</div>'
-
-  /* MAIN DATA TABLE */
-  +'<table>'
-  +'<colgroup>'
-  +'<col class="cB"><col class="cC"><col class="cD"><col class="cE">'
-  +'<col class="cF"><col class="cG"><col class="cH"><col class="cI">'
-  +'</colgroup>'
-  +'<thead><tr>'
-  +'<th>Date</th>'
-  +'<th colspan="2">Details (Purpose, name of participants etc.)</th>'
-  +'<th>Receipt No.</th>'
-  +'<th>'+e(cur)+'</th>'
-  +'<th>US$</th>'
-  +'<th>Business Unit</th>'
-  +'<th>Expense Account<br><span style="font-size:8pt;font-weight:400">(to be filled by Finance)</span></th>'
-  +'</tr></thead>'
-  +'<tbody>'
-  +dataRows
-
-  /* TOTALS */
-  +'<tr class="tot">'
-  +'<td colspan="2" style="border:none"></td>'
-  +'<td style="border-left:none;border-right:none;text-align:right">TOTALS</td>'
-  +'<td class="tc">'+d.rows.filter(function(r){return r.receipt;}).length+'</td>'
-  +'<td class="tr">'+e(cur)+' '+d.totalTZS.toLocaleString()+'</td>'
-  +'<td class="tr">$0.00</td>'
-  +'<td class="tr">$0.00</td>'
-  +'<td></td>'
-  +'</tr>'
-
-  /* AMOUNT ADVANCED */
-  +'<tr class="adv">'
-  +'<td colspan="2" style="border:none"></td>'
-  +'<td style="border-left:none;border-right:none;text-align:right;font-weight:700;white-space:nowrap">Amount Advanced</td>'
-  +'<td></td>'
-  +'<td class="tr">'+e(cur)+' '+advanced.toLocaleString()+'</td>'
-  +'<td colspan="3"></td>'
-  +'</tr>'
-
-  /* BALANCE */
-  +'<tr class="bal">'
-  +'<td colspan="2" style="font-style:italic;font-size:8pt;border-right:none">Advance approved by (Name, &amp; Amount)</td>'
-  +'<td style="border-left:none;border-right:none;text-align:right;font-weight:700;white-space:nowrap">Balance claimed/Returned</td>'
-  +'<td></td>'
-  +'<td class="tr" style="'+balStyle+'">'+balVal+'</td>'
-  +'<td class="tr">$0.00</td>'
-  +'<td class="tr">0</td>'
-  +'<td></td>'
-  +'</tr>'
-
-  +'</tbody></table>'
-
-  /* SIGNATURES */
-  +'<div class="sig-wrap">'
-  +'<div class="sig-name">'+e(claimant)+'</div>'
-  +'<img class="sig-img" src="'+sigDataUrl+'">'
-  +'<div class="sig-date">'+e(dStr)+'</div>'
-  +'<div class="sig-lines">'
-  +'<div class="sig-col">Claimant (Name, Sign &amp; Date)</div>'
-  +'<div class="sig-col">1st Approver (Name, Sign &amp; Date)</div>'
-  +'<div class="sig-col">2nd Approver (Name, Sign &amp; Date)</div>'
-  +'</div>'
-  +'</div>'
-
-  /* FOOTER */
-  +'<div class="footer">'
-  +'<div>Author:FD<br>Approved By:CFO</div>'
-  +'<div>Release date: 8th Jan.2025</div>'
-  +'</div>'
-
-  +'</div>'  // .wrap
-  +'</body></html>';
-
-  var blob = new Blob([html],{type:'text/html;charset=utf-8'});
-  var url  = URL.createObjectURL(blob);
-  var w    = window.open(url,'_blank');
-  if(!w){
-    var w2=window.open('about:blank','_blank');
-    if(w2){w2.document.open();w2.document.write(html);w2.document.close();}
-    else{toast('Pop-up blocked — please allow pop-ups and try again');}
-  }
+  callGS('fillExpenseClaim', { params: JSON.stringify(params) }, function(res) {
+    if (btn) btn.innerHTML = origText;
+    if (!res || !res.ok) {
+      toast('PDF error: ' + (res && res.error ? res.error : 'unknown'));
+      return;
+    }
+    // Decode base64 PDF and trigger download
+    try {
+      var binary = atob(res.pdfBase64);
+      var bytes  = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      var blob   = new Blob([bytes], { type: 'application/pdf' });
+      var url    = URL.createObjectURL(blob);
+      var a      = document.createElement('a');
+      a.href     = url;
+      a.download = 'ExpenseClaim_' + (claimant||'Admin').replace(/\s+/g,'_') + '_' + dateVal + '.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('PDF downloaded successfully');
+    } catch(e) {
+      toast('Download error: ' + e.message);
+    }
+  });
 }
+
 
 function ecf_hf(label,val){
   return '<div class="hf"><div class="lbl">'+label+'</div><div class="val">'+(val||'')+'</div></div>';
