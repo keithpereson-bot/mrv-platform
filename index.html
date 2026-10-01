@@ -6572,7 +6572,7 @@ function ecfGetSelected() {
 
 function ecfBuildRows(selected,cur) {
   var rows=[],tTZS=0,tUSD=0;
-  selected.slice(0,11).forEach(function(r,ri){
+  selected.forEach(function(r,ri){
     var amt=parseFloat(r.amount)||0;
     var isTZS=(cur==='TZS'||cur==='KES'||cur==='UGX');
     var tzs=isTZS?amt:0, usd=cur==='USD'?amt:0;
@@ -6585,7 +6585,7 @@ function ecfBuildRows(selected,cur) {
       bu:r.category||r.type||'', acct:r.costSummary||''
     });
   });
-  while(rows.length<11) rows.push({date:'',details:'',receipt:'',tzs:'',usd:'',bu:'',acct:''});
+  // no padding — dynamic rows
   return {rows:rows,totalTZS:tTZS,totalUSD:tUSD};
 }
 
