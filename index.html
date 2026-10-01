@@ -6663,77 +6663,72 @@ async function ecfExportPDF() {
   var carbCode = document.getElementById('ecfCarbonCode').value||'';
   var cur      = document.getElementById('ecfCurrency').value||'KES';
   var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
-  var d        = ecfBuildRows(sel, cur);
 
-  // Build rows — include ref and signatures for acknowledgement slips
-  var rows = [];
-  sel.forEach(function(req, i) {
-    if (!req.description && !req.costSummary && !req.costItem) return;
-    var amt = parseFloat(req.amount)||0;
-    rows.push({
+  // Build rows from the actual selected request objects
+  var rows = sel.map(function(req, i) {
+    return {
       date:         (typeof fmtDate==='function') ? fmtDate(req.date||'') : (req.date||''),
       details:      req.description || req.costSummary || req.costItem || '',
       receipt:      i + 1,
-      amount:       amt,
+      amount:       parseFloat(req.amount)||0,
       usd:          0,
       bizUnit:      req.category || req.type || '',
       expAcct:      req.costSummary || '',
-      // Extra fields for acknowledgement slips
+      // for ack slip
       ref:          req.ref || '',
       project:      req.project || '',
       requester:    req.requester || '',
       approvedBy:   req.approvedBy || '',
       sigDataUrl:   req.sigDataUrl || '',
-      requesterSig: req.requesterSig || '',
       sigLabel:     req.sigLabel || '',
-      sigTime:      req.sigTime || ''
-    });
+      sigTime:      req.sigTime || '',
+      requesterSig: req.requesterSig || '',
+      requesterSigName: req.requesterSigName || '',
+      requesterSigTime: req.requesterSigTime || ''
+    };
   });
 
-  // Show loading
   var btn = document.getElementById('ecfExportBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Generating PDF…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
 
   try {
+    // ── Step 1: Get expense form PDF from AppScript ──────────────
     var res = await gasCall({
-      action:        'fillExpenseClaim',
-      entity:        entity,
-      date:          dStr,
-      profitCentre:  pCentre,
-      country:       country,
-      claimant:      claimant,
-      productCode:   prodCode,
-      costCentre:    costCtr,
-      jobTitle:      jobTitle,
-      rdCode:        rdCode,
-      dimCode:       dimCode,
-      bank:          bank,
-      carbonCode:    carbCode,
-      amountAdvanced: advanced,
-      currency:      cur,
-      rows:          rows,
-      sigBase64:     sigDataUrl
+      action: 'fillExpenseClaim',
+      entity: entity, date: dStr, profitCentre: pCentre,
+      country: country, claimant: claimant, productCode: prodCode,
+      costCentre: costCtr, jobTitle: jobTitle, rdCode: rdCode,
+      dimCode: dimCode, bank: bank, carbonCode: carbCode,
+      amountAdvanced: advanced, currency: cur,
+      rows: rows,
+      sigBase64: sigDataUrl
     });
 
     if (!res || !res.ok) {
-      toast('PDF error: ' + (res && res.error ? res.error : 'AppScript returned error'));
+      toast('Expense form error: ' + (res && res.error ? res.error : 'unknown'));
       return;
     }
 
-    // Decode base64 PDF and trigger download
-    var binary = atob(res.pdfBase64);
+    // ── Step 2: Generate acknowledgement PDF using jsPDF ─────────
+    // Reuse exact same rendering as downloadAcknowledgedPDF but only for selected requests
+    var ackDoc = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl);
+
+    // ── Step 3: Merge the two PDFs ───────────────────────────────
+    var combinedB64 = await ecfMergePDFs(res.pdfBase64, ackDoc);
+
+    // ── Step 4: Download ─────────────────────────────────────────
+    var binary = atob(combinedB64);
     var bytes  = new Uint8Array(binary.length);
     for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    var blob   = new Blob([bytes], { type: 'application/pdf' });
+    var blob   = new Blob([bytes], {type:'application/pdf'});
     var url    = URL.createObjectURL(blob);
     var a      = document.createElement('a');
-    a.href     = url;
-    a.download = 'ExpenseClaim_' + (claimant||'Admin').replace(/\s+/g,'_') + '_' + dateVal + '.pdf';
-    document.body.appendChild(a);
-    a.click();
+    a.href = url;
+    a.download = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal+'.pdf';
+    document.body.appendChild(a); a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast('PDF downloaded successfully');
+    toast('PDF downloaded — expense form + '+sel.length+' acknowledgement slip'+(sel.length===1?'':'s'));
 
   } catch(err) {
     toast('Error: ' + err.message);
@@ -6741,6 +6736,173 @@ async function ecfExportPDF() {
     if (btn) { btn.disabled = false; btn.innerHTML = '&#8659; Export to PDF'; }
   }
 }
+
+// ── Build acknowledgement pages for selected requests ─────────────
+function ecfBuildAckPDF(reqs, cur, claimant, adminSig) {
+  var JsPDF = window.jspdf.jsPDF;
+  var doc   = new JsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+  var pw    = doc.internal.pageSize.getWidth();
+  var ph    = doc.internal.pageSize.getHeight();
+  var ML    = 10, MR = 10, W = pw - ML - MR;
+  var now   = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+
+  var NAVY  = [13,  43,  46 ]; var TEAL  = [15,  110, 86 ];
+  var GREEN = [22,  163, 74 ]; var AMBER = [180, 120, 20 ];
+  var MUTED = [120, 135, 150]; var BRDR  = [210, 220, 225];
+  var WHITE = [255, 255, 255]; var ALT   = [247, 251, 249];
+
+  // Same COLS as downloadAcknowledgedPDF
+  var COLS = [
+    {label:'Ref #',            x:ML,     w:16},
+    {label:'Project / Type',   x:ML+16,  w:46},
+    {label:'Category',         x:ML+62,  w:34},
+    {label:'Amount',           x:ML+96,  w:24},
+    {label:'Requester',        x:ML+120, w:28},
+    {label:'Date',             x:ML+148, w:22},
+    {label:'Finance Signature',x:ML+170, w:58},
+    {label:'Acknowledgement',  x:ML+228, w:59},
+  ];
+  var ROW_SIG = 22;
+
+  function pageHeader() {
+    doc.setFillColor.apply(doc, NAVY); doc.rect(0,0,pw,18,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(12);
+    doc.setTextColor.apply(doc, WHITE);
+    doc.text('Expense Claim — Acknowledgement Slips', ML, 8);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7);
+    doc.setTextColor(180,215,205);
+    doc.text('Attached to expense claim for '+claimant+' — Generated: '+now, ML, 14);
+    return 20;
+  }
+
+  function tableHeader(y) {
+    doc.setFillColor.apply(doc, TEAL); doc.rect(ML,y,W,8,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5);
+    doc.setTextColor.apply(doc, WHITE);
+    COLS.forEach(function(c){ doc.text(c.label, c.x+2, y+5.2); });
+    return y+8;
+  }
+
+  function drawRow(r, y, isAlt) {
+    if (isAlt){ doc.setFillColor.apply(doc, ALT); doc.rect(ML,y,W,ROW_SIG,'F'); }
+    doc.setDrawColor.apply(doc, BRDR); doc.setLineWidth(0.15);
+    doc.rect(ML,y,W,ROW_SIG,'S');
+    COLS.forEach(function(c,i){ if(i>0){doc.setDrawColor.apply(doc,BRDR);doc.setLineWidth(0.1);doc.line(c.x,y,c.x,y+ROW_SIG);} });
+
+    var mid = y + ROW_SIG/2, pad = 2;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,TEAL);
+    doc.text('#'+(r.ref||''), COLS[0].x+pad, mid, {baseline:'middle'});
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,NAVY);
+    doc.text(doc.splitTextToSize(r.project||'',COLS[1].w-4)[0]||'', COLS[1].x+pad, mid-2, {baseline:'middle'});
+    if(r.type){ doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor.apply(doc,MUTED);doc.text(r.type,COLS[1].x+pad,mid+3,{baseline:'middle'}); }
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc,NAVY);
+    doc.text(doc.splitTextToSize(r.category||r.description||'',COLS[2].w-4).slice(0,2), COLS[2].x+pad, mid-2, {baseline:'middle'});
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor.apply(doc,NAVY);
+    doc.text((parseFloat(r.amount)||0).toLocaleString(), COLS[3].x+pad, mid, {baseline:'middle'});
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc,NAVY);
+    doc.text(r.requester||'', COLS[4].x+pad, mid, {baseline:'middle', maxWidth:COLS[4].w-4});
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc,MUTED);
+    doc.text(typeof fmtDate==='function'?fmtDate(r.sigTime||r.date||''):(r.date||''), COLS[5].x+pad, mid, {baseline:'middle'});
+
+    // Finance sig (admin sig)
+    var fx = COLS[6].x+pad;
+    if (adminSig) {
+      try { doc.addImage(adminSig,'PNG',fx,y+2,Math.min(40,COLS[6].w-8),ROW_SIG-6,undefined,'FAST'); } catch(e){}
+      doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor.apply(doc,NAVY);
+      doc.text(claimant||'', fx, y+ROW_SIG-4);
+    }
+
+    // Requester ack sig
+    var ax = COLS[7].x+pad;
+    if (r.requesterSig && r.requesterSig.length > 100) {
+      try { doc.addImage(r.requesterSig,'PNG',ax,y+2,Math.min(40,COLS[7].w-8),ROW_SIG-6,undefined,'FAST'); } catch(e){}
+      doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor.apply(doc,GREEN);
+      doc.text('✓ '+(r.requesterSigName||r.requester||''), ax, y+ROW_SIG-4);
+    } else if (r.requesterSigName) {
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor.apply(doc,GREEN);
+      doc.text('✓', ax+4, mid, {baseline:'middle'});
+      doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor.apply(doc,NAVY);
+      doc.text(r.requesterSigName, ax+10, mid, {baseline:'middle'});
+    } else {
+      doc.setFont('helvetica','italic');doc.setFontSize(6.5);doc.setTextColor.apply(doc,AMBER);
+      doc.text('Awaiting', ax, mid, {baseline:'middle'});
+    }
+  }
+
+  var y = pageHeader();
+  y = tableHeader(y);
+
+  reqs.forEach(function(r, i) {
+    if (y + ROW_SIG > ph - 12) {
+      doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor.apply(doc,MUTED);
+      doc.text('Expense Claim — Acknowledgements', ML, ph-5);
+      doc.addPage();
+      y = pageHeader();
+      y = tableHeader(y);
+    }
+    drawRow(r, y, i%2===1);
+    y += ROW_SIG;
+  });
+
+  // Footer
+  doc.setDrawColor.apply(doc,BRDR); doc.setLineWidth(0.3);
+  doc.line(ML,ph-10,pw-MR,ph-10);
+  doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor.apply(doc,MUTED);
+  doc.text('Acknowledgements for expense claim — '+reqs.length+' request'+(reqs.length===1?'':'s'), ML, ph-5);
+  doc.text('Total: '+cur+' '+reqs.reduce(function(s,r){return s+(parseFloat(r.amount)||0);},0).toLocaleString(), pw-MR, ph-5, {align:'right'});
+
+  return doc.output('arraybuffer');
+}
+
+// ── Merge two PDFs using pure JS (no external lib needed) ────────────
+// We use a simple approach: convert each to blob pages and concatenate
+// Since we can't merge PDFs natively without pdf-lib, we use a workaround:
+// load the expense form PDF bytes + ack PDF bytes and combine by
+// writing both data URIs into a hidden iframe print — actually simplest:
+// just output the ack as a separate download alongside, OR
+// use the jsPDF addPage approach on a fresh doc.
+// BEST APPROACH: treat the Sheets PDF as page 1 anchor, 
+// use pdf-lib from CDN to merge properly.
+async function ecfMergePDFs(sheetsB64, ackArrayBuffer) {
+  // Load pdf-lib if not already loaded
+  if (!window.PDFLib) {
+    await new Promise(function(resolve, reject) {
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  var PDFLib = window.PDFLib;
+
+  // Load both PDFs
+  var sheetsPdfBytes = Uint8Array.from(atob(sheetsB64), function(c){ return c.charCodeAt(0); });
+  var ackBytes       = new Uint8Array(ackArrayBuffer);
+
+  var sheetsDoc = await PDFLib.PDFDocument.load(sheetsPdfBytes);
+  var ackDoc    = await PDFLib.PDFDocument.load(ackBytes);
+
+  // Copy all pages from ack into sheets doc
+  var ackPageCount = ackDoc.getPageCount();
+  var copiedPages  = await sheetsDoc.copyPages(ackDoc, Array.from({length:ackPageCount}, function(_,i){return i;}));
+  copiedPages.forEach(function(page){ sheetsDoc.addPage(page); });
+
+  var mergedBytes = await sheetsDoc.save();
+  // Convert to base64
+  var binary = '';
+  var chunk  = 8192;
+  for (var i = 0; i < mergedBytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, mergedBytes.subarray(i, i+chunk));
+  }
+  return btoa(binary);
+}
+
 
 
 
