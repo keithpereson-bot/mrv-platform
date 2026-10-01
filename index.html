@@ -6690,138 +6690,55 @@ async function ecfExportPDF() {
   if (btn) { btn.disabled=true; btn.textContent='Generating…'; }
 
   try {
-    // Load SheetJS if not already loaded
-    if (typeof XLSX === 'undefined') {
-      await new Promise(function(resolve, reject) {
-        var s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-        s.onload = resolve; s.onerror = reject;
-        document.head.appendChild(s);
-      });
+    // Step 1: AppScript fills the sheet and returns xlsx + pdf
+    var res = await gasCall({
+      action: 'fillExpenseClaim',
+      entity: entity, date: dStr, profitCentre: pCentre,
+      country: country, claimant: claimant, productCode: prodCode,
+      costCentre: costCtr, jobTitle: jobTitle, rdCode: rdCode,
+      dimCode: dimCode, bank: bank, carbonCode: carbCode,
+      amountAdvanced: advanced, currency: cur,
+      rows: rows, sigBase64: sigDataUrl
+    });
+
+    if (!res || !res.ok) {
+      toast('Error: ' + (res && res.error ? res.error : 'unknown'));
+      return;
     }
 
-    // Decode template
-    var tmplBin  = atob(ECF_TEMPLATE_B64);
-    var tmplArr  = new Uint8Array(tmplBin.length);
-    for (var i = 0; i < tmplBin.length; i++) tmplArr[i] = tmplBin.charCodeAt(i);
+    var fname = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal;
 
-    // Read workbook
-    var wb = XLSX.read(tmplArr, {type:'array', cellStyles:true, cellFormula:true});
-    var ws = wb.Sheets['Expense_Claim_Form'];
+    // Step 2: Download the xlsx (exact template format)
+    var xlsxBytes = Uint8Array.from(atob(res.xlsxB64), function(c){return c.charCodeAt(0);});
+    var xlsxBlob  = new Blob([xlsxBytes], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var xlsxUrl   = URL.createObjectURL(xlsxBlob);
+    var a1 = document.createElement('a');
+    a1.href=xlsxUrl; a1.download=fname+'.xlsx';
+    document.body.appendChild(a1); a1.click();
+    document.body.removeChild(a1); URL.revokeObjectURL(xlsxUrl);
 
-    // Helper: set cell value preserving existing style
-    function setCell(ref, value) {
-      if (!ws[ref]) ws[ref] = {};
-      ws[ref].v = value;
-      ws[ref].t = typeof value === 'number' ? 'n' : 's';
-      if (typeof value === 'number') ws[ref].z = '#,##0';
-    }
-
-    // ── Header fields ────────────────────────────────────────────────────
-    setCell('C3', entity);
-    setCell('E3', dStr);
-    setCell('I3', pCentre);
-    setCell('C4', country);
-    setCell('E4', claimant);
-    setCell('I4', prodCode);
-    setCell('C5', costCtr);
-    setCell('E5', jobTitle);
-    setCell('I5', rdCode);
-    setCell('C6', dimCode);
-    setCell('E6', bank);
-    setCell('I6', carbCode);
-
-    // ── Data rows (rows 10-20 in template, max 11) ────────────────────────
-    // If more than 11 rows, we need to insert rows — SheetJS handles this
-    var MIN_ROWS = 11;
-    var n = rows.length;
-
-    // For rows beyond 11, duplicate row 20 formatting then shift rows 21-27 down
-    if (n > MIN_ROWS) {
-      var extra = n - MIN_ROWS;
-      // Get the range ref and shift everything below row 20 down
-      var ref = ws['!ref'];
-      // Simple approach: just write all data, update formulas manually
-      // SheetJS will extend the sheet as needed
-    }
-
-    // Write data rows
-    for (var ri = 0; ri < n; ri++) {
-      var rowNum = 10 + ri;
-      var r = rows[ri];
-      setCell('B'+rowNum, r.date);
-      setCell('C'+rowNum, r.details);
-      setCell('E'+rowNum, ri+1);
-      if (r.amount) { setCell('F'+rowNum, r.amount); ws['F'+rowNum].z = '"'+cur+' "#,##0'; }
-      if (r.usd)    { setCell('G'+rowNum, r.usd); }
-      setCell('H'+rowNum, r.bizUnit);
-      setCell('I'+rowNum, r.expAcct);
-    }
-
-    // Clear unused rows (if n < 11)
-    for (var ri2 = n; ri2 < MIN_ROWS; ri2++) {
-      var rn = 10 + ri2;
-      ['B','C','E','F','G','H','I'].forEach(function(col) {
-        if (ws[col+rn]) { ws[col+rn].v = ''; ws[col+rn].t = 's'; }
-      });
-    }
-
-    // Last data row
-    var lastDataRow = 9 + Math.max(n, MIN_ROWS);
-    var totRow = lastDataRow + 1;
-    var advRow = lastDataRow + 2; // row 22 in default
-    var balRow = lastDataRow + 3; // row 23
-
-    // Update formulas to cover actual rows used
-    setCell('F'+totRow, rows.reduce(function(s,r){return s+r.amount;},0));
-    ws['F'+totRow].z = '"'+cur+' "#,##0';
-    setCell('G'+totRow, 0);
-    setCell('H'+totRow, 0);
-    setCell('E'+totRow, n);
-    setCell('F'+advRow, advanced);
-    ws['F'+advRow].z = '"'+cur+' "#,##0';
-    var balance = rows.reduce(function(s,r){return s+r.amount;},0) - advanced;
-    setCell('F'+balRow, balance);
-    ws['F'+balRow].z = '"'+cur+' "#,##0';
-
-    // Update sheet range if we added rows
-    if (n > MIN_ROWS) {
-      var origRef = XLSX.utils.decode_range(ws['!ref'] || 'A1:I27');
-      origRef.e.r = Math.max(origRef.e.r, balRow + 5);
-      ws['!ref'] = XLSX.utils.encode_range(origRef);
-    }
-
-    // ── Download as xlsx ──────────────────────────────────────────────────
-    var xlsxOut = XLSX.write(wb, {bookType:'xlsx', type:'array', cellStyles:true});
-    var blob    = new Blob([xlsxOut], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    var url     = URL.createObjectURL(blob);
-    var a       = document.createElement('a');
-    a.href      = url;
-    a.download  = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal+'.xlsx';
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); URL.revokeObjectURL(url);
-
-    // ── Also build ack PDF and merge ──────────────────────────────────────
-    toast('Excel downloaded. Generating acknowledgement PDF…');
+    // Step 3: Build ack PDF and merge with expense form PDF
     var ackBuf = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl);
-    var ackBytes = new Uint8Array(ackBuf);
-    var ackBlob  = new Blob([ackBytes], {type:'application/pdf'});
-    var ackUrl   = URL.createObjectURL(ackBlob);
-    var a2       = document.createElement('a');
-    a2.href      = ackUrl;
-    a2.download  = 'ExpenseClaim_Ack_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal+'.pdf';
-    document.body.appendChild(a2); a2.click();
-    document.body.removeChild(a2); URL.revokeObjectURL(ackUrl);
+    var combined = await ecfMergePDFs(res.pdfBase64, ackBuf);
 
-    toast('\u2713 Downloaded: Expense form (.xlsx) + Acknowledgements (.pdf)');
+    var pdfBytes = Uint8Array.from(atob(combined), function(c){return c.charCodeAt(0);});
+    var pdfBlob  = new Blob([pdfBytes], {type:'application/pdf'});
+    var pdfUrl   = URL.createObjectURL(pdfBlob);
+    var a2 = document.createElement('a');
+    a2.href=pdfUrl; a2.download=fname+'.pdf';
+    document.body.appendChild(a2); a2.click();
+    document.body.removeChild(a2); URL.revokeObjectURL(pdfUrl);
+
+    toast('✓ Downloaded: '+fname+'.xlsx + '+fname+'.pdf');
 
   } catch(err) {
     toast('Error: '+err.message);
     console.error(err);
   } finally {
-    if(btn){btn.disabled=false;btn.innerHTML='&#8659; Export to PDF';}
+    if(btn){btn.disabled=false;btn.innerHTML='&#8659; Export';}
   }
 }
+
 
 
 // ── Build acknowledgement PDF ─────────────────────────────────────────────
