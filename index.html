@@ -6467,7 +6467,6 @@ function wrapTables() {
 // EXPENSE CLAIM FORM  (admin only)
 // ══════════════════════════════════════════════════════════════
 
-var ECF_LOGO_B64 = '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';
 
 function ecfInitSig() {
   var cv = document.getElementById('ecfSigCanvas');
@@ -6642,6 +6641,8 @@ function ecfRefreshPreview() {
     +'</table></div>';
 }
 
+var ECF_LOGO_B64 = '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';
+
 async function ecfExportPDF() {
   var sel = ecfGetSelected();
   if (!sel.length) { toast('Select at least one paid request'); return; }
@@ -6664,244 +6665,225 @@ async function ecfExportPDF() {
   var cur      = document.getElementById('ecfCurrency').value||'KES';
   var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
 
-  // Build rows from the actual selected request objects
-  var rows = sel.map(function(req, i) {
-    return {
-      date:         (typeof fmtDate==='function') ? fmtDate(req.date||'') : (req.date||''),
-      details:      req.description || req.costSummary || req.costItem || '',
-      receipt:      i + 1,
-      amount:       parseFloat(req.amount)||0,
-      usd:          0,
-      bizUnit:      req.category || req.type || '',
-      expAcct:      req.costSummary || '',
-      // for ack slip
-      ref:          req.ref || '',
-      project:      req.project || '',
-      requester:    req.requester || '',
-      approvedBy:   req.approvedBy || '',
-      sigDataUrl:   req.sigDataUrl || '',
-      sigLabel:     req.sigLabel || '',
-      sigTime:      req.sigTime || '',
-      requesterSig: req.requesterSig || '',
-      requesterSigName: req.requesterSigName || '',
-      requesterSigTime: req.requesterSigTime || ''
-    };
-  });
-
   var btn = document.getElementById('ecfExportBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+  if (btn) { btn.disabled=true; btn.textContent='Generating…'; }
 
   try {
-    // ── Step 1: Get expense form PDF from AppScript ──────────────
-    var res = await gasCall({
-      action: 'fillExpenseClaim',
-      entity: entity, date: dStr, profitCentre: pCentre,
-      country: country, claimant: claimant, productCode: prodCode,
-      costCentre: costCtr, jobTitle: jobTitle, rdCode: rdCode,
-      dimCode: dimCode, bank: bank, carbonCode: carbCode,
-      amountAdvanced: advanced, currency: cur,
-      rows: rows,
-      sigBase64: sigDataUrl
+    // Build rows from selected requests
+    var rows = sel.map(function(req,i){
+      return {
+        date:    (typeof fmtDate==='function')?fmtDate(req.date||''):(req.date||''),
+        details: req.description||req.costSummary||req.costItem||'',
+        receipt: i+1,
+        amount:  parseFloat(req.amount)||0,
+        bizUnit: req.category||req.type||'',
+        expAcct: req.costSummary||'',
+        ref:            req.ref||'',
+        project:        req.project||'',
+        requester:      req.requester||'',
+        approvedBy:     req.approvedBy||'',
+        sigDataUrl:     req.sigDataUrl||'',
+        sigLabel:       req.sigLabel||'',
+        sigTime:        req.sigTime||'',
+        requesterSig:   req.requesterSig||'',
+        requesterSigName: req.requesterSigName||'',
+        requesterSigTime: req.requesterSigTime||''
+      };
     });
 
-    if (!res || !res.ok) {
-      toast('Expense form error: ' + (res && res.error ? res.error : 'unknown'));
-      return;
+    var total   = rows.reduce(function(s,r){return s+r.amount;},0);
+    var balance = total - advanced;
+
+    function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    function fmt(n){return Number(n||0).toLocaleString();}
+
+    // ── Build expense form HTML ──────────────────────────────────────────
+    var dataRows = rows.map(function(r){
+      return '<tr>'
+        +'<td>'+esc(r.date)+'</td>'
+        +'<td colspan="2">'+esc(r.details)+'</td>'
+        +'<td class="tc">'+r.receipt+'</td>'
+        +'<td class="tr">'+cur+' '+fmt(r.amount)+'</td>'
+        +'<td class="tr"></td>'
+        +'<td>'+esc(r.bizUnit)+'</td>'
+        +'<td>'+esc(r.expAcct)+'</td>'
+        +'</tr>';
+    }).join('');
+
+    var balColor = balance<0?'color:#B40000':'';
+    var balStr   = balance<0?'('+cur+' '+fmt(Math.abs(balance))+')':cur+' '+fmt(balance);
+
+    // ── Build ack slips HTML ─────────────────────────────────────────────
+    var NAVY='#0D2B2E', TEAL='#0F6E56', GREEN='#16A34A', MUTED='#78879A', BRDR='#D2DCE1', ALT='#F7FBF9';
+
+    var ackRows = rows.map(function(r,i){
+      var isAlt = i%2===1;
+      var finSig = r.sigDataUrl && r.sigDataUrl.length>100
+        ? '<img src="'+r.sigDataUrl+'" style="height:36px;display:block"><div style="font-size:7pt;font-weight:700;color:'+NAVY+'">'+esc(r.sigLabel||claimant)+'</div>'
+        : '<span style="font-size:7pt;color:'+MUTED+'">'+esc(r.sigLabel||claimant)+'</span>';
+      var ackSig = r.requesterSig && r.requesterSig.length>100
+        ? '<img src="'+r.requesterSig+'" style="height:36px;display:block"><div style="font-size:7pt;font-weight:700;color:'+GREEN+'">✓ '+esc(r.requesterSigName||r.requester)+'</div>'
+        : r.requesterSigName
+          ? '<div style="font-size:14pt;color:'+GREEN+'">✓</div><div style="font-size:7pt;color:'+NAVY+'">'+esc(r.requesterSigName)+'</div>'
+          : '<span style="font-size:7pt;color:#B45309">Awaiting</span>';
+      return '<tr style="background:'+(isAlt?ALT:'#fff')+';border:0.5px solid '+BRDR+'">'
+        +'<td style="font-weight:700;color:'+TEAL+';font-size:7pt">'+esc('#'+r.ref)+'</td>'
+        +'<td><div style="font-weight:700;font-size:7pt;color:'+NAVY+'">'+esc(r.project)+'</div><div style="font-size:6pt;color:'+MUTED+'">'+esc(r.bizUnit.split(' ')[0]||'')+'</div></td>'
+        +'<td style="font-size:7pt">'+esc(r.bizUnit)+'</td>'
+        +'<td style="font-weight:700;font-size:8pt">'+fmt(r.amount)+'</td>'
+        +'<td style="font-size:7pt">'+esc(r.requester)+'</td>'
+        +'<td style="font-size:7pt;color:'+MUTED+'">'+esc(r.date)+'</td>'
+        +'<td>'+finSig+'</td>'
+        +'<td>'+ackSig+'</td>'
+        +'</tr>';
+    }).join('');
+
+    var logoSrc = 'data:image/png;base64,'+ECF_LOGO_B64;
+    var now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Expense Claim</title><style>'
+    +'*{margin:0;padding:0;box-sizing:border-box}'
+    +'body{font-family:Arial,Helvetica,sans-serif;font-size:9pt;color:#000;background:#fff}'
+    +'@page{size:A4 landscape;margin:8mm 10mm}'
+    +'@media print{.no-print{display:none!important} body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}'
+    // Expense form styles
+    +'.ecf{width:100%;page-break-after:always}'
+    +'.topbar{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #aaa;padding-bottom:4px;margin-bottom:6px}'
+    +'.ecf-title{font-size:14pt;font-weight:700;text-align:center;flex:1}'
+    +'.hdr{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:4px}'
+    +'.hf{display:flex;align-items:flex-end;padding:2px 4px 2px 0;gap:3px}'
+    +'.lbl{font-weight:700;font-size:7pt;white-space:nowrap;text-align:right;min-width:90px;flex-shrink:0}'
+    +'.val{font-size:8pt;border-bottom:0.5px solid #888;flex:1;padding:0 2px 1px;min-height:13px}'
+    +'.note-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}'
+    +'.note{font-style:italic;font-size:6pt;color:#555}'
+    +'.erp{border:1px solid #aaa;background:#d9d9d9;font-weight:700;font-size:7pt;padding:1px 8px}'
+    +'table{width:100%;border-collapse:collapse;table-layout:fixed}'
+    +'th,td{border:0.5px solid #999;font-size:7.5pt;vertical-align:middle;padding:2px 3px;overflow:hidden}'
+    +'thead th{background:#d9d9d9;font-weight:700;text-align:center;font-size:7pt}'
+    +'thead th .sub{font-size:5.5pt;font-weight:400;display:block}'
+    +'tbody td{background:#fff}'
+    +'.tc{text-align:center}.tr{text-align:right}'
+    +'.tot td{background:#d9d9d9;font-weight:700}'
+    +'.adv td,.bal td{background:#fff}'
+    +'.sig-wrap{margin-top:8px}'
+    +'.sig-lines{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:30px}'
+    +'.sig-col{border-top:0.8px solid #000;padding-top:3px;font-size:7pt;color:#666}'
+    // Ack slip styles
+    +'.ack-page{width:100%}'
+    +'.ack-hdr{background:'+NAVY+';color:#fff;padding:8px 12px;margin-bottom:0}'
+    +'.ack-hdr h2{font-size:12pt;font-weight:700}'
+    +'.ack-hdr p{font-size:7pt;opacity:.7;margin-top:2px}'
+    +'.ack-table{width:100%;border-collapse:collapse;table-layout:fixed}'
+    +'.ack-table th{background:'+TEAL+';color:#fff;font-size:7pt;padding:4px 5px;text-align:left}'
+    +'.ack-table td{padding:5px;border:0.5px solid '+BRDR+';vertical-align:middle}'
+    +'.ack-footer{display:flex;justify-content:space-between;border-top:0.3px solid '+BRDR+';margin-top:6px;padding-top:4px;font-size:6pt;color:'+MUTED+'}'
+    +'.btn{position:fixed;bottom:16px;right:16px;background:#F25C0A;color:#fff;border:none;padding:10px 22px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;z-index:9999}'
+    +'</style></head><body>'
+
+    // Print button
+    +'<button class="btn no-print" onclick="window.print()">⬇ Print / Save PDF</button>'
+
+    // ── PAGE 1: Expense Claim Form ──────────────────────────────────────
+    +'<div class="ecf">'
+    +'<div class="topbar">'
+    +'<span style="font-size:6.5pt;color:#666">REF: FIN_FM_003-F</span>'
+    +'<div class="ecf-title">EXPENSE CLAIM FORM</div>'
+    +'<img src="'+logoSrc+'" style="height:30px">'
+    +'</div>'
+    // Header fields
+    +'<div class="hdr">'
+    +'<div class="hf"><div class="lbl">BURN ENTITY:</div><div class="val">'+esc(entity)+'</div></div>'
+    +'<div class="hf"><div class="lbl">Date:</div><div class="val">'+esc(dStr)+'</div></div>'
+    +'<div class="hf"><div class="lbl">Profit Centre:</div><div class="val">'+esc(pCentre)+'</div></div>'
+    +'<div class="hf"><div class="lbl">Country Code:</div><div class="val">'+esc(country)+'</div></div>'
+    +'<div class="hf"><div class="lbl">Name of Claimant:</div><div class="val">'+esc(claimant)+'</div></div>'
+    +'<div class="hf"><div class="lbl">Product Code:</div><div class="val">'+esc(prodCode)+'</div></div>'
+    +'<div class="hf"><div class="lbl">Cost Centre:</div><div class="val">'+esc(costCtr)+'</div></div>'
+    +'<div class="hf"><div class="lbl">Job Title:</div><div class="val">'+esc(jobTitle)+'</div></div>'
+    +'<div class="hf"><div class="lbl">R&amp;D Project Code:</div><div class="val">'+esc(rdCode)+'</div></div>'
+    +'<div class="hf"><div class="lbl">Dimension Code:</div><div class="val">'+esc(dimCode)+'</div></div>'
+    +'<div class="hf"><div class="lbl">Bank Details/Mpesa No:</div><div class="val">'+esc(bank)+'</div></div>'
+    +'<div class="hf"><div class="lbl">Carbon / Project Code:</div><div class="val">'+esc(carbCode)+'</div></div>'
+    +'</div>'
+    // Receipt note
+    +'<div class="note-row">'
+    +'<div class="note">Please number and attach all receipts, stating relevant number for each entry in &lsquo;Receipt No.&rsquo; column</div>'
+    +'<div class="erp">ERP</div>'
+    +'</div>'
+    // Table
+    +'<table>'
+    +'<colgroup><col style="width:8%"><col style="width:20%"><col style="width:15%"><col style="width:6%"><col style="width:9%"><col style="width:7%"><col style="width:13%"><col style="width:22%"></colgroup>'
+    +'<thead><tr>'
+    +'<th>Date</th><th colspan="2">Details (Purpose, name of participants etc.)</th>'
+    +'<th>Receipt No.</th><th class="tr">'+esc(cur)+'</th><th class="tr">US$</th>'
+    +'<th>Business Unit</th><th>Expense Account<span class="sub">(to be filled by Finance)</span></th>'
+    +'</tr></thead>'
+    +'<tbody>'
+    +dataRows
+    +'<tr class="tot"><td colspan="2"></td><td style="text-align:right;font-weight:700">TOTALS</td>'
+    +'<td class="tc">'+rows.length+'</td>'
+    +'<td class="tr">'+cur+' '+fmt(total)+'</td><td class="tr">$0.00</td><td class="tr">$0.00</td><td></td></tr>'
+    +'<tr class="adv"><td colspan="2"></td><td style="text-align:right;font-weight:700;white-space:nowrap">Amount Advanced</td>'
+    +'<td></td><td class="tr">'+cur+' '+fmt(advanced)+'</td><td colspan="3"></td></tr>'
+    +'<tr class="bal"><td colspan="2" style="font-style:italic;font-size:6pt">Advance approved by (Name, &amp; Amount)</td>'
+    +'<td style="text-align:right;font-weight:700;white-space:nowrap">Balance claimed/Returned</td>'
+    +'<td></td><td class="tr" style="'+balColor+'">'+balStr+'</td><td class="tr">$0.00</td><td>0</td><td></td></tr>'
+    +'</tbody></table>'
+    // Signature section
+    +'<div class="sig-wrap">'
+    +'<div style="font-size:10pt;font-weight:700">'+esc(claimant)+'</div>'
+    +'<img src="'+sigDataUrl+'" style="height:36px;display:block;margin:4px 0">'
+    +'<div style="font-size:8pt">'+esc(dStr)+'</div>'
+    +'<div class="sig-lines">'
+    +'<div class="sig-col">Claimant (Name, Sign &amp; Date)</div>'
+    +'<div class="sig-col">1st Approver (Name, Sign &amp; Date)</div>'
+    +'<div class="sig-col">2nd Approver (Name, Sign &amp; Date)</div>'
+    +'</div></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:6pt;color:#888">'
+    +'<div>Author:FD<br>Approved By:CFO</div><div>Release date: 8th Jan.2025</div>'
+    +'</div>'
+    +'</div>' // end .ecf
+
+    // ── PAGE 2+: Acknowledgement Slips ──────────────────────────────────
+    +'<div class="ack-page">'
+    +'<div class="ack-hdr">'
+    +'<h2>Expense Claim &mdash; Acknowledgement Slips</h2>'
+    +'<p>Attached to expense claim for '+esc(claimant)+' &mdash; Generated: '+esc(now)+'</p>'
+    +'</div>'
+    +'<table class="ack-table">'
+    +'<colgroup><col style="width:6%"><col style="width:13%"><col style="width:11%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:20%"><col style="width:23%"></colgroup>'
+    +'<thead><tr>'
+    +'<th>Ref #</th><th>Project / Type</th><th>Category</th><th>Amount</th>'
+    +'<th>Requester</th><th>Date</th><th>Finance Signature</th><th>Acknowledgement</th>'
+    +'</tr></thead>'
+    +'<tbody>'+ackRows+'</tbody>'
+    +'</table>'
+    +'<div class="ack-footer">'
+    +'<span>Acknowledgements for expense claim &mdash; '+rows.length+' request'+(rows.length===1?'':'s')+'</span>'
+    +'<span>Total: '+cur+' '+fmt(total)+'</span>'
+    +'</div>'
+    +'</div>'
+
+    +'</body></html>';
+
+    // Open in new tab and print
+    var blob = new Blob([html],{type:'text/html;charset=utf-8'});
+    var url  = URL.createObjectURL(blob);
+    var w    = window.open(url,'_blank');
+    if(!w){
+      var w2=window.open('about:blank','_blank');
+      if(w2){w2.document.open();w2.document.write(html);w2.document.close();}
+      else{toast('Pop-up blocked — please allow pop-ups for this site');}
     }
-
-    // ── Step 2: Generate acknowledgement PDF using jsPDF ─────────
-    // Reuse exact same rendering as downloadAcknowledgedPDF but only for selected requests
-    var ackDoc = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl);
-
-    // ── Step 3: Merge the two PDFs ───────────────────────────────
-    var combinedB64 = await ecfMergePDFs(res.pdfBase64, ackDoc);
-
-    // ── Step 4: Download ─────────────────────────────────────────
-    var binary = atob(combinedB64);
-    var bytes  = new Uint8Array(binary.length);
-    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    var blob   = new Blob([bytes], {type:'application/pdf'});
-    var url    = URL.createObjectURL(blob);
-    var a      = document.createElement('a');
-    a.href = url;
-    a.download = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal+'.pdf';
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast('PDF downloaded — expense form + '+sel.length+' acknowledgement slip'+(sel.length===1?'':'s'));
+    toast('Expense form ready — click "Print / Save PDF" in the new tab');
 
   } catch(err) {
-    toast('Error: ' + err.message);
+    toast('Error: '+err.message);
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '&#8659; Export to PDF'; }
+    if(btn){btn.disabled=false;btn.innerHTML='&#8659; Export to PDF';}
   }
 }
 
-// ── Build acknowledgement pages for selected requests ─────────────
-function ecfBuildAckPDF(reqs, cur, claimant, adminSig) {
-  var JsPDF = window.jspdf.jsPDF;
-  var doc   = new JsPDF({orientation:'landscape', unit:'mm', format:'a4'});
-  var pw    = doc.internal.pageSize.getWidth();
-  var ph    = doc.internal.pageSize.getHeight();
-  var ML    = 10, MR = 10, W = pw - ML - MR;
-  var now   = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
-
-  var NAVY  = [13,  43,  46 ]; var TEAL  = [15,  110, 86 ];
-  var GREEN = [22,  163, 74 ]; var AMBER = [180, 120, 20 ];
-  var MUTED = [120, 135, 150]; var BRDR  = [210, 220, 225];
-  var WHITE = [255, 255, 255]; var ALT   = [247, 251, 249];
-
-  // Same COLS as downloadAcknowledgedPDF
-  var COLS = [
-    {label:'Ref #',            x:ML,     w:16},
-    {label:'Project / Type',   x:ML+16,  w:46},
-    {label:'Category',         x:ML+62,  w:34},
-    {label:'Amount',           x:ML+96,  w:24},
-    {label:'Requester',        x:ML+120, w:28},
-    {label:'Date',             x:ML+148, w:22},
-    {label:'Finance Signature',x:ML+170, w:58},
-    {label:'Acknowledgement',  x:ML+228, w:59},
-  ];
-  var ROW_SIG = 22;
-
-  function pageHeader() {
-    doc.setFillColor.apply(doc, NAVY); doc.rect(0,0,pw,18,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(12);
-    doc.setTextColor.apply(doc, WHITE);
-    doc.text('Expense Claim — Acknowledgement Slips', ML, 8);
-    doc.setFont('helvetica','normal'); doc.setFontSize(7);
-    doc.setTextColor(180,215,205);
-    doc.text('Attached to expense claim for '+claimant+' — Generated: '+now, ML, 14);
-    return 20;
-  }
-
-  function tableHeader(y) {
-    doc.setFillColor.apply(doc, TEAL); doc.rect(ML,y,W,8,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.5);
-    doc.setTextColor.apply(doc, WHITE);
-    COLS.forEach(function(c){ doc.text(c.label, c.x+2, y+5.2); });
-    return y+8;
-  }
-
-  function drawRow(r, y, isAlt) {
-    if (isAlt){ doc.setFillColor.apply(doc, ALT); doc.rect(ML,y,W,ROW_SIG,'F'); }
-    doc.setDrawColor.apply(doc, BRDR); doc.setLineWidth(0.15);
-    doc.rect(ML,y,W,ROW_SIG,'S');
-    COLS.forEach(function(c,i){ if(i>0){doc.setDrawColor.apply(doc,BRDR);doc.setLineWidth(0.1);doc.line(c.x,y,c.x,y+ROW_SIG);} });
-
-    var mid = y + ROW_SIG/2, pad = 2;
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,TEAL);
-    doc.text('#'+(r.ref||''), COLS[0].x+pad, mid, {baseline:'middle'});
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,NAVY);
-    doc.text(doc.splitTextToSize(r.project||'',COLS[1].w-4)[0]||'', COLS[1].x+pad, mid-2, {baseline:'middle'});
-    if(r.type){ doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor.apply(doc,MUTED);doc.text(r.type,COLS[1].x+pad,mid+3,{baseline:'middle'}); }
-
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc,NAVY);
-    doc.text(doc.splitTextToSize(r.category||r.description||'',COLS[2].w-4).slice(0,2), COLS[2].x+pad, mid-2, {baseline:'middle'});
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor.apply(doc,NAVY);
-    doc.text((parseFloat(r.amount)||0).toLocaleString(), COLS[3].x+pad, mid, {baseline:'middle'});
-
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc,NAVY);
-    doc.text(r.requester||'', COLS[4].x+pad, mid, {baseline:'middle', maxWidth:COLS[4].w-4});
-
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc,MUTED);
-    doc.text(typeof fmtDate==='function'?fmtDate(r.sigTime||r.date||''):(r.date||''), COLS[5].x+pad, mid, {baseline:'middle'});
-
-    // Finance sig (admin sig)
-    var fx = COLS[6].x+pad;
-    if (adminSig) {
-      try { doc.addImage(adminSig,'PNG',fx,y+2,Math.min(40,COLS[6].w-8),ROW_SIG-6,undefined,'FAST'); } catch(e){}
-      doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor.apply(doc,NAVY);
-      doc.text(claimant||'', fx, y+ROW_SIG-4);
-    }
-
-    // Requester ack sig
-    var ax = COLS[7].x+pad;
-    if (r.requesterSig && r.requesterSig.length > 100) {
-      try { doc.addImage(r.requesterSig,'PNG',ax,y+2,Math.min(40,COLS[7].w-8),ROW_SIG-6,undefined,'FAST'); } catch(e){}
-      doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor.apply(doc,GREEN);
-      doc.text('✓ '+(r.requesterSigName||r.requester||''), ax, y+ROW_SIG-4);
-    } else if (r.requesterSigName) {
-      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor.apply(doc,GREEN);
-      doc.text('✓', ax+4, mid, {baseline:'middle'});
-      doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor.apply(doc,NAVY);
-      doc.text(r.requesterSigName, ax+10, mid, {baseline:'middle'});
-    } else {
-      doc.setFont('helvetica','italic');doc.setFontSize(6.5);doc.setTextColor.apply(doc,AMBER);
-      doc.text('Awaiting', ax, mid, {baseline:'middle'});
-    }
-  }
-
-  var y = pageHeader();
-  y = tableHeader(y);
-
-  reqs.forEach(function(r, i) {
-    if (y + ROW_SIG > ph - 12) {
-      doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor.apply(doc,MUTED);
-      doc.text('Expense Claim — Acknowledgements', ML, ph-5);
-      doc.addPage();
-      y = pageHeader();
-      y = tableHeader(y);
-    }
-    drawRow(r, y, i%2===1);
-    y += ROW_SIG;
-  });
-
-  // Footer
-  doc.setDrawColor.apply(doc,BRDR); doc.setLineWidth(0.3);
-  doc.line(ML,ph-10,pw-MR,ph-10);
-  doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor.apply(doc,MUTED);
-  doc.text('Acknowledgements for expense claim — '+reqs.length+' request'+(reqs.length===1?'':'s'), ML, ph-5);
-  doc.text('Total: '+cur+' '+reqs.reduce(function(s,r){return s+(parseFloat(r.amount)||0);},0).toLocaleString(), pw-MR, ph-5, {align:'right'});
-
-  return doc.output('arraybuffer');
-}
-
-// ── Merge two PDFs using pure JS (no external lib needed) ────────────
-// We use a simple approach: convert each to blob pages and concatenate
-// Since we can't merge PDFs natively without pdf-lib, we use a workaround:
-// load the expense form PDF bytes + ack PDF bytes and combine by
-// writing both data URIs into a hidden iframe print — actually simplest:
-// just output the ack as a separate download alongside, OR
-// use the jsPDF addPage approach on a fresh doc.
-// BEST APPROACH: treat the Sheets PDF as page 1 anchor, 
-// use pdf-lib from CDN to merge properly.
-async function ecfMergePDFs(sheetsB64, ackArrayBuffer) {
-  // Load pdf-lib if not already loaded
-  if (!window.PDFLib) {
-    await new Promise(function(resolve, reject) {
-      var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
-      s.onload = resolve; s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  }
-  var PDFLib = window.PDFLib;
-
-  // Load both PDFs
-  var sheetsPdfBytes = Uint8Array.from(atob(sheetsB64), function(c){ return c.charCodeAt(0); });
-  var ackBytes       = new Uint8Array(ackArrayBuffer);
-
-  var sheetsDoc = await PDFLib.PDFDocument.load(sheetsPdfBytes);
-  var ackDoc    = await PDFLib.PDFDocument.load(ackBytes);
-
-  // Copy all pages from ack into sheets doc
-  var ackPageCount = ackDoc.getPageCount();
-  var copiedPages  = await sheetsDoc.copyPages(ackDoc, Array.from({length:ackPageCount}, function(_,i){return i;}));
-  copiedPages.forEach(function(page){ sheetsDoc.addPage(page); });
-
-  var mergedBytes = await sheetsDoc.save();
-  // Convert to base64
-  var binary = '';
-  var chunk  = 8192;
-  for (var i = 0; i < mergedBytes.length; i += chunk) {
-    binary += String.fromCharCode.apply(null, mergedBytes.subarray(i, i+chunk));
-  }
-  return btoa(binary);
-}
 
 
 
