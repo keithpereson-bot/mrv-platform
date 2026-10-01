@@ -6665,20 +6665,29 @@ async function ecfExportPDF() {
   var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
   var d        = ecfBuildRows(sel, cur);
 
-  // Build rows — only filled ones
+  // Build rows — include ref and signatures for acknowledgement slips
   var rows = [];
-  d.rows.forEach(function(r) {
-    if (r.details) {
-      rows.push({
-        date:    r.date,
-        details: r.details,
-        receipt: r.receipt,
-        amount:  parseFloat((r.tzs||'0').toString().replace(/,/g,''))||0,
-        usd:     parseFloat((r.usd||'0').toString().replace(/,/g,''))||0,
-        bizUnit: r.bu,
-        expAcct: r.acct
-      });
-    }
+  sel.forEach(function(req, i) {
+    if (!req.description && !req.costSummary && !req.costItem) return;
+    var amt = parseFloat(req.amount)||0;
+    rows.push({
+      date:         (typeof fmtDate==='function') ? fmtDate(req.date||'') : (req.date||''),
+      details:      req.description || req.costSummary || req.costItem || '',
+      receipt:      i + 1,
+      amount:       amt,
+      usd:          0,
+      bizUnit:      req.category || req.type || '',
+      expAcct:      req.costSummary || '',
+      // Extra fields for acknowledgement slips
+      ref:          req.ref || '',
+      project:      req.project || '',
+      requester:    req.requester || '',
+      approvedBy:   req.approvedBy || '',
+      sigDataUrl:   req.sigDataUrl || '',
+      requesterSig: req.requesterSig || '',
+      sigLabel:     req.sigLabel || '',
+      sigTime:      req.sigTime || ''
+    });
   });
 
   // Show loading
