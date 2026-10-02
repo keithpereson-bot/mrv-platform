@@ -6688,223 +6688,226 @@ async function ecfExportPDF() {
   try {
     var total   = rows.reduce(function(s,r){return s+r.amount;},0);
     var balance = total - advanced;
-    function esc(s){return String(s||'');}
     function fmt(n){return Number(n||0).toLocaleString();}
 
-    // ── Step 1: Build expense form PDF using jsPDF ──────────────
+    // ── jsPDF setup ───────────────────────────────────────────────
     var JsPDF = window.jspdf.jsPDF;
     var doc = new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-    var PW=297, PH=210, ML=6.35, MR=6.35, MT=6.35;
-    var TW = PW-ML-MR;
+    var PW=297, PH=210;
+    var ML=8, MR=8, MT=6;
+    var TW = PW-ML-MR;  // 281mm usable width
 
-    // pt to mm: 1pt = 0.353mm
-    function pt2mm(pt){ return pt*0.353; }
+    // Fixed layout zones (from bottom up):
+    var FOOTER_H  = 8;   // author/release date
+    var SIG_H     = 22;  // sig underlines + labels
+    var SIG_NAME_H= 16;  // claimant name + sig + date above underline
+    var TOT_H     = 7;   // each of TOTALS/ADV/BAL rows
+    var HDR_COL_H = 11;  // column header row
+    var NOTE_H    = 6;   // receipt note row
+    var HDR_ROWS_H= 30;  // 4 header field rows
+    var TITLE_H   = 10;  // title row
 
-    var BK=[0,0,0], GY=[150,150,150], GREY_FILL=[217,217,217], WH=[255,255,255];
+    // Available height for data rows:
+    var FIXED_H = MT + TITLE_H + HDR_ROWS_H + NOTE_H + HDR_COL_H + 3*TOT_H + SIG_NAME_H + SIG_H + FOOTER_H;
+    var DATA_AVAIL = PH - FIXED_H;
+    var n = rows.length;
+    // Row height: use 7mm minimum, scale down if too many rows
+    var rH = Math.min(7, Math.max(4.5, DATA_AVAIL / n));
+
+    // Column widths (mm) — must sum to TW=281
+    // Date | Details | Receipt | KES | USD | BizUnit | ExpAcct
+    var CW = {
+      date:   22,
+      det:    90,
+      rec:    18,
+      kes:    28,   // wider for amounts like KES 2,000,000
+      usd:    16,
+      bu:     40,
+      acct:   281 - 22 - 90 - 18 - 28 - 16 - 40  // fills rest = 67
+    };
+
+    var BK=[0,0,0], MGY=[150,150,150], DGY=[80,80,80];
+    var GREY=[217,217,217], WH=[255,255,255], RD=[180,0,0];
+
     function sf(c){doc.setFillColor(c[0],c[1],c[2]);}
     function sd(c,w){doc.setDrawColor(c[0],c[1],c[2]);doc.setLineWidth(w||0.2);}
     function st(c){doc.setTextColor(c[0],c[1],c[2]);}
     function fb(sz){doc.setFont('helvetica','bold');doc.setFontSize(sz);}
     function fn(sz){doc.setFont('helvetica','normal');doc.setFontSize(sz);}
     function fi(sz){doc.setFont('helvetica','italic');doc.setFontSize(sz);}
+    function tx(text,x,y,opts){doc.text(String(text||''),x,y,opts||{});}
 
     var y = MT;
 
-    // Logo top-right
-    try { doc.addImage('data:image/png;base64,'+ECF_LOGO_B64,'PNG',PW-MR-44,y,44,pt2mm(23.4)); } catch(e){}
+    // ── TITLE ROW ─────────────────────────────────────────────────
+    try { doc.addImage('data:image/png;base64,'+ECF_LOGO_B64,'PNG',PW-MR-40,y,40,TITLE_H); } catch(e){}
+    fb(15); st(BK);
+    tx('EXPENSE CLAIM FORM', PW/2, y+TITLE_H/2+1, {align:'center', baseline:'middle'});
+    y += TITLE_H;
 
-    // Title row
-    fb(16); st(BK);
-    doc.text('EXPENSE CLAIM FORM', PW/2, y+pt2mm(23.4)/2+2, {align:'center'});
-    y += pt2mm(23.4) + pt2mm(17.4);
+    // ── HEADER FIELD ROWS (3-6) ───────────────────────────────────
+    // 3 column groups: [label+box] [label+underline] [label+box]
+    // Widths: col1=label(32)+val(55)=87mm  col2=label(44)+val(56)=100mm  col3=label(40)+val(54)=94mm
+    var hRowH = HDR_ROWS_H / 4;
+    var C1x=ML,    C1lw=32, C1vw=55;
+    var C2x=ML+87, C2lw=44, C2vw=56;
+    var C3x=ML+187,C3lw=40, C3vw=94;
 
-    // ── Header field rows ────────────────────────────────────────
-    // Col positions (mm): B=ML, C=ML+14, D=ML+14+37, E=ML+14+37+14, EG-end, H=..., I=...
-    // Scale from px: total usable = 297-12.7=284.3mm, total cols = 108+277+245+108+64+50+153+226=1231px
-    var scale = TW / 1161;  // mm per px
-    var cB  = ML;
-    var cC  = cB  + 108*scale;
-    var cD  = cC  + 277*scale;
-    var cEG = cD  + 245*scale; // E:G merged end
-    var cH  = cEG + (108+64+50)*scale;
-    var cI  = cH  + 153*scale;
-    var cEnd= cI  + 226*scale;
-
-    var hdrRows = [
-      [pt2mm(25.65),'BURN ENTITY:',   entity,   'Date:',                dStr,    'Profit Centre:',          pCentre],
-      [pt2mm(24.6), 'Country Code:',  country,  'Name of Claimant:',   claimant, 'Product Code:',           prodCode],
-      [pt2mm(26.4), 'Cost Centre:',   costCtr,  'Job Title:',          jobTitle, 'R&D Project Code:',       rdCode],
-      [pt2mm(26.4), 'Dimension Code:',dimCode,  'Bank Details/Mpesa No:',bank,   'Carbon / Project Code:',  carbCode],
+    var hdrData = [
+      ['BURN ENTITY:',entity,   'Date:',dStr,                 'Profit Centre:',pCentre],
+      ['Country Code:',country, 'Name of Claimant:',claimant, 'Product Code:',prodCode],
+      ['Cost Centre:',costCtr,  'Job Title:',jobTitle,         'R&D Project Code:',rdCode],
+      ['Dimension Code:',dimCode,'Bank Details/Mpesa No:',bank,'Carbon / Project Code:',carbCode],
     ];
 
-    hdrRows.forEach(function(hr) {
-      var rh=hr[0];
-      // B label
-      fb(10); st(BK);
-      doc.text(hr[1], cC-1, y+rh/2+1, {align:'right'});
-      // C value — box
-      sd(BK,0.5); sf(WH);
-      doc.rect(cC, y, cD-cC, rh, 'S');
-      fn(10); st(BK);
-      doc.text(String(hr[2]||''), cC+2, y+rh/2+1, {maxWidth:cD-cC-4});
-      // D label
-      fb(10); st(BK);
-      doc.text(hr[3], cEG-1, y+rh/2+1, {align:'right'});
-      // E:G value — bottom line only
-      sd(BK,0.5);
-      doc.line(cEG, y+rh, cH-2, y+rh);
-      fn(10); st(BK);
-      doc.text(String(hr[4]||''), cEG+1, y+rh/2+1, {maxWidth:cH-cEG-4});
-      // H label
-      fb(10); st(BK);
-      doc.text(hr[5], cI-1, y+rh/2+1, {align:'right'});
-      // I value — box
-      sd(BK,0.5); sf(WH);
-      doc.rect(cI, y, cEnd-cI, rh, 'S');
-      fn(10); st(BK);
-      doc.text(String(hr[6]||''), cI+2, y+rh/2+1, {maxWidth:cEnd-cI-4});
-      y += rh;
+    hdrData.forEach(function(h) {
+      // Col 1: label + box value
+      fb(8); st(BK);
+      tx(h[0], C1x+C1lw-1, y+hRowH/2+0.8, {align:'right',baseline:'middle'});
+      sd(BK,0.4); sf(WH);
+      doc.rect(C1x+C1lw, y, C1vw, hRowH, 'S');
+      fn(8); tx(String(h[1]||''), C1x+C1lw+2, y+hRowH/2+0.8, {baseline:'middle', maxWidth:C1vw-4});
+      // Col 2: label + underline value
+      fb(8); st(BK);
+      tx(h[2], C2x+C2lw-1, y+hRowH/2+0.8, {align:'right',baseline:'middle'});
+      sd(BK,0.4);
+      doc.line(C2x+C2lw, y+hRowH, C2x+C2lw+C2vw, y+hRowH);
+      fn(8); tx(String(h[3]||''), C2x+C2lw+2, y+hRowH/2+0.8, {baseline:'middle', maxWidth:C2vw-4});
+      // Col 3: label + box value
+      fb(8); st(BK);
+      tx(h[4], C3x+C3lw-1, y+hRowH/2+0.8, {align:'right',baseline:'middle'});
+      sd(BK,0.4); sf(WH);
+      doc.rect(C3x+C3lw, y, C3vw, hRowH, 'S');
+      fn(8); tx(String(h[5]||''), C3x+C3lw+2, y+hRowH/2+0.8, {baseline:'middle', maxWidth:C3vw-4});
+      y += hRowH;
     });
 
-    y += pt2mm(10.65); // row 7 spacer
+    // ── RECEIPT NOTE + ERP ────────────────────────────────────────
+    fi(7); st(DGY);
+    tx("Please number and attach all receipts, stating relevant number for each entry in 'Receipt No.' column", ML, y+NOTE_H/2+0.5, {baseline:'middle'});
+    sd(BK,0.4); sf(WH);
+    doc.rect(PW-MR-18, y, 18, NOTE_H, 'S');
+    fb(8); st(BK);
+    tx('ERP', PW-MR-9, y+NOTE_H/2+0.5, {align:'center',baseline:'middle'});
+    y += NOTE_H;
 
-    // Row 8: receipt note + ERP box
-    fi(8); st([100,100,100]);
-    doc.text("Please number and attach all receipts, stating relevant number for each entry in 'Receipt No.' column", cB, y+pt2mm(16.2)/2+1);
-    sd(BK,0.5); sf(WH);
-    doc.rect(cEnd-20, y, 20, pt2mm(16.2), 'S');
-    fb(10); st(BK);
-    doc.text('ERP', cEnd-10, y+pt2mm(16.2)/2+1, {align:'center'});
-    y += pt2mm(16.2);
-
-    // ── Row 9: Column headers ─────────────────────────────────────
-    var chH = pt2mm(31.2);
-    sf(GREY_FILL); doc.rect(cB, y, TW, chH, 'F');
-    sd(BK, 0.7);
-
-    var cols = [
-      {x:cB,   w:cC-cB,   label:'Date'},
-      {x:cC,   w:cH-cC,   label:'Details (Purpose, name of participants etc.)'},
-      {x:cH,   w:cI-cH,   label:'Receipt No.', sub:''},
-      {x:cI,   w:cI+(64*scale)-cI, label:cur},
+    // ── COLUMN HEADERS ────────────────────────────────────────────
+    sf(GREY); sd(BK,0.5);
+    doc.rect(ML, y, TW, HDR_COL_H, 'FD');
+    fb(8); st(BK);
+    var cx=ML;
+    var colDefs=[
+      {w:CW.date,label:'Date'},
+      {w:CW.det, label:'Details (Purpose, name of participants etc.)'},
+      {w:CW.rec, label:'Receipt\nNo.'},
+      {w:CW.kes, label:cur},
+      {w:CW.usd, label:'US$'},
+      {w:CW.bu,  label:'Business Unit'},
+      {w:CW.acct,label:'Expense Account\n(to be filled by Finance)'},
     ];
-    // Recalculate column x positions properly
-    var colDefs = [
-      {x:cB,            w:108*scale,  label:'Date'},
-      {x:cC,            w:(277+245)*scale, label:'Details (Purpose, name of participants etc.)'},
-      {x:cD+245*scale,  w:108*scale,  label:'Receipt No.'},
-      {x:cD+245*scale+108*scale, w:64*scale, label:cur},
-      {x:cD+245*scale+108*scale+64*scale, w:50*scale, label:'US$'},
-      {x:cD+245*scale+108*scale+64*scale+50*scale, w:153*scale, label:'Business Unit'},
-      {x:cD+245*scale+108*scale+64*scale+50*scale+153*scale, w:226*scale, label:'Expense Account\n(to be filled by Finance)'},
-    ];
-    // Recalc from scratch
-    var cx = cB;
-    var colWidths = [90,440,80,100,55,170,226];
-    var colLabels = ['Date','Details (Purpose, name of participants etc.)','Receipt No.',cur,'US$','Business Unit','Expense Account\n(to be filled\nby Finance)'];
-    colWidths.forEach(function(pw,ci){
-      var cw = pw*scale;
-      sd(BK,0.7); doc.rect(cx, y, cw, chH);
-      fb(9); st(BK);
-      var lbl = colLabels[ci];
-      var lines = doc.splitTextToSize(lbl, cw-3);
-      var ty = y + chH/2 - (lines.length-1)*2;
-      doc.text(lines, cx+cw/2, ty, {align:'center', baseline:'middle'});
-      cx += cw;
+    colDefs.forEach(function(col){
+      sd(BK,0.5); doc.rect(cx,y,col.w,HDR_COL_H);
+      fb(7); st(BK);
+      var lines=doc.splitTextToSize(col.label,col.w-2);
+      doc.text(lines, cx+col.w/2, y+HDR_COL_H/2+0.5, {align:'center',baseline:'middle'});
+      cx+=col.w;
     });
-    y += chH;
+    y += HDR_COL_H;
 
-    // ── Data rows ─────────────────────────────────────────────────
-    var rH = pt2mm(21);
-    cx = cB;
+    // ── DATA ROWS ─────────────────────────────────────────────────
     rows.forEach(function(r,ri){
-      sf(WH); sd(BK, ri===0?0.7:0.3);
-      doc.rect(cB, y, TW, rH, 'FD');
-      fn(9); st(BK);
-      var cxd = cB;
-      var vals = [
-        {v:r.date, w:108*scale, a:'center'},
-        {v:r.details, w:(277+245)*scale, a:'left'},
-        {v:String(r.receipt), w:108*scale, a:'center'},
-        {v:cur+' '+fmt(r.amount), w:64*scale, a:'right'},
-        {v:'$0.00', w:50*scale, a:'right'},
-        {v:r.bizUnit, w:153*scale, a:'center'},
-        {v:r.expAcct, w:226*scale, a:'left'},
+      sf(WH); sd(BK,0.2);
+      doc.rect(ML,y,TW,rH,'FD');
+      fn(7); st(BK);
+      var rx=ML;
+      var vals=[
+        {v:r.date,          w:CW.date,a:'center'},
+        {v:r.details,       w:CW.det, a:'left'},
+        {v:String(r.receipt),w:CW.rec,a:'center'},
+        {v:cur+' '+fmt(r.amount),w:CW.kes,a:'right'},
+        {v:'$0.00',         w:CW.usd, a:'right'},
+        {v:r.bizUnit,       w:CW.bu,  a:'left'},
+        {v:r.expAcct,       w:CW.acct,a:'left'},
       ];
-      vals.forEach(function(v){
-        var tx = v.a==='right'?cxd+v.w-1:v.a==='center'?cxd+v.w/2:cxd+1;
-        fn(9); st(BK);
-        doc.text(doc.splitTextToSize(String(v.v||''),v.w-3)[0]||'', tx, y+rH/2+0.7, {align:v.a,baseline:'middle'});
-        if(cxd > cB) { sd(BK,0.2); doc.line(cxd,y,cxd,y+rH); }
-        cxd += v.w;
+      vals.forEach(function(v,vi){
+        if(vi>0){sd(BK,0.15);doc.line(rx,y,rx,y+rH);}
+        var txt=doc.splitTextToSize(String(v.v||''),v.w-2)[0]||'';
+        var tx2=v.a==='right'?rx+v.w-1:v.a==='center'?rx+v.w/2:rx+1;
+        fn(7); st(BK);
+        doc.text(txt,tx2,y+rH/2+0.5,{align:v.a,baseline:'middle'});
+        rx+=v.w;
       });
-      y += rH;
+      y+=rH;
     });
 
-    // ── Totals / Adv / Balance ────────────────────────────────────
-    function totLine(label, val, isBalance) {
-      sd(BK,0.7); sf(WH);
-      doc.rect(cB, y, TW, rH, 'FD');
-      fi(9); st([100,100,100]);
-      if(isBalance) doc.text('Advance approved by (Name, & Amount)', cB+1, y+rH/2+0.7, {baseline:'middle'});
-      fb(10); st(BK);
-      // Label right-aligned before the amount col
-      var labelX = cB + (108+277+245)*scale;
-      doc.text(label, labelX-1, y+rH/2+0.7, {align:'right', baseline:'middle'});
-      fn(10);
-      if(isBalance && balance<0) st([180,0,0]);
-      doc.text(val, labelX+(108)*scale-1, y+rH/2+0.7, {align:'right', baseline:'middle'});
-      st(BK);
-      y += rH;
-    }
-    fb(11); st(BK);
-    sd(BK,0.7); sf(GREY_FILL);
-    doc.rect(cB, y, TW, rH, 'FD');
-    var totLabelX = cB + (108+277+245)*scale;
-    doc.text('TOTALS', totLabelX-1, y+rH/2+0.7, {align:'right', baseline:'middle'});
-    fn(10);
-    doc.text(String(rows.length), totLabelX+54*scale, y+rH/2+0.7, {align:'center', baseline:'middle'});
-    doc.text(cur+' '+fmt(total), totLabelX+(108+64)*scale-1, y+rH/2+0.7, {align:'right', baseline:'middle'});
-    doc.text('$0.00', totLabelX+(108+64+50)*scale-1, y+rH/2+0.7, {align:'right', baseline:'middle'});
-    doc.text('$0.00', totLabelX+(108+64+50+153)*scale-1, y+rH/2+0.7, {align:'right', baseline:'middle'});
-    y += rH;
+    // ── TOTALS / ADV / BAL ────────────────────────────────────────
+    var tX = ML+CW.date+CW.det;  // x where receipt col starts
 
-    totLine('Amount Advanced', cur+' '+fmt(advanced), false);
-    var balStr2 = balance<0?'('+cur+' '+fmt(Math.abs(balance))+')':cur+' '+fmt(balance);
-    totLine('Balance claimed/Returned', balStr2, true);
+    // TOTALS
+    sf(GREY); sd(BK,0.5); doc.rect(ML,y,TW,TOT_H,'FD');
+    fb(8); st(BK);
+    tx('TOTALS', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    fn(8);
+    tx(String(n), tX+CW.rec/2, y+TOT_H/2+0.5, {align:'center',baseline:'middle'});
+    tx(cur+' '+fmt(total), tX+CW.rec+CW.kes-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    tx('$0.00', tX+CW.rec+CW.kes+CW.usd-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    tx('$0.00', tX+CW.rec+CW.kes+CW.usd+CW.bu-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    y+=TOT_H;
 
-    // ── Signature — fixed position from bottom ───────────────────
-    // Footer at very bottom
-    var footY = PH - 5;
-    fn(7); st([120,120,120]);
-    doc.text('Author:FD', ML, footY-3);
-    doc.text('Approved By:CFO', ML, footY);
-    doc.text('Release date: 8th Jan.2025', PW-MR, footY, {align:'right'});
-    // Sig underlines fixed above footer
-    var ulY = PH - 18;
+    // Amount Advanced
+    sf(WH); sd(BK,0.4); doc.rect(ML,y,TW,TOT_H,'FD');
+    fb(8); st(BK);
+    tx('Amount Advanced', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    fn(8);
+    tx(cur+' '+fmt(advanced), tX+CW.rec+CW.kes-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    y+=TOT_H;
+
+    // Balance
+    sf(WH); sd(BK,0.4); doc.rect(ML,y,TW,TOT_H,'FD');
+    fi(7); st(DGY);
+    tx('Advance approved by (Name, & Amount)', ML+1, y+TOT_H/2+0.5, {baseline:'middle'});
+    fb(8); st(BK);
+    tx('Balance claimed/Returned', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    fn(8); st(balance<0?RD:BK);
+    var balStr=balance<0?'('+cur+' '+fmt(Math.abs(balance))+')':cur+' '+fmt(balance);
+    tx(balStr, tX+CW.rec+CW.kes-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    fn(8); st(BK);
+    tx('$0.00', tX+CW.rec+CW.kes+CW.usd-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    tx('0', tX+CW.rec+CW.kes+CW.usd+CW.bu-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    y+=TOT_H;
+
+    // ── SIGNATURE SECTION (fixed at bottom) ───────────────────────
+    var ulY    = PH - FOOTER_H - SIG_H + 2;
+    var labelY = ulY + 4;
+    var nameY  = ulY - SIG_NAME_H;
+
+    fn(9); st(BK);
+    tx(claimant, ML, nameY);
+    try { doc.addImage(sigDataUrl,'PNG',ML,nameY+3,44,14); } catch(e){}
+    fn(8); st(BK);
+    tx(dStr, ML, nameY+19);
+
     sd(BK,0.5);
     doc.line(ML,          ulY, ML+TW/3-4,     ulY);
     doc.line(ML+TW/3+4,   ulY, ML+2*TW/3-4,   ulY);
     doc.line(ML+2*TW/3+4, ulY, PW-MR,          ulY);
-    fn(8); st([100,100,100]);
-    doc.text('Claimant (Name, Sign & Date)',     ML,          ulY+4);
-    doc.text('1st Approver (Name, Sign & Date)', ML+TW/3+4,   ulY+4);
-    doc.text('2nd Approver (Name, Sign & Date)', ML+2*TW/3+4, ulY+4);
-    // Claimant content above underline
-    fn(10); st(BK);
-    var sigContentY = ulY - 22;
-    doc.text(claimant, ML, sigContentY);
-    try { doc.addImage(sigDataUrl,'PNG',ML,sigContentY+3,45,14); } catch(e){}
-    doc.text(dStr, ML, sigContentY+19);
 
-    // ── Step 2: Build ack PDF ─────────────────────────────────────
+    fn(7); st(DGY);
+    tx('Claimant (Name, Sign & Date)',     ML,          labelY);
+    tx('1st Approver (Name, Sign & Date)', ML+TW/3+4,   labelY);
+    tx('2nd Approver (Name, Sign & Date)', ML+2*TW/3+4, labelY);
+
+    var footY = PH - 3;
+    fn(6); st(DGY);
+    tx('Author:FD',       ML, footY-3);
+    tx('Approved By:CFO', ML, footY);
+    tx('Release date: 8th Jan.2025', PW-MR, footY, {align:'right'});
+
+    // ── Merge with ack PDF ────────────────────────────────────────
     var ackBuf = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl);
-
-    // ── Step 3: Merge using pdf-lib ───────────────────────────────
     var ecfB64 = doc.output('datauristring').split(',')[1];
     var combined = await ecfMergePDFs(ecfB64, ackBuf);
 
-    // ── Step 4: Download ──────────────────────────────────────────
     var fname = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal+'.pdf';
     var bytes = Uint8Array.from(atob(combined),function(c){return c.charCodeAt(0);});
     var blob  = new Blob([bytes],{type:'application/pdf'});
@@ -6922,6 +6925,7 @@ async function ecfExportPDF() {
     if(btn){btn.disabled=false;btn.innerHTML='&#8659; Export';}
   }
 }
+
 
 
 
