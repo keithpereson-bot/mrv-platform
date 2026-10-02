@@ -6675,251 +6675,250 @@ async function ecfExportPDF() {
       amount:  parseFloat(req.amount)||0,
       bizUnit: req.category||req.type||'',
       expAcct: req.costSummary||'',
-      ref:          req.ref||'',
-      project:      req.project||'',
-      requester:    req.requester||'',
-      sigDataUrl:   req.sigDataUrl||'',
-      sigLabel:     req.sigLabel||'',
-      requesterSig: req.requesterSig||'',
+      ref: req.ref||'', project: req.project||'',
+      requester: req.requester||'', sigDataUrl: req.sigDataUrl||'',
+      sigLabel: req.sigLabel||'', requesterSig: req.requesterSig||'',
       requesterSigName: req.requesterSigName||''
     };
   });
 
-  var total   = rows.reduce(function(s,r){return s+r.amount;},0);
-  var balance = total - advanced;
+  var btn = document.getElementById('ecfExportBtn');
+  if (btn) { btn.disabled=true; btn.textContent='Generating\u2026'; }
 
-  function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  function fmt(n){return Number(n||0).toLocaleString();}
+  try {
+    var total   = rows.reduce(function(s,r){return s+r.amount;},0);
+    var balance = total - advanced;
+    function esc(s){return String(s||'');}
+    function fmt(n){return Number(n||0).toLocaleString();}
 
-  var logoSrc = 'data:image/png;base64,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';
+    // ── Step 1: Build expense form PDF using jsPDF ──────────────
+    var JsPDF = window.jspdf.jsPDF;
+    var doc = new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    var PW=297, PH=210, ML=6.35, MR=6.35, MT=6.35;
+    var TW = PW-ML-MR;
 
-  // ── Expense form HTML ──────────────────────────────────────────────────
-  // Exact column widths from template (px): A=11,B=108,C=277,D=245,E=108,F≈64,G≈50,H=153,I=226
-  // Row heights from template (pt→px at 96dpi): multiply pt by 1.333
-  function pt(p){return Math.round(p*1.333)+'px';}
+    // pt to mm: 1pt = 0.353mm
+    function pt2mm(pt){ return pt*0.353; }
 
-  var dataRowsHtml = rows.map(function(r,i){
-    return '<tr style="height:'+pt(21)+'">'
-      +'<td class="td-date">'+esc(r.date)+'</td>'
-      +'<td class="td-det" colspan="2">'+esc(r.details)+'</td>'
-      +'<td class="td-rec">'+r.receipt+'</td>'
-      +'<td class="td-amt">'+esc(cur)+' '+fmt(r.amount)+'</td>'
-      +'<td class="td-usd">$0.00</td>'
-      +'<td class="td-bu">'+esc(r.bizUnit)+'</td>'
-      +'<td class="td-acct">'+esc(r.expAcct)+'</td>'
-      +'</tr>';
-  }).join('');
+    var BK=[0,0,0], GY=[150,150,150], GREY_FILL=[217,217,217], WH=[255,255,255];
+    function sf(c){doc.setFillColor(c[0],c[1],c[2]);}
+    function sd(c,w){doc.setDrawColor(c[0],c[1],c[2]);doc.setLineWidth(w||0.2);}
+    function st(c){doc.setTextColor(c[0],c[1],c[2]);}
+    function fb(sz){doc.setFont('helvetica','bold');doc.setFontSize(sz);}
+    function fn(sz){doc.setFont('helvetica','normal');doc.setFontSize(sz);}
+    function fi(sz){doc.setFont('helvetica','italic');doc.setFontSize(sz);}
 
-  var balStyle = balance<0?'color:#B40000':'';
-  var balStr   = balance<0?'('+esc(cur)+' '+fmt(Math.abs(balance))+')':esc(cur)+' '+fmt(balance);
+    var y = MT;
 
-  // Ack slips using jsPDF — convert to data URL for embedding in HTML
-  var ackDoc = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl);
-  var ackBase64 = btoa(String.fromCharCode.apply(null, new Uint8Array(ackDoc)));
+    // Logo top-right
+    try { doc.addImage('data:image/png;base64,'+ECF_LOGO_B64,'PNG',PW-MR-44,y,44,pt2mm(23.4)); } catch(e){}
 
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Expense Claim Form</title>'
-  +'<style>'
-  +'*{margin:0;padding:0;box-sizing:border-box}'
-  +'html,body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#000;background:#fff}'
-  +'@page ecf{size:A4 landscape;margin:6.35mm}'
-  +'@page ack{size:A4 landscape;margin:0}'
-  +'@media print{'
-  +' .no-print{display:none!important}'
-  +' body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}'
-  +' .ecf-page{page:ecf}'
-  +' .ack-page{page:ack}'
-  +'}'
-  +'.ecf-page{width:100%;page-break-after:always}'
-  // Title row
-  +'.title-row{display:flex;align-items:center;margin-bottom:0;height:'+pt(23.4)+'}'
-  +'.title-cell{flex:1;text-align:center;font-size:18pt;font-weight:700}'
-  +'.logo-cell{width:140px;text-align:right}'
-  +'.logo-cell img{height:44px}'
-  // Spacer
-  +'.spacer-row{height:'+pt(17.4)+'}'
-  // Header grid
-  +'.hdr-table{width:100%;border-collapse:collapse;table-layout:fixed}'
-  +'.hdr-table td{padding:0;vertical-align:middle;overflow:hidden}'
-  // Header label cells
-  +'.hl{font-size:12pt;font-weight:700;text-align:right;padding-right:3px;white-space:nowrap}'
-  // Header value — boxed (thin border all sides)
-  +'.hv-box{font-size:11pt;text-align:center;border:0.75pt solid #000;padding:1px 3px}'
-  // Header value — underline only
-  +'.hv-ul{font-size:11pt;text-align:left;border-bottom:0.75pt solid #000;padding:1px 3px}'
-  // Receipt note row
-  +'.note-row{display:flex;justify-content:space-between;align-items:center;height:'+pt(16.2)+'}'
-  +'.note-text{font-size:10pt;font-style:italic}'
-  +'.erp-box{font-size:12pt;font-weight:700;text-align:center;border:0.75pt solid #000;border-bottom:none;padding:1px 8px}'
-  // Data table
-  +'.data-table{width:100%;border-collapse:collapse;table-layout:fixed}'
-  +'th,td{border:0.75pt solid #000;padding:1px 3px;overflow:hidden;white-space:nowrap}'
-  // Column header row
-  +'.col-hdr{height:'+pt(31.2)+';background:#D9D9D9;font-size:12pt;font-weight:700;text-align:center;vertical-align:middle;border:1pt solid #000}'
-  // Column widths
-  +'.td-date{width:108px;text-align:center;vertical-align:top}'
-  +'.td-det{width:522px;text-align:left;vertical-align:top}'     // C(277)+D(245)
-  +'.td-rec{width:108px;text-align:center;vertical-align:top}'
-  +'.td-amt{width:64px;text-align:right;vertical-align:top}'
-  +'.td-usd{width:50px;text-align:right;vertical-align:top}'
-  +'.td-bu{width:153px;text-align:center;vertical-align:top}'
-  +'.td-acct{width:226px;text-align:left;vertical-align:top}'
-  // Totals rows
-  +'.tot-row td{border:1pt solid #000;font-weight:700;font-size:12pt;vertical-align:middle}'
-  +'.adv-row td,.bal-row td{border:1pt solid #000;font-size:11pt;vertical-align:middle}'
-  // Sig
-  +'.sig-section{margin-top:8px}'
-  +'.sig-grid{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1pt solid #000;margin-top:30px}'
-  +'.sig-col{padding-top:3px;font-size:11pt;font-style:italic}'
-  // Print button
-  +'.print-btn{position:fixed;bottom:16px;right:16px;background:#F25C0A;color:#fff;border:none;padding:10px 22px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;z-index:9999}'
-  // Ack page
-  +'.ack-page{width:100%;height:100vh}'
-  +'.ack-page iframe{width:100%;height:100%;border:none}'
-  +'</style></head><body>'
+    // Title row
+    fb(16); st(BK);
+    doc.text('EXPENSE CLAIM FORM', PW/2, y+pt2mm(23.4)/2+2, {align:'center'});
+    y += pt2mm(23.4) + pt2mm(17.4);
 
-  +'<button class="print-btn no-print" onclick="window.print()">&#8659; Save as PDF</button>'
+    // ── Header field rows ────────────────────────────────────────
+    // Col positions (mm): B=ML, C=ML+14, D=ML+14+37, E=ML+14+37+14, EG-end, H=..., I=...
+    // Scale from px: total usable = 297-12.7=284.3mm, total cols = 108+277+245+108+64+50+153+226=1231px
+    var scale = TW / 1231;  // mm per px
+    var cB  = ML;
+    var cC  = cB  + 108*scale;
+    var cD  = cC  + 277*scale;
+    var cEG = cD  + 245*scale; // E:G merged end
+    var cH  = cEG + (108+64+50)*scale;
+    var cI  = cH  + 153*scale;
+    var cEnd= cI  + 226*scale;
 
-  // ── EXPENSE FORM PAGE ────────────────────────────────────────────────
-  +'<div class="ecf-page">'
+    var hdrRows = [
+      [pt2mm(25.65),'BURN ENTITY:',   entity,   'Date:',                dStr,    'Profit Centre:',          pCentre],
+      [pt2mm(24.6), 'Country Code:',  country,  'Name of Claimant:',   claimant, 'Product Code:',           prodCode],
+      [pt2mm(26.4), 'Cost Centre:',   costCtr,  'Job Title:',          jobTitle, 'R&D Project Code:',       rdCode],
+      [pt2mm(26.4), 'Dimension Code:',dimCode,  'Bank Details/Mpesa No:',bank,   'Carbon / Project Code:',  carbCode],
+    ];
 
-  // Title + logo
-  +'<div class="title-row">'
-  +'<div style="width:140px"></div>'
-  +'<div class="title-cell">EXPENSE CLAIM FORM</div>'
-  +'<div class="logo-cell"><img src="'+logoSrc+'"></div>'
-  +'</div>'
+    hdrRows.forEach(function(hr) {
+      var rh=hr[0];
+      // B label
+      fb(10); st(BK);
+      doc.text(hr[1], cC-1, y+rh/2+1, {align:'right'});
+      // C value — box
+      sd(BK,0.5); sf(WH);
+      doc.rect(cC, y, cD-cC, rh, 'S');
+      fn(10); st(BK);
+      doc.text(String(hr[2]||''), cC+2, y+rh/2+1, {maxWidth:cD-cC-4});
+      // D label
+      fb(10); st(BK);
+      doc.text(hr[3], cEG-1, y+rh/2+1, {align:'right'});
+      // E:G value — bottom line only
+      sd(BK,0.5);
+      doc.line(cEG, y+rh, cH-2, y+rh);
+      fn(10); st(BK);
+      doc.text(String(hr[4]||''), cEG+1, y+rh/2+1, {maxWidth:cH-cEG-4});
+      // H label
+      fb(10); st(BK);
+      doc.text(hr[5], cI-1, y+rh/2+1, {align:'right'});
+      // I value — box
+      sd(BK,0.5); sf(WH);
+      doc.rect(cI, y, cEnd-cI, rh, 'S');
+      fn(10); st(BK);
+      doc.text(String(hr[6]||''), cI+2, y+rh/2+1, {maxWidth:cEnd-cI-4});
+      y += rh;
+    });
 
-  // Spacer row 2
-  +'<div class="spacer-row"></div>'
+    y += pt2mm(10.65); // row 7 spacer
 
-  // Header fields rows 3-6
-  +'<table class="hdr-table"><tbody>'
-  // Row 3
-  +'<tr style="height:'+pt(25.65)+'">'
-  +'<td class="hl" style="width:108px">BURN ENTITY:</td>'
-  +'<td class="hv-box" style="width:277px">'+esc(entity)+'</td>'
-  +'<td class="hl" style="width:108px">Date:</td>'
-  +'<td class="hv-ul" style="width:320px">'+esc(dStr)+'</td>'
-  +'<td class="hl" style="width:153px">Profit Centre:</td>'
-  +'<td class="hv-box" style="width:226px">'+esc(pCentre)+'</td>'
-  +'</tr>'
-  // Row 4
-  +'<tr style="height:'+pt(24.6)+'">'
-  +'<td class="hl">Country Code:</td>'
-  +'<td class="hv-box">'+esc(country)+'</td>'
-  +'<td class="hl">Name of Claimant:</td>'
-  +'<td class="hv-ul">'+esc(claimant)+'</td>'
-  +'<td class="hl">Product Code:</td>'
-  +'<td class="hv-box">'+esc(prodCode)+'</td>'
-  +'</tr>'
-  // Row 5
-  +'<tr style="height:'+pt(26.4)+'">'
-  +'<td class="hl">Cost Centre:</td>'
-  +'<td class="hv-box">'+esc(costCtr)+'</td>'
-  +'<td class="hl">Job Title:</td>'
-  +'<td class="hv-ul">'+esc(jobTitle)+'</td>'
-  +'<td class="hl">R&amp;D Project Code:</td>'
-  +'<td class="hv-box">'+esc(rdCode)+'</td>'
-  +'</tr>'
-  // Row 6
-  +'<tr style="height:'+pt(26.4)+'">'
-  +'<td class="hl">Dimension Code:</td>'
-  +'<td class="hv-box">'+esc(dimCode)+'</td>'
-  +'<td class="hl">Bank Details/Mpesa No:</td>'
-  +'<td class="hv-ul">'+esc(bank)+'</td>'
-  +'<td class="hl">Carbon / Project Code:</td>'
-  +'<td class="hv-box">'+esc(carbCode)+'</td>'
-  +'</tr>'
-  +'</tbody></table>'
+    // Row 8: receipt note + ERP box
+    fi(8); st([100,100,100]);
+    doc.text("Please number and attach all receipts, stating relevant number for each entry in 'Receipt No.' column", cB, y+pt2mm(16.2)/2+1);
+    sd(BK,0.5); sf(WH);
+    doc.rect(cEnd-20, y, 20, pt2mm(16.2), 'S');
+    fb(10); st(BK);
+    doc.text('ERP', cEnd-10, y+pt2mm(16.2)/2+1, {align:'center'});
+    y += pt2mm(16.2);
 
-  // Row 7 spacer
-  +'<div style="height:'+pt(10.65)+'"></div>'
+    // ── Row 9: Column headers ─────────────────────────────────────
+    var chH = pt2mm(31.2);
+    sf(GREY_FILL); doc.rect(cB, y, TW, chH, 'F');
+    sd(BK, 0.7);
 
-  // Row 8: note + ERP
-  +'<div class="note-row">'
-  +'<div class="note-text">Please number and attach all receipts, stating relevant number for each entry in &lsquo;Receipt No.&rsquo; column</div>'
-  +'<div class="erp-box">ERP</div>'
-  +'</div>'
+    var cols = [
+      {x:cB,   w:cC-cB,   label:'Date'},
+      {x:cC,   w:cH-cC,   label:'Details (Purpose, name of participants etc.)'},
+      {x:cH,   w:cI-cH,   label:'Receipt No.', sub:''},
+      {x:cI,   w:cI+(64*scale)-cI, label:cur},
+    ];
+    // Recalculate column x positions properly
+    var colDefs = [
+      {x:cB,            w:108*scale,  label:'Date'},
+      {x:cC,            w:(277+245)*scale, label:'Details (Purpose, name of participants etc.)'},
+      {x:cD+245*scale,  w:108*scale,  label:'Receipt No.'},
+      {x:cD+245*scale+108*scale, w:64*scale, label:cur},
+      {x:cD+245*scale+108*scale+64*scale, w:50*scale, label:'US$'},
+      {x:cD+245*scale+108*scale+64*scale+50*scale, w:153*scale, label:'Business Unit'},
+      {x:cD+245*scale+108*scale+64*scale+50*scale+153*scale, w:226*scale, label:'Expense Account\n(to be filled by Finance)'},
+    ];
+    // Recalc from scratch
+    var cx = cB;
+    var colWidths = [108,277+245,108,64,50,153,226];
+    var colLabels = ['Date','Details (Purpose, name of participants etc.)','Receipt No.',cur,'US$','Business Unit','Expense Account\n(to be filled\nby Finance)'];
+    colWidths.forEach(function(pw,ci){
+      var cw = pw*scale;
+      sd(BK,0.7); doc.rect(cx, y, cw, chH);
+      fb(9); st(BK);
+      var lbl = colLabels[ci];
+      var lines = doc.splitTextToSize(lbl, cw-3);
+      var ty = y + chH/2 - (lines.length-1)*2;
+      doc.text(lines, cx+cw/2, ty, {align:'center', baseline:'middle'});
+      cx += cw;
+    });
+    y += chH;
 
-  // Data table
-  +'<table class="data-table">'
-  +'<thead><tr>'
-  +'<th class="col-hdr td-date">Date</th>'
-  +'<th class="col-hdr td-det" colspan="2">Details (Purpose, name of participants etc.)</th>'
-  +'<th class="col-hdr td-rec">Receipt No.</th>'
-  +'<th class="col-hdr td-amt">'+esc(cur)+'</th>'
-  +'<th class="col-hdr td-usd">US$</th>'
-  +'<th class="col-hdr td-bu">Business Unit</th>'
-  +'<th class="col-hdr td-acct" style="white-space:normal;font-size:10pt">Expense Account<br><span style="font-weight:400;font-size:9pt">(to be filled by Finance)</span></th>'
-  +'</tr></thead>'
-  +'<tbody>'
-  +dataRowsHtml
-  // TOTALS
-  +'<tr class="tot-row" style="height:'+pt(21)+'">'
-  +'<td colspan="2" style="border:none"></td>'
-  +'<td style="text-align:right;border-right:none">TOTALS</td>'
-  +'<td style="text-align:center;border-left:none">'+rows.length+'</td>'
-  +'<td style="text-align:right">'+esc(cur)+' '+fmt(total)+'</td>'
-  +'<td style="text-align:right">$0.00</td>'
-  +'<td style="text-align:right">$0.00</td>'
-  +'<td></td>'
-  +'</tr>'
-  // Amount Advanced
-  +'<tr class="adv-row" style="height:'+pt(21)+'">'
-  +'<td colspan="2" style="border:none"></td>'
-  +'<td style="text-align:right;font-weight:700;border-right:none">Amount Advanced</td>'
-  +'<td style="border-left:none"></td>'
-  +'<td style="text-align:right">'+esc(cur)+' '+fmt(advanced)+'</td>'
-  +'<td colspan="3" style="border:none"></td>'
-  +'</tr>'
-  // Balance
-  +'<tr class="bal-row" style="height:'+pt(21)+'">'
-  +'<td colspan="2" style="font-style:italic;font-size:9pt;border-right:none">Advance approved by (Name, &amp; Amount)</td>'
-  +'<td style="text-align:right;font-weight:700;border-left:none;border-right:none">Balance claimed/Returned</td>'
-  +'<td style="border-left:none"></td>'
-  +'<td style="text-align:right;'+balStyle+'">'+balStr+'</td>'
-  +'<td style="text-align:right">$0.00</td>'
-  +'<td style="text-align:right">0</td>'
-  +'<td></td>'
-  +'</tr>'
-  +'</tbody></table>'
+    // ── Data rows ─────────────────────────────────────────────────
+    var rH = pt2mm(21);
+    cx = cB;
+    rows.forEach(function(r,ri){
+      sf(WH); sd(BK, ri===0?0.7:0.3);
+      doc.rect(cB, y, TW, rH, 'FD');
+      fn(9); st(BK);
+      var cxd = cB;
+      var vals = [
+        {v:r.date, w:108*scale, a:'center'},
+        {v:r.details, w:(277+245)*scale, a:'left'},
+        {v:String(r.receipt), w:108*scale, a:'center'},
+        {v:cur+' '+fmt(r.amount), w:64*scale, a:'right'},
+        {v:'$0.00', w:50*scale, a:'right'},
+        {v:r.bizUnit, w:153*scale, a:'center'},
+        {v:r.expAcct, w:226*scale, a:'left'},
+      ];
+      vals.forEach(function(v){
+        var tx = v.a==='right'?cxd+v.w-1:v.a==='center'?cxd+v.w/2:cxd+1;
+        fn(9); st(BK);
+        doc.text(doc.splitTextToSize(String(v.v||''),v.w-3)[0]||'', tx, y+rH/2+0.7, {align:v.a,baseline:'middle'});
+        if(cxd > cB) { sd(BK,0.2); doc.line(cxd,y,cxd,y+rH); }
+        cxd += v.w;
+      });
+      y += rH;
+    });
 
-  // Signature
-  +'<div class="sig-section">'
-  +'<div style="font-size:11pt;font-weight:700;margin-bottom:2px">'+esc(claimant)+'</div>'
-  +'<img src="'+sigDataUrl+'" style="height:44px;display:block;margin:3px 0">'
-  +'<div style="font-size:11pt;margin-bottom:4px">'+esc(dStr)+'</div>'
-  +'<div class="sig-grid">'
-  +'<div class="sig-col">Claimant (Name, Sign &amp; Date)</div>'
-  +'<div class="sig-col">1st Approver (Name, Sign &amp; Date)</div>'
-  +'<div class="sig-col">2nd Approver (Name, Sign &amp; Date)</div>'
-  +'</div>'
-  +'</div>'
+    // ── Totals / Adv / Balance ────────────────────────────────────
+    function totLine(label, val, isBalance) {
+      sd(BK,0.7); sf(WH);
+      doc.rect(cB, y, TW, rH, 'FD');
+      fi(9); st([100,100,100]);
+      if(isBalance) doc.text('Advance approved by (Name, & Amount)', cB+1, y+rH/2+0.7, {baseline:'middle'});
+      fb(10); st(BK);
+      // Label right-aligned before the amount col
+      var labelX = cB + (108+277+245)*scale;
+      doc.text(label, labelX-1, y+rH/2+0.7, {align:'right', baseline:'middle'});
+      fn(10);
+      if(isBalance && balance<0) st([180,0,0]);
+      doc.text(val, labelX+(108)*scale-1, y+rH/2+0.7, {align:'right', baseline:'middle'});
+      st(BK);
+      y += rH;
+    }
+    fb(11); st(BK);
+    sd(BK,0.7); sf(GREY_FILL);
+    doc.rect(cB, y, TW, rH, 'FD');
+    var totLabelX = cB + (108+277+245)*scale;
+    doc.text('TOTALS', totLabelX-1, y+rH/2+0.7, {align:'right', baseline:'middle'});
+    fn(10);
+    doc.text(String(rows.length), totLabelX+54*scale, y+rH/2+0.7, {align:'center', baseline:'middle'});
+    doc.text(cur+' '+fmt(total), totLabelX+(108+64)*scale-1, y+rH/2+0.7, {align:'right', baseline:'middle'});
+    doc.text('$0.00', totLabelX+(108+64+50)*scale-1, y+rH/2+0.7, {align:'right', baseline:'middle'});
+    doc.text('$0.00', totLabelX+(108+64+50+153)*scale-1, y+rH/2+0.7, {align:'right', baseline:'middle'});
+    y += rH;
 
-  +'<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:8pt;color:#666">'
-  +'<div>Author:FD<br>Approved By:CFO</div>'
-  +'<div>Release date: 8th Jan.2025</div>'
-  +'</div>'
+    totLine('Amount Advanced', cur+' '+fmt(advanced), false);
+    var balStr2 = balance<0?'('+cur+' '+fmt(Math.abs(balance))+')':cur+' '+fmt(balance);
+    totLine('Balance claimed/Returned', balStr2, true);
 
-  +'</div>'  // end ecf-page
+    // ── Signature ─────────────────────────────────────────────────
+    y += 5;
+    fn(10); st(BK);
+    doc.text(claimant, ML, y+4);
+    try { doc.addImage(sigDataUrl,'PNG',ML,y+6,45,12); } catch(e){}
+    doc.text(dStr, ML, y+20);
+    var ulY = PH-18;
+    sd(BK,0.5);
+    doc.line(ML, ulY, ML+TW/3-4, ulY);
+    doc.line(ML+TW/3+4, ulY, ML+2*TW/3-4, ulY);
+    doc.line(ML+2*TW/3+4, ulY, PW-MR, ulY);
+    fn(8); st([100,100,100]);
+    doc.text('Claimant (Name, Sign & Date)', ML, ulY+4);
+    doc.text('1st Approver (Name, Sign & Date)', ML+TW/3+4, ulY+4);
+    doc.text('2nd Approver (Name, Sign & Date)', ML+2*TW/3+4, ulY+4);
+    fn(7); st([120,120,120]);
+    doc.text('Author:FD', ML, PH-5);
+    doc.text('Approved By:CFO', ML, PH-2);
+    doc.text('Release date: 8th Jan.2025', PW-MR, PH-2, {align:'right'});
 
-  // ── ACK SLIPS PAGE ───────────────────────────────────────────────────
-  +'<div class="ack-page">'
-  +'<embed src="data:application/pdf;base64,'+ackBase64+'" type="application/pdf" style="width:100%;height:100vh">'
-  +'</div>'
+    // ── Step 2: Build ack PDF ─────────────────────────────────────
+    var ackBuf = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl);
 
-  +'</body></html>';
+    // ── Step 3: Merge using pdf-lib ───────────────────────────────
+    var ecfB64 = doc.output('datauristring').split(',')[1];
+    var combined = await ecfMergePDFs(ecfB64, ackBuf);
 
-  var blob = new Blob([html],{type:'text/html;charset=utf-8'});
-  var url  = URL.createObjectURL(blob);
-  var w    = window.open(url,'_blank');
-  if(!w){
-    var w2=window.open('about:blank','_blank');
-    if(w2){w2.document.open();w2.document.write(html);w2.document.close();}
-    else{toast('Pop-up blocked — allow pop-ups for this site');}
+    // ── Step 4: Download ──────────────────────────────────────────
+    var fname = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal+'.pdf';
+    var bytes = Uint8Array.from(atob(combined),function(c){return c.charCodeAt(0);});
+    var blob  = new Blob([bytes],{type:'application/pdf'});
+    var url   = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href=url; a.download=fname;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    toast('\u2713 Downloaded: '+fname);
+
+  } catch(err){
+    toast('Error: '+err.message);
+    console.error(err);
+  } finally {
+    if(btn){btn.disabled=false;btn.innerHTML='&#8659; Export';}
   }
-  toast('\u2713 Print window opened — click Save as PDF');
 }
+
 
 
 
