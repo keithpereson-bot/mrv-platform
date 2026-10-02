@@ -6721,7 +6721,7 @@ async function ecfExportPDF() {
     // ── Header field rows ────────────────────────────────────────
     // Col positions (mm): B=ML, C=ML+14, D=ML+14+37, E=ML+14+37+14, EG-end, H=..., I=...
     // Scale from px: total usable = 297-12.7=284.3mm, total cols = 108+277+245+108+64+50+153+226=1231px
-    var scale = TW / 1231;  // mm per px
+    var scale = TW / 1161;  // mm per px
     var cB  = ML;
     var cC  = cB  + 108*scale;
     var cD  = cC  + 277*scale;
@@ -6800,7 +6800,7 @@ async function ecfExportPDF() {
     ];
     // Recalc from scratch
     var cx = cB;
-    var colWidths = [108,277+245,108,64,50,153,226];
+    var colWidths = [90,440,80,100,55,170,226];
     var colLabels = ['Date','Details (Purpose, name of participants etc.)','Receipt No.',cur,'US$','Business Unit','Expense Account\n(to be filled\nby Finance)'];
     colWidths.forEach(function(pw,ci){
       var cw = pw*scale;
@@ -6873,25 +6873,29 @@ async function ecfExportPDF() {
     var balStr2 = balance<0?'('+cur+' '+fmt(Math.abs(balance))+')':cur+' '+fmt(balance);
     totLine('Balance claimed/Returned', balStr2, true);
 
-    // ── Signature ─────────────────────────────────────────────────
-    y += 5;
-    fn(10); st(BK);
-    doc.text(claimant, ML, y+4);
-    try { doc.addImage(sigDataUrl,'PNG',ML,y+6,45,12); } catch(e){}
-    doc.text(dStr, ML, y+20);
-    var ulY = PH-18;
-    sd(BK,0.5);
-    doc.line(ML, ulY, ML+TW/3-4, ulY);
-    doc.line(ML+TW/3+4, ulY, ML+2*TW/3-4, ulY);
-    doc.line(ML+2*TW/3+4, ulY, PW-MR, ulY);
-    fn(8); st([100,100,100]);
-    doc.text('Claimant (Name, Sign & Date)', ML, ulY+4);
-    doc.text('1st Approver (Name, Sign & Date)', ML+TW/3+4, ulY+4);
-    doc.text('2nd Approver (Name, Sign & Date)', ML+2*TW/3+4, ulY+4);
+    // ── Signature — fixed position from bottom ───────────────────
+    // Footer at very bottom
+    var footY = PH - 5;
     fn(7); st([120,120,120]);
-    doc.text('Author:FD', ML, PH-5);
-    doc.text('Approved By:CFO', ML, PH-2);
-    doc.text('Release date: 8th Jan.2025', PW-MR, PH-2, {align:'right'});
+    doc.text('Author:FD', ML, footY-3);
+    doc.text('Approved By:CFO', ML, footY);
+    doc.text('Release date: 8th Jan.2025', PW-MR, footY, {align:'right'});
+    // Sig underlines fixed above footer
+    var ulY = PH - 18;
+    sd(BK,0.5);
+    doc.line(ML,          ulY, ML+TW/3-4,     ulY);
+    doc.line(ML+TW/3+4,   ulY, ML+2*TW/3-4,   ulY);
+    doc.line(ML+2*TW/3+4, ulY, PW-MR,          ulY);
+    fn(8); st([100,100,100]);
+    doc.text('Claimant (Name, Sign & Date)',     ML,          ulY+4);
+    doc.text('1st Approver (Name, Sign & Date)', ML+TW/3+4,   ulY+4);
+    doc.text('2nd Approver (Name, Sign & Date)', ML+2*TW/3+4, ulY+4);
+    // Claimant content above underline
+    fn(10); st(BK);
+    var sigContentY = ulY - 22;
+    doc.text(claimant, ML, sigContentY);
+    try { doc.addImage(sigDataUrl,'PNG',ML,sigContentY+3,45,14); } catch(e){}
+    doc.text(dStr, ML, sigContentY+19);
 
     // ── Step 2: Build ack PDF ─────────────────────────────────────
     var ackBuf = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl);
