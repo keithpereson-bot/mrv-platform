@@ -4039,7 +4039,7 @@ async function gasCall(payload) {
 
   // 30-second timeout -- prevents hanging on Apps Script cold starts
   const controller = new AbortController();
-  const timer = setTimeout(function() { controller.abort(); }, 45000);
+  const timer = setTimeout(function() { controller.abort(); }, 120000);
 
   try {
     let resp;
@@ -6702,7 +6702,11 @@ async function ecfExportPDF() {
     });
 
     if (!res || !res.ok) {
-      toast('Error: ' + (res && res.error ? res.error : 'unknown'));
+      toast('Error: ' + (res && res.error ? res.error : 'Request timed out — try with fewer items or try again'));
+      return;
+    }
+    if (!res.xlsxB64 || !res.pdfBase64) {
+      toast('Error: incomplete response from server — please try again');
       return;
     }
 
