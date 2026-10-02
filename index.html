@@ -6709,7 +6709,7 @@ async function ecfExportPDF() {
     var fname = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal;
 
     // Step 2: Download the xlsx (exact template format)
-    var xlsxBytes = Uint8Array.from(atob(res.xlsxB64), function(c){return c.charCodeAt(0);});
+    var xlsxBytes = Uint8Array.from(atob(res.xlsxB64.replace(/[\s]/g,'')), function(c){return c.charCodeAt(0);});
     var xlsxBlob  = new Blob([xlsxBytes], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     var xlsxUrl   = URL.createObjectURL(xlsxBlob);
     var a1 = document.createElement('a');
@@ -6719,7 +6719,7 @@ async function ecfExportPDF() {
 
     // Step 3: Build ack PDF and merge with expense form PDF
     var ackBuf = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl);
-    var combined = await ecfMergePDFs(res.pdfBase64, ackBuf);
+    var combined = await ecfMergePDFs(res.pdfBase64.replace(/[\s]/g,''), ackBuf);
 
     var pdfBytes = Uint8Array.from(atob(combined), function(c){return c.charCodeAt(0);});
     var pdfBlob  = new Blob([pdfBytes], {type:'application/pdf'});
@@ -6833,7 +6833,7 @@ async function ecfMergePDFs(sheetsB64, ackArrayBuffer) {
       s.onload=resolve; s.onerror=reject; document.head.appendChild(s);
     });
   }
-  var sheetBytes = Uint8Array.from(atob(sheetsB64),function(c){return c.charCodeAt(0);});
+  var sheetBytes = Uint8Array.from(atob(sheetsB64.replace(/[\s]/g,'')),function(c){return c.charCodeAt(0);});
   var ackBytes   = new Uint8Array(ackArrayBuffer);
   var sheetsDoc  = await window.PDFLib.PDFDocument.load(sheetBytes);
   var ackDoc     = await window.PDFLib.PDFDocument.load(ackBytes);
