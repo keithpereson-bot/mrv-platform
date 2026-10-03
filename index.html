@@ -6785,16 +6785,16 @@ async function ecfExportPDF() {
     // ── RECEIPT NOTE + ERP ────────────────────────────────────────
     fi(7); st(DGY);
     tx("Please number and attach all receipts, stating relevant number for each entry in 'Receipt No.' column", ML, y+NOTE_H/2+0.5, {baseline:'middle'});
-    sd(BK,0.4); sf(WH);
-    doc.rect(PW-MR-18, y, 18, NOTE_H, 'S');
+    // ERP: no box, just bold text right-aligned
     fb(8); st(BK);
-    tx('ERP', PW-MR-9, y+NOTE_H/2+0.5, {align:'center',baseline:'middle'});
+    tx('ERP', PW-MR, y+NOTE_H/2+0.5, {align:'right',baseline:'middle'});
     y += NOTE_H;
 
     // ── COLUMN HEADERS ────────────────────────────────────────────
-    sf(GREY); sd(BK,0.5);
-    doc.rect(ML, y, TW, HDR_COL_H, 'FD');
-    fb(8); st(BK);
+    // Column headers: dark fill, white text (matching template exactly)
+    doc.setFillColor(30,30,30); sd(BK,0.3);
+    doc.rect(ML, y, TW, HDR_COL_H, 'F');
+    fb(8); st(WH);
     var cx=ML;
     var colDefs=[
       {w:CW.date,label:'Date'},
@@ -6806,8 +6806,8 @@ async function ecfExportPDF() {
       {w:CW.acct,label:'Expense Account\n(to be filled by Finance)'},
     ];
     colDefs.forEach(function(col){
-      sd(BK,0.5); doc.rect(cx,y,col.w,HDR_COL_H);
-      fb(7); st(BK);
+      sd(BK,0.3); doc.rect(cx,y,col.w,HDR_COL_H);
+      fb(7); st(WH);
       var lines=doc.splitTextToSize(col.label,col.w-2);
       doc.text(lines, cx+col.w/2, y+HDR_COL_H/2+0.5, {align:'center',baseline:'middle'});
       cx+=col.w;
@@ -6816,7 +6816,7 @@ async function ecfExportPDF() {
 
     // ── DATA ROWS ─────────────────────────────────────────────────
     rows.forEach(function(r,ri){
-      sf(WH); sd(BK,0.2);
+      sf(WH); sd([180,180,180],0.15);
       doc.rect(ML,y,TW,rH,'FD');
       fn(7); st(BK);
       var rx=ML;
@@ -6830,7 +6830,7 @@ async function ecfExportPDF() {
         {v:r.expAcct,       w:CW.acct,a:'left'},
       ];
       vals.forEach(function(v,vi){
-        if(vi>0){sd(BK,0.15);doc.line(rx,y,rx,y+rH);}
+        if(vi>0){sd([180,180,180],0.1);doc.line(rx,y,rx,y+rH);}
         var txt=doc.splitTextToSize(String(v.v||''),v.w-2)[0]||'';
         var tx2=v.a==='right'?rx+v.w-1:v.a==='center'?rx+v.w/2:rx+1;
         fn(7); st(BK);
@@ -6844,7 +6844,7 @@ async function ecfExportPDF() {
     var tX = ML+CW.date+CW.det;  // x where receipt col starts
 
     // TOTALS
-    sf(GREY); sd(BK,0.5); doc.rect(ML,y,TW,TOT_H,'FD');
+    sf(GREY); sd(BK,0.4); doc.rect(ML,y,TW,TOT_H,'FD');
     fb(8); st(BK);
     tx('TOTALS', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
     fn(8);
