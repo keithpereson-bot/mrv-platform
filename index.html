@@ -6695,17 +6695,27 @@ function ecfGetSelected() {
 
 function ecfBuildRows(selected,cur) {
   var rows=[],tTZS=0,tUSD=0;
+  var formBU = (document.getElementById('ecfBizUnit') || {}).value || '';
   selected.forEach(function(r,ri){
     var amt=parseFloat(r.amount)||0;
     var isTZS=(cur==='TZS'||cur==='KES'||cur==='UGX');
     var tzs=isTZS?amt:0, usd=cur==='USD'?amt:0;
     tTZS+=tzs; tUSD+=usd;
+    var metaBU = '';
+    try {
+      var m = getProjectBudgetMeta(r.project);
+      if (m) metaBU = m.businessUnit || '';
+    } catch(e) {}
     rows.push({
       date:(typeof fmtDate==='function')?fmtDate(r.date||''):(r.date||''),
-      details:(r.description||r.costSummary||r.costItem||'').slice(0,55),
+      // Details = Cost Item from sheet
+      details:(r.costItem || r.description || '').slice(0,80),
       receipt:(ri+1).toString(),
       tzs:tzs?tzs.toLocaleString():'', usd:usd?usd.toLocaleString():'',
-      bu:r.category||r.type||'', acct:r.costSummary||''
+      // Business Unit from form / budget meta
+      bu: formBU || metaBU || '',
+      // Expense Account left blank for Finance
+      acct:''
     });
   });
   // no padding — dynamic rows
@@ -6825,14 +6835,24 @@ async function ecfExportPDF() {
 
       if (btn) btn.textContent = 'Generating '+(pi+1)+'/'+projectKeys.length+'\u2026';
 
+      // Business Unit: form field → budget meta for this project → blank
+      var formBU = (document.getElementById('ecfBizUnit') || {}).value || '';
+      var metaBU = '';
+      try {
+        var _meta = getProjectBudgetMeta(projectLabel);
+        if (_meta) metaBU = _meta.businessUnit || '';
+      } catch(e) {}
       var rows = sel.map(function(req,i){
         return {
           date:    (typeof fmtDate==='function')?fmtDate(req.date||''):(req.date||''),
-          details: req.description||req.costSummary||req.costItem||'',
+          // Details column = Cost Item from the request / sheet
+          details: req.costItem || req.description || '',
           receipt: i+1,
           amount:  parseFloat(req.amount)||0,
-          bizUnit: req.category||req.type||'',
-          expAcct: req.costSummary||'',
+          // Business Unit from form or project budget metadata
+          bizUnit: formBU || metaBU || '',
+          // Expense Account left blank for Finance to fill
+          expAcct: '',
           ref: req.ref||'', project: req.project||'',
           requester: req.requester||'', sigDataUrl: req.sigDataUrl||'',
           sigLabel: req.sigLabel||'', requesterSig: req.requesterSig||'',
