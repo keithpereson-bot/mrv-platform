@@ -6794,7 +6794,7 @@ async function ecfExportPDF() {
     // ERP box — aligned exactly over the Expense Account column
     var erpX = ML + CW.date + CW.det + CW.rec + CW.kes + CW.usd + CW.bu;
     var erpW = CW.acct;
-    sd([120, 120, 120], 0.4); sf([210, 210, 210]);
+    sd([150, 150, 150], 0.35); sf([236, 236, 236]);
     doc.rect(erpX, y, erpW, NOTE_H, 'FD');
     fb(7.5); st(DK);
     tx('ERP', erpX + erpW/2, y + NOTE_H/2 + 0.3, {align: 'center', baseline: 'middle'});
@@ -6802,7 +6802,7 @@ async function ecfExportPDF() {
 
     // ── COLUMN HEADERS ────────────────────────────────────────────
     var CHH = 9;
-    sf([210, 210, 210]); sd([120, 120, 120], 0.4);
+    sf([236, 236, 236]); sd([150, 150, 150], 0.35);
     doc.rect(ML, y, TW, CHH, 'FD');
     fb(7); st(DK);
     var cx = ML;
@@ -6834,7 +6834,7 @@ async function ecfExportPDF() {
 
     // Re-usable column header drawer (for continuation pages)
     function drawColHeader() {
-      sf([210, 210, 210]); sd([120, 120, 120], 0.4);
+      sf([236, 236, 236]); sd([150, 150, 150], 0.35);
       doc.rect(ML, y, TW, CHH, 'FD');
       var cxh = ML;
       colDefs.forEach(function(col, ci) {
@@ -6928,22 +6928,23 @@ async function ecfExportPDF() {
     var bW    = buEnd - tX;
 
     var TOT_H = 5.8;
-    var BORDER = [120, 120, 120];
-    var TOT_GY = [210, 210, 210];   // slightly darker grey for TOTALS (matches target)
+    var BORDER = [150, 150, 150];
+    var TOT_GY = [236, 236, 236];   // soft light grey (matches target intensity)
+    var BAL_GY = [242, 242, 242];   // even softer for Balance row
 
     // Full-width top border of the totals block
-    sd(BORDER, 0.4);
+    sd(BORDER, 0.35);
     doc.line(ML, y, ML + TW, y);
 
     function drawTotDividers(yy) {
-      sd(BORDER, 0.3);
+      sd(BORDER, 0.28);
       [recX, kesX, usdX, buX].forEach(function(xx) {
         if (xx > tX && xx < buEnd) doc.line(xx, yy, xx, yy + TOT_H);
       });
     }
 
-    // ── TOTALS row (grey) ──
-    sf(TOT_GY); sd(BORDER, 0.4);
+    // ── TOTALS row (soft grey) ──
+    sf(TOT_GY); sd(BORDER, 0.35);
     doc.rect(tX, y, bW, TOT_H, 'FD');
     drawTotDividers(y);
     fb(7.5); st(DK);
@@ -6956,7 +6957,7 @@ async function ecfExportPDF() {
     y += TOT_H;
 
     // ── Amount Advanced row (white) ──
-    sf(WH); sd(BORDER, 0.4);
+    sf(WH); sd(BORDER, 0.35);
     doc.rect(tX, y, bW, TOT_H, 'FD');
     drawTotDividers(y);
     fb(7.5); st(DK);
@@ -6967,8 +6968,8 @@ async function ecfExportPDF() {
     tx('',                        buX  + CW.bu  - 1.2, y + TOT_H/2 + 0.4, {align: 'right', baseline: 'middle'});
     y += TOT_H;
 
-    // ── Balance claimed/Returned row ──
-    sf(WH); sd(BORDER, 0.4);
+    // ── Balance claimed/Returned row (soft grey fill) ──
+    sf(BAL_GY); sd(BORDER, 0.35);
     // left side: only a top rule (open area for the italic note)
     doc.line(ML, y, tX, y);
     doc.rect(tX, y, bW, TOT_H, 'FD');
