@@ -7025,116 +7025,127 @@ function ecfBuildAckPDF(reqs, cur, claimant, adminSig, projectLabel) {
     {label:'Requester',x:ML+120,w:28},{label:'Date',x:ML+148,w:22},
     {label:'Finance Signature',x:ML+170,w:58},{label:'Acknowledgement',x:ML+228,w:59}
   ];
-  var ROW=22;
+
+  // Fit exactly 14 data rows per page
+  // Header 16 + tblHdr 7 + footer 10 = 33; remaining 210-33 = 177; 177/14 ≈ 12.6
+  var ROWS_PER_PAGE = 14;
+  var HDR_H = 16;
+  var TH_H  = 7;
+  var FOOT_H = 10;
+  var ROW = (ph - HDR_H - 1 - TH_H - FOOT_H) / ROWS_PER_PAGE;  // ~12.6 mm
+  var SIG_H = Math.min(9, ROW - 3.5);   // signature image height
+  var SIG_W = 34;                        // signature image width
 
   function hdr(){
-    // Soft warm header background (not solid orange)
     doc.setFillColor.apply(doc, BRAND_LT);
-    doc.rect(0, 0, pw, 18, 'F');
-    // Thin brand accent line under the header
+    doc.rect(0, 0, pw, HDR_H, 'F');
     doc.setFillColor.apply(doc, BRAND);
-    doc.rect(0, 18, pw, 1.0, 'F');
+    doc.rect(0, HDR_H, pw, 1.0, 'F');
 
-    // Title + project name
     var ackTitle = projectLabel
       ? 'Expense Claim — Acknowledgement Slips  ·  ' + projectLabel
       : 'Expense Claim — Acknowledgement Slips';
     doc.setFont('helvetica','bold');
-    doc.setFontSize(ackTitle.length > 55 ? 10 : 11);
+    doc.setFontSize(ackTitle.length > 55 ? 9.5 : 10.5);
     doc.setTextColor.apply(doc, INK);
-    doc.text(ackTitle, ML, 8);
+    doc.text(ackTitle, ML, 7);
 
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, MUTED);
-    doc.text('Attached to expense claim for '+claimant+' — Generated: '+now, ML, 14);
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, MUTED);
+    doc.text('Attached to expense claim for '+claimant+' — Generated: '+now, ML, 12.5);
 
-    // Company logo (right side of header)
     try {
-      doc.addImage('data:image/png;base64,'+ECF_LOGO_B64, 'PNG', pw - MR - 36, 2.5, 34, 12);
+      doc.addImage('data:image/png;base64,'+ECF_LOGO_B64, 'PNG', pw - MR - 34, 2, 32, 11);
     } catch(e) {}
 
-    return 22;
+    return HDR_H + 1;
   }
 
   function tblHdr(y){
-    // Soft brand-tinted header (not solid orange)
     doc.setFillColor(255, 236, 220);
-    doc.rect(ML, y, W, 8, 'F');
-    // Bottom border accent
+    doc.rect(ML, y, W, TH_H, 'F');
     doc.setDrawColor.apply(doc, BRAND);
-    doc.setLineWidth(0.6);
-    doc.line(ML, y+8, ML+W, y+8);
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, HDR_TXT);
-    COLS.forEach(function(c){ doc.text(c.label, c.x+2, y+5.2); });
-    return y+8;
+    doc.setLineWidth(0.5);
+    doc.line(ML, y+TH_H, ML+W, y+TH_H);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor.apply(doc, HDR_TXT);
+    COLS.forEach(function(c){ doc.text(c.label, c.x+2, y + TH_H/2 + 0.3, {baseline:'middle'}); });
+    return y + TH_H;
   }
 
-  function drawRow(r,y,isAlt){
+  function drawRow(r, y, isAlt){
     if(isAlt){ doc.setFillColor.apply(doc, ALT); doc.rect(ML, y, W, ROW, 'F'); }
-    doc.setDrawColor.apply(doc, BRDR); doc.setLineWidth(0.2); doc.rect(ML, y, W, ROW, 'S');
+    doc.setDrawColor.apply(doc, BRDR); doc.setLineWidth(0.18); doc.rect(ML, y, W, ROW, 'S');
     COLS.forEach(function(c,i){
-      if(i>0){ doc.setDrawColor.apply(doc, BRDR); doc.setLineWidth(0.12); doc.line(c.x, y, c.x, y+ROW); }
+      if(i>0){ doc.setDrawColor.apply(doc, BRDR); doc.setLineWidth(0.1); doc.line(c.x, y, c.x, y+ROW); }
     });
-    var mid=y+ROW/2, pad=2;
+    var mid = y + ROW/2, pad = 1.5;
 
     // Ref #
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc, BRAND);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, BRAND);
     doc.text('#'+(r.ref||''), COLS[0].x+pad, mid, {baseline:'middle'});
 
     // Project / Type
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc, INK);
-    doc.text(doc.splitTextToSize(r.project||'', COLS[1].w-4)[0]||'', COLS[1].x+pad, mid-2, {baseline:'middle'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, INK);
+    doc.text(doc.splitTextToSize(r.project||'', COLS[1].w-3)[0]||'', COLS[1].x+pad, mid-1.8, {baseline:'middle'});
     if(r.type){
-      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, MUTED);
-      doc.text(r.type, COLS[1].x+pad, mid+3, {baseline:'middle'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor.apply(doc, MUTED);
+      doc.text(r.type, COLS[1].x+pad, mid+2.2, {baseline:'middle'});
     }
 
     // Category
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, INK);
-    doc.text(doc.splitTextToSize(r.category||r.description||'', COLS[2].w-4).slice(0,2), COLS[2].x+pad, mid-2, {baseline:'middle'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, INK);
+    doc.text(doc.splitTextToSize(r.category||r.description||'', COLS[2].w-3).slice(0,2), COLS[2].x+pad, mid-1.5, {baseline:'middle'});
 
     // Amount
-    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor.apply(doc, INK);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc, INK);
     doc.text((parseFloat(r.amount)||0).toLocaleString(), COLS[3].x+pad, mid, {baseline:'middle'});
 
     // Requester
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, INK);
-    doc.text(r.requester||'', COLS[4].x+pad, mid, {baseline:'middle', maxWidth:COLS[4].w-4});
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, INK);
+    doc.text(r.requester||'', COLS[4].x+pad, mid, {baseline:'middle', maxWidth:COLS[4].w-3});
 
     // Date
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, MUTED);
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, MUTED);
     doc.text(typeof fmtDate==='function'?fmtDate(r.sigTime||r.date||''):(r.date||''), COLS[5].x+pad, mid, {baseline:'middle'});
 
-    // Finance signature
-    var fx=COLS[6].x+pad;
-    if(adminSig){ try{ doc.addImage(adminSig,'PNG', fx, y+2, Math.min(40,COLS[6].w-8), ROW-6, undefined, 'FAST'); }catch(e){} }
-    doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor.apply(doc, INK);
-    doc.text(claimant||'', fx, y+ROW-4);
+    // Finance signature — keep fully visible
+    var fx = COLS[6].x + pad;
+    var sigY = y + (ROW - SIG_H) / 2;
+    if(adminSig){
+      try { doc.addImage(adminSig, 'PNG', fx, sigY, SIG_W, SIG_H, undefined, 'FAST'); } catch(e) {}
+    }
+    doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor.apply(doc, INK);
+    doc.text(claimant||'', fx, y + ROW - 1.2);
 
-    // Acknowledgement
-    var ax=COLS[7].x+pad;
-    if(r.requesterSig && r.requesterSig.length>100){
-      try{ doc.addImage(r.requesterSig,'PNG', ax, y+2, Math.min(40,COLS[7].w-8), ROW-6, undefined, 'FAST'); }catch(e){}
-      doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor.apply(doc, GREEN);
-      doc.text('\u2713 '+(r.requesterSigName||r.requester||''), ax, y+ROW-4);
+    // Acknowledgement signature — keep fully visible
+    var ax = COLS[7].x + pad;
+    if(r.requesterSig && r.requesterSig.length > 100){
+      try { doc.addImage(r.requesterSig, 'PNG', ax, sigY, SIG_W, SIG_H, undefined, 'FAST'); } catch(e) {}
+      doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor.apply(doc, GREEN);
+      doc.text('\u2713 '+(r.requesterSigName||r.requester||''), ax, y + ROW - 1.2);
     } else if(r.requesterSigName){
-      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor.apply(doc, GREEN);
-      doc.text('\u2713', ax+4, mid, {baseline:'middle'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, INK);
-      doc.text(r.requesterSigName, ax+10, mid, {baseline:'middle'});
+      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc, GREEN);
+      doc.text('\u2713', ax+3, mid, {baseline:'middle'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, INK);
+      doc.text(r.requesterSigName, ax+9, mid, {baseline:'middle'});
     } else {
-      doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, AMBER);
+      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor.apply(doc, AMBER);
       doc.text('Awaiting', ax, mid, {baseline:'middle'});
     }
   }
 
-  var y=hdr(); y=tblHdr(y);
-  reqs.forEach(function(r,i){
-    if(y+ROW > ph-12){
-      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, MUTED);
-      doc.text('Expense Claim — Acknowledgements', ML, ph-5);
-      doc.addPage(); y=hdr(); y=tblHdr(y);
+  var y = hdr(); y = tblHdr(y);
+  var rowsOnPage = 0;
+  reqs.forEach(function(r, i){
+    if(rowsOnPage >= ROWS_PER_PAGE){
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, MUTED);
+      doc.text('Expense Claim — Acknowledgements', ML, ph - 4);
+      doc.addPage();
+      y = hdr(); y = tblHdr(y);
+      rowsOnPage = 0;
     }
-    drawRow(r, y, i%2===1); y+=ROW;
+    drawRow(r, y, i % 2 === 1);
+    y += ROW;
+    rowsOnPage++;
   });
 
   // Footer
