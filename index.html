@@ -6874,7 +6874,7 @@ async function ecfExportPDF() {
 
     // TOTALS block — starts at tX (after Date+Details), not full width
     // Left of tX is open (no box) matching the reference
-    var bW = ML+TW-tX;  // width from Receipt col to right edge
+    var bW = CW.rec+CW.kes+CW.usd+CW.bu;  // ends at Business Unit right edge (not Expense Account)
 
     // Horizontal line above TOTALS block (across full width like reference)
     sd([100,100,100],0.3);
