@@ -6788,12 +6788,43 @@ function ecfGetSelected() {
   return out;
 }
 
+// Aggregate selected requests by Cost Item (one form line per unique cost item)
+function ecfAggregateByCostItem(selected) {
+  var map = {};
+  var order = [];
+  (selected || []).forEach(function(r){
+    var key = String(r.costItem || r.description || 'Other').trim().toLowerCase();
+    if (!map[key]) {
+      map[key] = {
+        costItem: r.costItem || r.description || 'Other',
+        amount: 0,
+        date: r.date || '',
+        project: r.project || '',
+        type: r.type || '',
+        category: r.category || '',
+        count: 0,
+        refs: []
+      };
+      order.push(key);
+    }
+    map[key].amount += parseFloat(r.amount) || 0;
+    map[key].count += 1;
+    if (r.ref) map[key].refs.push(r.ref);
+    // Keep the latest date string when possible
+    if (r.date && (!map[key].date || String(r.date) > String(map[key].date))) {
+      map[key].date = r.date;
+    }
+  });
+  return order.map(function(k){ return map[k]; });
+}
+
 function ecfBuildRows(selected,cur) {
   var rows=[],tTZS=0,tUSD=0;
   var formBU = (document.getElementById('ecfBizUnit') || {}).value || '';
-  selected.forEach(function(r,ri){
+  var aggregated = ecfAggregateByCostItem(selected);
+  aggregated.forEach(function(r,ri){
     var amt=parseFloat(r.amount)||0;
-    var isTZS=(cur==='TZS'||cur==='KES'||cur==='UGX');
+    var isTZS=(cur==='TZS'||cur==='KES'||cur==='UGX'||cur==='CDF'||cur==='RWF');
     var tzs=isTZS?amt:0, usd=cur==='USD'?amt:0;
     tTZS+=tzs; tUSD+=usd;
     var metaBU = '';
@@ -6803,17 +6834,13 @@ function ecfBuildRows(selected,cur) {
     } catch(e) {}
     rows.push({
       date:(typeof fmtDate==='function')?fmtDate(r.date||''):(r.date||''),
-      // Details = Cost Item from sheet
-      details:(r.costItem || r.description || '').slice(0,80),
+      details: String(r.costItem || '').slice(0,80),
       receipt:(ri+1).toString(),
       tzs:tzs?tzs.toLocaleString():'', usd:usd?usd.toLocaleString():'',
-      // Business Unit from form / budget meta
       bu: formBU || metaBU || '',
-      // Expense Account left blank for Finance
       acct:''
     });
   });
-  // no padding — dynamic rows
   return {rows:rows,totalTZS:tTZS,totalUSD:tUSD};
 }
 
@@ -6937,21 +6964,20 @@ async function ecfExportPDF() {
         var _meta = getProjectBudgetMeta(projectLabel);
         if (_meta) metaBU = _meta.businessUnit || '';
       } catch(e) {}
-      var rows = sel.map(function(req,i){
+      // One form line per unique Cost Item (amounts aggregated)
+      var aggregated = ecfAggregateByCostItem(sel);
+      var rows = aggregated.map(function(item, i){
         return {
-          date:    (typeof fmtDate==='function')?fmtDate(req.date||''):(req.date||''),
-          // Details column = Cost Item from the request / sheet
-          details: req.costItem || req.description || '',
+          date:    (typeof fmtDate==='function')?fmtDate(item.date||''):(item.date||''),
+          details: item.costItem || '',
           receipt: i+1,
-          amount:  parseFloat(req.amount)||0,
-          // Business Unit from form or project budget metadata
+          amount:  parseFloat(item.amount)||0,
           bizUnit: formBU || metaBU || '',
-          // Expense Account left blank for Finance to fill
           expAcct: '',
-          ref: req.ref||'', project: req.project||'',
-          requester: req.requester||'', sigDataUrl: req.sigDataUrl||'',
-          sigLabel: req.sigLabel||'', requesterSig: req.requesterSig||'',
-          requesterSigName: req.requesterSigName||''
+          // Keep first ref for tracing; ack slips still use full `sel`
+          ref: (item.refs && item.refs[0]) || '',
+          project: item.project || projectLabel || '',
+          count: item.count || 1
         };
       });
 
