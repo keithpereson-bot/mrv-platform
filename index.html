@@ -6872,36 +6872,46 @@ async function ecfExportPDF() {
     var TOT_H = 5.5;
     var tX = ML+CW.date+CW.det;
 
-    // TOTALS — light grey fill
-    sf(MGY); sd([100,100,100],0.4); doc.rect(ML,y,TW,TOT_H,'FD');
+    // TOTALS block — starts at tX (after Date+Details), not full width
+    // Left of tX is open (no box) matching the reference
+    var bW = ML+TW-tX;  // width from Receipt col to right edge
+
+    // Horizontal line above TOTALS block (across full width like reference)
+    sd([100,100,100],0.3);
+    doc.line(ML, y, ML+TW, y);
+
+    // TOTALS — grey fill, starts at tX
+    sf(MGY); sd([100,100,100],0.4); doc.rect(tX,y,bW,TOT_H,'FD');
     fb(7.5); st(DK);
     tx('TOTALS', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
     fn(7.5);
-    tx(String(n),          tX+CW.rec/2,           y+TOT_H/2+0.5,{align:'center',baseline:'middle'});
-    tx(cur+' '+fmt(total), tX+CW.rec+CW.kes-1,    y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
-    tx('$0.00',            tX+CW.rec+CW.kes+CW.usd-1,y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
+    tx(String(n),          tX+CW.rec/2,                    y+TOT_H/2+0.5,{align:'center',baseline:'middle'});
+    tx(cur+' '+fmt(total), tX+CW.rec+CW.kes-1,             y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
+    tx('$0.00',            tX+CW.rec+CW.kes+CW.usd-1,      y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
     tx('$0.00',            tX+CW.rec+CW.kes+CW.usd+CW.bu-1,y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
     y+=TOT_H;
 
-    // Amount Advanced
-    sf(WH); sd([100,100,100],0.4); doc.rect(ML,y,TW,TOT_H,'FD');
+    // Amount Advanced — white, starts at tX
+    sf(WH); sd([100,100,100],0.4); doc.rect(tX,y,bW,TOT_H,'FD');
     fb(7.5); st(DK);
     tx('Amount Advanced', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
     fn(7.5);
     tx(cur+' '+fmt(advanced), tX+CW.rec+CW.kes-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
     y+=TOT_H;
 
-    // Balance
-    sf(WH); sd([100,100,100],0.4); doc.rect(ML,y,TW,TOT_H,'FD');
+    // Balance — white, full width (italic note on left, values on right)
+    sf(WH); sd([100,100,100],0.4);
+    doc.rect(ML,y,ML+TW-ML,TOT_H,'FD');  // full width for the italic note
+    doc.rect(tX,y,bW,TOT_H,'FD');        // also box the right portion
     fi(7); st(MK);
     tx('Advance approved by (Name, & Amount)', ML+1, y+TOT_H/2+0.5, {baseline:'middle'});
     fb(7.5); st(DK);
     tx('Balance claimed/Returned', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
     fn(7.5); st(balance<0?RD:DK);
     var balStr=balance<0?'('+cur+' '+fmt(Math.abs(balance))+')':cur+' '+fmt(balance);
-    tx(balStr,  tX+CW.rec+CW.kes-1,        y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
+    tx(balStr,  tX+CW.rec+CW.kes-1,             y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
     fn(7.5); st(DK);
-    tx('$0.00', tX+CW.rec+CW.kes+CW.usd-1, y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
+    tx('$0.00', tX+CW.rec+CW.kes+CW.usd-1,      y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
     tx('0',     tX+CW.rec+CW.kes+CW.usd+CW.bu-1,y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
     y+=TOT_H;
 
