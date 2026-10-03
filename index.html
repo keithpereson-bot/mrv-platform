@@ -1145,8 +1145,8 @@
   <!-- -- STEP 5: WEEKLY EXPENSING -- -->
   <div id="view-expenses" class="view">
     <div class="page-header">
-      <h1>Weekly Expensing &amp; Expense Claim Form</h1>
-      <p>Record weekly expenses and auto-fill the Burn Manufacturing 2026 expense claim template from paid requests</p>
+      <h1>Expense Claim Form</h1>
+      <p>Auto-fill the Burn Manufacturing expense claim template from paid requests, sign, and export to PDF</p>
     </div>
 
     <!-- ── EXPENSE CLAIM FORM SECTION ──────────────────────── -->
@@ -1229,70 +1229,7 @@
       </div>
     </div>
 
-    <!-- ── WEEKLY EXPENSE LOG (existing) ────────────────────── -->
-    <div style="margin-top:32px;margin-bottom:8px;padding-top:24px;border-top:2px solid var(--border)">
-      <h2 style="font-size:15px;font-weight:700;color:var(--gray-900);margin-bottom:4px">Weekly Expense Log</h2>
-      <p style="font-size:12.5px;color:var(--muted)">Record individual expenses and collect recipient signatures</p>
     </div>
-
-    <div class="two-col">
-      <div class="card">
-        <div class="card-header"><div class="card-title">Record Expense</div></div>
-        <div class="card-body">
-          <div class="form-grid">
-            <div class="form-group"><label>Project</label><select id="expProjectSelect"></select></div>
-            <div class="form-group"><label>Request Reference</label><select id="expReqSelect"></select></div>
-            <div class="form-group"><label>Amount Expensed (KES)</label><input type="number" placeholder="0"></div>
-            <div class="form-group"><label>Expense Date</label><input type="date"></div>
-            <div class="form-group form-full"><label>Description</label><input type="text" placeholder="Brief description of expense"></div>
-            <div class="form-group form-full">
-              <label>Receipt / Supporting Document</label>
-              <div class="upload-zone" onclick="toast('File upload simulated OK')">&#128206; Click to attach receipt or drag &amp; drop</div>
-            </div>
-          </div>
-          <!-- Inline signature widget -->
-          <div style="margin-bottom:16px;">
-            <label style="margin-bottom:10px;">Recipient Signature</label>
-            <div id="expSigDisplay" style="display:none;" class="sig-applied">
-              <img id="expSigImg" src="" alt="signature">
-              <div class="sig-applied-info">
-                <div class="sig-applied-name" id="expSigName"></div>
-                <div class="sig-applied-time" id="expSigTime"></div>
-              </div>
-              <span class="sig-stamp">OK Signed</span>
-              <button class="btn btn-ghost btn-sm" onclick="clearExpSig()" style="margin-left:8px">Change</button>
-            </div>
-            <div id="expSigWidget">
-              <div class="sig-tabs">
-                <button class="sig-tab active" onclick="switchSigTab(this,'exp-saved')">&#128190; Saved Signatures</button>
-                <button class="sig-tab" onclick="switchSigTab(this,'exp-draw')">&#9998;&#65039; Draw</button>
-              </div>
-              <div id="exp-saved" class="sig-panel active">
-                <div class="sig-grid" id="expSavedGrid"></div>
-                <p class="text-sm text-muted" style="margin-top:4px">No saved signature yet. Draw one using the canvas below.</p>
-              </div>
-              <div id="exp-draw" class="sig-panel">
-                <canvas id="expCanvas" width="900" height="160" style="width:100%;height:160px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none;"></canvas>
-                <div class="flex gap-2" style="margin-top:8px">
-                  <button class="btn btn-ghost btn-sm" onclick="clearCanvas('expCanvas')">Clear</button>
-                  <button class="btn btn-primary btn-sm" onclick="applyDrawnSig('exp')">Apply Signature</button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <button class="btn btn-primary" onclick="submitExpense()">Submit Expense</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">Weekly Expense Log</div></div>
-        <div class="card-body" style="padding:0">
-          <table><thead><tr><th>Date</th><th>Project</th><th>Amount</th><th>Signature</th></tr></thead>
-          <tbody id="expenseLog"></tbody></table>
-          <div style="padding:14px 16px;font-size:13px;color:var(--purple);font-weight:600;border-top:1px solid var(--border);">Total Expensed: <span class="currency">0</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- -- STEP 6: RECONCILIATION -- -->
   <div id="view-reconciliation" class="view">
@@ -6050,7 +5987,7 @@ function buildSidebar() {
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
       { type:'item', label:'Load Funds',       view:'funds',          icon:'funds' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
-      { type:'item', label:'Weekly Expensing', view:'expenses',       icon:'expenses' },
+      { type:'item', label:'Expense Claim',    view:'expenses',       icon:'expenses' },
       { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
@@ -6065,7 +6002,7 @@ function buildSidebar() {
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
       { type:'item', label:'Load Funds',       view:'funds',          icon:'funds' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
-      { type:'item', label:'Weekly Expensing', view:'expenses',       icon:'expenses' },
+      { type:'item', label:'Expense Claim',    view:'expenses',       icon:'expenses' },
       { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
@@ -6080,7 +6017,7 @@ function buildSidebar() {
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
       { type:'item', label:'Load Funds',       view:'funds',          icon:'funds' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
-      { type:'item', label:'Weekly Expensing', view:'expenses',       icon:'expenses' },
+      { type:'item', label:'Expense Claim',    view:'expenses',       icon:'expenses' },
       { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
