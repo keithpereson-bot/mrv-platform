@@ -797,26 +797,51 @@
 
   @media (max-width:768px) {
     #sheetsStatusPill,.desktop-only { display:none !important; }
-    #mobileSignOutBtn { display:inline-flex !important; align-items:center; }
+    #mobileSignOutBtn {
+      display:inline-flex !important;
+      align-items:center;
+      visibility:visible !important;
+      opacity:1 !important;
+      position:relative;
+      z-index:160;
+      min-height:32px;
+      padding:6px 12px;
+      font-size:12px;
+    }
     #menuToggle { display:flex; }
-    nav { padding:0 12px; }
-    /* Keep sign-out reachable: don't let avatar/menu crowd it out */
-    .nav-user { margin-left:4px; }
-    #userMenuDropdown { right:8px; left:auto; max-width:calc(100vw - 16px); }
-    /* Sidebar sign-out footer always visible on mobile */
+    nav { padding:0 10px; gap:6px; }
+    nav > div:last-child {
+      display:flex !important;
+      align-items:center;
+      gap:8px;
+      flex-shrink:0;
+      margin-left:auto;
+    }
+    .nav-brand { min-width:0; flex:1; overflow:hidden; }
+    .nav-user { margin-left:0; flex-shrink:0; }
+    #userMenuDropdown { right:8px; left:auto; max-width:calc(100vw - 16px); z-index:600; }
+    /* Sidebar: scrollable nav + pinned Sign Out footer */
+    .aside-nav-scroll { flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; }
     .aside-signout {
       display:flex !important;
-      position:sticky; bottom:0;
-      background:var(--gray-50);
-      border-top:1px solid var(--border);
-      margin-top:auto;
+      visibility:visible !important;
+      flex-shrink:0;
+      background:#fff7ed;
+      border-top:1px solid rgba(242,92,10,.25);
+      margin-top:0 !important;
+      position:relative;
+      z-index:2;
     }
     .layout { height:calc(100vh - 56px); }
     aside {
       position:fixed;top:56px;left:0;bottom:56px;
       transform:translateX(-100%);transition:transform .25s cubic-bezier(.4,0,.2,1);
-      z-index:130;width:240px;
+      z-index:130;width:260px;
       box-shadow:4px 0 24px rgba(0,0,0,.12);
+      display:flex !important;
+      flex-direction:column;
+      padding-bottom:0;
+      overflow:hidden;
     }
     aside.open { transform:translateX(0); }
     main { padding:16px;padding-bottom:72px;width:100%; }
@@ -909,7 +934,7 @@
       <div class="nav-sub">Money-In / Money-Out</div>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px">
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto">
     <!-- Font size accessibility toggle -->
     <div class="font-size-toggle desktop-only" title="Adjust text size">
       <button class="fst-btn active" id="fst-normal" onclick="setFontSize('normal')">A</button>
@@ -921,12 +946,12 @@
       <span id="sheetsStatusLabel">Not connected</span>
     </div>
     <span class="desktop-only" style="font-size:12px;opacity:.7">June 2026</span>
+    <!-- Mobile sign-out — placed before avatar so it never gets clipped -->
+    <button type="button" id="mobileSignOutBtn" onclick="event.stopPropagation();doLogout();">Sign Out</button>
     <div class="nav-user" style="position:relative;cursor:pointer;flex-shrink:0" id="navUserAvatar" onclick="toggleUserMenu()" title="Account / Sign Out">
       <span id="navUserInitials">?</span>
       <span id="navRoleDot" style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;background:#C89B2A;border-radius:50%;border:2px solid var(--teal);"></span>
     </div>
-    <!-- Mobile sign-out -- always visible, no dropdown needed -->
-    <button id="mobileSignOutBtn" onclick="doLogout()">Sign Out</button>
   </div>
 </nav>
 
@@ -6137,13 +6162,16 @@ function buildSidebar() {
       + '</div>';
   }).join('');
 
-  // Sign Out always available in the sidebar (critical on mobile)
+  // Sign Out pinned at bottom of sidebar (always reachable on mobile)
   var signOutHtml =
-    '<div class="aside-signout" onclick="doLogout()" style="display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;color:var(--danger);font-size:13.5px;font-weight:600;margin-top:auto;border-top:1px solid var(--border)">'
-    + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'
+    '<div class="aside-signout" role="button" tabindex="0" onclick="doLogout()" '
+    + 'style="display:flex;align-items:center;gap:10px;padding:16px;cursor:pointer;color:#c2410c;font-size:14px;font-weight:700;">'
+    + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'
     + 'Sign Out</div>';
 
-  aside.innerHTML = itemsHtml + signOutHtml;
+  aside.innerHTML =
+    '<div class="aside-nav-scroll">' + itemsHtml + '</div>'
+    + signOutHtml;
 }
 
 // Called by loginSuccess() after a successful sign-in
@@ -6700,6 +6728,35 @@ function ecfAutoHeader(force) {
   }
 
   var meta = getProjectBudgetMeta(project);
+
+  // Resolve type from first paid request of this project (for currency lookup)
+  var typeHint = '';
+  var paidForProj = (_ecfFilteredPaid || []).filter(function(r){ return r.project === project; });
+  if (paidForProj.length) typeHint = paidForProj[0].type || '';
+  if (!typeHint && meta) typeHint = meta.type || '';
+
+  // Currency: prefer budget line currency for this project (+ type if known)
+  var projCurrency = '';
+  if (typeof getCurrency === 'function') {
+    projCurrency = getCurrency(project, typeHint) || '';
+  }
+  if (!projCurrency && meta && meta.currency) projCurrency = meta.currency;
+  if (projCurrency) {
+    var curSel = document.getElementById('ecfCurrency');
+    if (curSel) {
+      // Ensure option exists (e.g. CDF, RWF not in default list)
+      var hasOpt = Array.prototype.some.call(curSel.options, function(o){ return o.value === projCurrency; });
+      if (!hasOpt) {
+        var opt = document.createElement('option');
+        opt.value = projCurrency;
+        opt.textContent = projCurrency;
+        curSel.appendChild(opt);
+      }
+      // Always apply when forcing (project change) or when empty
+      if (force || !curSel.value) curSel.value = projCurrency;
+    }
+  }
+
   if (!meta) return;
 
   // Dedicated ECF columns on the Budgets sheet (preferred)
@@ -6712,12 +6769,6 @@ function ecfAutoHeader(force) {
   set('ecfDimCode',      meta.dimensionCode);
   set('ecfCarbonCode',   meta.carbonCode);
   set('ecfBizUnit',      meta.businessUnit || meta.type);
-  if (meta.currency) {
-    var curSel = document.getElementById('ecfCurrency');
-    if (curSel && (force || !curSel.value || curSel.value === 'KES' || curSel.value === 'TZS')) {
-      curSel.value = meta.currency;
-    }
-  }
 }
 
 function ecfGetSelected() {
@@ -7618,11 +7669,16 @@ function ecfInit() {
   </div>
   <div class="mob-nav-item" id="mob-history" onclick="showView('history',null);setMobActive('mob-history')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    <span>My History</span>
+    <span>History</span>
   </div>
   <div class="mob-nav-item non-requester-only" id="mob-more" onclick="toggleSidebar()">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     <span>More</span>
+  </div>
+  <!-- Always-visible Sign Out for mobile (all roles) -->
+  <div class="mob-nav-item" id="mob-logout" onclick="doLogout()" style="color:var(--danger)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    <span>Sign Out</span>
   </div>
 </nav>
 
