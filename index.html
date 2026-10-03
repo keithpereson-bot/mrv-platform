@@ -1152,27 +1152,44 @@
     <!-- ── EXPENSE CLAIM FORM SECTION ──────────────────────── -->
     <div style="margin-bottom:8px">
       <h2 style="font-size:15px;font-weight:700;color:var(--gray-900);margin-bottom:4px">Expense Claim Form</h2>
-      <p style="font-size:12.5px;color:var(--muted)">Auto-fill the official template from paid requests, sign as admin, export to PDF</p>
+      <p style="font-size:12.5px;color:var(--muted)">One form per project — select a project, include its paid requests, sign, and export to PDF</p>
     </div>
 
-    <!-- Step 1: Select paid requests -->
+    <!-- Step 1: Select project -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 1 &mdash; Select Paid Requests to Include</div>
-        <div style="display:flex;gap:6px">
+        <div class="card-title">Step 1 &mdash; Select Project</div>
+      </div>
+      <div class="card-body">
+        <div class="form-group" style="margin:0;max-width:420px">
+          <label>Project to expense</label>
+          <select id="ecfProjectSelect" onchange="ecfOnProjectChange()">
+            <option value="">— Select a project —</option>
+          </select>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:6px">Each project generates its own expense claim form. Only paid requests for the selected project will appear below.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Select paid requests for that project -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Step 2 &mdash; Select Paid Requests to Include</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="badge badge-gray" id="ecfReqCount" style="margin-right:4px">0</span>
           <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(true)">All</button>
           <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(false)">None</button>
         </div>
       </div>
       <div id="ecfRequestList" style="max-height:260px;overflow-y:auto;border-top:1px solid var(--border)">
-        <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">No paid requests available. Mark requests as Paid in System Requests first.</div>
+        <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">Select a project above to load its paid requests.</div>
       </div>
     </div>
 
-    <!-- Step 2: Header fields -->
+    <!-- Step 3: Header fields -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 2 &mdash; Form Header</div>
+        <div class="card-title">Step 3 &mdash; Form Header</div>
         <button class="btn btn-ghost btn-sm" onclick="ecfAutoHeader()">&#8635; Auto-fill from data</button>
       </div>
       <div class="card-body">
@@ -1196,10 +1213,10 @@
       </div>
     </div>
 
-    <!-- Step 3: Preview -->
+    <!-- Step 4: Preview -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 3 &mdash; Form Preview</div>
+        <div class="card-title">Step 4 &mdash; Form Preview</div>
         <button class="btn btn-secondary btn-sm" onclick="ecfRefreshPreview()">&#8635; Refresh Preview</button>
       </div>
       <div style="padding:16px;overflow-x:auto;background:#f5f5f5">
@@ -1209,10 +1226,10 @@
       </div>
     </div>
 
-    <!-- Step 4: Signature + Export -->
+    <!-- Step 5: Signature + Export -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 4 &mdash; Admin Signature &amp; Export PDF</div>
+        <div class="card-title">Step 5 &mdash; Admin Signature &amp; Export PDF</div>
       </div>
       <div class="card-body">
         <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Your <strong>saved signature</strong> will be used automatically as the Claimant signature. Draw below only if you have no saved signature.</p>
@@ -6459,63 +6476,140 @@ function ecfGetAdminSig() {
   return null;
 }
 
+// Paid requests currently shown in the ECF list (filtered by project)
+var _ecfFilteredPaid = [];
+
+function ecfPopulateProjects() {
+  var sel = document.getElementById('ecfProjectSelect');
+  if (!sel) return;
+  var prev = sel.value || '';
+  var paid = (requestsStore || []).filter(function(r){ return r.status === 'Paid'; });
+  var projects = {};
+  paid.forEach(function(r){
+    if (r.project) {
+      if (!projects[r.project]) projects[r.project] = { count: 0, total: 0 };
+      projects[r.project].count++;
+      projects[r.project].total += parseFloat(r.amount) || 0;
+    }
+  });
+  var names = Object.keys(projects).sort();
+  sel.innerHTML = '<option value="">— Select a project —</option>' +
+    names.map(function(p){
+      var info = projects[p];
+      return '<option value="'+p.replace(/"/g,'&quot;')+'">'+p+
+        '  ('+info.count+' paid · '+info.total.toLocaleString()+')</option>';
+    }).join('');
+  // Restore previous selection if still available
+  if (prev && projects[prev]) sel.value = prev;
+}
+
+function ecfOnProjectChange() {
+  // Clear header fields that were auto-filled for the previous project
+  ['ecfEntity','ecfProfitCentre','ecfCountry','ecfCostCentre','ecfDimCode',
+   'ecfCarbonCode','ecfBizUnit','ecfProductCode','ecfRdCode'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ecfLoadRequests();
+  ecfAutoHeader();
+  // Clear preview
+  var area = document.getElementById('ecfPreview');
+  if (area) area.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px">Click Refresh Preview to see the filled form.</div>';
+}
+
 function ecfLoadRequests() {
   var list = document.getElementById('ecfRequestList');
+  var countEl = document.getElementById('ecfReqCount');
   if (!list) return;
-  var paid = (requestsStore||[]).filter(function(r){ return r.status==='Paid'; });
-  if (!paid.length) {
-    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">No paid requests found. Mark requests as Paid in System Requests first.</div>';
+
+  var project = (document.getElementById('ecfProjectSelect') || {}).value || '';
+  if (!project) {
+    _ecfFilteredPaid = [];
+    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">Select a project above to load its paid requests.</div>';
+    if (countEl) countEl.textContent = '0';
     return;
   }
-  list.innerHTML = paid.map(function(r,i){
-    var amt = parseFloat(r.amount)||0;
-    var cur = (typeof getCurrency==='function') ? getCurrency(r.project,r.type)||'KES' : 'KES';
-    var desc = (r.costSummary||r.description||r.costItem||'No description').replace(/</g,'&lt;');
-    var cat  = (r.category||'').replace(/</g,'&lt;');
+
+  var paid = (requestsStore || []).filter(function(r){
+    return r.status === 'Paid' && r.project === project;
+  });
+  _ecfFilteredPaid = paid;
+
+  if (!paid.length) {
+    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">No paid requests for <strong>'+project.replace(/</g,'&lt;')+'</strong>. Mark requests as Paid in System Requests first.</div>';
+    if (countEl) countEl.textContent = '0';
+    return;
+  }
+
+  list.innerHTML = paid.map(function(r, i){
+    var amt = parseFloat(r.amount) || 0;
+    var cur = (typeof getCurrency === 'function') ? getCurrency(r.project, r.type) || 'KES' : 'KES';
+    var desc = (r.costSummary || r.description || r.costItem || 'No description').replace(/</g, '&lt;');
+    var cat  = (r.category || '').replace(/</g, '&lt;');
     return '<label style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background=\'var(--gray-50)\'" onmouseout="this.style.background=\'\'">'
-      +'<input type="checkbox" class="ecf-chk" data-i="'+i+'" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0" checked>'
+      +'<input type="checkbox" class="ecf-chk" data-ref="'+(r.ref||'').replace(/"/g,'&quot;')+'" data-i="'+i+'" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0" checked>'
       +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:12.5px;font-weight:600;color:var(--gray-900)">'+desc+'</div>'
-        +'<div style="font-size:11px;color:var(--gray-500);margin-top:2px">'+(r.ref||'')+(cat?' &bull; '+cat:'')+' &bull; '+(r.project||'')+(r.date?' &bull; '+(typeof fmtDate==='function'?fmtDate(r.date):r.date):'')+'</div>'
+        +'<div style="font-size:11px;color:var(--gray-500);margin-top:2px">'+(r.ref||'')+(cat?' &bull; '+cat:'')+(r.type?' &bull; '+r.type:'')+(r.date?' &bull; '+(typeof fmtDate==='function'?fmtDate(r.date):r.date):'')+'</div>'
       +'</div>'
       +'<div style="font-size:13px;font-weight:700;color:var(--gray-900);white-space:nowrap">'+cur+' '+amt.toLocaleString()+'</div>'
       +'</label>';
   }).join('');
+
+  if (countEl) countEl.textContent = paid.length + ' request' + (paid.length === 1 ? '' : 's');
 }
 
-function ecfSelAll(v) { document.querySelectorAll('.ecf-chk').forEach(function(c){c.checked=v;}); }
+function ecfSelAll(v) { document.querySelectorAll('.ecf-chk').forEach(function(c){ c.checked = v; }); }
 
 function ecfAutoHeader() {
   var dateEl = document.getElementById('ecfDate');
   if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
   if (currentUser) {
     var cEl = document.getElementById('ecfClaimant');
-    if (cEl && !cEl.value) cEl.value = currentUser.name||'';
+    if (cEl && !cEl.value) cEl.value = currentUser.name || '';
     var jEl = document.getElementById('ecfJobTitle');
     if (jEl && !jEl.value) {
-      var rm={admin:'Finance Manager',approver:'Senior Officer',manager:'Manager',requester:'Officer',viewer:'Viewer'};
-      jEl.value = rm[currentUser.role]||currentUser.role||'';
+      var rm = {admin:'Finance Manager',approver:'Senior Officer',manager:'Manager',requester:'Officer',viewer:'Viewer'};
+      jEl.value = rm[currentUser.role] || currentUser.role || '';
     }
   }
-  var paid = (requestsStore||[]).filter(function(r){ return r.status==='Paid'; });
+  var project = (document.getElementById('ecfProjectSelect') || {}).value || '';
+  var paid = _ecfFilteredPaid.length
+    ? _ecfFilteredPaid
+    : (requestsStore || []).filter(function(r){ return r.status === 'Paid' && (!project || r.project === project); });
   if (!paid.length) return;
   var r = paid[0];
-  function sif(id,val){var el=document.getElementById(id);if(el&&!el.value&&val)el.value=val;}
-  var bl = (budgetLines||[]).find(function(l){return l.project===r.project&&l.type===r.type;});
+  function sif(id, val){ var el = document.getElementById(id); if (el && !el.value && val) el.value = val; }
+  var bl = (budgetLines || []).find(function(l){ return l.project === r.project && l.type === r.type; });
   if (bl) {
-    sif('ecfEntity',bl.country||''); sif('ecfProfitCentre',bl.type||'');
-    sif('ecfCountry',bl.country||''); sif('ecfCostCentre',bl.dept||'');
-    sif('ecfDimCode',bl.costItem||''); sif('ecfCarbonCode',bl.costSummary||'');
-    if (bl.currency){var sel=document.getElementById('ecfCurrency');if(sel)sel.value=bl.currency;}
+    sif('ecfEntity', bl.country || '');
+    sif('ecfProfitCentre', bl.type || '');
+    sif('ecfCountry', bl.country || '');
+    sif('ecfCostCentre', bl.dept || '');
+    sif('ecfDimCode', bl.costItem || '');
+    sif('ecfCarbonCode', bl.costSummary || '');
+    if (bl.currency) {
+      var curSel = document.getElementById('ecfCurrency');
+      if (curSel) curSel.value = bl.currency;
+    }
   }
-  sif('ecfBizUnit',r.type||r.category||'');
+  sif('ecfBizUnit', r.type || r.category || '');
 }
 
 function ecfGetSelected() {
-  var paid = (requestsStore||[]).filter(function(r){return r.status==='Paid';});
-  var out=[];
+  // Prefer filtered list; fall back to all paid if needed
+  var source = _ecfFilteredPaid.length
+    ? _ecfFilteredPaid
+    : (requestsStore || []).filter(function(r){ return r.status === 'Paid'; });
+  var byRef = {};
+  source.forEach(function(r){ if (r.ref) byRef[r.ref] = r; });
+  var out = [];
   document.querySelectorAll('.ecf-chk').forEach(function(c){
-    if(c.checked){var i=parseInt(c.dataset.i);if(paid[i])out.push(paid[i]);}
+    if (!c.checked) return;
+    var ref = c.dataset.ref;
+    if (ref && byRef[ref]) { out.push(byRef[ref]); return; }
+    var i = parseInt(c.dataset.i);
+    if (!isNaN(i) && source[i]) out.push(source[i]);
   });
   return out;
 }
@@ -6602,8 +6696,10 @@ var ECF_LOGO_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAPAAAABkCAMAAACPfE31AAAAA3NCSVQICAjb
 
 
 async function ecfExportPDF() {
+  var project = (document.getElementById('ecfProjectSelect') || {}).value || '';
+  if (!project) { toast('Select a project first'); return; }
   var sel = ecfGetSelected();
-  if (!sel.length) { toast('Select at least one paid request'); return; }
+  if (!sel.length) { toast('Select at least one paid request for this project'); return; }
   var sigDataUrl = ecfGetAdminSig();
   if (!sigDataUrl) { toast('No signature found'); return; }
 
@@ -6623,14 +6719,17 @@ async function ecfExportPDF() {
   var cur      = document.getElementById('ecfCurrency').value||'KES';
   var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
 
-  // Unique project name(s) for the title
-  var projSet = {};
-  sel.forEach(function(r){ if (r.project) projSet[r.project] = true; });
-  var projectNames = Object.keys(projSet);
-  var projectLabel = projectNames.length === 0 ? ''
-                   : projectNames.length === 1 ? projectNames[0]
-                   : projectNames.length <= 3 ? projectNames.join(', ')
-                   : projectNames[0] + ' +' + (projectNames.length - 1) + ' more';
+  // Project name for the title (one form per project)
+  var projectLabel = project || '';
+  if (!projectLabel) {
+    var projSet = {};
+    sel.forEach(function(r){ if (r.project) projSet[r.project] = true; });
+    var projectNames = Object.keys(projSet);
+    projectLabel = projectNames.length === 0 ? ''
+                 : projectNames.length === 1 ? projectNames[0]
+                 : projectNames.length <= 3 ? projectNames.join(', ')
+                 : projectNames[0] + ' +' + (projectNames.length - 1) + ' more';
+  }
 
   var rows = sel.map(function(req,i){
     return {
@@ -7208,17 +7307,24 @@ function ecf_hf(label,val){
 
 
 function ecfInit() {
+  ecfPopulateProjects();
   ecfLoadRequests();
   ecfInitSig();
-  ecfAutoHeader();
-  var note=document.getElementById('ecfSigNote');
-  if(note){
-    if(savedSigs&&savedSigs.length>0){
-      note.textContent='Saved signature found: '+savedSigs[0].label+' — will be used as Claimant';
-      note.style.color='var(--success,#16a34a)';
+  // Only auto-fill claimant/date; project-specific fields fill after project is chosen
+  var dateEl = document.getElementById('ecfDate');
+  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+  if (currentUser) {
+    var cEl = document.getElementById('ecfClaimant');
+    if (cEl && !cEl.value) cEl.value = currentUser.name || '';
+  }
+  var note = document.getElementById('ecfSigNote');
+  if (note) {
+    if (savedSigs && savedSigs.length > 0) {
+      note.textContent = 'Saved signature found: '+savedSigs[0].label+' — will be used as Claimant';
+      note.style.color = 'var(--success,#16a34a)';
     } else {
-      note.textContent='No saved signature — draw one above, or save one in My Signatures first';
-      note.style.color='var(--muted)';
+      note.textContent = 'No saved signature — draw one above, or save one in My Signatures first';
+      note.style.color = 'var(--muted)';
     }
   }
 }
