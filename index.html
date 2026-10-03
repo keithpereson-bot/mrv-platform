@@ -3590,6 +3590,19 @@ function openSignAndApprove(btn, ref, recipient) {
   setTimeout(() => initCanvas('modalCanvas'), 100);
 }
 
+// Background Sheets sync — keeps UI instant, optimises payload
+function backgroundPush(opts) {
+  opts = opts || {};
+  clearInterval(gsAutoSyncTimer);
+  if (!gsWebAppUrl) return;
+  pushToSheets(opts).then(function() {
+    if (opts.withSigs) {
+      return pushSigImages().then(function(){ startAutoSync(); }, function(){ startAutoSync(); });
+    }
+    startAutoSync();
+  }).catch(function(){ startAutoSync(); });
+}
+
 // Step 1: Approve request (Draft/Pending -> Approved, moves to Payment Queue)
 function approveRequest(ref) {
   // Find and mutate the entry
@@ -3610,17 +3623,10 @@ function approveRequest(ref) {
   persistRequestsToStorage();
   rebuildRequestsTable();
   renderDashboard();
-
-  // Push to Sheets -- pause auto-sync until push completes
-  clearInterval(gsAutoSyncTimer);
-  if (gsWebAppUrl) {
-    pushToSheets().then(function() {
-      startAutoSync(); // restart after push completes
-    }).catch(function() {
-      startAutoSync();
-    });
-  }
   toast('Request approved');
+
+  // Fast push — status only, no actuals/signatures
+  backgroundPush({ fast: true, skipActuals: true });
 }
 
 // Step 2: Mark as Paid (Approved -> Paid, actuals update NOW)
@@ -3643,14 +3649,10 @@ function confirmSignAndApprove() {
   persistRequestsToStorage();
   rebuildRequestsTable();
   renderDashboard();
-  clearInterval(gsAutoSyncTimer);
-  if (gsWebAppUrl) {
-    pushToSheets().then(function() {
-      pushSigImages(); // push images after metadata
-      startAutoSync();
-    }).catch(function() { startAutoSync(); });
-  }
   toast('Payment confirmed & signed');
+
+  // Metadata + actuals first (no bulk base64), then signature images separately
+  backgroundPush({ fast: true, skipActuals: false, withSigs: true });
 }
 
 // -- Request / expense helpers ------------------------------
@@ -3859,13 +3861,8 @@ function submitRequest() {
 
   toast('Request submitted — ' + num + ' (syncing in background)');
 
-  // Fast background push (no signature images, no actuals) so it lands in Sheets quickly
-  clearInterval(gsAutoSyncTimer);
-  if (gsWebAppUrl) {
-    pushToSheets({ fast: true, skipActuals: true })
-      .then(function(){ startAutoSync(); })
-      .catch(function(){ startAutoSync(); });
-  }
+  // Fast background push (no signature images, no actuals)
+  backgroundPush({ fast: true, skipActuals: true });
 }
 
 function submitExpense() {
@@ -4130,9 +4127,10 @@ async function pushToSheets(opts) {
   var _pushSafetyTimer = setTimeout(function(){ window._pushInProgress = false; }, 20000);
   appendSyncLog(opts.fast ? 'Quick-push to Sheets...' : 'Pushing to Sheets...');
   try {
-    // Requests — for fast draft submits, skip large base64 images to speed up
+    // Requests — always preserve existing signature images so a full sheet
+    // rewrite never wipes them. Empty strings stay empty (saves bandwidth).
     const reqRows = requestsStore.map(function(r) {
-      var row = {
+      return {
         ref:              r.ref              || '',
         project:          r.project          || '',
         type:             r.type             || '',
@@ -4150,15 +4148,10 @@ async function pushToSheets(opts) {
         approvedAt:       r.approvedAt       || '',
         requesterSigName: r.requesterSigName || '',
         requesterSigTime: r.requesterSigTime || '',
-        sigDataUrl:       '',
-        requesterSig:     '',
+        // Only include base64 when it exists (avoids shipping empty fields)
+        sigDataUrl:       (r.sigDataUrl && r.sigDataUrl.length > 50) ? r.sigDataUrl : '',
+        requesterSig:     (r.requesterSig && r.requesterSig.length > 50) ? r.requesterSig : '',
       };
-      // Only ship signature images when present and not in fast mode
-      if (!opts.fast) {
-        if (r.sigDataUrl && r.sigDataUrl.length > 50) row.sigDataUrl = r.sigDataUrl;
-        if (r.requesterSig && r.requesterSig.length > 50) row.requesterSig = r.requesterSig;
-      }
-      return row;
     });
 
     // Actuals — skip on fast draft submit (no Paid totals changed)
@@ -4660,11 +4653,8 @@ function syncAfterChange() {
   if (document.getElementById('view-budgets') && document.getElementById('view-budgets').classList.contains('active')) {
     renderBudgetView();
   }
-  // Push immediately — stop auto-sync to prevent race, restart after
-  if (gsWebAppUrl) {
-    clearInterval(gsAutoSyncTimer);
-    pushToSheets().then(function(){ startAutoSync(); }).catch(function(){ startAutoSync(); });
-  }
+  // Fast background push (metadata; full sigs on next dedicated push if needed)
+  backgroundPush({ fast: true });
 }
 
 // Legacy alias
@@ -5570,20 +5560,13 @@ function confirmAck() {
   closeModal('ackModal');
 
   // Render immediately -- no waiting for Sheets
-  rebuildRequestsTable();   // updates admin Paid Requests view instantly
-  renderHistory();          // updates requester My Submissions view instantly
+  rebuildRequestsTable();
+  renderHistory();
   renderDashboard();
-
-  // Push metadata first, then images
-  clearInterval(gsAutoSyncTimer);
-  if (gsWebAppUrl) {
-    pushToSheets().then(function(){
-      pushSigImages();
-      startAutoSync();
-    }).catch(function(){ startAutoSync(); });
-  }
-
   toast('Receipt acknowledged — ' + targets.length + ' request' + (targets.length===1?'':'s') + ' signed');
+
+  // Fast metadata push (no actuals change), then signature images
+  backgroundPush({ fast: true, skipActuals: true, withSigs: true });
 }
 
 function clearAck(ref) {
@@ -6466,11 +6449,10 @@ function confirmBulkApprove(){
   closeModal('bulkApproveModal');
   rebuildRequestsTable();
   renderDashboard();
-  clearInterval(gsAutoSyncTimer);
-  if (gsWebAppUrl) {
-    pushToSheets().then(function() { startAutoSync(); }).catch(function() { startAutoSync(); });
-  }
   toast('Paid: '+checked.length+' request'+(checked.length===1?'':'s'));
+
+  // Fast metadata + actuals, then signature images
+  backgroundPush({ fast: true, skipActuals: false, withSigs: true });
 }
 
 // ==============================================================
