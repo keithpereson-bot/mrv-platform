@@ -6986,8 +6986,18 @@ function ecfBuildAckPDF(reqs, cur, claimant, adminSig) {
   var pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight();
   var ML=10, MR=10, W=pw-ML-MR;
   var now=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
-  var NAVY=[13,43,46],TEAL=[15,110,86],GREEN=[22,163,74],AMBER=[180,120,20];
-  var MUTED=[120,135,150],BRDR=[210,220,225],WHITE=[255,255,255],ALT=[247,251,249];
+
+  // Brand theme — fire orange (matches app / expense form)
+  var BRAND   = [242, 92, 10];      // --brand #F25C0A
+  var BRAND_DK= [201, 72, 0];       // --brand-dk
+  var INK     = [17, 24, 39];       // gray-900
+  var MUTED   = [107, 114, 128];    // gray-500
+  var BRDR    = [209, 213, 219];    // gray-300
+  var WHITE   = [255, 255, 255];
+  var ALT     = [255, 247, 237];    // brand-lt / warm off-white
+  var GREEN   = [5, 150, 105];      // success green
+  var AMBER   = [217, 119, 6];      // warn
+
   var COLS=[
     {label:'Ref #',x:ML,w:16},{label:'Project / Type',x:ML+16,w:46},
     {label:'Category',x:ML+62,w:34},{label:'Amount',x:ML+96,w:24},
@@ -6995,69 +7005,110 @@ function ecfBuildAckPDF(reqs, cur, claimant, adminSig) {
     {label:'Finance Signature',x:ML+170,w:58},{label:'Acknowledgement',x:ML+228,w:59}
   ];
   var ROW=22;
+
   function hdr(){
-    doc.setFillColor.apply(doc,NAVY);doc.rect(0,0,pw,18,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor.apply(doc,WHITE);
-    doc.text('Expense Claim — Acknowledgement Slips',ML,8);
-    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(180,215,205);
-    doc.text('Attached to expense claim for '+claimant+' — Generated: '+now,ML,14);
-    return 20;
+    // Top brand bar
+    doc.setFillColor.apply(doc, BRAND);
+    doc.rect(0, 0, pw, 18, 'F');
+    // Accent stripe under the bar
+    doc.setFillColor.apply(doc, BRAND_DK);
+    doc.rect(0, 18, pw, 1.2, 'F');
+
+    // Title
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor.apply(doc, WHITE);
+    doc.text('Expense Claim — Acknowledgement Slips', ML, 8);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(255, 230, 210);
+    doc.text('Attached to expense claim for '+claimant+' — Generated: '+now, ML, 14);
+
+    // Company logo (right side of header)
+    try {
+      doc.addImage('data:image/png;base64,'+ECF_LOGO_B64, 'PNG', pw - MR - 36, 2.5, 34, 12);
+    } catch(e) {}
+
+    return 22;
   }
+
   function tblHdr(y){
-    doc.setFillColor.apply(doc,TEAL);doc.rect(ML,y,W,8,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor.apply(doc,WHITE);
-    COLS.forEach(function(c){doc.text(c.label,c.x+2,y+5.2);});
+    doc.setFillColor.apply(doc, BRAND);
+    doc.rect(ML, y, W, 8, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, WHITE);
+    COLS.forEach(function(c){ doc.text(c.label, c.x+2, y+5.2); });
     return y+8;
   }
+
   function drawRow(r,y,isAlt){
-    if(isAlt){doc.setFillColor.apply(doc,ALT);doc.rect(ML,y,W,ROW,'F');}
-    doc.setDrawColor.apply(doc,BRDR);doc.setLineWidth(0.15);doc.rect(ML,y,W,ROW,'S');
-    COLS.forEach(function(c,i){if(i>0){doc.setDrawColor.apply(doc,BRDR);doc.setLineWidth(0.1);doc.line(c.x,y,c.x,y+ROW);}});
-    var mid=y+ROW/2,pad=2;
-    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor.apply(doc,TEAL);
-    doc.text('#'+(r.ref||''),COLS[0].x+pad,mid,{baseline:'middle'});
-    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor.apply(doc,NAVY);
-    doc.text(doc.splitTextToSize(r.project||'',COLS[1].w-4)[0]||'',COLS[1].x+pad,mid-2,{baseline:'middle'});
-    if(r.type){doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor.apply(doc,MUTED);doc.text(r.type,COLS[1].x+pad,mid+3,{baseline:'middle'});}
-    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor.apply(doc,NAVY);
-    doc.text(doc.splitTextToSize(r.category||r.description||'',COLS[2].w-4).slice(0,2),COLS[2].x+pad,mid-2,{baseline:'middle'});
-    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor.apply(doc,NAVY);
-    doc.text((parseFloat(r.amount)||0).toLocaleString(),COLS[3].x+pad,mid,{baseline:'middle'});
-    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor.apply(doc,NAVY);
-    doc.text(r.requester||'',COLS[4].x+pad,mid,{baseline:'middle',maxWidth:COLS[4].w-4});
-    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor.apply(doc,MUTED);
-    doc.text(typeof fmtDate==='function'?fmtDate(r.sigTime||r.date||''):(r.date||''),COLS[5].x+pad,mid,{baseline:'middle'});
+    if(isAlt){ doc.setFillColor.apply(doc, ALT); doc.rect(ML, y, W, ROW, 'F'); }
+    doc.setDrawColor.apply(doc, BRDR); doc.setLineWidth(0.2); doc.rect(ML, y, W, ROW, 'S');
+    COLS.forEach(function(c,i){
+      if(i>0){ doc.setDrawColor.apply(doc, BRDR); doc.setLineWidth(0.12); doc.line(c.x, y, c.x, y+ROW); }
+    });
+    var mid=y+ROW/2, pad=2;
+
+    // Ref #
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc, BRAND);
+    doc.text('#'+(r.ref||''), COLS[0].x+pad, mid, {baseline:'middle'});
+
+    // Project / Type
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc, INK);
+    doc.text(doc.splitTextToSize(r.project||'', COLS[1].w-4)[0]||'', COLS[1].x+pad, mid-2, {baseline:'middle'});
+    if(r.type){
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, MUTED);
+      doc.text(r.type, COLS[1].x+pad, mid+3, {baseline:'middle'});
+    }
+
+    // Category
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, INK);
+    doc.text(doc.splitTextToSize(r.category||r.description||'', COLS[2].w-4).slice(0,2), COLS[2].x+pad, mid-2, {baseline:'middle'});
+
+    // Amount
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor.apply(doc, INK);
+    doc.text((parseFloat(r.amount)||0).toLocaleString(), COLS[3].x+pad, mid, {baseline:'middle'});
+
+    // Requester
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, INK);
+    doc.text(r.requester||'', COLS[4].x+pad, mid, {baseline:'middle', maxWidth:COLS[4].w-4});
+
+    // Date
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, MUTED);
+    doc.text(typeof fmtDate==='function'?fmtDate(r.sigTime||r.date||''):(r.date||''), COLS[5].x+pad, mid, {baseline:'middle'});
+
+    // Finance signature
     var fx=COLS[6].x+pad;
-    if(adminSig){try{doc.addImage(adminSig,'PNG',fx,y+2,Math.min(40,COLS[6].w-8),ROW-6,undefined,'FAST');}catch(e){}}
-    doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor.apply(doc,NAVY);
-    doc.text(claimant||'',fx,y+ROW-4);
+    if(adminSig){ try{ doc.addImage(adminSig,'PNG', fx, y+2, Math.min(40,COLS[6].w-8), ROW-6, undefined, 'FAST'); }catch(e){} }
+    doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor.apply(doc, INK);
+    doc.text(claimant||'', fx, y+ROW-4);
+
+    // Acknowledgement
     var ax=COLS[7].x+pad;
-    if(r.requesterSig&&r.requesterSig.length>100){
-      try{doc.addImage(r.requesterSig,'PNG',ax,y+2,Math.min(40,COLS[7].w-8),ROW-6,undefined,'FAST');}catch(e){}
-      doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor.apply(doc,GREEN);
-      doc.text('\u2713 '+(r.requesterSigName||r.requester||''),ax,y+ROW-4);
+    if(r.requesterSig && r.requesterSig.length>100){
+      try{ doc.addImage(r.requesterSig,'PNG', ax, y+2, Math.min(40,COLS[7].w-8), ROW-6, undefined, 'FAST'); }catch(e){}
+      doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor.apply(doc, GREEN);
+      doc.text('\u2713 '+(r.requesterSigName||r.requester||''), ax, y+ROW-4);
     } else if(r.requesterSigName){
-      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor.apply(doc,GREEN);
-      doc.text('\u2713',ax+4,mid,{baseline:'middle'});
-      doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor.apply(doc,NAVY);
-      doc.text(r.requesterSigName,ax+10,mid,{baseline:'middle'});
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor.apply(doc, GREEN);
+      doc.text('\u2713', ax+4, mid, {baseline:'middle'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, INK);
+      doc.text(r.requesterSigName, ax+10, mid, {baseline:'middle'});
     } else {
-      doc.setFont('helvetica','italic');doc.setFontSize(6.5);doc.setTextColor.apply(doc,AMBER);
-      doc.text('Awaiting',ax,mid,{baseline:'middle'});
+      doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, AMBER);
+      doc.text('Awaiting', ax, mid, {baseline:'middle'});
     }
   }
+
   var y=hdr(); y=tblHdr(y);
   reqs.forEach(function(r,i){
-    if(y+ROW>ph-12){
-      doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor.apply(doc,MUTED);
-      doc.text('Expense Claim — Acknowledgements',ML,ph-5);
+    if(y+ROW > ph-12){
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, MUTED);
+      doc.text('Expense Claim — Acknowledgements', ML, ph-5);
       doc.addPage(); y=hdr(); y=tblHdr(y);
     }
-    drawRow(r,y,i%2===1); y+=ROW;
+    drawRow(r, y, i%2===1); y+=ROW;
   });
-  doc.setDrawColor.apply(doc,BRDR);doc.setLineWidth(0.3);doc.line(ML,ph-10,pw-MR,ph-10);
-  doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor.apply(doc,MUTED);
-  doc.text('Acknowledgements for expense claim — '+reqs.length+' request'+(reqs.length===1?'':'s'),ML,ph-5);
+
+  // Footer
+  doc.setDrawColor.apply(doc, BRDR); doc.setLineWidth(0.3); doc.line(ML, ph-10, pw-MR, ph-10);
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, MUTED);
+  doc.text('Acknowledgements for expense claim — '+reqs.length+' request'+(reqs.length===1?'':'s'), ML, ph-5);
   doc.text('Total: '+cur+' '+reqs.reduce(function(s,r){return s+(parseFloat(r.amount)||0);},0).toLocaleString(),pw-MR,ph-5,{align:'right'});
   return doc.output('arraybuffer');
 }
