@@ -6827,25 +6827,50 @@ async function ecfExportPDF() {
     });
     y += CHH;
 
-    // ── DATA ROWS ─────────────────────────────────────────────────
-    // Adapt row count to number of cost items (keep a modest minimum so the form still looks balanced)
+    // ── DATA ROWS (exactly one row per cost item — no empty fillers) ──
     var n = rows.length;
-    var MIN_ROWS = Math.max(6, Math.min(12, n + 4));   // grows with items, never forces 11+ empty rows
-    var DISPLAY_ROWS = Math.max(n, MIN_ROWS);
-    var DATA_AVAIL = PH - y - 5.5*3 - 28 - 12;
-    // Prefer slightly taller rows when there are few items
-    var rH = Math.min(7.2, Math.max(4.2, DATA_AVAIL / DISPLAY_ROWS));
+    var rH = 6.2;                          // fixed comfortable row height
+    var FOOTER_RESERVE = 5.5 * 3 + 32;     // space needed for TOTALS block + signatures
 
-    // Lighter grey for empty rows (closer to target)
-    var EMPTY_GY = [232, 232, 232];
+    // Re-usable column header drawer (for continuation pages)
+    function drawColHeader() {
+      sf([210, 210, 210]); sd([120, 120, 120], 0.4);
+      doc.rect(ML, y, TW, CHH, 'FD');
+      var cxh = ML;
+      colDefs.forEach(function(col, ci) {
+        if (ci > 0) {
+          sd([140, 140, 140], 0.3);
+          doc.line(cxh, y, cxh, y + CHH);
+        }
+        fb(7); st(DK);
+        var lines = doc.splitTextToSize(col.label, col.w - 2);
+        doc.text(lines, cxh + col.w / 2, y + CHH / 2 + 0.3, {align: 'center', baseline: 'middle'});
+        cxh += col.w;
+      });
+      y += CHH;
+    }
 
-    for (var ri = 0; ri < DISPLAY_ROWS; ri++) {
-      var r = (ri < n) ? rows[ri] : null;
-      if (r) { sf(WH); } else { sf(EMPTY_GY); }
+    for (var ri = 0; ri < n; ri++) {
+      // Page break if the next row would collide with the totals/signature reserve
+      if (y + rH > PH - FOOTER_RESERVE) {
+        // thin bottom border of current page table
+        sd([120, 120, 120], 0.35);
+        doc.line(ML, y, ML + TW, y);
+        doc.addPage();
+        y = MT + 4;
+        // small continuation header
+        fn(7); st(MK);
+        tx('EXPENSE CLAIM FORM (continued)', ML, y);
+        y += 6;
+        drawColHeader();
+      }
+
+      var r = rows[ri];
+      sf(WH);
       sd([140, 140, 140], 0.35);
       doc.rect(ML, y, TW, rH, 'FD');
 
-      // Always draw vertical column dividers so borders stay consistent
+      // vertical column dividers
       var rx2 = ML;
       colDefs.forEach(function(col, vi) {
         if (vi > 0) {
@@ -6855,33 +6880,42 @@ async function ecfExportPDF() {
         rx2 += col.w;
       });
 
-      if (r) {
+      fn(7); st(DK);
+      var rx = ML;
+      var amt = parseFloat(r.amount) || 0;
+      var vals = [
+        {v: r.date || '',                 w: CW.date, a: 'center'},
+        {v: r.details || '',              w: CW.det,  a: 'left'},
+        {v: String(r.receipt),            w: CW.rec,  a: 'center'},
+        {v: cur + ' ' + fmt(amt),         w: CW.kes,  a: 'right'},
+        {v: '',                           w: CW.usd,  a: 'right'},
+        {v: r.bizUnit || '',              w: CW.bu,   a: 'left'},
+        {v: r.expAcct || '',              w: CW.acct, a: 'left'},
+      ];
+      vals.forEach(function(v) {
+        var txt = doc.splitTextToSize(String(v.v || ''), v.w - 2)[0] || '';
+        var tx2 = v.a === 'right'  ? rx + v.w - 1.2
+                : v.a === 'center' ? rx + v.w / 2
+                : rx + 1.2;
         fn(7); st(DK);
-        var rx = ML;
-        var amt = parseFloat(r.amount) || 0;
-        var vals = [
-          {v: r.date || '',                 w: CW.date, a: 'center'},
-          {v: r.details || '',              w: CW.det,  a: 'left'},
-          {v: String(r.receipt),            w: CW.rec,  a: 'center'},
-          {v: cur + ' ' + fmt(amt),         w: CW.kes,  a: 'right'},
-          {v: '',                           w: CW.usd,  a: 'right'},
-          {v: r.bizUnit || '',              w: CW.bu,   a: 'left'},
-          {v: r.expAcct || '',              w: CW.acct, a: 'left'},
-        ];
-        vals.forEach(function(v) {
-          var txt = doc.splitTextToSize(String(v.v || ''), v.w - 2)[0] || '';
-          var tx2 = v.a === 'right' ? rx + v.w - 1.2
-                  : v.a === 'center' ? rx + v.w / 2
-                  : rx + 1.2;
-          fn(7); st(DK);
-          doc.text(txt, tx2, y + rH / 2 + 0.4, {align: v.a, baseline: 'middle'});
-          rx += v.w;
-        });
-      }
+        doc.text(txt, tx2, y + rH / 2 + 0.4, {align: v.a, baseline: 'middle'});
+        rx += v.w;
+      });
       y += rH;
     }
 
     // ── TOTALS / ADV / BAL ────────────────────────────────────────
+    // If totals + signatures won't fit, start a new page
+    if (y + 5.8 * 3 + 30 > PH - 8) {
+      sd([120, 120, 120], 0.35);
+      doc.line(ML, y, ML + TW, y);
+      doc.addPage();
+      y = MT + 4;
+      fn(7); st(MK);
+      tx('EXPENSE CLAIM FORM (continued)', ML, y);
+      y += 8;
+    }
+
     // Absolute column starts (match data rows exactly)
     var recX  = ML + CW.date + CW.det;          // start of Receipt No.
     var kesX  = recX + CW.rec;                  // start of currency col
