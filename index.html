@@ -6869,51 +6869,77 @@ async function ecfExportPDF() {
     }
 
     // ── TOTALS / ADV / BAL ────────────────────────────────────────
+    // Absolute column starts (match data rows exactly)
+    var recX  = ML + CW.date + CW.det;          // start of Receipt No.
+    var kesX  = recX + CW.rec;                  // start of currency col
+    var usdX  = kesX + CW.kes;                  // start of US$
+    var buX   = usdX + CW.usd;                  // start of Business Unit
+    var buEnd = buX  + CW.bu;                   // right edge of Business Unit
+
+    // Box starts part-way through Details so "TOTALS" / "Amount Advanced" have room to the left of Receipt
+    var tX    = ML + CW.date + Math.round(CW.det * 0.45);  // ~45% into Details
+    var bW    = buEnd - tX;                     // ends exactly at Business Unit right edge
+
     var TOT_H = 5.5;
-    var tX = ML+CW.date+Math.round(CW.det*0.55);  // ~55% through Details col
 
-    // TOTALS block — starts at tX (after Date+Details), not full width
-    // Left of tX is open (no box) matching the reference
-    var bW = CW.rec+CW.kes+CW.usd+CW.bu;  // ends at Business Unit right edge (not Expense Account)
-
-    // Horizontal line above TOTALS block (across full width like reference)
+    // Horizontal line above TOTALS block (across full table width)
     sd([100,100,100],0.3);
     doc.line(ML, y, ML+TW, y);
 
-    // TOTALS — grey fill, starts at tX
-    sf(MGY); sd([100,100,100],0.4); doc.rect(tX,y,bW,TOT_H,'FD');
-    fb(7.5); st(DK);
-    tx('TOTALS', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
-    fn(7.5);
-    tx(String(n),          tX+CW.rec/2,                    y+TOT_H/2+0.5,{align:'center',baseline:'middle'});
-    tx(cur+' '+fmt(total), tX+CW.rec+CW.kes-1,             y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
-    tx('$0.00',            tX+CW.rec+CW.kes+CW.usd-1,      y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
-    tx('$0.00',            tX+CW.rec+CW.kes+CW.usd+CW.bu-1,y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
-    y+=TOT_H;
+    // Helper: draw vertical dividers inside the totals box at actual column boundaries
+    function drawTotDividers(yy) {
+      sd([100,100,100],0.3);
+      [recX, kesX, usdX, buX].forEach(function(xx){
+        if (xx > tX && xx < buEnd) doc.line(xx, yy, xx, yy+TOT_H);
+      });
+    }
 
-    // Amount Advanced — white, starts at tX
-    sf(WH); sd([100,100,100],0.4); doc.rect(tX,y,bW,TOT_H,'FD');
+    // ── TOTALS row (grey) ──
+    sf(MGY); sd([100,100,100],0.4); doc.rect(tX, y, bW, TOT_H, 'FD');
+    drawTotDividers(y);
+    // "TOTALS" sits in the left (Details remnant) area, right-aligned against Receipt column
     fb(7.5); st(DK);
-    tx('Amount Advanced', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle',maxWidth:CW.rec+CW.det*0.45});
+    tx('TOTALS', recX - 1.5, y + TOT_H/2 + 0.5, {align:'right', baseline:'middle'});
+    // Count centred under Receipt No. column (separated from TOTALS text)
     fn(7.5);
-    tx(cur+' '+fmt(advanced), tX+CW.rec+CW.kes-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
-    y+=TOT_H;
+    tx(String(n), recX + CW.rec/2, y + TOT_H/2 + 0.5, {align:'center', baseline:'middle'});
+    // Amount under currency column
+    tx(cur + ' ' + fmt(total), kesX + CW.kes - 1, y + TOT_H/2 + 0.5, {align:'right', baseline:'middle'});
+    // US$ and Business Unit
+    tx('$0.00', usdX + CW.usd - 1, y + TOT_H/2 + 0.5, {align:'right', baseline:'middle'});
+    tx('$0.00', buX  + CW.bu  - 1, y + TOT_H/2 + 0.5, {align:'right', baseline:'middle'});
+    y += TOT_H;
 
-    // Balance — top border only on left side, full box on right portion
+    // ── Amount Advanced row (white) ──
+    // Label in merged cell left of Receipt (just below TOTALS text); figure under currency column (matches target)
+    sf(WH); sd([100,100,100],0.4); doc.rect(tX, y, bW, TOT_H, 'FD');
+    drawTotDividers(y);
+    fb(7.5); st(DK);
+    tx('Amount Advanced', recX - 1.5, y + TOT_H/2 + 0.5, {align:'right', baseline:'middle'});
+    fn(7.5);
+    // Figure under the currency (CDF/KES/…) column — same position as TOTALS amount
+    tx(cur + ' ' + fmt(advanced), kesX + CW.kes - 1, y + TOT_H/2 + 0.5, {align:'right', baseline:'middle'});
+    tx('$0.00', usdX + CW.usd - 1, y + TOT_H/2 + 0.5, {align:'right', baseline:'middle'});
+    tx('', buX + CW.bu - 1, y + TOT_H/2 + 0.5, {align:'right', baseline:'middle'});
+    y += TOT_H;
+
+    // ── Balance claimed/Returned row ──
     sf(WH); sd([100,100,100],0.4);
-    doc.line(ML, y, tX, y);              // top line only on left (italic note area)
-    doc.rect(tX,y,bW,TOT_H,'FD');       // full box on right portion
+    doc.line(ML, y, tX, y);                 // top line only on left (italic note area)
+    doc.rect(tX, y, bW, TOT_H, 'FD');
+    drawTotDividers(y);
     fi(7); st(MK);
-    tx('Advance approved by (Name, & Amount)', ML+1, y+TOT_H/2+0.5, {baseline:'middle'});
+    tx('Advance approved by (Name, & Amount)', ML + 1, y + TOT_H/2 + 0.5, {baseline:'middle'});
     fb(7.5); st(DK);
-    tx('Balance claimed/Returned', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle',maxWidth:CW.rec+CW.det*0.45});
-    fn(7.5); st(balance<0?RD:DK);
-    var balStr=balance<0?'('+cur+' '+fmt(Math.abs(balance))+')':cur+' '+fmt(balance);
-    tx(balStr,  tX+CW.rec+CW.kes-1,             y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
+    tx('Balance claimed/Returned', recX - 1.5, y + TOT_H/2 + 0.5, {align:'right', baseline:'middle'});
+    fn(7.5); st(balance < 0 ? RD : DK);
+    var balStr = balance < 0 ? '(' + cur + ' ' + fmt(Math.abs(balance)) + ')' : cur + ' ' + fmt(balance);
+    // Balance figure under currency column (matches target)
+    tx(balStr, kesX + CW.kes - 1, y + TOT_H/2 + 0.5, {align:'right', baseline:'middle'});
     fn(7.5); st(DK);
-    tx('$0.00', tX+CW.rec+CW.kes+CW.usd-1,      y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
-    tx('0',     tX+CW.rec+CW.kes+CW.usd+CW.bu-1,y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
-    y+=TOT_H;
+    tx('$0.00', usdX + CW.usd - 1, y + TOT_H/2 + 0.5, {align:'right', baseline:'middle'});
+    tx('0',     buX  + CW.bu  - 1, y + TOT_H/2 + 0.5, {align:'right', baseline:'middle'});
+    y += TOT_H;
 
     // ── SIGNATURE AREA ────────────────────────────────────────────
     var sigY = y+3;
