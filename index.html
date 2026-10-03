@@ -6802,7 +6802,7 @@ async function ecfExportPDF() {
     // ── COLUMN HEADERS ────────────────────────────────────────────
     // White fill, thin grey borders, dark bold compact text
     var CHH = 9;
-    sf(WH); sd(LGY,0.3);
+    sf(WH); sd([100,100,100],0.4);
     doc.rect(ML,y,TW,CHH,'FD');
     fb(7); st(DK);
     var cx=ML;
@@ -6816,7 +6816,7 @@ async function ecfExportPDF() {
       {w:CW.acct,label:'Expense Account\n(to be filled by Finance)'},
     ];
     colDefs.forEach(function(col,ci){
-      if(ci>0){sd(LGY,0.3);doc.line(cx,y,cx,y+CHH);}
+      if(ci>0){sd([100,100,100],0.3);doc.line(cx,y,cx,y+CHH);}
       fb(7); st(DK);
       var lines=doc.splitTextToSize(col.label,col.w-2);
       doc.text(lines,cx+col.w/2,y+CHH/2+0.5,{align:'center',baseline:'middle'});
@@ -6835,7 +6835,7 @@ async function ecfExportPDF() {
       var r = rows[ri] || null;
       // Empty rows get light grey fill like the reference
       if(r){ sf(WH); } else { sf(MGY); }
-      sd(LGY,0.15); doc.rect(ML,y,TW,rH,'FD');
+      sd([100,100,100],0.3); doc.rect(ML,y,TW,rH,'FD');
       if(r){
         fn(7); st(DK);
         var rx=ML;
@@ -6850,7 +6850,7 @@ async function ecfExportPDF() {
           {v:r.expAcct,         w:CW.acct,a:'left'},
         ];
         vals.forEach(function(v,vi){
-          if(vi>0){sd(LGY,0.1);doc.line(rx,y,rx,y+rH);}
+          if(vi>0){sd([100,100,100],0.25);doc.line(rx,y,rx,y+rH);}
           var txt=doc.splitTextToSize(String(v.v||''),v.w-2)[0]||'';
           var tx2=v.a==='right'?rx+v.w-1:v.a==='center'?rx+v.w/2:rx+1;
           fn(7); st(DK);
@@ -6861,7 +6861,7 @@ async function ecfExportPDF() {
         // Empty row — just draw column dividers
         var rx2=ML;
         colDefs.forEach(function(col,vi){
-          if(vi>0){sd(LGY,0.1);doc.line(rx2,y,rx2,y+rH);}
+          if(vi>0){sd([100,100,100],0.25);doc.line(rx2,y,rx2,y+rH);}
           rx2+=col.w;
         });
       }
@@ -6873,7 +6873,7 @@ async function ecfExportPDF() {
     var tX = ML+CW.date+CW.det;
 
     // TOTALS — light grey fill
-    sf(MGY); sd(LGY,0.3); doc.rect(ML,y,TW,TOT_H,'FD');
+    sf(MGY); sd([100,100,100],0.4); doc.rect(ML,y,TW,TOT_H,'FD');
     fb(7.5); st(DK);
     tx('TOTALS', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
     fn(7.5);
@@ -6884,7 +6884,7 @@ async function ecfExportPDF() {
     y+=TOT_H;
 
     // Amount Advanced
-    sf(WH); sd(LGY,0.3); doc.rect(ML,y,TW,TOT_H,'FD');
+    sf(WH); sd([100,100,100],0.4); doc.rect(ML,y,TW,TOT_H,'FD');
     fb(7.5); st(DK);
     tx('Amount Advanced', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
     fn(7.5);
@@ -6892,7 +6892,7 @@ async function ecfExportPDF() {
     y+=TOT_H;
 
     // Balance
-    sf(WH); sd(LGY,0.3); doc.rect(ML,y,TW,TOT_H,'FD');
+    sf(WH); sd([100,100,100],0.4); doc.rect(ML,y,TW,TOT_H,'FD');
     fi(7); st(MK);
     tx('Advance approved by (Name, & Amount)', ML+1, y+TOT_H/2+0.5, {baseline:'middle'});
     fb(7.5); st(DK);
