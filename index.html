@@ -6727,7 +6727,7 @@ async function ecfExportPDF() {
     // Col 2: label right-aligned, value underline only
     var C2x=ML+77, C2lw=40, C2vw=55;
     // Col 3: label right-aligned, value in box
-    var C3x=ML+172,C3lw=43, C3vw=TW-(172)+ML-C3lw;
+    var C3x=ML+172,C3lw=43, C3vw=(ML+TW)-(ML+172+C3lw); // cap at table right edge
 
     var hdrData = [
       ['BURN ENTITY:',entity,   'Date:',dStr,                 'Profit Centre:',pCentre],
@@ -6780,12 +6780,13 @@ async function ecfExportPDF() {
     var NOTE_H = 5;
     fi(6.5); st(MK);
     tx("Please number and attach all receipts, stating relevant number for each entry in 'Receipt No.' column", ML, y+3.5, {baseline:'middle'});
-    // ERP box — thin grey border all sides
-    var erpW=18;
-    sd(LGY,0.3); sf(WH);
-    doc.rect(PW-MR-erpW, y, erpW, NOTE_H, 'FD');
+    // ERP box — aligned exactly over the Expense Account column
+    var erpX = ML+CW.date+CW.det+CW.rec+CW.kes+CW.usd+CW.bu;
+    var erpW = CW.acct;
+    sd([100,100,100],0.4); sf(WH);
+    doc.rect(erpX, y, erpW, NOTE_H, 'FD');
     fb(7.5); st(DK);
-    tx('ERP', PW-MR-erpW/2, y+NOTE_H/2+0.5, {align:'center',baseline:'middle'});
+    tx('ERP', erpX+erpW/2, y+NOTE_H/2+0.5, {align:'center',baseline:'middle'});
     y += NOTE_H;
 
     // ── COLUMN WIDTHS ─────────────────────────────────────────────
