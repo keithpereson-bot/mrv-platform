@@ -6742,7 +6742,8 @@ async function ecfExportPDF() {
       fb(7.5); st(DK);
       tx(h[0], C1x+C1lw-1, y+hH/2+0.8, {align:'right',baseline:'middle'});
       // C1: value box — thin grey, open bottom on all but last row
-      sd(LGY,0.3);
+      sd(LGY,0.3); sf(MGY);
+      doc.rect(C1x+C1lw, y, C1vw, hH, 'F');
       doc.line(C1x+C1lw,      y,      C1x+C1lw,      y+hH); // left
       doc.line(C1x+C1lw,      y,      C1x+C1lw+C1vw, y);    // top
       doc.line(C1x+C1lw+C1vw, y,      C1x+C1lw+C1vw, y+hH); // right
@@ -6761,7 +6762,8 @@ async function ecfExportPDF() {
       // C3: label + value box
       fb(7.5); st(DK);
       tx(h[4], C3x+C3lw-1, y+hH/2+0.8, {align:'right',baseline:'middle'});
-      sd(LGY,0.3);
+      sd(LGY,0.3); sf(MGY);
+      doc.rect(C3x+C3lw, y, C3vw, hH, 'F');
       doc.line(C3x+C3lw,      y,      C3x+C3lw,      y+hH);
       doc.line(C3x+C3lw,      y,      C3x+C3lw+C3vw, y);
       doc.line(C3x+C3lw+C3vw, y,      C3x+C3lw+C3vw, y+hH);
