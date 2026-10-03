@@ -6695,12 +6695,13 @@ async function ecfExportPDF() {
     var PW=297, PH=210, ML=10, MR=10, MT=6, TW=PW-ML-MR;
 
     // Colors
-    var LGY=[180,180,180];  // light grey — borders
-    var MGY=[217,217,217];  // medium grey — TOTALS + empty rows
+    var LGY=[120,120,120];  // medium-dark grey — header field borders
+    var MGY=[236,236,236];  // soft light grey — header value boxes (matches target)
     var WH =[255,255,255];
     var RD =[180,0,0];
     var DK =[30,30,30];
     var MK =[80,80,80];
+    var TBL_BORDER = [60, 60, 60];  // dark table borders (matches target)
 
     function sf(c){doc.setFillColor(c[0],c[1],c[2]);}
     function sd(c,w){doc.setDrawColor(c[0],c[1],c[2]);doc.setLineWidth(w||0.2);}
@@ -6741,8 +6742,8 @@ async function ecfExportPDF() {
       // C1: label
       fb(7.5); st(DK);
       tx(h[0], C1x+C1lw-1, y+hH/2+0.8, {align:'right',baseline:'middle'});
-      // C1: value box — thin grey, open bottom on all but last row
-      sd(LGY,0.3); sf(MGY);
+      // C1: value box — soft light grey fill, darker borders
+      sd(LGY, 0.4); sf(MGY);
       doc.rect(C1x+C1lw, y, C1vw, hH, 'F');
       doc.line(C1x+C1lw,      y,      C1x+C1lw,      y+hH); // left
       doc.line(C1x+C1lw,      y,      C1x+C1lw+C1vw, y);    // top
@@ -6754,7 +6755,7 @@ async function ecfExportPDF() {
       // C2: label + underline value
       fb(7.5); st(DK);
       tx(h[2], C2x+C2lw-1, y+hH/2+0.8, {align:'right',baseline:'middle'});
-      sd(LGY,0.3);
+      sd(LGY, 0.4);
       doc.line(C2x+C2lw, y+hH, C2x+C2lw+C2vw, y+hH);
       fn(7.5); st(DK);
       tx(String(h[3]||''), C2x+C2lw+2, y+hH/2+0.8, {baseline:'middle',maxWidth:C2vw-4});
@@ -6762,7 +6763,7 @@ async function ecfExportPDF() {
       // C3: label + value box
       fb(7.5); st(DK);
       tx(h[4], C3x+C3lw-1, y+hH/2+0.8, {align:'right',baseline:'middle'});
-      sd(LGY,0.3); sf(MGY);
+      sd(LGY, 0.4); sf(MGY);
       doc.rect(C3x+C3lw, y, C3vw, hH, 'F');
       doc.line(C3x+C3lw,      y,      C3x+C3lw,      y+hH);
       doc.line(C3x+C3lw,      y,      C3x+C3lw+C3vw, y);
@@ -6794,7 +6795,7 @@ async function ecfExportPDF() {
     // ERP box — aligned exactly over the Expense Account column
     var erpX = ML + CW.date + CW.det + CW.rec + CW.kes + CW.usd + CW.bu;
     var erpW = CW.acct;
-    sd([150, 150, 150], 0.35); sf([236, 236, 236]);
+    sd(TBL_BORDER, 0.4); sf([236, 236, 236]);
     doc.rect(erpX, y, erpW, NOTE_H, 'FD');
     fb(7.5); st(DK);
     tx('ERP', erpX + erpW/2, y + NOTE_H/2 + 0.3, {align: 'center', baseline: 'middle'});
@@ -6802,7 +6803,7 @@ async function ecfExportPDF() {
 
     // ── COLUMN HEADERS ────────────────────────────────────────────
     var CHH = 9;
-    sf([236, 236, 236]); sd([150, 150, 150], 0.35);
+    sf([236, 236, 236]); sd(TBL_BORDER, 0.45);
     doc.rect(ML, y, TW, CHH, 'FD');
     fb(7); st(DK);
     var cx = ML;
@@ -6817,7 +6818,7 @@ async function ecfExportPDF() {
     ];
     colDefs.forEach(function(col, ci) {
       if (ci > 0) {
-        sd([140, 140, 140], 0.3);
+        sd(TBL_BORDER, 0.35);
         doc.line(cx, y, cx, y + CHH);
       }
       fb(7); st(DK);
@@ -6834,12 +6835,12 @@ async function ecfExportPDF() {
 
     // Re-usable column header drawer (for continuation pages)
     function drawColHeader() {
-      sf([236, 236, 236]); sd([150, 150, 150], 0.35);
+      sf([236, 236, 236]); sd(TBL_BORDER, 0.45);
       doc.rect(ML, y, TW, CHH, 'FD');
       var cxh = ML;
       colDefs.forEach(function(col, ci) {
         if (ci > 0) {
-          sd([140, 140, 140], 0.3);
+          sd(TBL_BORDER, 0.35);
           doc.line(cxh, y, cxh, y + CHH);
         }
         fb(7); st(DK);
@@ -6854,7 +6855,7 @@ async function ecfExportPDF() {
       // Page break if the next row would collide with the totals/signature reserve
       if (y + rH > PH - FOOTER_RESERVE) {
         // thin bottom border of current page table
-        sd([120, 120, 120], 0.35);
+        sd(TBL_BORDER, 0.4);
         doc.line(ML, y, ML + TW, y);
         doc.addPage();
         y = MT + 4;
@@ -6867,14 +6868,14 @@ async function ecfExportPDF() {
 
       var r = rows[ri];
       sf(WH);
-      sd([140, 140, 140], 0.35);
+      sd(TBL_BORDER, 0.4);
       doc.rect(ML, y, TW, rH, 'FD');
 
       // vertical column dividers
       var rx2 = ML;
       colDefs.forEach(function(col, vi) {
         if (vi > 0) {
-          sd([160, 160, 160], 0.28);
+          sd(TBL_BORDER, 0.32);
           doc.line(rx2, y, rx2, y + rH);
         }
         rx2 += col.w;
@@ -6907,7 +6908,7 @@ async function ecfExportPDF() {
     // ── TOTALS / ADV / BAL ────────────────────────────────────────
     // If totals + signatures won't fit, start a new page
     if (y + 5.8 * 3 + 30 > PH - 8) {
-      sd([120, 120, 120], 0.35);
+      sd(TBL_BORDER, 0.4);
       doc.line(ML, y, ML + TW, y);
       doc.addPage();
       y = MT + 4;
@@ -6928,23 +6929,23 @@ async function ecfExportPDF() {
     var bW    = buEnd - tX;
 
     var TOT_H = 5.8;
-    var BORDER = [150, 150, 150];
+    var BORDER = TBL_BORDER;
     var TOT_GY = [236, 236, 236];   // soft light grey (matches target intensity)
     var BAL_GY = [242, 242, 242];   // even softer for Balance row
 
     // Full-width top border of the totals block
-    sd(BORDER, 0.35);
+    sd(BORDER, 0.4);
     doc.line(ML, y, ML + TW, y);
 
     function drawTotDividers(yy) {
-      sd(BORDER, 0.28);
+      sd(BORDER, 0.32);
       [recX, kesX, usdX, buX].forEach(function(xx) {
         if (xx > tX && xx < buEnd) doc.line(xx, yy, xx, yy + TOT_H);
       });
     }
 
     // ── TOTALS row (soft grey) ──
-    sf(TOT_GY); sd(BORDER, 0.35);
+    sf(TOT_GY); sd(BORDER, 0.4);
     doc.rect(tX, y, bW, TOT_H, 'FD');
     drawTotDividers(y);
     fb(7.5); st(DK);
@@ -6957,7 +6958,7 @@ async function ecfExportPDF() {
     y += TOT_H;
 
     // ── Amount Advanced row (white) ──
-    sf(WH); sd(BORDER, 0.35);
+    sf(WH); sd(BORDER, 0.4);
     doc.rect(tX, y, bW, TOT_H, 'FD');
     drawTotDividers(y);
     fb(7.5); st(DK);
@@ -6969,7 +6970,7 @@ async function ecfExportPDF() {
     y += TOT_H;
 
     // ── Balance claimed/Returned row (soft grey fill) ──
-    sf(BAL_GY); sd(BORDER, 0.35);
+    sf(BAL_GY); sd(BORDER, 0.4);
     // left side: only a top rule (open area for the italic note)
     doc.line(ML, y, tX, y);
     doc.rect(tX, y, bW, TOT_H, 'FD');
