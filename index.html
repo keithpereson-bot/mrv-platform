@@ -6870,7 +6870,7 @@ async function ecfExportPDF() {
 
     // ── TOTALS / ADV / BAL ────────────────────────────────────────
     var TOT_H = 5.5;
-    var tX = ML+CW.date+CW.det;
+    var tX = ML+CW.date+Math.round(CW.det*0.55);  // ~55% through Details col
 
     // TOTALS block — starts at tX (after Date+Details), not full width
     // Left of tX is open (no box) matching the reference
@@ -6894,7 +6894,7 @@ async function ecfExportPDF() {
     // Amount Advanced — white, starts at tX
     sf(WH); sd([100,100,100],0.4); doc.rect(tX,y,bW,TOT_H,'FD');
     fb(7.5); st(DK);
-    tx('Amount Advanced', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    tx('Amount Advanced', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle',maxWidth:CW.rec+CW.det*0.45});
     fn(7.5);
     tx(cur+' '+fmt(advanced), tX+CW.rec+CW.kes-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
     y+=TOT_H;
@@ -6906,7 +6906,7 @@ async function ecfExportPDF() {
     fi(7); st(MK);
     tx('Advance approved by (Name, & Amount)', ML+1, y+TOT_H/2+0.5, {baseline:'middle'});
     fb(7.5); st(DK);
-    tx('Balance claimed/Returned', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    tx('Balance claimed/Returned', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle',maxWidth:CW.rec+CW.det*0.45});
     fn(7.5); st(balance<0?RD:DK);
     var balStr=balance<0?'('+cur+' '+fmt(Math.abs(balance))+')':cur+' '+fmt(balance);
     tx(balStr,  tX+CW.rec+CW.kes-1,             y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
