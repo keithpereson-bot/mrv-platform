@@ -6840,15 +6840,15 @@ async function ecfExportPDF() {
       if(r){
         fn(7); st(DK);
         var rx=ML;
+        var amt = r ? (parseFloat(r.amount)||0) : 0;
         var vals=[
-          {v:r.date,            w:CW.date,a:'center'},
-          {v:r.details,         w:CW.det, a:'left'},
-          {v:String(r.receipt), w:CW.rec, a:'center'},
-          // Amount: currency left-aligned, number right-aligned within cell
-          {v:cur+' '+fmt(r.amount),w:CW.kes,a:'right'},
-          {v:'',                w:CW.usd, a:'right'},
-          {v:r.bizUnit,         w:CW.bu,  a:'left'},
-          {v:r.expAcct,         w:CW.acct,a:'left'},
+          {v:r ? r.date    : '',                w:CW.date,a:'center'},
+          {v:r ? r.details : '',                w:CW.det, a:'left'},
+          {v:r ? String(r.receipt) : '',        w:CW.rec, a:'center'},
+          {v:r ? cur+' '+fmt(amt) : '',         w:CW.kes, a:'right'},
+          {v:'',                                w:CW.usd, a:'right'},
+          {v:r ? r.bizUnit : '',                w:CW.bu,  a:'left'},
+          {v:r ? r.expAcct : '',                w:CW.acct,a:'left'},
         ];
         vals.forEach(function(v,vi){
           if(vi>0){sd([100,100,100],0.25);doc.line(rx,y,rx,y+rH);}
