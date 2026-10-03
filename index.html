@@ -2749,27 +2749,36 @@ async function downloadAcknowledgedPDF() {
   if (!paid.length) { toast('No paid requests to export'); return; }
 
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-  const pw  = doc.internal.pageSize.getWidth();   // 297mm
-  const ph  = doc.internal.pageSize.getHeight();  // 210mm
-  const ML  = 10; const MR = 10;                  // margins
-  const W   = pw - ML - MR;                       // usable width: 277mm
+  const pw  = doc.internal.pageSize.getWidth();
+  const ph  = doc.internal.pageSize.getHeight();
+  const ML  = 10, MR = 10;
+  const W   = pw - ML - MR;
   const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
   const acked  = paid.filter(function(r){ return !!r.requesterSigName; });
   const total  = paid.reduce(function(s,r){ return s+(parseFloat(r.amount)||0); }, 0);
   const ccy    = paid.length ? getCurrency(paid[0].project, paid[0].type) : 'KES';
 
-  // Colours
-  const NAVY  = [13,  43,  46 ];
-  const TEAL  = [15,  110, 86 ];
-  const GREEN = [22,  163, 74 ];
-  const AMBER = [180, 120, 20 ];
-  const MUTED = [120, 135, 150];
-  const BRDR  = [210, 220, 225];
-  const WHITE = [255, 255, 255];
-  const ALT   = [247, 251, 249];
+  // Soft brand theme (matches expense claim acknowledgement slips)
+  const BRAND    = [242, 92, 10];
+  const BRAND_LT = [254, 240, 230];
+  const INK      = [17, 24, 39];
+  const MUTED    = [107, 114, 128];
+  const BRDR     = [209, 213, 219];
+  const WHITE    = [255, 255, 255];
+  const ALT      = [255, 248, 245];
+  const GREEN    = [5, 150, 105];
+  const AMBER    = [217, 119, 6];
+  const HDR_TXT  = [120, 50, 10];
 
-  // Column layout (landscape 297mm, usable 277mm)
-  // Ref | Project/Type | Category | Amount | Requester | Date | Finance Sig | Requester Sig
+  // Project label for title
+  var projSet = {};
+  paid.forEach(function(r){ if (r.project) projSet[r.project] = true; });
+  var pNames = Object.keys(projSet);
+  var projectLabel = pNames.length === 0 ? ''
+                   : pNames.length === 1 ? pNames[0]
+                   : pNames.length <= 3 ? pNames.join(', ')
+                   : pNames[0] + ' +' + (pNames.length - 1) + ' more';
+
   const COLS = [
     { label:'Ref #',            x:ML,       w:16  },
     { label:'Project / Type',   x:ML+16,    w:46  },
@@ -2780,27 +2789,42 @@ async function downloadAcknowledgedPDF() {
     { label:'Finance Signature',x:ML+170,   w:58  },
     { label:'Acknowledgement',  x:ML+228,   w:59  },
   ];
-  const ROW_TEXT = 22;   // fixed height for all rows
-  const ROW_SIG  = 22;   // same -- every row is equal height
 
-  // ── Page header ───────────────────────────────────────────────
+  // Fit 14 rows per page (first page has summary strip so fewer rows)
+  var ROWS_PER_PAGE = 14;
+  var HDR_H  = 16;
+  var SUM_H  = 10;   // summary strip on first page only
+  var TH_H   = 7;
+  var FOOT_H = 10;
+
   function pageHeader(isFirst) {
-    doc.setFillColor(...NAVY);
-    doc.rect(0, 0, pw, 18, 'F');
+    doc.setFillColor(...BRAND_LT);
+    doc.rect(0, 0, pw, HDR_H, 'F');
+    doc.setFillColor(...BRAND);
+    doc.rect(0, HDR_H, pw, 1.0, 'F');
+
+    var title = projectLabel
+      ? 'MRV Platform — Paid Requests Report  ·  ' + projectLabel
+      : 'MRV Platform — Paid Requests Report';
     doc.setFont('helvetica','bold');
-    doc.setFontSize(12);
-    doc.setTextColor(...WHITE);
-    doc.text('MRV Platform — Paid Requests Report', ML, 8);
-    doc.setFont('helvetica','normal');
-    doc.setFontSize(7);
-    doc.setTextColor(180,215,205);
-    doc.text('Expense clearing document — includes finance and requester signatures', ML, 14);
-    doc.text('Generated: '+now, pw-MR, 14, {align:'right'});
+    doc.setFontSize(title.length > 55 ? 9.5 : 10.5);
+    doc.setTextColor(...INK);
+    doc.text(title, ML, 7);
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+    doc.text('Expense clearing document — includes finance and requester signatures', ML, 12.5);
+    doc.text('Generated: '+now, pw - MR - 36, 12.5, {align:'right'});
+
+    // Company logo
+    try {
+      doc.addImage('data:image/png;base64,'+ECF_LOGO_B64, 'PNG', pw - MR - 34, 2, 32, 11);
+    } catch(e) {}
+
+    var y = HDR_H + 1;
 
     if (isFirst) {
-      // Summary strip
-      doc.setFillColor(235,245,240);
-      doc.rect(0, 18, pw, 10, 'F');
+      doc.setFillColor(255, 236, 220);
+      doc.rect(0, y, pw, SUM_H, 'F');
       var items = [
         ['Total Paid Requests', paid.length+''],
         ['Acknowledged',        acked.length+' / '+paid.length],
@@ -2809,41 +2833,37 @@ async function downloadAcknowledgedPDF() {
       var iw = pw / items.length;
       items.forEach(function(it, i) {
         var cx = i*iw + iw/2;
-        doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...TEAL);
-        doc.text(it[1], cx, 24, {align:'center'});
-        doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...MUTED);
-        doc.text(it[0].toUpperCase(), cx, 27, {align:'center'});
+        doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...BRAND);
+        doc.text(it[1], cx, y + 4.5, {align:'center'});
+        doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED);
+        doc.text(it[0].toUpperCase(), cx, y + 8, {align:'center'});
       });
-      return 30;
+      return y + SUM_H;
     }
-    return 20;
+    return y;
   }
 
-  // ── Table header row ──────────────────────────────────────────
   function tableHeader(y) {
-    doc.setFillColor(...TEAL);
-    doc.rect(ML, y, W, 8, 'F');
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(6.5);
-    doc.setTextColor(...WHITE);
+    doc.setFillColor(255, 236, 220);
+    doc.rect(ML, y, W, TH_H, 'F');
+    doc.setDrawColor(...BRAND);
+    doc.setLineWidth(0.5);
+    doc.line(ML, y+TH_H, ML+W, y+TH_H);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(...HDR_TXT);
     COLS.forEach(function(c) {
-      doc.text(c.label, c.x+2, y+5.2);
+      doc.text(c.label, c.x+2, y + TH_H/2 + 0.3, {baseline:'middle'});
     });
-    return y+8;
+    return y + TH_H;
   }
 
-  // ── Draw one data row ─────────────────────────────────────────
   function drawRow(r, y, rowH, isAlt) {
-    // Background
     if (isAlt) {
       doc.setFillColor(...ALT);
       doc.rect(ML, y, W, rowH, 'F');
     }
-    // Row border
     doc.setDrawColor(...BRDR);
-    doc.setLineWidth(0.15);
+    doc.setLineWidth(0.18);
     doc.rect(ML, y, W, rowH, 'S');
-    // Vertical col dividers
     COLS.forEach(function(c, i) {
       if (i > 0) {
         doc.setDrawColor(...BRDR);
@@ -2853,114 +2873,108 @@ async function downloadAcknowledgedPDF() {
     });
 
     var mid = y + rowH/2;
-    var pad = 2;
+    var pad = 1.5;
+    var SIG_H = Math.min(9, rowH - 3.5);
+    var SIG_W = 34;
+    var sigY  = y + (rowH - SIG_H) / 2;
 
     // Ref
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...TEAL);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...BRAND);
     doc.text('#'+r.ref, COLS[0].x+pad, mid, {baseline:'middle'});
 
     // Project / Type
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...NAVY);
-    var projLines = doc.splitTextToSize(r.project||'', COLS[1].w-pad*2);
-    doc.text(projLines[0]||'', COLS[1].x+pad, rowH>ROW_TEXT ? y+5 : mid, {baseline:'middle'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...INK);
+    doc.text(doc.splitTextToSize(r.project||'', COLS[1].w-3)[0]||'', COLS[1].x+pad, mid-1.8, {baseline:'middle'});
     if (r.type) {
-      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...MUTED);
-      doc.text(r.type, COLS[1].x+pad, rowH>ROW_TEXT ? y+10 : mid+4, {baseline:'middle'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED);
+      doc.text(r.type, COLS[1].x+pad, mid+2.2, {baseline:'middle'});
     }
 
     // Category
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...NAVY);
-    var catLines = doc.splitTextToSize((r.category||r.description||''), COLS[2].w-pad*2);
-    doc.text(catLines.slice(0,2), COLS[2].x+pad, rowH>ROW_TEXT ? y+5 : mid, {baseline:'middle'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...INK);
+    doc.text(doc.splitTextToSize((r.category||r.description||''), COLS[2].w-3).slice(0,2), COLS[2].x+pad, mid-1.5, {baseline:'middle'});
 
     // Amount
-    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...NAVY);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...INK);
     doc.text((parseFloat(r.amount)||0).toLocaleString(), COLS[3].x+pad, mid, {baseline:'middle'});
 
     // Requester
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...NAVY);
-    doc.text(r.requester||'', COLS[4].x+pad, mid, {baseline:'middle', maxWidth:COLS[4].w-pad*2});
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...INK);
+    doc.text(r.requester||'', COLS[4].x+pad, mid, {baseline:'middle', maxWidth:COLS[4].w-3});
 
     // Date
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...MUTED);
     doc.text(fmtDate(r.sigTime||r.date||''), COLS[5].x+pad, mid, {baseline:'middle'});
 
     // Finance signature
     var fx = COLS[6].x+pad;
     if (r.sigDataUrl) {
       try {
-        var f1 = r.sigDataUrl.startsWith('data:image/png')?'PNG':'JPEG';
-        var sh = rowH-6;
-        doc.addImage(r.sigDataUrl, f1, fx, y+3, Math.min(40, COLS[6].w-pad*2-2), sh, undefined, 'FAST');
+        var f1 = r.sigDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        doc.addImage(r.sigDataUrl, f1, fx, sigY, SIG_W, SIG_H, undefined, 'FAST');
       } catch(e) {}
-      doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(...NAVY);
-      doc.text(r.sigLabel||'', fx, y+rowH-7);
-      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED);
-      doc.text(fmtDate(r.sigTime||''), fx, y+rowH-3.5);
+      doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(...INK);
+      doc.text(r.sigLabel||'', fx, y+rowH-1.2);
     } else {
-      doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...MUTED);
       doc.text(r.sigLabel ? r.sigLabel : 'No signature', fx, mid, {baseline:'middle'});
-      if (r.sigLabel && r.sigTime) {
-        doc.setFont('helvetica','normal'); doc.setFontSize(5.5);
-        doc.text(fmtDate(r.sigTime), fx, mid+5, {baseline:'middle'});
-      }
     }
 
     // Acknowledgement
     var ax = COLS[7].x+pad;
     if (r.requesterSig) {
       try {
-        var f2 = r.requesterSig.startsWith('data:image/png')?'PNG':'JPEG';
-        var sh2 = rowH-6;
-        doc.addImage(r.requesterSig, f2, ax, y+3, Math.min(40, COLS[7].w-pad*2-2), sh2, undefined, 'FAST');
+        var f2 = r.requesterSig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        doc.addImage(r.requesterSig, f2, ax, sigY, SIG_W, SIG_H, undefined, 'FAST');
       } catch(e) {}
-      doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(...GREEN);
-      doc.text('✓ '+(r.requesterSigName||''), ax, y+rowH-7);
-      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED);
-      doc.text(fmtDate(r.requesterSigTime||''), ax, y+rowH-3.5);
+      doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(...GREEN);
+      doc.text('\u2713 '+(r.requesterSigName||''), ax, y+rowH-1.2);
     } else if (r.requesterSigName) {
-      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...GREEN);
-      doc.text('✓', ax+4, mid-2, {baseline:'middle'});
-      doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...NAVY);
-      doc.text(r.requesterSigName, ax+10, mid-2, {baseline:'middle'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...MUTED);
-      doc.text(fmtDate(r.requesterSigTime||''), ax, mid+4, {baseline:'middle'});
+      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...GREEN);
+      doc.text('\u2713', ax+3, mid, {baseline:'middle'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...INK);
+      doc.text(r.requesterSigName, ax+9, mid, {baseline:'middle'});
     } else {
-      doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor(...AMBER);
+      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(...AMBER);
       doc.text('Awaiting', ax, mid, {baseline:'middle'});
     }
   }
 
-  // ── Render pages ──────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────
   var y = pageHeader(true);
   y = tableHeader(y);
   var pageNum = 1;
+  // First page has less room because of the summary strip
+  var firstPageRows = Math.max(8, Math.floor((ph - y - FOOT_H) / ((ph - HDR_H - 1 - TH_H - FOOT_H) / ROWS_PER_PAGE)));
+  var rowH = (ph - HDR_H - 1 - TH_H - FOOT_H) / ROWS_PER_PAGE;
+  var rowsOnPage = 0;
+  var maxThisPage = firstPageRows;
 
   paid.forEach(function(r, i) {
-    var rowH   = ROW_SIG; // fixed height -- sigs force-fit
-
-    if (y + rowH > ph - 12) {
-      // Footer then new page
-      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
-      doc.text('MRV Platform — Confidential', ML, ph-5);
-      doc.text('Page '+pageNum, pw-MR, ph-5, {align:'right'});
+    if (rowsOnPage >= maxThisPage) {
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...MUTED);
+      doc.text('MRV Platform — Confidential', ML, ph-4);
+      doc.text('Page '+pageNum, pw-MR, ph-4, {align:'right'});
       doc.addPage();
       pageNum++;
       y = pageHeader(false);
       y = tableHeader(y);
+      rowsOnPage = 0;
+      maxThisPage = ROWS_PER_PAGE;
+      rowH = (ph - HDR_H - 1 - TH_H - FOOT_H) / ROWS_PER_PAGE;
     }
-
     drawRow(r, y, rowH, i%2===1);
     y += rowH;
+    rowsOnPage++;
   });
 
   // Final footer
   doc.setDrawColor(...BRDR); doc.setLineWidth(0.3);
   doc.line(ML, ph-10, pw-MR, ph-10);
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
-  doc.text('MRV Platform — Confidential. For expense clearing only.', ML, ph-5);
-  doc.text(acked.length+' of '+paid.length+' requests acknowledged.', pw/2, ph-5, {align:'center'});
-  doc.text('Page '+pageNum, pw-MR, ph-5, {align:'right'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...MUTED);
+  doc.text('MRV Platform — Confidential. For expense clearing only.', ML, ph-4);
+  doc.text(acked.length+' of '+paid.length+' requests acknowledged.', pw/2, ph-4, {align:'center'});
+  doc.text('Page '+pageNum, pw-MR, ph-4, {align:'right'});
 
   doc.save('MRV_Paid_Requests_'+new Date().toISOString().slice(0,10)+'.pdf');
   toast('PDF downloaded — '+paid.length+' paid request'+(paid.length===1?'':'s'));
