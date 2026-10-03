@@ -6833,7 +6833,7 @@ async function ecfExportPDF() {
     var rH = Math.min(6, Math.max(4, DATA_AVAIL/DISPLAY_ROWS));
 
     for (var ri=0; ri<DISPLAY_ROWS; ri++){
-      var r = rows[ri] || null;
+      var r = (ri < n) ? rows[ri] : null;
       // Empty rows get light grey fill like the reference
       if(r){ sf(WH); } else { sf(MGY); }
       sd([100,100,100],0.3); doc.rect(ML,y,TW,rH,'FD');
