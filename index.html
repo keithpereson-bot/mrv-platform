@@ -6899,10 +6899,10 @@ async function ecfExportPDF() {
     tx(cur+' '+fmt(advanced), tX+CW.rec+CW.kes-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
     y+=TOT_H;
 
-    // Balance — white, full width (italic note on left, values on right)
+    // Balance — top border only on left side, full box on right portion
     sf(WH); sd([100,100,100],0.4);
-    doc.rect(ML,y,ML+TW-ML,TOT_H,'FD');  // full width for the italic note
-    doc.rect(tX,y,bW,TOT_H,'FD');        // also box the right portion
+    doc.line(ML, y, tX, y);              // top line only on left (italic note area)
+    doc.rect(tX,y,bW,TOT_H,'FD');       // full box on right portion
     fi(7); st(MK);
     tx('Advance approved by (Name, & Amount)', ML+1, y+TOT_H/2+0.5, {baseline:'middle'});
     fb(7.5); st(DK);
