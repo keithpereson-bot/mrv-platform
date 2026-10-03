@@ -6775,8 +6775,18 @@ async function ecfExportPDF() {
     });
     y += 2;
 
+    // ── COLUMN WIDTHS ─────────────────────────────────────────────
+    var CW = {
+      date: 20,
+      det:  82,
+      rec:  18,
+      kes:  28,
+      usd:  14,
+      bu:   38,
+      acct: TW-20-82-18-28-14-38  // ~77mm
+    };
+
     // ── RECEIPT NOTE + ERP BOX ────────────────────────────────────
-    // ERP is a proper bordered box top-right
     var NOTE_H = 5;
     fi(6.5); st(MK);
     tx("Please number and attach all receipts, stating relevant number for each entry in 'Receipt No.' column", ML, y+3.5, {baseline:'middle'});
@@ -6788,17 +6798,6 @@ async function ecfExportPDF() {
     fb(7.5); st(DK);
     tx('ERP', erpX+erpW/2, y+NOTE_H/2+0.5, {align:'center',baseline:'middle'});
     y += NOTE_H;
-
-    // ── COLUMN WIDTHS ─────────────────────────────────────────────
-    var CW = {
-      date: 20,
-      det:  82,
-      rec:  18,
-      kes:  28,
-      usd:  14,
-      bu:   38,
-      acct: TW-20-82-18-28-14-38  // ~77mm
-    };
 
     // ── COLUMN HEADERS ────────────────────────────────────────────
     // White fill, thin grey borders, dark bold compact text
