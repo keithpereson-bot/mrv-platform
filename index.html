@@ -12,6 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -1149,18 +1150,22 @@
       <p>One form per project — select a project, include its paid requests, sign, and export to PDF</p>
     </div>
 
-    <!-- Step 1: Select project -->
+    <!-- Step 1: Select project(s) -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 1 &mdash; Select Project</div>
+        <div class="card-title">Step 1 &mdash; Select Project(s)</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(true)">All</button>
+          <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(false)">None</button>
+        </div>
       </div>
-      <div class="card-body">
-        <div class="form-group" style="margin:0;max-width:420px">
-          <label for="ecfProjectSelect">Project to expense</label>
-          <select id="ecfProjectSelect" onchange="ecfOnProjectChange()" size="1" style="appearance:auto;-webkit-appearance:menulist;background:#fff;height:auto;min-height:38px;padding:8px 12px;line-height:1.4">
-            <option value="">— Select a project —</option>
-          </select>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:6px">Each project generates its own expense claim form. Only paid requests for the selected project will appear below.</div>
+      <div class="card-body" style="padding-top:12px;padding-bottom:12px">
+        <div id="ecfProjectList" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto">
+          <div style="padding:12px;text-align:center;color:var(--muted);font-size:13px">Loading projects…</div>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:10px">
+          Select one or more projects. Each selected project gets its own expense claim form.
+          Multiple projects are exported together as a <strong>ZIP</strong> file.
         </div>
       </div>
     </div>
@@ -6470,13 +6475,30 @@ function ecfGetAdminSig() {
   return null;
 }
 
-// Paid requests currently shown in the ECF list (filtered by project)
+// Paid requests currently shown in the ECF list (filtered by selected projects)
 var _ecfFilteredPaid = [];
 
+function ecfGetSelectedProjects() {
+  var out = [];
+  document.querySelectorAll('.ecf-proj-chk:checked').forEach(function(c){
+    if (c.value) out.push(c.value);
+  });
+  return out;
+}
+
+function ecfSelAllProjects(v) {
+  document.querySelectorAll('.ecf-proj-chk').forEach(function(c){ c.checked = !!v; });
+  ecfOnProjectChange();
+}
+
 function ecfPopulateProjects() {
-  var sel = document.getElementById('ecfProjectSelect');
-  if (!sel) return;
-  var prev = sel.value || '';
+  var list = document.getElementById('ecfProjectList');
+  if (!list) return;
+
+  // Remember currently checked projects
+  var prevChecked = {};
+  document.querySelectorAll('.ecf-proj-chk:checked').forEach(function(c){ prevChecked[c.value] = true; });
+
   var paid = (requestsStore || []).filter(function(r){ return r.status === 'Paid'; });
   var projects = {};
   paid.forEach(function(r){
@@ -6487,31 +6509,30 @@ function ecfPopulateProjects() {
     projects[p].total += parseFloat(r.amount) || 0;
   });
   var names = Object.keys(projects).sort(function(a,b){ return a.localeCompare(b); });
+
   if (!names.length) {
-    sel.innerHTML = '<option value="">No projects with paid requests</option>';
-    sel.disabled = true;
+    list.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px">No projects with paid requests. Mark requests as Paid first.</div>';
     return;
   }
-  sel.disabled = false;
-  sel.innerHTML = '<option value="">— Select a project —</option>' +
-    names.map(function(p){
-      var info = projects[p];
-      var label = p + '  (' + info.count + ' paid · ' + info.total.toLocaleString() + ')';
-      return '<option value="'+p.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+label.replace(/</g,'&lt;')+'</option>';
-    }).join('');
-  if (prev && projects[prev]) sel.value = prev;
+
+  list.innerHTML = names.map(function(p){
+    var info = projects[p];
+    var checked = prevChecked[p] ? ' checked' : '';
+    var safe = p.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:#fff" onmouseover="this.style.borderColor=\'var(--brand)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
+      +'<input type="checkbox" class="ecf-proj-chk" value="'+safe+'"'+checked+' onchange="ecfOnProjectChange()" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0">'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:600;color:var(--gray-900)">'+p.replace(/</g,'&lt;')+'</div>'
+        +'<div style="font-size:11px;color:var(--muted)">'+info.count+' paid request'+(info.count===1?'':'s')+' · '+info.total.toLocaleString()+'</div>'
+      +'</div>'
+      +'</label>';
+  }).join('');
 }
 
 function ecfOnProjectChange() {
-  // Clear header fields that were auto-filled for the previous project
-  ['ecfEntity','ecfProfitCentre','ecfCountry','ecfCostCentre','ecfDimCode',
-   'ecfCarbonCode','ecfBizUnit','ecfProductCode','ecfRdCode'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (el) el.value = '';
-  });
   ecfLoadRequests();
+  // Auto-fill header from the first selected project's data (if header empty)
   ecfAutoHeader();
-  // Clear preview
   var area = document.getElementById('ecfPreview');
   if (area) area.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px">Click Refresh Preview to see the filled form.</div>';
 }
@@ -6521,39 +6542,55 @@ function ecfLoadRequests() {
   var countEl = document.getElementById('ecfReqCount');
   if (!list) return;
 
-  var project = (document.getElementById('ecfProjectSelect') || {}).value || '';
-  if (!project) {
+  var selectedProjects = ecfGetSelectedProjects();
+  if (!selectedProjects.length) {
     _ecfFilteredPaid = [];
-    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">Select a project above to load its paid requests.</div>';
+    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">Select one or more projects above to load their paid requests.</div>';
     if (countEl) countEl.textContent = '0';
     return;
   }
 
+  var projSet = {};
+  selectedProjects.forEach(function(p){ projSet[p] = true; });
   var paid = (requestsStore || []).filter(function(r){
-    return r.status === 'Paid' && r.project === project;
+    return r.status === 'Paid' && projSet[r.project];
+  });
+  // Sort by project then date
+  paid.sort(function(a,b){
+    var c = (a.project||'').localeCompare(b.project||'');
+    if (c) return c;
+    return (a.date||'').localeCompare(b.date||'');
   });
   _ecfFilteredPaid = paid;
 
   if (!paid.length) {
-    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">No paid requests for <strong>'+project.replace(/</g,'&lt;')+'</strong>. Mark requests as Paid in System Requests first.</div>';
+    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">No paid requests for the selected project(s).</div>';
     if (countEl) countEl.textContent = '0';
     return;
   }
 
-  list.innerHTML = paid.map(function(r, i){
+  var html = '';
+  var lastProj = null;
+  paid.forEach(function(r, i){
+    if (r.project !== lastProj) {
+      lastProj = r.project;
+      html += '<div style="padding:6px 18px;font-size:11px;font-weight:700;color:var(--brand);background:var(--gray-50);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.03em">'
+        +(r.project||'').replace(/</g,'&lt;')+'</div>';
+    }
     var amt = parseFloat(r.amount) || 0;
     var cur = (typeof getCurrency === 'function') ? getCurrency(r.project, r.type) || 'KES' : 'KES';
     var desc = (r.costSummary || r.description || r.costItem || 'No description').replace(/</g, '&lt;');
     var cat  = (r.category || '').replace(/</g, '&lt;');
-    return '<label style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background=\'var(--gray-50)\'" onmouseout="this.style.background=\'\'">'
-      +'<input type="checkbox" class="ecf-chk" data-ref="'+(r.ref||'').replace(/"/g,'&quot;')+'" data-i="'+i+'" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0" checked>'
+    html += '<label style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background=\'var(--gray-50)\'" onmouseout="this.style.background=\'\'">'
+      +'<input type="checkbox" class="ecf-chk" data-ref="'+(r.ref||'').replace(/"/g,'&quot;')+'" data-project="'+(r.project||'').replace(/"/g,'&quot;')+'" data-i="'+i+'" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0" checked>'
       +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:12.5px;font-weight:600;color:var(--gray-900)">'+desc+'</div>'
         +'<div style="font-size:11px;color:var(--gray-500);margin-top:2px">'+(r.ref||'')+(cat?' &bull; '+cat:'')+(r.type?' &bull; '+r.type:'')+(r.date?' &bull; '+(typeof fmtDate==='function'?fmtDate(r.date):r.date):'')+'</div>'
       +'</div>'
       +'<div style="font-size:13px;font-weight:700;color:var(--gray-900);white-space:nowrap">'+cur+' '+amt.toLocaleString()+'</div>'
       +'</label>';
-  }).join('');
+  });
+  list.innerHTML = html;
 
   if (countEl) countEl.textContent = paid.length + ' request' + (paid.length === 1 ? '' : 's');
 }
@@ -6572,10 +6609,9 @@ function ecfAutoHeader() {
       jEl.value = rm[currentUser.role] || currentUser.role || '';
     }
   }
-  var project = (document.getElementById('ecfProjectSelect') || {}).value || '';
   var paid = _ecfFilteredPaid.length
     ? _ecfFilteredPaid
-    : (requestsStore || []).filter(function(r){ return r.status === 'Paid' && (!project || r.project === project); });
+    : (requestsStore || []).filter(function(r){ return r.status === 'Paid'; });
   if (!paid.length) return;
   var r = paid[0];
   function sif(id, val){ var el = document.getElementById(id); if (el && !el.value && val) el.value = val; }
@@ -6596,7 +6632,6 @@ function ecfAutoHeader() {
 }
 
 function ecfGetSelected() {
-  // Prefer filtered list; fall back to all paid if needed
   var source = _ecfFilteredPaid.length
     ? _ecfFilteredPaid
     : (requestsStore || []).filter(function(r){ return r.status === 'Paid'; });
@@ -6695,12 +6730,26 @@ var ECF_LOGO_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAPAAAABkCAMAAACPfE31AAAAA3NCSVQICAjb
 
 
 async function ecfExportPDF() {
-  var project = (document.getElementById('ecfProjectSelect') || {}).value || '';
-  if (!project) { toast('Select a project first'); return; }
-  var sel = ecfGetSelected();
-  if (!sel.length) { toast('Select at least one paid request for this project'); return; }
+  var selectedProjects = ecfGetSelectedProjects();
+  if (!selectedProjects.length) { toast('Select at least one project'); return; }
+  var allSel = ecfGetSelected();
+  if (!allSel.length) { toast('Select at least one paid request'); return; }
   var sigDataUrl = ecfGetAdminSig();
   if (!sigDataUrl) { toast('No signature found'); return; }
+
+  // Group selected requests by project
+  var byProject = {};
+  allSel.forEach(function(r){
+    var p = r.project || 'Unknown';
+    if (!byProject[p]) byProject[p] = [];
+    byProject[p].push(r);
+  });
+  var projectKeys = Object.keys(byProject);
+  // Only include projects that were actually selected (and have checked requests)
+  projectKeys = projectKeys.filter(function(p){
+    return selectedProjects.indexOf(p) >= 0 || selectedProjects.length === 0;
+  });
+  if (!projectKeys.length) projectKeys = Object.keys(byProject);
 
   var entity   = document.getElementById('ecfEntity').value||'';
   var dateVal  = document.getElementById('ecfDate').value||new Date().toISOString().slice(0,10);
@@ -6718,40 +6767,39 @@ async function ecfExportPDF() {
   var cur      = document.getElementById('ecfCurrency').value||'KES';
   var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
 
-  // Project name for the title (one form per project)
-  var projectLabel = project || '';
-  if (!projectLabel) {
-    var projSet = {};
-    sel.forEach(function(r){ if (r.project) projSet[r.project] = true; });
-    var projectNames = Object.keys(projSet);
-    projectLabel = projectNames.length === 0 ? ''
-                 : projectNames.length === 1 ? projectNames[0]
-                 : projectNames.length <= 3 ? projectNames.join(', ')
-                 : projectNames[0] + ' +' + (projectNames.length - 1) + ' more';
-  }
-
-  var rows = sel.map(function(req,i){
-    return {
-      date:    (typeof fmtDate==='function')?fmtDate(req.date||''):(req.date||''),
-      details: req.description||req.costSummary||req.costItem||'',
-      receipt: i+1,
-      amount:  parseFloat(req.amount)||0,
-      bizUnit: req.category||req.type||'',
-      expAcct: req.costSummary||'',
-      ref: req.ref||'', project: req.project||'',
-      requester: req.requester||'', sigDataUrl: req.sigDataUrl||'',
-      sigLabel: req.sigLabel||'', requesterSig: req.requesterSig||'',
-      requesterSigName: req.requesterSigName||''
-    };
-  });
-
   var btn = document.getElementById('ecfExportBtn');
   if (btn) { btn.disabled=true; btn.textContent='Generating\u2026'; }
 
   try {
-    var total   = rows.reduce(function(s,r){return s+r.amount;},0);
-    var balance = total - advanced;
-    function fmt(n){return Number(n||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});}
+    // Generate one PDF per project, collect as {name, bytes}
+    var files = [];
+    for (var pi = 0; pi < projectKeys.length; pi++) {
+      var projectLabel = projectKeys[pi];
+      var sel = byProject[projectLabel];
+      if (!sel || !sel.length) continue;
+
+      if (btn) btn.textContent = 'Generating '+(pi+1)+'/'+projectKeys.length+'\u2026';
+
+      var rows = sel.map(function(req,i){
+        return {
+          date:    (typeof fmtDate==='function')?fmtDate(req.date||''):(req.date||''),
+          details: req.description||req.costSummary||req.costItem||'',
+          receipt: i+1,
+          amount:  parseFloat(req.amount)||0,
+          bizUnit: req.category||req.type||'',
+          expAcct: req.costSummary||'',
+          ref: req.ref||'', project: req.project||'',
+          requester: req.requester||'', sigDataUrl: req.sigDataUrl||'',
+          sigLabel: req.sigLabel||'', requesterSig: req.requesterSig||'',
+          requesterSigName: req.requesterSigName||''
+        };
+      });
+
+      var total   = rows.reduce(function(s,r){return s+r.amount;},0);
+      // Amount Advanced applies fully only for single-project export; for multi, leave as entered
+      var advThis = projectKeys.length === 1 ? advanced : 0;
+      var balance = total - advThis;
+      function fmt(n){return Number(n||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
     var JsPDF = window.jspdf.jsPDF;
     var doc = new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
@@ -7032,7 +7080,7 @@ async function ecfExportPDF() {
     fb(7.5); st(DK);
     tx('Amount Advanced', recX - 1.8, y + TOT_H/2 + 0.4, {align: 'right', baseline: 'middle'});
     fn(7.5);
-    tx(cur + ' ' + fmt(advanced), kesX + CW.kes - 1.2, y + TOT_H/2 + 0.4, {align: 'right', baseline: 'middle'});
+    tx(cur + ' ' + fmt(advThis), kesX + CW.kes - 1.2, y + TOT_H/2 + 0.4, {align: 'right', baseline: 'middle'});
     tx('$0.00',                   usdX + CW.usd - 1.2, y + TOT_H/2 + 0.4, {align: 'right', baseline: 'middle'});
     tx('',                        buX  + CW.bu  - 1.2, y + TOT_H/2 + 0.4, {align: 'right', baseline: 'middle'});
     y += TOT_H;
@@ -7083,22 +7131,49 @@ async function ecfExportPDF() {
     tx('Release date: 8th Jan.2025', PW-MR, footY, {align:'right'});
 
     // Merge with ack PDF
-    var ackBuf  = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl, projectLabel);
-    var ecfB64  = doc.output('datauristring').split(',')[1];
-    var combined = await ecfMergePDFs(ecfB64, ackBuf);
-    var fname = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal+'.pdf';
-    var bytes = Uint8Array.from(atob(combined),function(c){return c.charCodeAt(0);});
-    var blob  = new Blob([bytes],{type:'application/pdf'});
-    var url   = URL.createObjectURL(blob);
-    var a=document.createElement('a'); a.href=url; a.download=fname;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); URL.revokeObjectURL(url);
-    toast('\u2713 Downloaded: '+fname);
+      var ackBuf  = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl, projectLabel);
+      var ecfB64  = doc.output('datauristring').split(',')[1];
+      var combined = await ecfMergePDFs(ecfB64, ackBuf);
+      var safeProj = projectLabel.replace(/[^\w\-]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'Project';
+      var fname = 'ExpenseClaim_'+safeProj+'_'+dateVal+'.pdf';
+      var bytes = Uint8Array.from(atob(combined), function(c){ return c.charCodeAt(0); });
+      files.push({ name: fname, bytes: bytes });
+    } // end per-project loop
+
+    if (!files.length) {
+      toast('No PDFs generated');
+      return;
+    }
+
+    // Single project → direct PDF download; multiple → ZIP
+    if (files.length === 1) {
+      var blob = new Blob([files[0].bytes], {type: 'application/pdf'});
+      var url  = URL.createObjectURL(blob);
+      var a = document.createElement('a'); a.href = url; a.download = files[0].name;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+      toast('\u2713 Downloaded: ' + files[0].name);
+    } else {
+      if (!window.JSZip) {
+        toast('JSZip not loaded — cannot create ZIP');
+        return;
+      }
+      if (btn) btn.textContent = 'Packaging ZIP\u2026';
+      var zip = new JSZip();
+      files.forEach(function(f){ zip.file(f.name, f.bytes); });
+      var zipBlob = await zip.generateAsync({ type: 'blob' });
+      var zipName = 'ExpenseClaims_'+dateVal+'.zip';
+      var zurl = URL.createObjectURL(zipBlob);
+      var za = document.createElement('a'); za.href = zurl; za.download = zipName;
+      document.body.appendChild(za); za.click();
+      document.body.removeChild(za); URL.revokeObjectURL(zurl);
+      toast('\u2713 Downloaded ZIP: ' + zipName + ' (' + files.length + ' forms)');
+    }
 
   } catch(err){
     toast('Error: '+err.message); console.error(err);
   } finally {
-    if(btn){btn.disabled=false;btn.innerHTML='&#8659; Export';}
+    if(btn){btn.disabled=false;btn.innerHTML='&#8659; Export to PDF';}
   }
 }
 
