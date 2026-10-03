@@ -6549,6 +6549,11 @@ function ecfRefreshPreview() {
   var balance=d.totalTZS-advanced;
   var sigSrc=ecfGetAdminSig();
   var sigHtml=sigSrc?'<img src="'+sigSrc+'" style="height:30px;display:block;margin-top:3px">':'<span style="font-size:8px;color:#999">No signature saved</span>';
+  // Project label for preview title
+  var pSet={}; sel.forEach(function(r){ if(r.project) pSet[r.project]=true; });
+  var pNames=Object.keys(pSet);
+  var pLabel=pNames.length===0?'':pNames.length===1?pNames[0]:pNames.length<=3?pNames.join(', '):pNames[0]+' +'+(pNames.length-1)+' more';
+  var previewTitle=pLabel?'EXPENSE CLAIM FORM  —  '+pLabel:'EXPENSE CLAIM FORM';
   var B='border:1px solid #aaa;padding:3px 5px;font-size:9px';
   var BL=B+';font-weight:700;background:#f0f0f0';
   var BH='border:1px solid #aaa;padding:3px 5px;font-size:8.5px;font-weight:700;background:#d0d0d0;text-align:center';
@@ -6562,7 +6567,7 @@ function ecfRefreshPreview() {
   }).join('');
   area.innerHTML='<div style="font-family:Arial,sans-serif;font-size:9px;border:1.5px solid #999;position:relative">'
     +'<div style="position:absolute;top:6px;right:8px"><img src="data:image/png;base64,'+ECF_LOGO_B64+'" style="height:30px"></div>'
-    +'<div style="text-align:center;font-size:13px;font-weight:700;padding:9px;border-bottom:1px solid #aaa">EXPENSE CLAIM FORM</div>'
+    +'<div style="text-align:center;font-size:13px;font-weight:700;padding:9px;border-bottom:1px solid #aaa">'+previewTitle+'</div>'
     +'<table style="width:100%;border-collapse:collapse">'
     +'<tr><td style="'+BL+'">BURN ENTITY:</td><td style="'+B+'">'+entity+'</td><td style="'+BL+'">Date:</td><td style="'+B+'">'+dStr+'</td><td style="'+BL+'">Profit Centre:</td><td style="'+B+'" colspan="3">'+pCentre+'</td></tr>'
     +'<tr><td style="'+BL+'">Country Code:</td><td style="'+B+'">'+country+'</td><td style="'+BL+'">Name of Claimant:</td><td style="'+B+'">'+claimant+'</td><td style="'+BL+'">Product Code:</td><td style="'+B+'" colspan="3">'+prodCode+'</td></tr>'
@@ -6603,6 +6608,15 @@ async function ecfExportPDF() {
   var carbCode = document.getElementById('ecfCarbonCode').value||'';
   var cur      = document.getElementById('ecfCurrency').value||'KES';
   var advanced = parseFloat(document.getElementById('ecfAdvanced').value)||0;
+
+  // Unique project name(s) for the title
+  var projSet = {};
+  sel.forEach(function(r){ if (r.project) projSet[r.project] = true; });
+  var projectNames = Object.keys(projSet);
+  var projectLabel = projectNames.length === 0 ? ''
+                   : projectNames.length === 1 ? projectNames[0]
+                   : projectNames.length <= 3 ? projectNames.join(', ')
+                   : projectNames[0] + ' +' + (projectNames.length - 1) + ' more';
 
   var rows = sel.map(function(req,i){
     return {
@@ -6654,7 +6668,12 @@ async function ecfExportPDF() {
     fn(7); st(MK);
     tx('REF: FIN_FM_003-F', ML, y+4);
     fb(13); st(DK);
-    tx('EXPENSE CLAIM FORM', PW/2, y+4, {align:'center'});
+    var mainTitle = projectLabel
+      ? 'EXPENSE CLAIM FORM  —  ' + projectLabel
+      : 'EXPENSE CLAIM FORM';
+    // Slightly smaller font if title is long
+    if (mainTitle.length > 48) fb(11); else fb(13);
+    tx(mainTitle, PW/2, y+4, {align:'center'});
     try { doc.addImage('data:image/png;base64,'+ECF_LOGO_B64,'PNG',PW-MR-38,y-1,38,12); } catch(e){}
     y += 14;
 
@@ -6952,7 +6971,7 @@ async function ecfExportPDF() {
     tx('Release date: 8th Jan.2025', PW-MR, footY, {align:'right'});
 
     // Merge with ack PDF
-    var ackBuf  = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl);
+    var ackBuf  = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl, projectLabel);
     var ecfB64  = doc.output('datauristring').split(',')[1];
     var combined = await ecfMergePDFs(ecfB64, ackBuf);
     var fname = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal+'.pdf';
@@ -6980,23 +6999,25 @@ async function ecfExportPDF() {
 
 
 // ── Build acknowledgement PDF ─────────────────────────────────────────────
-function ecfBuildAckPDF(reqs, cur, claimant, adminSig) {
+function ecfBuildAckPDF(reqs, cur, claimant, adminSig, projectLabel) {
   var JsPDF = window.jspdf.jsPDF;
   var doc = new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   var pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight();
   var ML=10, MR=10, W=pw-ML-MR;
   var now=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
 
-  // Brand theme — fire orange (matches app / expense form)
-  var BRAND   = [242, 92, 10];      // --brand #F25C0A
-  var BRAND_DK= [201, 72, 0];       // --brand-dk
+  // Soft brand theme — muted fire orange (less intense than solid brand bar)
+  var BRAND   = [242, 92, 10];      // --brand #F25C0A (accents only)
+  var BRAND_LT= [254, 240, 230];    // very soft warm tint for header bg
+  var BRAND_MID=[255, 119, 48];     // mid brand for thin accent
   var INK     = [17, 24, 39];       // gray-900
   var MUTED   = [107, 114, 128];    // gray-500
   var BRDR    = [209, 213, 219];    // gray-300
   var WHITE   = [255, 255, 255];
-  var ALT     = [255, 247, 237];    // brand-lt / warm off-white
-  var GREEN   = [5, 150, 105];      // success green
-  var AMBER   = [217, 119, 6];      // warn
+  var ALT     = [255, 248, 245];    // barely-warm alternate row
+  var GREEN   = [5, 150, 105];
+  var AMBER   = [217, 119, 6];
+  var HDR_TXT = [120, 50, 10];      // dark warm text on light header
 
   var COLS=[
     {label:'Ref #',x:ML,w:16},{label:'Project / Type',x:ML+16,w:46},
@@ -7007,17 +7028,23 @@ function ecfBuildAckPDF(reqs, cur, claimant, adminSig) {
   var ROW=22;
 
   function hdr(){
-    // Top brand bar
-    doc.setFillColor.apply(doc, BRAND);
+    // Soft warm header background (not solid orange)
+    doc.setFillColor.apply(doc, BRAND_LT);
     doc.rect(0, 0, pw, 18, 'F');
-    // Accent stripe under the bar
-    doc.setFillColor.apply(doc, BRAND_DK);
-    doc.rect(0, 18, pw, 1.2, 'F');
+    // Thin brand accent line under the header
+    doc.setFillColor.apply(doc, BRAND);
+    doc.rect(0, 18, pw, 1.0, 'F');
 
-    // Title
-    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor.apply(doc, WHITE);
-    doc.text('Expense Claim — Acknowledgement Slips', ML, 8);
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(255, 230, 210);
+    // Title + project name
+    var ackTitle = projectLabel
+      ? 'Expense Claim — Acknowledgement Slips  ·  ' + projectLabel
+      : 'Expense Claim — Acknowledgement Slips';
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(ackTitle.length > 55 ? 10 : 11);
+    doc.setTextColor.apply(doc, INK);
+    doc.text(ackTitle, ML, 8);
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, MUTED);
     doc.text('Attached to expense claim for '+claimant+' — Generated: '+now, ML, 14);
 
     // Company logo (right side of header)
@@ -7029,9 +7056,14 @@ function ecfBuildAckPDF(reqs, cur, claimant, adminSig) {
   }
 
   function tblHdr(y){
-    doc.setFillColor.apply(doc, BRAND);
+    // Soft brand-tinted header (not solid orange)
+    doc.setFillColor(255, 236, 220);
     doc.rect(ML, y, W, 8, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, WHITE);
+    // Bottom border accent
+    doc.setDrawColor.apply(doc, BRAND);
+    doc.setLineWidth(0.6);
+    doc.line(ML, y+8, ML+W, y+8);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor.apply(doc, HDR_TXT);
     COLS.forEach(function(c){ doc.text(c.label, c.x+2, y+5.2); });
     return y+8;
   }
