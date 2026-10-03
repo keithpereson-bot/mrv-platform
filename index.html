@@ -6688,19 +6688,19 @@ async function ecfExportPDF() {
   try {
     var total   = rows.reduce(function(s,r){return s+r.amount;},0);
     var balance = total - advanced;
-    function fmt(n){return Number(n||0).toLocaleString();}
+    function fmt(n){return Number(n||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
     var JsPDF = window.jspdf.jsPDF;
     var doc = new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-    var PW=297, PH=210, ML=10, MR=10, MT=7, TW=PW-ML-MR;
+    var PW=297, PH=210, ML=10, MR=10, MT=6, TW=PW-ML-MR;
 
-    // ── Colors ──────────────────────────────────────────────────
-    var BK  = [0,0,0];
-    var LGY = [180,180,180];  // light grey — all borders
-    var MGY = [217,217,217];  // medium grey — TOTALS fill
-    var WH  = [255,255,255];
-    var RD  = [180,0,0];
-    var DK  = [50,50,50];     // dark text
+    // Colors
+    var LGY=[180,180,180];  // light grey — borders
+    var MGY=[217,217,217];  // medium grey — TOTALS + empty rows
+    var WH =[255,255,255];
+    var RD =[180,0,0];
+    var DK =[30,30,30];
+    var MK =[80,80,80];
 
     function sf(c){doc.setFillColor(c[0],c[1],c[2]);}
     function sd(c,w){doc.setDrawColor(c[0],c[1],c[2]);doc.setLineWidth(w||0.2);}
@@ -6712,19 +6712,22 @@ async function ecfExportPDF() {
 
     var y = MT;
 
-    // ── TITLE ───────────────────────────────────────────────────
+    // ── ROW 1: REF + TITLE + LOGO ────────────────────────────────
+    fn(7); st(MK);
+    tx('REF: FIN_FM_003-F', ML, y+4);
     fb(13); st(DK);
-    tx('EXPENSE CLAIM FORM', PW/2, y+5, {align:'center'});
-    try { doc.addImage('data:image/png;base64,'+ECF_LOGO_B64,'PNG',PW-MR-36,y,36,10); } catch(e){}
-    y += 12;
+    tx('EXPENSE CLAIM FORM', PW/2, y+4, {align:'center'});
+    try { doc.addImage('data:image/png;base64,'+ECF_LOGO_B64,'PNG',PW-MR-38,y-1,38,12); } catch(e){}
+    y += 14;
 
-    // ── HEADER FIELDS ────────────────────────────────────────────
-    // 3 column groups. Left: label+box. Centre: label+underline. Right: label+box.
-    // Heights per row: ~6mm × 4 rows = 24mm
-    var hH = 5.5;  // row height for header field rows
-    var C1x=ML,    C1lw=26, C1vw=48;   // left col: label+box
-    var C2x=ML+74, C2lw=38, C2vw=52;   // centre col: label+underline
-    var C3x=ML+164,C3lw=40, C3vw=TW-(164-ML)-40-ML; // right col: label+box
+    // ── HEADER FIELDS ─────────────────────────────────────────────
+    var hH = 5.5;
+    // Col 1: label right-aligned, value in box (left/top/right border only — open bottom)
+    var C1x=ML,    C1lw=27, C1vw=50;
+    // Col 2: label right-aligned, value underline only
+    var C2x=ML+77, C2lw=40, C2vw=55;
+    // Col 3: label right-aligned, value in box
+    var C3x=ML+172,C3lw=43, C3vw=TW-(172)+ML-C3lw;
 
     var hdrData = [
       ['BURN ENTITY:',entity,   'Date:',dStr,                 'Profit Centre:',pCentre],
@@ -6733,16 +6736,21 @@ async function ecfExportPDF() {
       ['Dimension Code:',dimCode,'Bank Details/Mpesa No:',bank,'Carbon / Project Code:',carbCode],
     ];
 
-    hdrData.forEach(function(h){
-      // Left: bold label, thin-box value
+    hdrData.forEach(function(h, hi){
+      var isLast = hi === 3;
+      // C1: label
       fb(7.5); st(DK);
       tx(h[0], C1x+C1lw-1, y+hH/2+0.8, {align:'right',baseline:'middle'});
-      sd(LGY,0.3); sf(WH);
-      doc.rect(C1x+C1lw, y, C1vw, hH, 'S');
+      // C1: value box — thin grey, open bottom on all but last row
+      sd(LGY,0.3);
+      doc.line(C1x+C1lw,      y,      C1x+C1lw,      y+hH); // left
+      doc.line(C1x+C1lw,      y,      C1x+C1lw+C1vw, y);    // top
+      doc.line(C1x+C1lw+C1vw, y,      C1x+C1lw+C1vw, y+hH); // right
+      if (isLast) doc.line(C1x+C1lw, y+hH, C1x+C1lw+C1vw, y+hH); // bottom only on last
       fn(7.5); st(DK);
       tx(String(h[1]||''), C1x+C1lw+2, y+hH/2+0.8, {baseline:'middle',maxWidth:C1vw-4});
 
-      // Centre: bold label, underline value
+      // C2: label + underline value
       fb(7.5); st(DK);
       tx(h[2], C2x+C2lw-1, y+hH/2+0.8, {align:'right',baseline:'middle'});
       sd(LGY,0.3);
@@ -6750,44 +6758,48 @@ async function ecfExportPDF() {
       fn(7.5); st(DK);
       tx(String(h[3]||''), C2x+C2lw+2, y+hH/2+0.8, {baseline:'middle',maxWidth:C2vw-4});
 
-      // Right: bold label, thin-box value
+      // C3: label + value box
       fb(7.5); st(DK);
       tx(h[4], C3x+C3lw-1, y+hH/2+0.8, {align:'right',baseline:'middle'});
-      sd(LGY,0.3); sf(WH);
-      doc.rect(C3x+C3lw, y, C3vw, hH, 'S');
+      sd(LGY,0.3);
+      doc.line(C3x+C3lw,      y,      C3x+C3lw,      y+hH);
+      doc.line(C3x+C3lw,      y,      C3x+C3lw+C3vw, y);
+      doc.line(C3x+C3lw+C3vw, y,      C3x+C3lw+C3vw, y+hH);
+      if (isLast) doc.line(C3x+C3lw, y+hH, C3x+C3lw+C3vw, y+hH);
       fn(7.5); st(DK);
       tx(String(h[5]||''), C3x+C3lw+2, y+hH/2+0.8, {baseline:'middle',maxWidth:C3vw-4});
+
       y += hH;
     });
     y += 2;
 
-    // ── RECEIPT NOTE + ERP ────────────────────────────────────────
-    // ERP: plain text above the Expense Account column
-    // Note: ERP sits top-right, no box
+    // ── RECEIPT NOTE + ERP BOX ────────────────────────────────────
+    // ERP is a proper bordered box top-right
     var NOTE_H = 5;
-    fi(6.5); st([120,120,120]);
+    fi(6.5); st(MK);
     tx("Please number and attach all receipts, stating relevant number for each entry in 'Receipt No.' column", ML, y+3.5, {baseline:'middle'});
+    // ERP box — thin grey border all sides
+    var erpW=18;
+    sd(LGY,0.3); sf(WH);
+    doc.rect(PW-MR-erpW, y, erpW, NOTE_H, 'FD');
     fb(7.5); st(DK);
-    tx('ERP', PW-MR, y+3.5, {align:'right',baseline:'middle'});
+    tx('ERP', PW-MR-erpW/2, y+NOTE_H/2+0.5, {align:'center',baseline:'middle'});
     y += NOTE_H;
 
     // ── COLUMN WIDTHS ─────────────────────────────────────────────
-    // Reference proportions: Date=small, Details=largest, Rec=small, 
-    // KES=medium, USD=small, BU=medium, Acct=large
-    // Total TW=277mm
     var CW = {
       date: 20,
-      det:  80,   // largest
-      rec:  16,
-      kes:  26,
+      det:  82,
+      rec:  18,
+      kes:  28,
       usd:  14,
-      bu:   36,
-      acct: TW-20-80-16-26-14-36  // ~85mm
+      bu:   38,
+      acct: TW-20-82-18-28-14-38  // ~77mm
     };
 
     // ── COLUMN HEADERS ────────────────────────────────────────────
-    // WHITE background, thin grey borders, dark compact text — matches reference
-    var CHH = 9;  // column header height
+    // White fill, thin grey borders, dark bold compact text
+    var CHH = 9;
     sf(WH); sd(LGY,0.3);
     doc.rect(ML,y,TW,CHH,'FD');
     fb(7); st(DK);
@@ -6795,7 +6807,7 @@ async function ecfExportPDF() {
     var colDefs=[
       {w:CW.date,label:'Date'},
       {w:CW.det, label:'Details (Purpose, name of participants etc.)'},
-      {w:CW.rec, label:'Receipt\nNo.'},
+      {w:CW.rec, label:'Receipt No.'},
       {w:CW.kes, label:cur},
       {w:CW.usd, label:'US$'},
       {w:CW.bu,  label:'Business Unit'},
@@ -6808,56 +6820,68 @@ async function ecfExportPDF() {
       doc.text(lines,cx+col.w/2,y+CHH/2+0.5,{align:'center',baseline:'middle'});
       cx+=col.w;
     });
-    // Outer box
-    sd(LGY,0.3); doc.rect(ML,y,TW,CHH);
     y += CHH;
 
     // ── DATA ROWS ─────────────────────────────────────────────────
+    var MIN_ROWS = 11;  // minimum rows to show (empty ones get grey fill)
     var n = rows.length;
-    var DATA_AVAIL = PH - y - 5/*totals*/*3 - 25/*sig*/ - 10/*footer*/;
-    var rH = Math.min(6, Math.max(4, DATA_AVAIL/n));
+    var DISPLAY_ROWS = Math.max(n, MIN_ROWS);
+    var DATA_AVAIL = PH - y - 5.5*3 - 28 - 12;
+    var rH = Math.min(6, Math.max(4, DATA_AVAIL/DISPLAY_ROWS));
 
-    rows.forEach(function(r,ri){
-      sf(WH); sd(LGY,0.15);
-      doc.rect(ML,y,TW,rH,'FD');
-      fn(7); st(DK);
-      var rx=ML;
-      var vals=[
-        {v:r.date,              w:CW.date,a:'center'},
-        {v:r.details,           w:CW.det, a:'left'},
-        {v:String(r.receipt),   w:CW.rec, a:'center'},
-        {v:cur+' '+fmt(r.amount),w:CW.kes,a:'right'},
-        {v:'$0.00',             w:CW.usd, a:'right'},
-        {v:r.bizUnit,           w:CW.bu,  a:'left'},
-        {v:r.expAcct,           w:CW.acct,a:'left'},
-      ];
-      vals.forEach(function(v,vi){
-        if(vi>0){sd(LGY,0.1);doc.line(rx,y,rx,y+rH);}
-        var txt=doc.splitTextToSize(String(v.v||''),v.w-2)[0]||'';
-        var tx2=v.a==='right'?rx+v.w-1:v.a==='center'?rx+v.w/2:rx+1;
+    for (var ri=0; ri<DISPLAY_ROWS; ri++){
+      var r = rows[ri] || null;
+      // Empty rows get light grey fill like the reference
+      if(r){ sf(WH); } else { sf(MGY); }
+      sd(LGY,0.15); doc.rect(ML,y,TW,rH,'FD');
+      if(r){
         fn(7); st(DK);
-        doc.text(txt,tx2,y+rH/2+0.5,{align:v.a,baseline:'middle'});
-        rx+=v.w;
-      });
+        var rx=ML;
+        var vals=[
+          {v:r.date,            w:CW.date,a:'center'},
+          {v:r.details,         w:CW.det, a:'left'},
+          {v:String(r.receipt), w:CW.rec, a:'center'},
+          // Amount: currency left-aligned, number right-aligned within cell
+          {v:cur+' '+fmt(r.amount),w:CW.kes,a:'right'},
+          {v:'',                w:CW.usd, a:'right'},
+          {v:r.bizUnit,         w:CW.bu,  a:'left'},
+          {v:r.expAcct,         w:CW.acct,a:'left'},
+        ];
+        vals.forEach(function(v,vi){
+          if(vi>0){sd(LGY,0.1);doc.line(rx,y,rx,y+rH);}
+          var txt=doc.splitTextToSize(String(v.v||''),v.w-2)[0]||'';
+          var tx2=v.a==='right'?rx+v.w-1:v.a==='center'?rx+v.w/2:rx+1;
+          fn(7); st(DK);
+          doc.text(txt,tx2,y+rH/2+0.5,{align:v.a,baseline:'middle'});
+          rx+=v.w;
+        });
+      } else {
+        // Empty row — just draw column dividers
+        var rx2=ML;
+        colDefs.forEach(function(col,vi){
+          if(vi>0){sd(LGY,0.1);doc.line(rx2,y,rx2,y+rH);}
+          rx2+=col.w;
+        });
+      }
       y+=rH;
-    });
+    }
 
     // ── TOTALS / ADV / BAL ────────────────────────────────────────
     var TOT_H = 5.5;
     var tX = ML+CW.date+CW.det;
 
-    // TOTALS — light grey fill, thin grey border
+    // TOTALS — light grey fill
     sf(MGY); sd(LGY,0.3); doc.rect(ML,y,TW,TOT_H,'FD');
     fb(7.5); st(DK);
     tx('TOTALS', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
     fn(7.5);
-    tx(String(n),              tX+CW.rec/2,            y+TOT_H/2+0.5, {align:'center',baseline:'middle'});
-    tx(cur+' '+fmt(total),     tX+CW.rec+CW.kes-1,     y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
-    tx('$0.00',                tX+CW.rec+CW.kes+CW.usd-1,y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
-    tx('$0.00',                tX+CW.rec+CW.kes+CW.usd+CW.bu-1,y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
+    tx(String(n),          tX+CW.rec/2,           y+TOT_H/2+0.5,{align:'center',baseline:'middle'});
+    tx(cur+' '+fmt(total), tX+CW.rec+CW.kes-1,    y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
+    tx('$0.00',            tX+CW.rec+CW.kes+CW.usd-1,y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
+    tx('$0.00',            tX+CW.rec+CW.kes+CW.usd+CW.bu-1,y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
     y+=TOT_H;
 
-    // Amount Advanced — white, thin grey
+    // Amount Advanced
     sf(WH); sd(LGY,0.3); doc.rect(ML,y,TW,TOT_H,'FD');
     fb(7.5); st(DK);
     tx('Amount Advanced', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
@@ -6865,71 +6889,65 @@ async function ecfExportPDF() {
     tx(cur+' '+fmt(advanced), tX+CW.rec+CW.kes-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
     y+=TOT_H;
 
-    // Balance — white, thin grey
+    // Balance
     sf(WH); sd(LGY,0.3); doc.rect(ML,y,TW,TOT_H,'FD');
-    fi(7); st([120,120,120]);
+    fi(7); st(MK);
     tx('Advance approved by (Name, & Amount)', ML+1, y+TOT_H/2+0.5, {baseline:'middle'});
     fb(7.5); st(DK);
     tx('Balance claimed/Returned', tX+CW.rec-1, y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
     fn(7.5); st(balance<0?RD:DK);
     var balStr=balance<0?'('+cur+' '+fmt(Math.abs(balance))+')':cur+' '+fmt(balance);
-    tx(balStr,      tX+CW.rec+CW.kes-1,       y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    tx(balStr,  tX+CW.rec+CW.kes-1,        y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
     fn(7.5); st(DK);
-    tx('$0.00',     tX+CW.rec+CW.kes+CW.usd-1,y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
-    tx('0',         tX+CW.rec+CW.kes+CW.usd+CW.bu-1,y+TOT_H/2+0.5, {align:'right',baseline:'middle'});
+    tx('$0.00', tX+CW.rec+CW.kes+CW.usd-1, y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
+    tx('0',     tX+CW.rec+CW.kes+CW.usd+CW.bu-1,y+TOT_H/2+0.5,{align:'right',baseline:'middle'});
     y+=TOT_H;
 
     // ── SIGNATURE AREA ────────────────────────────────────────────
-    // Claimant name + sig immediately below balance (no gap)
-    var sigY = y + 3;
+    var sigY = y+3;
     fn(8); st(DK);
     tx(claimant, ML, sigY+3);
     try { doc.addImage(sigDataUrl,'PNG',ML,sigY+5,38,12); } catch(e){}
 
-    // Three underlines + labels
-    var ulY = Math.min(sigY+20, PH-22);
+    var ulY = Math.min(sigY+22, PH-22);
     sd(DK,0.4);
     doc.line(ML,          ulY, ML+TW/3-4,     ulY);
     doc.line(ML+TW/3+4,   ulY, ML+2*TW/3-4,   ulY);
     doc.line(ML+2*TW/3+4, ulY, PW-MR,          ulY);
-    fn(7); st([120,120,120]);
+    fn(7); st(MK);
     tx('Claimant (Name, Sign & Date)',     ML,          ulY+3);
     tx('1st Approver (Name, Sign & Date)', ML+TW/3+4,   ulY+3);
     tx('2nd Approver (Name, Sign & Date)', ML+2*TW/3+4, ulY+3);
-
-    // Date below sig
     fn(7); st(DK);
     tx(dStr, ML, ulY+8);
 
     // Footer
-    var footY = PH-3;
+    var footY=PH-3;
     fn(6); st([150,150,150]);
     tx('Author:FD',       ML, footY-3);
     tx('Approved By:CFO', ML, footY);
     tx('Release date: 8th Jan.2025', PW-MR, footY, {align:'right'});
 
-    // ── Merge with ack PDF ────────────────────────────────────────
+    // Merge with ack PDF
     var ackBuf  = ecfBuildAckPDF(sel, cur, claimant, sigDataUrl);
     var ecfB64  = doc.output('datauristring').split(',')[1];
     var combined = await ecfMergePDFs(ecfB64, ackBuf);
-
     var fname = 'ExpenseClaim_'+(claimant||'Admin').replace(/\s+/g,'_')+'_'+dateVal+'.pdf';
     var bytes = Uint8Array.from(atob(combined),function(c){return c.charCodeAt(0);});
     var blob  = new Blob([bytes],{type:'application/pdf'});
     var url   = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href=url; a.download=fname;
+    var a=document.createElement('a'); a.href=url; a.download=fname;
     document.body.appendChild(a); a.click();
     document.body.removeChild(a); URL.revokeObjectURL(url);
     toast('\u2713 Downloaded: '+fname);
 
   } catch(err){
-    toast('Error: '+err.message);
-    console.error(err);
+    toast('Error: '+err.message); console.error(err);
   } finally {
     if(btn){btn.disabled=false;btn.innerHTML='&#8659; Export';}
   }
 }
+
 
 
 
