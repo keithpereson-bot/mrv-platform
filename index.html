@@ -797,9 +797,20 @@
 
   @media (max-width:768px) {
     #sheetsStatusPill,.desktop-only { display:none !important; }
-    #mobileSignOutBtn { display:flex !important; }
+    #mobileSignOutBtn { display:inline-flex !important; align-items:center; }
     #menuToggle { display:flex; }
     nav { padding:0 12px; }
+    /* Keep sign-out reachable: don't let avatar/menu crowd it out */
+    .nav-user { margin-left:4px; }
+    #userMenuDropdown { right:8px; left:auto; max-width:calc(100vw - 16px); }
+    /* Sidebar sign-out footer always visible on mobile */
+    .aside-signout {
+      display:flex !important;
+      position:sticky; bottom:0;
+      background:var(--gray-50);
+      border-top:1px solid var(--border);
+      margin-top:auto;
+    }
     .layout { height:calc(100vh - 56px); }
     aside {
       position:fixed;top:56px;left:0;bottom:56px;
@@ -2013,18 +2024,37 @@ function getBudgetedAmount(proj, type, cat, summary) {
   var line = getBudgetLine(proj, type, cat, summary);
   return line ? (parseFloat(line.budgetedAmount)||0) : 0;
 }
+// Cached paid-totals index — rebuilt when requests change
+var _paidActualsCache = null;
+
+function invalidateActualsCache() {
+  _paidActualsCache = null;
+}
+
+function buildPaidActualsCache() {
+  var map = {}; // key: project|type|category|costSummary|costItem → sum
+  var mapNoItem = {}; // key without costItem for fallback
+  (requestsStore || []).forEach(function(r){
+    if (r.status !== 'Paid') return;
+    var amt = parseFloat(r.amount) || 0;
+    var base = (r.project||'') + '\0' + (r.type||'') + '\0' + (r.category||'') + '\0' + (r.costSummary||'');
+    var full = base + '\0' + (r.costItem||'');
+    map[full] = (map[full] || 0) + amt;
+    mapNoItem[base] = (mapNoItem[base] || 0) + amt;
+  });
+  _paidActualsCache = { map: map, mapNoItem: mapNoItem };
+  return _paidActualsCache;
+}
+
 // THE ONE TRUE getActualForLine -- matches all 4 keys against Paid requests
 function getActualForLine(proj, type, cat, summary, costItem) {
-  return requestsStore
-    .filter(function(r){
-      return r.status==='Paid'
-        && r.project     === proj
-        && r.type        === type
-        && r.category    === cat
-        && r.costSummary === summary
-        && (!costItem || !r.costItem || r.costItem === costItem);
-    })
-    .reduce(function(s,r){ return s + (parseFloat(r.amount)||0); }, 0);
+  var cache = _paidActualsCache || buildPaidActualsCache();
+  var base = (proj||'') + '\0' + (type||'') + '\0' + (cat||'') + '\0' + (summary||'');
+  if (costItem) {
+    var full = base + '\0' + costItem;
+    if (cache.map[full] != null) return cache.map[full];
+  }
+  return cache.mapNoItem[base] || 0;
 }
 
 
@@ -2075,6 +2105,7 @@ function loadRequestsFromStorage() {
 }
 function persistRequestsToStorage() {
   try { localStorage.setItem('mrv_requests', JSON.stringify(requestsStore)); } catch(e) {}
+  if (typeof invalidateActualsCache === 'function') invalidateActualsCache();
 }
 let requestsStore = loadRequestsFromStorage();
 
@@ -3811,16 +3842,30 @@ function submitRequest() {
   });
   persistRequestsToStorage();
   closeModal('requestModal');
+
+  // Show immediately in the app — don't wait for Sheets
   rebuildRequestsTable();
   renderDashboard();
   renderHistory();
   populateAllDropdowns();
-  // Stop auto-sync, push immediately, restart — same as approve
+  // Jump to System Requests so the new draft is visible right away
+  try {
+    showView('requests', null);
+    var draftsTab = document.querySelector('[data-req-tab="drafts"], .req-tab[onclick*="drafts"]');
+    if (typeof switchReqTab === 'function') {
+      try { switchReqTab('drafts'); } catch(e) {}
+    }
+  } catch(e) {}
+
+  toast('Request submitted — ' + num + ' (syncing in background)');
+
+  // Fast background push (no signature images, no actuals) so it lands in Sheets quickly
   clearInterval(gsAutoSyncTimer);
   if (gsWebAppUrl) {
-    pushToSheets().then(function(){ startAutoSync(); }).catch(function(){ startAutoSync(); });
+    pushToSheets({ fast: true, skipActuals: true })
+      .then(function(){ startAutoSync(); })
+      .catch(function(){ startAutoSync(); });
   }
-  toast('Request submitted -- ' + num);
 }
 
 function submitExpense() {
@@ -4074,19 +4119,20 @@ async function gasCall(payload) {
 }
 
 // -- Push all data to Sheets ---------------------------------
-async function pushToSheets() {
+async function pushToSheets(opts) {
+  opts = opts || {};
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') {
     if (currentUser && currentUser.role === 'admin') toast('Connect Google Sheets first');
     return;
   }
   window._pushInProgress = true;
-  // Safety: force-clear the flag after 15s in case of silent failure
-  var _pushSafetyTimer = setTimeout(function(){ window._pushInProgress = false; }, 15000);
-  appendSyncLog('Pushing to Sheets...');
+  // Safety: force-clear the flag after 20s in case of silent failure
+  var _pushSafetyTimer = setTimeout(function(){ window._pushInProgress = false; }, 20000);
+  appendSyncLog(opts.fast ? 'Quick-push to Sheets...' : 'Pushing to Sheets...');
   try {
-    // Requests -- include sig images so they're stored in Sheets with each request
+    // Requests — for fast draft submits, skip large base64 images to speed up
     const reqRows = requestsStore.map(function(r) {
-      return {
+      var row = {
         ref:              r.ref              || '',
         project:          r.project          || '',
         type:             r.type             || '',
@@ -4100,28 +4146,36 @@ async function pushToSheets() {
         date:             r.date             || '',
         sigLabel:         r.sigLabel         || '',
         sigTime:          r.sigTime          || '',
-        sigDataUrl:       r.sigDataUrl       || '',
         approvedBy:       r.approvedBy       || '',
         approvedAt:       r.approvedAt       || '',
-        requesterSig:     r.requesterSig     || '',
         requesterSigName: r.requesterSigName || '',
         requesterSigTime: r.requesterSigTime || '',
+        sigDataUrl:       '',
+        requesterSig:     '',
       };
+      // Only ship signature images when present and not in fast mode
+      if (!opts.fast) {
+        if (r.sigDataUrl && r.sigDataUrl.length > 50) row.sigDataUrl = r.sigDataUrl;
+        if (r.requesterSig && r.requesterSig.length > 50) row.requesterSig = r.requesterSig;
+      }
+      return row;
     });
 
-    // Actuals -- full running total per line (OVERWRITE, not additive)
-    // Calculated fresh from requestsStore so always accurate
-    const actualsData = budgetLines.map(function(l) {
-      return {
-        project:     l.project,
-        type:        l.type,
-        category:    l.category,
-        costSummary: l.costSummary,
-        costItem:    l.costItem,
-        actual:      getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem),
-        delta:       null,   // null = overwrite mode in AppScript
-      };
-    });
+    // Actuals — skip on fast draft submit (no Paid totals changed)
+    var actualsData = [];
+    if (!opts.skipActuals) {
+      actualsData = budgetLines.map(function(l) {
+        return {
+          project:     l.project,
+          type:        l.type,
+          category:    l.category,
+          costSummary: l.costSummary,
+          costItem:    l.costItem,
+          actual:      getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem),
+          delta:       null,
+        };
+      });
+    }
 
     // Funds from DOM
     const fundRows = [];
@@ -6088,17 +6142,25 @@ function buildSidebar() {
     ];
   }
 
-  aside.innerHTML = nav.map(function(n) {
+  var itemsHtml = nav.map(function(n) {
     if (n.type === 'section') {
       return '<div class="aside-section">'+n.label+'</div>';
     }
     if (!n.view) return '';
-    return '<div class="aside-item"'+(n.id?' id="'+n.id+'"':'')+' data-view="'+n.view+'" onclick="showView(this.dataset.view,this)">'
+    return '<div class="aside-item"'+(n.id?' id="'+n.id+'"':'')+' data-view="'+n.view+'" onclick="showView(this.dataset.view,this);closeSidebar()">'
       + makeIcon(n.icon)
       + n.label
       + (n.badge || '')
       + '</div>';
   }).join('');
+
+  // Sign Out always available in the sidebar (critical on mobile)
+  var signOutHtml =
+    '<div class="aside-signout" onclick="doLogout()" style="display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;color:var(--danger);font-size:13.5px;font-weight:600;margin-top:auto;border-top:1px solid var(--border)">'
+    + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'
+    + 'Sign Out</div>';
+
+  aside.innerHTML = itemsHtml + signOutHtml;
 }
 
 // Called by loginSuccess() after a successful sign-in
