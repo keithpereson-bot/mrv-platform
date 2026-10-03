@@ -1146,13 +1146,7 @@
   <div id="view-expenses" class="view">
     <div class="page-header">
       <h1>Expense Claim Form</h1>
-      <p>Auto-fill the Burn Manufacturing expense claim template from paid requests, sign, and export to PDF</p>
-    </div>
-
-    <!-- ── EXPENSE CLAIM FORM SECTION ──────────────────────── -->
-    <div style="margin-bottom:8px">
-      <h2 style="font-size:15px;font-weight:700;color:var(--gray-900);margin-bottom:4px">Expense Claim Form</h2>
-      <p style="font-size:12.5px;color:var(--muted)">One form per project — select a project, include its paid requests, sign, and export to PDF</p>
+      <p>One form per project — select a project, include its paid requests, sign, and export to PDF</p>
     </div>
 
     <!-- Step 1: Select project -->
@@ -1162,8 +1156,8 @@
       </div>
       <div class="card-body">
         <div class="form-group" style="margin:0;max-width:420px">
-          <label>Project to expense</label>
-          <select id="ecfProjectSelect" onchange="ecfOnProjectChange()">
+          <label for="ecfProjectSelect">Project to expense</label>
+          <select id="ecfProjectSelect" onchange="ecfOnProjectChange()" size="1" style="appearance:auto;-webkit-appearance:menulist;background:#fff;height:auto;min-height:38px;padding:8px 12px;line-height:1.4">
             <option value="">— Select a project —</option>
           </select>
           <div style="font-size:11.5px;color:var(--muted);margin-top:6px">Each project generates its own expense claim form. Only paid requests for the selected project will appear below.</div>
@@ -6486,20 +6480,25 @@ function ecfPopulateProjects() {
   var paid = (requestsStore || []).filter(function(r){ return r.status === 'Paid'; });
   var projects = {};
   paid.forEach(function(r){
-    if (r.project) {
-      if (!projects[r.project]) projects[r.project] = { count: 0, total: 0 };
-      projects[r.project].count++;
-      projects[r.project].total += parseFloat(r.amount) || 0;
-    }
+    var p = (r.project || '').trim();
+    if (!p) return;
+    if (!projects[p]) projects[p] = { count: 0, total: 0 };
+    projects[p].count++;
+    projects[p].total += parseFloat(r.amount) || 0;
   });
-  var names = Object.keys(projects).sort();
+  var names = Object.keys(projects).sort(function(a,b){ return a.localeCompare(b); });
+  if (!names.length) {
+    sel.innerHTML = '<option value="">No projects with paid requests</option>';
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
   sel.innerHTML = '<option value="">— Select a project —</option>' +
     names.map(function(p){
       var info = projects[p];
-      return '<option value="'+p.replace(/"/g,'&quot;')+'">'+p+
-        '  ('+info.count+' paid · '+info.total.toLocaleString()+')</option>';
+      var label = p + '  (' + info.count + ' paid · ' + info.total.toLocaleString() + ')';
+      return '<option value="'+p.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+label.replace(/</g,'&lt;')+'</option>';
     }).join('');
-  // Restore previous selection if still available
   if (prev && projects[prev]) sel.value = prev;
 }
 
