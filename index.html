@@ -2661,10 +2661,69 @@ function toggleAllBudgetGroups(expand) {
 // Legacy stub
 function toggleBudgetGroup(gid) {}
 
+// Flexible budget-column lookup (case/spacing insensitive)
+function pickBudgetField(r, names) {
+  if (!r) return '';
+  for (var i = 0; i < names.length; i++) {
+    var n = names[i];
+    if (r[n] != null && String(r[n]).trim() !== '') return String(r[n]).trim();
+  }
+  var keys = Object.keys(r);
+  for (var i = 0; i < names.length; i++) {
+    var target = names[i].toLowerCase().replace(/[^a-z0-9]/g, '');
+    for (var k = 0; k < keys.length; k++) {
+      if (keys[k].toLowerCase().replace(/[^a-z0-9]/g, '') === target) {
+        var v = r[keys[k]];
+        if (v != null && String(v).trim() !== '') return String(v).trim();
+      }
+    }
+  }
+  return '';
+}
+
+// Map one Sheets budget row → app budget line (includes ECF header fields)
+function mapBudgetRow(r) {
+  return {
+    project:        pickBudgetField(r, ['Project']) || String(r.project || '').trim(),
+    type:           pickBudgetField(r, ['Type']) || String(r.type || '').trim(),
+    year:           parseInt(pickBudgetField(r, ['Year']) || r.year) || 0,
+    month:          pickBudgetField(r, ['Month']) || String(r.month || '').trim(),
+    dept:           pickBudgetField(r, ['Department', 'Dept']) || String(r.dept || '').trim(),
+    country:        pickBudgetField(r, ['Country']) || String(r.country || '').trim(),
+    costItem:       pickBudgetField(r, ['Cost Item', 'CostItem']) || String(r.costItem || '').trim(),
+    unitOfMeasure:  pickBudgetField(r, ['Unit of Measure', 'UnitOfMeasure']) || String(r.unitOfMeasure || '').trim(),
+    category:       pickBudgetField(r, ['Category']) || String(r.category || '').trim(),
+    costSummary:    pickBudgetField(r, ['Cost Summary', 'CostSummary']) || String(r.costSummary || '').trim(),
+    budgetedAmount: parseFloat(pickBudgetField(r, ['Amount', 'Budgeted', 'Budgeted Amount']) || r.budgetedAmount || 0) || 0,
+    currency:       pickBudgetField(r, ['Currency']) || String(r.currency || 'KES').trim(),
+    sheetActual:    parseFloat(pickBudgetField(r, ['Actual', 'Actuals']) || r.sheetActual || 0) || 0,
+    // Expense Claim Form header fields (project-level metadata on budget sheet)
+    burnEntity:     pickBudgetField(r, ['Burn Entity', 'BurnEntity', 'Entity']),
+    profitCentre:   pickBudgetField(r, ['Profit Centre', 'Profit Centre', 'ProfitCenter', 'Profit Centre']),
+    countryCode:    pickBudgetField(r, ['Country Code', 'Country code', 'CountryCode']),
+    productCode:    pickBudgetField(r, ['Product Code', 'ProductCode']),
+    costCentre:     pickBudgetField(r, ['Cost Centre', 'Cost Centre', 'CostCenter', 'Cost Centre']),
+    rdCode:         pickBudgetField(r, ['R&D Project Code', 'RD Project Code', 'R&D Project Code', 'RDProjectCode', 'RnD Project Code']),
+    dimensionCode:  pickBudgetField(r, ['Dimension Code', 'DimensionCode']),
+    carbonCode:     pickBudgetField(r, ['Carbon/Project Code', 'Carbon / Project Code', 'Carbon Project Code', 'Carbon/Project code', 'CarbonCode']),
+    businessUnit:   pickBudgetField(r, ['Business Unit', 'BusinessUnit', 'BU']),
+  };
+}
+
+// First budget line for a project that has ECF metadata (or any line for that project)
+function getProjectBudgetMeta(project) {
+  var lines = (budgetLines || []).filter(function(l){ return l.project === project; });
+  if (!lines.length) return null;
+  return lines.find(function(l){
+    return l.burnEntity || l.profitCentre || l.productCode || l.costCentre || l.dimensionCode || l.carbonCode || l.businessUnit;
+  }) || lines[0];
+}
+
 // Pull budget lines from Google Sheet (READ ONLY -- never written by app)
-// Maps EXACTLY to your sheet column names as shown in the image:
-// Project | Type | Year | Month | Department | Country | Cost Item |
-// Unit of Measure | Category | Cost Summary | Amount | Currency
+// Core columns: Project | Type | Year | Month | Department | Country | Cost Item |
+// Unit of Measure | Category | Cost Summary | Amount | Currency | Actual
+// ECF columns (optional): Burn Entity, Profit Centre, Country Code, Product Code,
+// Cost Centre, R&D Project Code, Dimension Code, Carbon/Project Code, Business Unit
 async function pullBudgetLinesFromSheets() {
   if (!gsWebAppUrl) return;
   try {
@@ -2678,24 +2737,7 @@ async function pullBudgetLinesFromSheets() {
     // Map Sheets rows to app format
     // Sheets is the master -- this REPLACES budgetLines entirely
     // so deletions/edits in Sheets are immediately reflected
-    var mapped = res.data.map(function(r) {
-      return {
-        project:        String(r['Project']         || '').trim(),
-        type:           String(r['Type']            || '').trim(),
-        year:           parseInt(r['Year'])          || 0,
-        month:          String(r['Month']           || '').trim(),
-        dept:           String(r['Department']      || '').trim(),
-        country:        String(r['Country']         || '').trim(),
-        costItem:       String(r['Cost Item']       || '').trim(),
-        unitOfMeasure:  String(r['Unit of Measure'] || '').trim(),
-        category:       String(r['Category']        || '').trim(),
-        costSummary:    String(r['Cost Summary']    || '').trim(),
-        budgetedAmount: parseFloat(r['Amount'])     || 0,
-        currency:       String(r['Currency']        || 'KES').trim(),
-        // Read current Actual from Sheet so we can compare
-        sheetActual:    parseFloat(r['Actual'])     || 0,
-      };
-    }).filter(function(l) {
+    var mapped = res.data.map(mapBudgetRow).filter(function(l) {
       return l.project && l.category && l.costSummary;
     });
 
@@ -4316,22 +4358,7 @@ async function pullFromSheets(silent) {
     // -- Budgets -- handled separately by pullBudgetLinesFromSheets()
     // (getAll also returns budgets but we use the dedicated function for correct mapping)
     if (res.budgets && res.budgets.length > 0) {
-      var mapped = res.budgets.map(function(b) {
-        return {
-          project:       String(b['Project']        || b.project        || '').trim(),
-          type:          String(b['Type']            || b.type           || '').trim(),
-          year:          parseInt(b['Year']          || b.year)          || 0,
-          month:         String(b['Month']           || b.month          || '').trim(),
-          dept:          String(b['Department']      || b.dept           || '').trim(),
-          country:       String(b['Country']         || b.country        || '').trim(),
-          costItem:      String(b['Cost Item']       || b.costItem       || '').trim(),
-          unitOfMeasure: String(b['Unit of Measure'] || b.unitOfMeasure  || '').trim(),
-          category:      String(b['Category']        || b.category       || '').trim(),
-          costSummary:   String(b['Cost Summary']    || b.costSummary    || '').trim(),
-          budgetedAmount:parseFloat(b['Amount']      || b.budgetedAmount || 0) || 0,
-          currency:      String(b['Currency']        || b.currency       || 'KES').trim(),
-        };
-      }).filter(function(l){ return l.project && l.category && l.costSummary; });
+      var mapped = res.budgets.map(mapBudgetRow).filter(function(l){ return l.project && l.category && l.costSummary; });
       if (mapped.length > 0) {
         budgetLines = mapped;
         budgetStore = buildBudgetStore();
@@ -6531,8 +6558,8 @@ function ecfPopulateProjects() {
 
 function ecfOnProjectChange() {
   ecfLoadRequests();
-  // Auto-fill header from the first selected project's data (if header empty)
-  ecfAutoHeader();
+  // Force-fill header from the first selected project's budget metadata
+  ecfAutoHeader(true);
   var area = document.getElementById('ecfPreview');
   if (area) area.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px">Click Refresh Preview to see the filled form.</div>';
 }
@@ -6597,38 +6624,56 @@ function ecfLoadRequests() {
 
 function ecfSelAll(v) { document.querySelectorAll('.ecf-chk').forEach(function(c){ c.checked = v; }); }
 
-function ecfAutoHeader() {
+function ecfAutoHeader(force) {
+  // force=true overwrites existing field values (used when project selection changes)
   var dateEl = document.getElementById('ecfDate');
-  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+  if (dateEl && (!dateEl.value || force)) dateEl.value = new Date().toISOString().slice(0,10);
   if (currentUser) {
     var cEl = document.getElementById('ecfClaimant');
-    if (cEl && !cEl.value) cEl.value = currentUser.name || '';
+    if (cEl && (!cEl.value || force)) cEl.value = currentUser.name || '';
     var jEl = document.getElementById('ecfJobTitle');
-    if (jEl && !jEl.value) {
+    if (jEl && (!jEl.value || force)) {
       var rm = {admin:'Finance Manager',approver:'Senior Officer',manager:'Manager',requester:'Officer',viewer:'Viewer'};
       jEl.value = rm[currentUser.role] || currentUser.role || '';
     }
   }
-  var paid = _ecfFilteredPaid.length
-    ? _ecfFilteredPaid
-    : (requestsStore || []).filter(function(r){ return r.status === 'Paid'; });
-  if (!paid.length) return;
-  var r = paid[0];
-  function sif(id, val){ var el = document.getElementById(id); if (el && !el.value && val) el.value = val; }
-  var bl = (budgetLines || []).find(function(l){ return l.project === r.project && l.type === r.type; });
-  if (bl) {
-    sif('ecfEntity', bl.country || '');
-    sif('ecfProfitCentre', bl.type || '');
-    sif('ecfCountry', bl.country || '');
-    sif('ecfCostCentre', bl.dept || '');
-    sif('ecfDimCode', bl.costItem || '');
-    sif('ecfCarbonCode', bl.costSummary || '');
-    if (bl.currency) {
-      var curSel = document.getElementById('ecfCurrency');
-      if (curSel) curSel.value = bl.currency;
+
+  // Prefer first selected project, else first filtered paid request's project
+  var projects = ecfGetSelectedProjects();
+  var project = projects.length ? projects[0] : '';
+  if (!project && _ecfFilteredPaid.length) project = _ecfFilteredPaid[0].project || '';
+  if (!project) {
+    var paid = (requestsStore || []).filter(function(r){ return r.status === 'Paid'; });
+    if (paid.length) project = paid[0].project || '';
+  }
+  if (!project) return;
+
+  function set(id, val) {
+    if (!val) return;
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (force || !el.value) el.value = val;
+  }
+
+  var meta = getProjectBudgetMeta(project);
+  if (!meta) return;
+
+  // Dedicated ECF columns on the Budgets sheet (preferred)
+  set('ecfEntity',       meta.burnEntity);
+  set('ecfProfitCentre', meta.profitCentre);
+  set('ecfCountry',      meta.countryCode || meta.country);
+  set('ecfProductCode',  meta.productCode);
+  set('ecfCostCentre',   meta.costCentre || meta.dept);
+  set('ecfRdCode',       meta.rdCode);
+  set('ecfDimCode',      meta.dimensionCode);
+  set('ecfCarbonCode',   meta.carbonCode);
+  set('ecfBizUnit',      meta.businessUnit || meta.type);
+  if (meta.currency) {
+    var curSel = document.getElementById('ecfCurrency');
+    if (curSel && (force || !curSel.value || curSel.value === 'KES' || curSel.value === 'TZS')) {
+      curSel.value = meta.currency;
     }
   }
-  sif('ecfBizUnit', r.type || r.category || '');
 }
 
 function ecfGetSelected() {
