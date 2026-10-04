@@ -480,30 +480,6 @@
   .badge-danger { background:var(--red-lt);color:#991B1B; }
   .badge-gray { background:var(--gray-100);color:var(--gray-600); }
 
-  /* ── PROCESS BAR ─────────────────────────────────────────────── */
-  .process-bar {
-    display:flex;align-items:center;
-    background:#fff;border:1px solid var(--gray-200);
-    border-radius:var(--radius-lg);padding:12px 20px;
-    margin-bottom:20px;gap:0;overflow-x:auto;
-    box-shadow:var(--shadow-sm);
-  }
-  .ps { display:flex;align-items:center;gap:8px;flex-shrink:0; }
-  .ps-dot {
-    width:24px;height:24px;border-radius:50%;
-    background:var(--gray-100);color:var(--gray-500);
-    font-size:10px;font-weight:700;
-    display:flex;align-items:center;justify-content:center;
-    border:2px solid var(--gray-200);
-  }
-  .ps-dot.done { background:var(--brand);color:#fff;border-color:var(--brand); }
-  .ps-dot.active { background:var(--brand);color:#fff;border-color:var(--brand);
-    box-shadow:0 0 0 3px rgba(242,92,10,.15); }
-  .ps-label { font-size:12px;font-weight:500;color:var(--gray-500);white-space:nowrap; }
-  .ps-label.active { color:var(--brand);font-weight:600; }
-  .ps-label.done { color:var(--green); }
-  .ps-arrow { color:var(--gray-300);font-size:16px;padding:0 8px;flex-shrink:0; }
-
   /* ── PROGRESS ────────────────────────────────────────────────── */
   .progress-wrap { background:var(--gray-100);border-radius:20px;height:6px;overflow:hidden; }
   .progress-fill { background:var(--brand);height:100%;border-radius:20px;transition:width .5s; }
@@ -947,23 +923,9 @@
 
   <!-- -- DASHBOARD -- -->
   <div id="view-dashboard" class="view">
-    <div class="page-header"><h1>Dashboard</h1><p>Monthly cycle overview -- June 2026</p></div>
-    <div class="process-bar">
-      <div class="ps"><div class="ps-dot done">OK</div><span class="ps-label done">Approved Budgets</span></div>
-      <div class="ps-arrow">›</div>
-      <div class="ps"><div class="ps-dot done">OK</div><span class="ps-label done">Load Funds</span></div>
-      <div class="ps-arrow">›</div>
-      <div class="ps"><div class="ps-dot active">3</div><span class="ps-label active">Post Funds</span></div>
-      <div class="ps-arrow">›</div>
-      <div class="ps"><div class="ps-dot">4</div><span class="ps-label">Utilization</span></div>
-      <div class="ps-arrow">›</div>
-      <div class="ps"><div class="ps-dot">5</div><span class="ps-label">Expensing</span></div>
-      <div class="ps-arrow">›</div>
-      <div class="ps"><div class="ps-dot">6</div><span class="ps-label">Reconciliation</span></div>
-    </div>
+    <div class="page-header"><h1>Dashboard</h1><p>Monthly cycle overview</p></div>
     <div id="dashStats" class="stats"></div>
 
-    <!-- AI Cost Intelligence -->
     <div class="two-col">
       <div class="card">
         <div class="card-header"><div class="card-title">Approved Projects</div><span class="badge badge-teal" id="dashProjCount"></span></div>
