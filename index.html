@@ -7392,22 +7392,26 @@ function ecfBuildAckPDF(reqs, cur, claimant, adminSig, projectLabel) {
   var AMBER   = [217, 119, 6];
   var HDR_TXT = [120, 50, 10];      // dark warm text on light header
 
+  // Columns: no Finance Signature — Cost Item instead of Category
+  // Usable width W ≈ 277mm
   var COLS=[
-    {label:'Ref #',x:ML,w:16},{label:'Project / Type',x:ML+16,w:46},
-    {label:'Category',x:ML+62,w:34},{label:'Amount',x:ML+96,w:24},
-    {label:'Requester',x:ML+120,w:28},{label:'Date',x:ML+148,w:22},
-    {label:'Finance Signature',x:ML+170,w:58},{label:'Acknowledgement',x:ML+228,w:59}
+    {label:'Ref #',            x:ML,      w:16},
+    {label:'Project / Type',   x:ML+16,   w:48},
+    {label:'Cost Item',        x:ML+64,   w:58},
+    {label:'Amount',           x:ML+122,  w:28},
+    {label:'Requester',        x:ML+150,  w:36},
+    {label:'Date',             x:ML+186,  w:24},
+    {label:'Acknowledgement',  x:ML+210,  w:W-210}
   ];
 
   // Fit exactly 14 data rows per page
-  // Header 16 + tblHdr 7 + footer 10 = 33; remaining 210-33 = 177; 177/14 ≈ 12.6
   var ROWS_PER_PAGE = 14;
   var HDR_H = 16;
   var TH_H  = 7;
   var FOOT_H = 10;
   var ROW = (ph - HDR_H - 1 - TH_H - FOOT_H) / ROWS_PER_PAGE;  // ~12.6 mm
-  var SIG_H = Math.min(9, ROW - 3.5);   // signature image height
-  var SIG_W = 34;                        // signature image width
+  var SIG_H = Math.min(9, ROW - 3.5);
+  var SIG_W = 42; // slightly wider now that Finance Sig column is gone
 
   function hdr(){
     doc.setFillColor.apply(doc, BRAND_LT);
@@ -7464,9 +7468,9 @@ function ecfBuildAckPDF(reqs, cur, claimant, adminSig, projectLabel) {
       doc.text(r.type, COLS[1].x+pad, mid+2.2, {baseline:'middle'});
     }
 
-    // Category
+    // Cost Item
     doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, INK);
-    doc.text(doc.splitTextToSize(r.category||r.description||'', COLS[2].w-3).slice(0,2), COLS[2].x+pad, mid-1.5, {baseline:'middle'});
+    doc.text(doc.splitTextToSize(r.costItem||r.description||r.category||'', COLS[2].w-3).slice(0,2), COLS[2].x+pad, mid-1.5, {baseline:'middle'});
 
     // Amount
     doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc, INK);
@@ -7480,17 +7484,9 @@ function ecfBuildAckPDF(reqs, cur, claimant, adminSig, projectLabel) {
     doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, MUTED);
     doc.text(typeof fmtDate==='function'?fmtDate(r.sigTime||r.date||''):(r.date||''), COLS[5].x+pad, mid, {baseline:'middle'});
 
-    // Finance signature — keep fully visible
-    var fx = COLS[6].x + pad;
+    // Acknowledgement signature only (Finance Signature column removed)
     var sigY = y + (ROW - SIG_H) / 2;
-    if(adminSig){
-      try { doc.addImage(adminSig, 'PNG', fx, sigY, SIG_W, SIG_H, undefined, 'FAST'); } catch(e) {}
-    }
-    doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor.apply(doc, INK);
-    doc.text(claimant||'', fx, y + ROW - 1.2);
-
-    // Acknowledgement signature — keep fully visible
-    var ax = COLS[7].x + pad;
+    var ax = COLS[6].x + pad;
     if(r.requesterSig && r.requesterSig.length > 100){
       try { doc.addImage(r.requesterSig, 'PNG', ax, sigY, SIG_W, SIG_H, undefined, 'FAST'); } catch(e) {}
       doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor.apply(doc, GREEN);
