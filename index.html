@@ -6898,7 +6898,7 @@ function ecfRefreshPreview() {
     +'<tr style="background:#fff9c4;font-weight:700"><td style="'+B+'" colspan="3"></td><td style="'+B+';font-weight:700">TOTALS</td><td style="'+BR+';font-weight:700">'+d.totalTZS.toLocaleString()+'</td><td style="'+BR+';font-weight:700">'+d.totalUSD.toLocaleString()+'</td><td style="'+B+'" colspan="2"></td></tr>'
     +'<tr><td style="'+B+'" colspan="3"></td><td style="'+BL+'">Amount Advanced</td><td style="'+BR+'">'+advanced.toLocaleString()+'</td><td style="'+B+'" colspan="3"></td></tr>'
     +'<tr><td style="'+B+';font-size:8px" colspan="3">Advance approved by (Name, &amp; Amount):</td><td style="'+BL+'">Balance claimed/Returned</td><td style="'+BR+';font-weight:700;color:'+(balance<0?'#cc0000':'#006600')+'">'+balance.toLocaleString()+'</td><td style="'+BR+'">'+d.totalUSD.toLocaleString()+'</td><td style="'+B+'" colspan="2"></td></tr>'
-    +'<tr style="height:55px"><td style="'+B+';vertical-align:top;padding:5px" colspan="2"><div style="font-size:8.5px;font-weight:600">'+claimant+'</div>'+sigHtml+'<div style="font-size:7.5px;color:#333;margin-top:1px">'+dStr+'</div><div style="font-size:7.5px;color:#666;border-top:1px solid #333;margin-top:3px;padding-top:2px">Claimant (Name, Sign &amp; Date)</div></td><td style="'+B+';vertical-align:top;padding:5px" colspan="3"><div style="font-size:7.5px;color:#666;border-top:1px solid #333;margin-top:40px;padding-top:2px">1st Approver (Name, Sign &amp; Date)</div></td><td style="'+B+';vertical-align:top;padding:5px" colspan="3"><div style="font-size:7.5px;color:#666;border-top:1px solid #333;margin-top:40px;padding-top:2px">2nd Approver (Name, Sign &amp; Date)</div></td></tr>'
+    +'<tr style="height:55px"><td style="'+B+';vertical-align:top;padding:5px" colspan="2"><div style="font-size:8.5px;font-weight:600">'+claimant+'</div>'+sigHtml+'<div style="font-size:7.5px;color:#333;margin-top:1px">'+dStr+'</div><div style="font-size:7.5px;color:#666;font-style:italic;border-top:1px solid #333;margin-top:3px;padding-top:2px">Claimant (Name, Sign &amp; Date)</div></td><td style="'+B+';vertical-align:top;padding:5px" colspan="3"><div style="font-size:7.5px;color:#666;font-style:italic;border-top:1px solid #333;margin-top:40px;padding-top:2px">1st Approver (Name, Sign &amp; Date)</div></td><td style="'+B+';vertical-align:top;padding:5px" colspan="3"><div style="font-size:7.5px;color:#666;font-style:italic;border-top:1px solid #333;margin-top:40px;padding-top:2px">2nd Approver (Name, Sign &amp; Date)</div></td></tr>'
     +'</table></div>';
 }
 
@@ -7000,6 +7000,8 @@ async function ecfExportPDF() {
     var MK =[80,80,80];
     var TBL_BORDER = [60, 60, 60];  // dark table borders (matches target)
 
+    // Typography mirrors the official Calibri form template (Apps Script fillExpenseClaimForm).
+    // jsPDF has no Calibri — Helvetica is the closest built-in sans-serif match.
     function sf(c){doc.setFillColor(c[0],c[1],c[2]);}
     function sd(c,w){doc.setDrawColor(c[0],c[1],c[2]);doc.setLineWidth(w||0.2);}
     function st(c){doc.setTextColor(c[0],c[1],c[2]);}
@@ -7307,10 +7309,11 @@ async function ecfExportPDF() {
     doc.line(ML,          ulY, ML+TW/3-4,     ulY);
     doc.line(ML+TW/3+4,   ulY, ML+2*TW/3-4,   ulY);
     doc.line(ML+2*TW/3+4, ulY, PW-MR,          ulY);
-    fn(7); st(MK);
-    tx('Claimant (Name, Sign & Date)',     ML,          ulY+3);
-    tx('1st Approver (Name, Sign & Date)', ML+TW/3+4,   ulY+3);
-    tx('2nd Approver (Name, Sign & Date)', ML+2*TW/3+4, ulY+3);
+    // Signature role labels — italic (matches official Calibri italic template)
+    fi(7.5); st(MK);
+    tx('Claimant (Name, Sign & Date)',     ML,          ulY+3.5);
+    tx('1st Approver (Name, Sign & Date)', ML+TW/3+4,   ulY+3.5);
+    tx('2nd Approver (Name, Sign & Date)', ML+2*TW/3+4, ulY+3.5);
 
     // Footer
     var footY=PH-3;
