@@ -6,9 +6,9 @@
 
 
 
-<!-- BUILD: v4-ai-intelligence -->
+<!-- BUILD: v5-erp-ui -->
 <title>MRV Finance Platform</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -70,53 +70,55 @@
     --border:     var(--gray-200);
     --border-mid: var(--gray-300);
 
-    /* Layout */
-    --radius:     8px;
-    --radius-lg:  12px;
-    --shadow-sm:  0 1px 2px rgba(0,0,0,.05);
-    --shadow:     0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
-    --shadow-md:  0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.04);
-    --shadow-lg:  0 10px 15px rgba(0,0,0,.07), 0 4px 6px rgba(0,0,0,.04);
-    --shadow-xl:  0 20px 25px rgba(0,0,0,.08), 0 10px 10px rgba(0,0,0,.03);
+    /* Layout — ERP denser radius / subtle elevation */
+    --radius:     6px;
+    --radius-lg:  8px;
+    --shadow-sm:  0 1px 2px rgba(15,23,42,.04);
+    --shadow:     0 1px 3px rgba(15,23,42,.06);
+    --shadow-md:  0 2px 8px rgba(15,23,42,.08);
+    --shadow-lg:  0 8px 16px rgba(15,23,42,.08);
+    --shadow-xl:  0 12px 24px rgba(15,23,42,.1);
   }
 
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 
   body {
-    font-family:'Inter',system-ui,-apple-system,sans-serif;
-    background:var(--gray-50);
+    font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+    background:#F1F5F9;
     color:var(--gray-900);
     min-height:100vh;
-    font-size:14px;
-    line-height:1.5;
+    font-size:13.5px;
+    line-height:1.45;
     -webkit-font-smoothing:antialiased;
+    letter-spacing:-0.01em;
   }
 
-  /* ── NAV ─────────────────────────────────────────────────────── */
+  /* ── NAV — ERP top bar ───────────────────────────────────────── */
   nav {
     background:#FFFFFF;
     color:var(--gray-900);
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:0 24px;
-    height:56px;
-    min-height:56px;
+    padding:0 20px;
+    height:52px;
+    min-height:52px;
     position:sticky;
     top:0;
     z-index:100;
     border-bottom:1px solid var(--gray-200);
-    box-shadow:var(--shadow-sm);
+    box-shadow:none;
     overflow:hidden;
+    border-top:3px solid var(--brand);
   }
   .nav-brand { display:flex;align-items:center;gap:10px; }
   .nav-logo {
-    width:32px;height:32px;
+    width:28px;height:28px;
     background:var(--brand);
-    border-radius:8px;
+    border-radius:5px;
     display:flex;align-items:center;justify-content:center;
-    font-size:13px;font-weight:700;color:#fff;
-    letter-spacing:-.3px;flex-shrink:0;
+    font-size:11px;font-weight:700;color:#fff;
+    letter-spacing:.02em;flex-shrink:0;
   }
   .nav-title {
     font-size:13px;font-weight:700;
@@ -166,16 +168,16 @@
   /* ── LAYOUT ──────────────────────────────────────────────────── */
   .layout {
     display:flex;
-    height:calc(100vh - 56px);
+    height:calc(100vh - 52px);
     overflow:hidden;
   }
 
-  /* ── SIDEBAR ─────────────────────────────────────────────────── */
+  /* ── SIDEBAR — ERP navigation rail ───────────────────────────── */
   aside {
-    width:220px;
+    width:212px;
     min-width:200px;
     background:#FFFFFF;
-    padding:8px 0 24px;
+    padding:6px 0 0;
     flex-shrink:0;
     display:flex;
     flex-direction:column;
@@ -187,24 +189,24 @@
   }
 
   .aside-section {
-    font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
     color:var(--gray-400);
-    padding:16px 16px 4px;
-    margin-top:4px;
+    padding:14px 16px 4px;
+    margin-top:2px;
   }
-  .aside-section:first-child { padding-top:8px;margin-top:0; }
+  .aside-section:first-child { padding-top:10px;margin-top:0; }
 
   .aside-item {
-    display:flex;align-items:center;gap:10px;
-    padding:8px 12px;
-    margin:0 8px;
-    font-size:13px;font-weight:500;
+    display:flex;align-items:center;gap:9px;
+    padding:7px 10px;
+    margin:1px 8px;
+    font-size:12.5px;font-weight:500;
     color:var(--gray-600);
     cursor:pointer;
-    transition:all .12s;
+    transition:background .1s,color .1s;
     text-decoration:none;
     position:relative;
-    border-radius:8px;
+    border-radius:5px;
     border-left:none;
   }
   .aside-item:hover {
@@ -212,32 +214,36 @@
     background:var(--gray-100);
   }
   .aside-item.active {
-    color:var(--brand);
+    color:var(--brand-dk);
     background:var(--brand-lt);
     font-weight:600;
   }
-  .aside-item.active::before { display:none; }
+  .aside-item.active::before {
+    content:'';
+    position:absolute;left:0;top:6px;bottom:6px;width:3px;
+    background:var(--brand);border-radius:0 2px 2px 0;
+  }
   .aside-icon {
-    width:18px;height:18px;
+    width:16px;height:16px;
     display:inline-flex;align-items:center;justify-content:center;
-    flex-shrink:0;opacity:.6;
+    flex-shrink:0;opacity:.55;
   }
   .aside-item:hover .aside-icon { opacity:.8; }
-  .aside-item.active .aside-icon { opacity:1; }
+  .aside-item.active .aside-icon { opacity:1; color:var(--brand); }
   .aside-badge {
     margin-left:auto;
     background:var(--brand);color:#fff;
     font-size:10px;font-weight:700;
-    border-radius:20px;padding:2px 7px;
-    min-width:20px;text-align:center;
+    border-radius:4px;padding:1px 6px;
+    min-width:18px;text-align:center;
   }
 
   /* ── MAIN ────────────────────────────────────────────────────── */
   main {
     flex:1;min-width:0;
-    padding:24px 28px;
+    padding:20px 24px;
     overflow-y:auto;overflow-x:hidden;
-    background:var(--gray-50);
+    background:#F1F5F9;
     height:100%;
   }
   .view { display:none; }
@@ -245,88 +251,84 @@
 
   /* ── PAGE HEADER ─────────────────────────────────────────────── */
   .page-header {
-    margin-bottom:24px;
+    margin-bottom:18px;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--gray-200);
   }
   .page-header h1 {
-    font-size:20px;font-weight:700;
+    font-size:18px;font-weight:700;
     color:var(--gray-900);
-    letter-spacing:-.3px;
+    letter-spacing:-.02em;
     margin-bottom:2px;
   }
-  .page-header p { font-size:13px;color:var(--gray-500); }
+  .page-header p { font-size:12.5px;color:var(--gray-500); }
 
   /* ── STAT CARDS ──────────────────────────────────────────────── */
   .stats {
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-    gap:16px;margin-bottom:24px;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:12px;margin-bottom:18px;
   }
   .stat-card {
     background:#FFFFFF;
     border:1px solid var(--gray-200);
-    border-radius:var(--radius-lg);
-    padding:20px;
-    box-shadow:var(--shadow-sm);
+    border-radius:var(--radius);
+    border-left:3px solid var(--brand);
+    padding:14px 16px;
+    box-shadow:none;
     position:relative;overflow:hidden;
-    transition:box-shadow .15s;
   }
-  .stat-card:hover { box-shadow:var(--shadow); }
-  .stat-card::after {
-    content:'';position:absolute;
-    top:0;left:0;right:0;height:3px;
-    background:var(--brand);border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-  }
-  .stat-card:nth-child(1)::after { background:var(--brand); }
-  .stat-card:nth-child(2)::after { background:var(--green); }
-  .stat-card:nth-child(3)::after { background:var(--blue); }
-  .stat-card:nth-child(4)::after { background:var(--yellow); }
+  .stat-card:nth-child(2) { border-left-color:var(--green); }
+  .stat-card:nth-child(3) { border-left-color:var(--blue); }
+  .stat-card:nth-child(4) { border-left-color:var(--yellow); }
 
   .stat-label {
-    font-size:11px;font-weight:500;text-transform:uppercase;
-    letter-spacing:.06em;color:var(--gray-500);margin-bottom:10px;
+    font-size:10.5px;font-weight:600;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--gray-500);margin-bottom:6px;
   }
   .stat-value {
-    font-size:28px;font-weight:700;
-    color:var(--gray-900);line-height:1;letter-spacing:-.5px;
+    font-size:22px;font-weight:700;
+    color:var(--gray-900);line-height:1.15;letter-spacing:-.03em;
+    font-variant-numeric:tabular-nums;
   }
   .stat-value.teal, .stat-value.green { color:var(--green); }
   .stat-value.blue { color:var(--blue); }
   .stat-value.gold, .stat-value.amber { color:var(--brand); }
   .stat-value.purple { color:var(--purple); }
-  .stat-sub { font-size:12px;color:var(--gray-500);margin-top:6px; }
+  .stat-sub { font-size:11.5px;color:var(--gray-500);margin-top:4px; }
 
   /* ── CARDS ───────────────────────────────────────────────────── */
   .card {
     background:#FFFFFF;
     border:1px solid var(--gray-200);
-    border-radius:var(--radius-lg);
-    box-shadow:var(--shadow-sm);
-    margin-bottom:20px;
-    transition:box-shadow .15s;
+    border-radius:var(--radius);
+    box-shadow:none;
+    margin-bottom:16px;
+    transition:none;
     min-width:0;overflow:hidden;
   }
   .card-header {
     display:flex;align-items:center;justify-content:space-between;
-    padding:14px 20px;
-    border-bottom:1px solid var(--gray-100);
-    background:#FFFFFF;
-    border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+    padding:10px 16px;
+    border-bottom:1px solid var(--gray-200);
+    background:var(--gray-50);
+    border-radius:var(--radius) var(--radius) 0 0;
   }
   .card-title {
-    font-size:13px;font-weight:600;
-    color:var(--gray-900);letter-spacing:-.1px;
+    font-size:12.5px;font-weight:600;
+    color:var(--gray-800);letter-spacing:-.01em;
   }
-  .card-body { padding:20px; }
+  .card-body { padding:14px 16px; }
 
   /* ── BUTTONS ─────────────────────────────────────────────────── */
   .btn {
     display:inline-flex;align-items:center;gap:6px;
-    border-radius:8px;
+    border-radius:5px;
     font-family:inherit;
-    font-size:13px;font-weight:500;
-    cursor:pointer;transition:all .12s;
-    border:none;padding:8px 16px;
-    white-space:nowrap;line-height:1;
+    font-size:12.5px;font-weight:550;
+    cursor:pointer;transition:background .1s,border-color .1s;
+    border:none;padding:7px 14px;
+    white-space:nowrap;line-height:1.2;
   }
   .btn:disabled { opacity:.45;cursor:not-allowed; }
   .btn-primary {
@@ -404,23 +406,24 @@
   .table-scroll::-webkit-scrollbar-thumb:hover { background:var(--brand); }
 
   th {
-    font-size:11px;font-weight:600;
-    text-transform:uppercase;letter-spacing:.06em;
+    font-size:10.5px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.05em;
     color:var(--gray-500);
-    padding:10px 16px;
+    padding:8px 12px;
     text-align:left;
     border-bottom:1px solid var(--gray-200);
-    background:#FFFFFF;
+    background:var(--gray-50);
     white-space:nowrap;
     position:sticky;top:0;z-index:3;
   }
   td {
-    padding:12px 16px;
-    font-size:13px;
+    padding:8px 12px;
+    font-size:12.5px;
     border-bottom:1px solid var(--gray-100);
     vertical-align:middle;
     color:var(--gray-700);
   }
+  tbody tr:hover td { background:#FFF8F5; }
   td:first-child {
     color:var(--gray-500);font-size:12px;
     font-family:'IBM Plex Mono',monospace;font-weight:500;
@@ -730,25 +733,6 @@
   .role-requester{ background:var(--gray-100);color:var(--gray-600); }
   .role-viewer   { background:var(--purple-lt);color:#5B21B6; }
 
-  /* ── AI TYPE CARDS ───────────────────────────────────────────── */
-  .ai-type-card {
-    border:1px solid var(--gray-200);border-radius:var(--radius-lg);
-    padding:18px 14px;background:#fff;cursor:pointer;
-    text-align:center;transition:all .15s;box-shadow:var(--shadow-sm);
-  }
-  .ai-type-card:hover {
-    border-color:var(--brand);box-shadow:var(--shadow);
-    transform:translateY(-1px);
-  }
-  .ai-type-card.active {
-    border-color:var(--brand);border-width:2px;
-    background:var(--brand-lt);
-    box-shadow:0 0 0 0px var(--brand);
-  }
-  .ai-type-icon { font-size:24px;margin-bottom:8px; }
-  .ai-type-label { font-size:12px;font-weight:600;color:var(--gray-700); }
-  .ai-type-card.active .ai-type-label { color:var(--brand); }
-
   /* ── BUDGET CARDS ────────────────────────────────────────────── */
   .budget-project-card {
     background:#fff;border:1px solid var(--gray-200);
@@ -832,7 +816,7 @@
       position:relative;
       z-index:2;
     }
-    .layout { height:calc(100vh - 56px); }
+    .layout { height:calc(100vh - 52px); }
     aside {
       position:fixed;top:56px;left:0;bottom:56px;
       transform:translateX(-100%);transition:transform .25s cubic-bezier(.4,0,.2,1);
@@ -930,8 +914,8 @@
   <div class="nav-brand">
     <div class="nav-logo">MRV</div>
     <div>
-      <div class="nav-title">MRV Platform</div>
-      <div class="nav-sub">Money-In / Money-Out</div>
+      <div class="nav-title">MRV Finance</div>
+      <div class="nav-sub">Enterprise Resource Planning</div>
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto">
@@ -1548,72 +1532,7 @@
   </div>
 
 
-  <!-- AI COST INTELLIGENCE -- Dedicated Tab -->
-  <div id="view-ai" class="view">
-    <div class="page-header">
-      <h1>AI Cost Intelligence</h1>
-      <p>Powered by Groq &amp; Llama 3.3 &mdash; instant financial insights from your live data</p>
-    </div>
-
-    <!-- Analysis type selector -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:24px">
-      <div class="ai-type-card active" onclick="selectAIType(this,'overview')" data-type="overview">
-        <div class="ai-type-icon">&#128202;</div>
-        <div class="ai-type-label">Cost Overview</div>
-      </div>
-      <div class="ai-type-card" onclick="selectAIType(this,'anomalies')" data-type="anomalies">
-        <div class="ai-type-icon">&#128269;</div>
-        <div class="ai-type-label">Anomalies</div>
-      </div>
-      <div class="ai-type-card" onclick="selectAIType(this,'utilisation')" data-type="utilisation">
-        <div class="ai-type-icon">&#128200;</div>
-        <div class="ai-type-label">Utilisation</div>
-      </div>
-      <div class="ai-type-card" onclick="selectAIType(this,'trends')" data-type="trends">
-        <div class="ai-type-icon">&#128201;</div>
-        <div class="ai-type-label">Trends</div>
-      </div>
-      <div class="ai-type-card" onclick="selectAIType(this,'forecast')" data-type="forecast">
-        <div class="ai-type-icon">&#128302;</div>
-        <div class="ai-type-label">Forecast</div>
-      </div>
-      <div class="ai-type-card" onclick="selectAIType(this,'recommendations')" data-type="recommendations">
-        <div class="ai-type-icon">&#128161;</div>
-        <div class="ai-type-label">Recommendations</div>
-      </div>
-    </div>
-
-    <!-- Run button -->
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px">
-      <button class="btn btn-primary" onclick="runAIInsight()" id="aiInsightBtn" style="padding:10px 28px;font-size:14px;gap:8px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Run Analysis
-      </button>
-      <span id="aiInsightStatus" style="font-size:12px;color:var(--muted)"></span>
-    </div>
-
-    <!-- Response card -->
-    <div class="card" id="aiResponseCard">
-      <div class="card-header" style="background:linear-gradient(135deg,#1A0800,#2E1000);border-radius:var(--radius-lg) var(--radius-lg) 0 0">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#F25C0A,#FF8C3A);;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">&#10022;</div>
-          <div>
-            <div style="color:#FFF8F0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em" id="aiResponseTitle">Cost Overview</div>
-            <div style="font-size:10.5px;color:rgba(255,240,225,.45);margin-top:1px" id="aiResponseMeta">Select a type above and click Run Analysis</div>
-          </div>
-        </div>
-      </div>
-      <div id="aiInsightBody" style="padding:24px;min-height:160px">
-        <div style="text-align:center;color:var(--muted);padding:40px 0">
-          <div style="font-size:40px;margin-bottom:12px;opacity:.2">&#10022;</div>
-          <div style="font-size:13.5px">Select an analysis type above and click <strong>Run Analysis</strong> to get AI-powered insights from your live cost data.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-
-</main>
+  </main>
 </div>
 
 <!-- -- MODALS -- -->
@@ -5057,7 +4976,7 @@ showView = function(id, el) {
 
   // Viewer: read-only -- dashboard, budgets, paid requests, transactions, reconciliation only
   if (role === 'viewer') {
-    var viewerAllowed = ['dashboard','budgets','transactions','reconciliation','requests','history','ai'];
+    var viewerAllowed = ['dashboard','budgets','transactions','reconciliation','requests','history'];
     if (!viewerAllowed.includes(id)) {
       toast('Access restricted -- Viewer accounts are read-only');
       return;
@@ -5897,147 +5816,6 @@ function clearFilter(tbodyId) {
 }
 
 // ==============================================================
-// AI COST INTELLIGENCE -- Claude-powered analysis
-// ==============================================================
-
-var _aiType = 'overview';
-
-function selectAIType(el, type) {
-  document.querySelectorAll('.ai-type-card').forEach(function(c){ c.classList.remove('active'); });
-  el.classList.add('active');
-  _aiType = type;
-  var titles = {
-    overview:'Cost Overview', anomalies:'Anomaly Detection',
-    utilisation:'Utilisation Analysis', trends:'Spending Trends',
-    forecast:'Budget Forecast', recommendations:'Recommendations'
-  };
-  var t = document.getElementById('aiResponseTitle');
-  if (t) t.textContent = titles[type] || type;
-}
-
-async function runAIInsight() {
-  var btn    = document.getElementById('aiInsightBtn');
-  var body   = document.getElementById('aiInsightBody');
-  var status = document.getElementById('aiInsightStatus');
-  var meta   = document.getElementById('aiResponseMeta');
-  var type   = _aiType || 'overview';
-  if (!body) return;
-
-  // Build data snapshot for Claude
-  var groups = {};
-  budgetLines.forEach(function(l) {
-    var k = l.project + ' — ' + l.type;
-    if (!groups[k]) groups[k] = { project:l.project, type:l.type, country:l.country||'', budget:0, actual:0, lines:[] };
-    var budg = parseFloat(l.budgetedAmount) || 0;
-    var act  = getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem);
-    groups[k].budget += budg;
-    groups[k].actual += act;
-    groups[k].lines.push({
-      category: l.category, summary: l.costSummary, item: l.costItem,
-      budgeted: budg, actual: act, currency: l.currency || 'KES'
-    });
-  });
-
-  var projectSummary = Object.values(groups).map(function(g) {
-    var pct = g.budget ? Math.round(g.actual / g.budget * 100) : 0;
-    return g.project + ' (' + g.type + ', ' + (g.country||'All') + '): Budget='
-      + g.budget.toLocaleString() + ', Spent=' + g.actual.toLocaleString()
-      + ', Utilisation=' + pct + '%';
-  }).join(String.fromCharCode(10));
-
-  var allPaid   = requestsStore.filter(function(r){ return r.status === 'Paid'; });
-  var totalPaid = allPaid.reduce(function(s,r){ return s + (parseFloat(r.amount)||0); }, 0);
-  var allBudget = budgetLines.reduce(function(s,l){ return s + (parseFloat(l.budgetedAmount)||0); }, 0);
-
-  // Category breakdown
-  var catMap = {};
-  allPaid.forEach(function(r) {
-    var k = r.category || 'Uncategorised';
-    catMap[k] = (catMap[k] || 0) + (parseFloat(r.amount) || 0);
-  });
-  var catBreakdown = Object.entries(catMap).sort(function(a,b){ return b[1]-a[1]; })
-    .map(function(e){ return e[0] + ': ' + e[1].toLocaleString(); }).join(', ');
-
-  var prompts = {
-    overview:        'Provide a concise executive summary of cost performance across all projects. Highlight which projects are on track, over budget, or underspending. Use the data below.',
-    anomalies:       'Identify any cost anomalies, unusual spending patterns, or outliers in the data. Flag any projects or categories that look suspicious or need attention.',
-    utilisation:     'Analyse budget utilisation across projects. Which projects are at risk of overspending? Which are severely underspent? What does this suggest about planning accuracy?',
-    trends:          'Based on current spending patterns, identify trends. Are costs accelerating? Is spending front-loaded or back-loaded? What patterns emerge by category?',
-    forecast:        'Based on current utilisation rates, forecast whether each project will come in under, over, or on budget by period end. Quantify the risk.',
-    recommendations: 'Provide 3-5 specific, actionable cost management recommendations based on the data. Be practical and prioritised.'
-  };
-
-  var dataContext = [
-    'FINANCIAL PERIOD DATA:',
-    'Total Approved Budget: ' + allBudget.toLocaleString() + ' KES',
-    'Total Spent (Paid): ' + totalPaid.toLocaleString() + ' KES',
-    'Overall Utilisation: ' + (allBudget ? Math.round(totalPaid/allBudget*100) : 0) + '%',
-    'Total Paid Requests: ' + allPaid.length,
-    '',
-    'PROJECT BREAKDOWN:',
-    projectSummary || 'No project data loaded.',
-    '',
-    'SPENDING BY CATEGORY:',
-    catBreakdown || 'No paid requests yet.',
-  ].join(String.fromCharCode(10));
-
-  var promptText = prompts[type] + '\n\nRespond in clear, professional prose with bullet points where helpful. Be specific and use actual numbers. Keep it under 350 words.\n\n' + dataContext;
-
-  // Loading state
-  btn.disabled = true;
-  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analysing…';
-  body.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:20px;color:var(--muted)">'
-    + '<div style="width:20px;height:20px;border:2px solid var(--amber);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div>'
-    + 'Claude is analysing your cost data…'
-    + '</div>';
-
-  try {
-    // Route through Apps Script to avoid CORS and keep API key server-side
-    var data = await gasCall({ action: 'aiInsight', prompt: promptText });
-    if (!data || !data.ok) throw new Error(data && data.error ? data.error : 'AI service unavailable');
-    var text = data.text || 'No response received.';
-
-    // Format the response
-    var typeLabels = {
-      overview:'Overall Cost Overview', anomalies:'Anomaly Detection',
-      utilisation:'Utilisation Analysis', trends:'Spending Trends',
-      forecast:'Budget Forecast', recommendations:'Recommendations'
-    };
-
-    // Convert markdown to HTML
-    var formatted = text
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/^### (.+)$/gm, '<div style="font-size:13px;font-weight:700;color:var(--ink);margin:12px 0 4px">$1</div>')
-      .replace(/^## (.+)$/gm, '<div style="font-size:14px;font-weight:700;color:var(--amber);margin:14px 0 6px">$1</div>')
-      .replace(/^• (.+)$/gm, '<div style="display:flex;gap:8px;margin:4px 0"><span style="color:var(--amber);margin-top:1px">•</span><span>$1</span></div>')
-      .replace(/^- (.+)$/gm, '<div style="display:flex;gap:8px;margin:4px 0"><span style="color:var(--amber);margin-top:1px">•</span><span>$1</span></div>')
-      .replace(/^\d+\. (.+)$/gm, function(m, p1) {
-        return '<div style="display:flex;gap:8px;margin:5px 0"><span style="color:var(--amber);font-weight:700;flex-shrink:0">&#9679;</span><span>'+p1+'</span></div>';
-      })
-      ;
-
-    body.innerHTML = '<div style="padding:6px 20px 20px">'
-      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">'
-        + '<span style="font-size:18px">✦</span>'
-        + '<div>'
-          + '<div style="font-size:13px;font-weight:700;color:var(--ink)">' + typeLabels[type] + '</div>'
-          + '<div style="font-size:11px;color:var(--muted)">Generated by Claude · ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + '</div>'
-        + '</div>'
-      + '</div>'
-      + '<div style="font-size:13.5px;line-height:1.7;color:var(--ink-mid)">' + formatted + '</div>'
-    + '</div>';
-
-  } catch(e) {
-    body.innerHTML = '<div style="padding:20px;color:var(--danger);font-size:13px">'
-      + '⚠️ Analysis failed: ' + e.message + '. Please check your connection and try again.'
-      + '</div>';
-  }
-
-  btn.disabled = false;
-  btn.textContent = '✦ Analyse';
-}
-
-// ==============================================================
 // END AUTH SYSTEM
 // ==============================================================
 
@@ -6064,7 +5842,6 @@ var ICONS = {
   transactions:   '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
   users:          '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
   sheets:         '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/>',
-  ai:             '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
 };
 
 function makeIcon(key) {
@@ -6094,7 +5871,6 @@ function buildSidebar() {
       { type:'section', label:'Reports' },
       { type:'item', label:'Paid Requests',   view:'requests',       icon:'requests' },
       { type:'item', label:'Transactions',    view:'transactions',   icon:'transactions' },
-      { type:'item', label:'AI Intelligence',  view:'ai',             icon:'ai' },
       { type:'item', label:'Reconciliation',  view:'reconciliation', icon:'reconciliation' },
       { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
     ];
@@ -6110,7 +5886,6 @@ function buildSidebar() {
       { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
-      { type:'item', label:'AI Intelligence',  view:'ai',             icon:'ai' },
       { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
     ];
 
@@ -6125,7 +5900,6 @@ function buildSidebar() {
       { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
-      { type:'item', label:'AI Intelligence',  view:'ai',             icon:'ai' },
       { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
     ];
 
@@ -6140,7 +5914,6 @@ function buildSidebar() {
       { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
       { type:'section', label:'Reports' },
       { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
-      { type:'item', label:'AI Intelligence',  view:'ai',             icon:'ai' },
       { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
       { type:'section', label:'Admin' },
       { type:'item', label:'Manage Users',     view:'users',          icon:'users' },
