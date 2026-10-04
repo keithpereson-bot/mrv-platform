@@ -6898,7 +6898,7 @@ function ecfRefreshPreview() {
     +'<tr style="background:#fff9c4;font-weight:700"><td style="'+B+'" colspan="3"></td><td style="'+B+';font-weight:700">TOTALS</td><td style="'+BR+';font-weight:700">'+d.totalTZS.toLocaleString()+'</td><td style="'+BR+';font-weight:700">'+d.totalUSD.toLocaleString()+'</td><td style="'+B+'" colspan="2"></td></tr>'
     +'<tr><td style="'+B+'" colspan="3"></td><td style="'+BL+'">Amount Advanced</td><td style="'+BR+'">'+advanced.toLocaleString()+'</td><td style="'+B+'" colspan="3"></td></tr>'
     +'<tr><td style="'+B+';font-size:8px" colspan="3">Advance approved by (Name, &amp; Amount):</td><td style="'+BL+'">Balance claimed/Returned</td><td style="'+BR+';font-weight:700;color:'+(balance<0?'#cc0000':'#006600')+'">'+balance.toLocaleString()+'</td><td style="'+BR+'">'+d.totalUSD.toLocaleString()+'</td><td style="'+B+'" colspan="2"></td></tr>'
-    +'<tr style="height:55px"><td style="'+B+';vertical-align:top;padding:5px" colspan="2"><div style="font-weight:700;font-size:8px">Claimant (Name, Sign &amp; Date):</div><div style="font-size:8.5px;margin-top:2px">'+claimant+'</div>'+sigHtml+'<div style="font-size:7.5px;color:#666;margin-top:2px">'+dStr+'</div></td><td style="'+B+';vertical-align:top;padding:5px" colspan="3"><div style="font-weight:700;font-size:8px">1st Approver (Name, Sign &amp; Date):</div></td><td style="'+B+';vertical-align:top;padding:5px" colspan="3"><div style="font-weight:700;font-size:8px">2nd Approver (Name, Sign &amp; Date):</div></td></tr>'
+    +'<tr style="height:55px"><td style="'+B+';vertical-align:top;padding:5px" colspan="2"><div style="font-size:8.5px;font-weight:600">'+claimant+'</div>'+sigHtml+'<div style="font-size:7.5px;color:#333;margin-top:1px">'+dStr+'</div><div style="font-size:7.5px;color:#666;border-top:1px solid #333;margin-top:3px;padding-top:2px">Claimant (Name, Sign &amp; Date)</div></td><td style="'+B+';vertical-align:top;padding:5px" colspan="3"><div style="font-size:7.5px;color:#666;border-top:1px solid #333;margin-top:40px;padding-top:2px">1st Approver (Name, Sign &amp; Date)</div></td><td style="'+B+';vertical-align:top;padding:5px" colspan="3"><div style="font-size:7.5px;color:#666;border-top:1px solid #333;margin-top:40px;padding-top:2px">2nd Approver (Name, Sign &amp; Date)</div></td></tr>'
     +'</table></div>';
 }
 
@@ -7292,12 +7292,17 @@ async function ecfExportPDF() {
     y += TOT_H;
 
     // ── SIGNATURE AREA ────────────────────────────────────────────
+    // Layout: Name → Signature → Date (just under sig) → underline → label
     var sigY = y+3;
     fn(8); st(DK);
     tx(claimant, ML, sigY+3);
-    try { doc.addImage(sigDataUrl,'PNG',ML,sigY+5,38,12); } catch(e){}
+    var sigImgY = sigY+5;
+    try { doc.addImage(sigDataUrl,'PNG',ML,sigImgY,38,12); } catch(e){}
+    // Date sits slightly below the signature image
+    fn(7); st(DK);
+    tx(dStr, ML, sigImgY+14.5);
 
-    var ulY = Math.min(sigY+22, PH-22);
+    var ulY = Math.min(sigImgY+17, PH-22);
     sd(DK,0.4);
     doc.line(ML,          ulY, ML+TW/3-4,     ulY);
     doc.line(ML+TW/3+4,   ulY, ML+2*TW/3-4,   ulY);
@@ -7306,8 +7311,6 @@ async function ecfExportPDF() {
     tx('Claimant (Name, Sign & Date)',     ML,          ulY+3);
     tx('1st Approver (Name, Sign & Date)', ML+TW/3+4,   ulY+3);
     tx('2nd Approver (Name, Sign & Date)', ML+2*TW/3+4, ulY+3);
-    fn(7); st(DK);
-    tx(dStr, ML, ulY+8);
 
     // Footer
     var footY=PH-3;
