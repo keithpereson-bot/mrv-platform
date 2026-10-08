@@ -6,7 +6,7 @@
 
 
 
-<!-- BUILD: v6-progress-ui-kit -->
+<!-- BUILD: v5-erp-ui -->
 <title>MRV Finance Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -480,116 +480,9 @@
   .badge-danger { background:var(--red-lt);color:#991B1B; }
   .badge-gray { background:var(--gray-100);color:var(--gray-700); }
 
-  /* ── PROGRESS (UI Design Kit style) ──────────────────────────── */
-  .progress-wrap {
-    background:var(--gray-100);
-    border-radius:999px;
-    height:8px;
-    overflow:hidden;
-    position:relative;
-  }
-  .progress-fill {
-    background:linear-gradient(90deg, var(--brand), var(--brand-mid));
-    height:100%;
-    border-radius:999px;
-    transition:width .45s cubic-bezier(.4,0,.2,1);
-    position:relative;
-  }
-  .progress-fill.is-success { background:linear-gradient(90deg, #059669, #34D399); }
-  .progress-fill.is-warn    { background:linear-gradient(90deg, #D97706, #FBBF24); }
-  .progress-fill.is-danger  { background:linear-gradient(90deg, #DC2626, #F87171); }
-
-  /* Labeled progress row */
-  .progress-row {
-    display:flex; flex-direction:column; gap:6px;
-  }
-  .progress-meta {
-    display:flex; align-items:center; justify-content:space-between; gap:8px;
-    font-size:12px; color:var(--gray-600); font-weight:500;
-  }
-  .progress-meta strong { color:var(--gray-900); font-weight:700; }
-
-  /* Segmented steps bar (kit-style) */
-  .progress-segments {
-    display:flex; gap:4px; width:100%;
-  }
-  .progress-seg {
-    flex:1; height:8px; border-radius:999px;
-    background:var(--gray-200);
-    transition:background .25s;
-  }
-  .progress-seg.done { background:var(--green); }
-  .progress-seg.active { background:var(--brand); }
-  .progress-seg.fail { background:var(--red); }
-
-  /* Circular step indicators */
-  .step-track {
-    display:flex; align-items:center; gap:0; width:100%;
-    padding:4px 0;
-  }
-  .step-item {
-    display:flex; flex-direction:column; align-items:center; gap:6px;
-    flex:0 0 auto; position:relative; z-index:1;
-  }
-  .step-dot {
-    width:28px; height:28px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    font-size:12px; font-weight:700;
-    border:2px solid var(--gray-300);
-    background:#fff; color:var(--gray-500);
-    transition:all .2s;
-  }
-  .step-dot.done {
-    background:var(--green); border-color:var(--green); color:#fff;
-  }
-  .step-dot.active {
-    background:var(--brand); border-color:var(--brand); color:#fff;
-    box-shadow:0 0 0 4px rgba(242,92,10,.15);
-  }
-  .step-dot.pending {
-    background:#fff; border-color:var(--gray-300); color:var(--gray-400);
-  }
-  .step-label {
-    font-size:11px; font-weight:600; color:var(--gray-500);
-    white-space:nowrap;
-  }
-  .step-label.done { color:var(--green); }
-  .step-label.active { color:var(--brand); }
-  .step-connector {
-    flex:1; height:2px; background:var(--gray-200); margin:0 6px; margin-bottom:18px;
-  }
-  .step-connector.done { background:var(--green); }
-
-  /* Level marker bar */
-  .level-bar {
-    position:relative; height:6px; background:var(--gray-200);
-    border-radius:999px; margin:18px 0 8px;
-  }
-  .level-bar-fill {
-    position:absolute; left:0; top:0; bottom:0;
-    background:linear-gradient(90deg, var(--brand), var(--brand-mid));
-    border-radius:999px;
-  }
-  .level-marker {
-    position:absolute; top:-11px; transform:translateX(-50%);
-    padding:2px 8px; border-radius:6px; font-size:10px; font-weight:700;
-    background:var(--gray-100); color:var(--gray-600);
-  }
-  .level-marker.active {
-    background:var(--brand); color:#fff;
-    box-shadow:0 2px 8px rgba(242,92,10,.3);
-  }
-
-  /* Compact status chip for completed/failed */
-  .progress-status {
-    display:inline-flex; align-items:center; gap:6px;
-    font-size:12px; font-weight:600;
-  }
-  .progress-status .ok { color:var(--green); }
-  .progress-status .fail { color:var(--red); }
-  .progress-status .dot {
-    width:8px; height:8px; border-radius:50%; background:currentColor;
-  }
+  /* ── PROGRESS ────────────────────────────────────────────────── */
+  .progress-wrap { background:var(--gray-100);border-radius:20px;height:6px;overflow:hidden; }
+  .progress-fill { background:var(--brand);height:100%;border-radius:20px;transition:width .5s; }
 
   /* ── ALERTS ──────────────────────────────────────────────────── */
   .alert {
@@ -2319,11 +2212,11 @@ function renderDashboard() {
       +'<td class="text-muted text-sm">'+g.dept+' &middot; '+g.country+'</td>'
       +'<td class="currency">'+getCurrency(g.project,g.type)+' '+fmt(budg)+'</td>'
       +'<td class="currency" style="color:var(--purple);font-weight:600">'+getCurrency(g.project,g.type)+' '+fmt(util)+'</td>'
-      +'<td><div style="display:flex;align-items:center;gap:10px;min-width:110px">'
-        +'<div class="progress-wrap" style="width:88px;height:8px">'
-          +'<div class="progress-fill '+(pct>85?'is-danger':pct>60?'is-warn':'is-success')+'" style="width:'+pct+'%"></div>'
+      +'<td><div style="display:flex;align-items:center;gap:8px">'
+        +'<div style="width:80px;height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden">'
+          +'<div style="width:'+pct+'%;height:100%;background:'+pc+'"></div>'
         +'</div>'
-        +'<span class="text-sm" style="font-weight:700;color:'+(pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--gray-700)')+'">'+pct+'%</span>'
+        +'<span class="text-sm text-muted">'+pct+'%</span>'
       +'</div></td>'
     +'</tr>';
   }).join('');
@@ -2348,13 +2241,12 @@ function renderDashboard() {
     var util = totalActuals(g.project, g.type);
     var pct  = budg ? Math.min(100, Math.round(util/budg*100)) : 0;
     var pc   = pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--amber)';
-    var fillCls = pct>85?'is-danger':pct>60?'is-warn':'is-success';
-    return '<div class="progress-row" style="margin-bottom:16px">'
-      +'<div class="progress-meta">'
-        +'<span class="font-600">'+g.project+' <span class="text-muted" style="font-weight:500">('+g.type+')</span></span>'
-        +'<span>'+getCurrency(g.project,g.type)+' '+fmt(util)+' of '+fmt(budg)+' &nbsp; <strong>'+pct+'%</strong></span>'
+    return '<div style="margin-bottom:14px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">'
+        +'<span class="font-600 text-sm">'+g.project+' ('+g.type+')</span>'
+        +'<span class="text-sm text-muted">'+getCurrency(g.project,g.type)+' '+fmt(util)+' of '+fmt(budg)+' &nbsp; <strong>'+pct+'%</strong></span>'
       +'</div>'
-      +'<div class="progress-wrap"><div class="progress-fill '+fillCls+'" style="width:'+pct+'%"></div></div>'
+      +'<div class="progress-wrap"><div class="progress-fill" style="width:'+pct+'%;background:'+pc+'"></div></div>'
     +'</div>';
   }).join('');
 }
@@ -2554,7 +2446,7 @@ function renderBudgetView() {
         +'<div class="stat-sub">'+(allRemain<0?'Over budget':'Available')+'</div></div>'
       +'<div class="stat-card"><div class="stat-label">Usage</div>'
         +'<div class="stat-value" style="color:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--ink)')+'">'+allPct+'%</div>'
-        +'<div class="stat-sub"><div class="progress-wrap" style="margin-top:8px"><div class="progress-fill '+(allPct>85?'is-danger':allPct>60?'is-warn':'is-success')+'" style="width:'+Math.min(100,allPct)+'%"></div></div></div></div>';
+        +'<div class="stat-sub"><div class="progress-wrap" style="margin-top:8px"><div class="progress-fill" style="width:'+Math.min(100,allPct)+'%;background:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--amber)')+'"></div></div></div></div>';
   }
 
   // One card per project+type group
@@ -2587,10 +2479,10 @@ function renderBudgetView() {
         + '<td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;color:'+(r<0?'var(--danger)':'var(--ink-mid)')+';white-space:nowrap">'+(r<0?'−':'')+fmt(Math.abs(r))+'</td>'
         + '<td style="padding:10px 20px 10px 12px;width:130px">'
           + '<div style="display:flex;align-items:center;gap:8px">'
-            + '<div class="progress-wrap" style="flex:1;height:8px">'
-              + '<div class="progress-fill '+(p>85?'is-danger':p>60?'is-warn':'is-success')+'" style="width:'+p+'%"></div>'
+            + '<div style="flex:1;height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden">'
+              + '<div style="width:'+p+'%;height:100%;background:'+pc+';border-radius:3px"></div>'
             + '</div>'
-            + '<span style="font-size:12px;font-weight:700;color:'+pc+';min-width:32px;text-align:right">'+p+'%</span>'
+            + '<span style="font-size:11.5px;font-weight:600;color:'+pc+';min-width:30px;text-align:right">'+p+'%</span>'
           + '</div>'
         + '</td>'
       + '</tr>';
@@ -2633,9 +2525,9 @@ function renderBudgetView() {
           + '</div>'
           + '<div style="padding:12px 18px;background:'+(pct>85?'#fef2f2':pct>60?'#fffbeb':'#f0fdf4')+'">'
             + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Usage</div>'
-            + '<div style="display:flex;align-items:center;gap:10px">'
-              + '<div class="progress-wrap" style="flex:1;height:8px">'
-                + '<div class="progress-fill '+(pct>85?'is-danger':pct>60?'is-warn':'is-success')+'" style="width:'+Math.min(100,pct)+'%"></div>'
+            + '<div style="display:flex;align-items:center;gap:8px">'
+              + '<div style="flex:1;height:5px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden">'
+                + '<div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+barClr+'"></div>'
               + '</div>'
               + '<span style="font-size:14px;font-weight:700;color:'+barClr+'">'+pct+'%</span>'
             + '</div>'
