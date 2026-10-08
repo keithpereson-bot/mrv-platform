@@ -6,7 +6,7 @@
 
 
 
-<!-- BUILD: v5-erp-ui -->
+<!-- BUILD: v6-progress-kit -->
 <title>MRV Finance Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -480,9 +480,119 @@
   .badge-danger { background:var(--red-lt);color:#991B1B; }
   .badge-gray { background:var(--gray-100);color:var(--gray-700); }
 
-  /* ── PROGRESS ────────────────────────────────────────────────── */
-  .progress-wrap { background:var(--gray-100);border-radius:20px;height:6px;overflow:hidden; }
-  .progress-fill { background:var(--brand);height:100%;border-radius:20px;transition:width .5s; }
+  /* ── PROGRESS BAR UI DESIGN KIT ──────────────────────────────── */
+  /* Continuous track */
+  .progress-wrap {
+    background:#E8ECF1;
+    border-radius:999px;
+    height:10px;
+    overflow:hidden;
+    position:relative;
+  }
+  .progress-fill {
+    height:100%;
+    border-radius:999px;
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+    background:linear-gradient(90deg, #F25C0A, #FF8A3D);
+  }
+  .progress-fill.is-success { background:linear-gradient(90deg, #059669, #34D399); }
+  .progress-fill.is-warn    { background:linear-gradient(90deg, #D97706, #FBBF24); }
+  .progress-fill.is-danger  { background:linear-gradient(90deg, #DC2626, #F87171); }
+  .progress-fill.is-info    { background:linear-gradient(90deg, #2563EB, #60A5FA); }
+
+  /* Labeled progress block (kit card style) */
+  .pb-card {
+    background:#fff;
+    border:1px solid var(--gray-200);
+    border-radius:12px;
+    padding:14px 16px;
+  }
+  .pb-card-dark {
+    background:#1F2937;
+    border-color:#374151;
+    color:#F9FAFB;
+  }
+  .pb-card-dark .pb-title { color:#F9FAFB; }
+  .pb-card-dark .pb-sub { color:#9CA3AF; }
+  .pb-title {
+    font-size:13px; font-weight:700; color:var(--gray-900);
+    margin-bottom:2px;
+  }
+  .pb-sub {
+    font-size:12px; color:var(--gray-500); margin-bottom:10px;
+  }
+  .pb-sub strong { color:var(--gray-800); }
+  .pb-card-dark .pb-sub strong { color:#E5E7EB; }
+
+  /* Segmented progress (blocks) */
+  .pb-segments {
+    display:flex; gap:5px; width:100%;
+  }
+  .pb-seg {
+    flex:1; height:10px; border-radius:4px;
+    background:#E5E7EB;
+  }
+  .pb-seg.done { background:#10B981; }
+  .pb-seg.active { background:var(--brand); }
+  .pb-seg.fail { background:#EF4444; }
+  .pb-card-dark .pb-seg { background:#374151; }
+  .pb-card-dark .pb-seg.done { background:#10B981; }
+  .pb-card-dark .pb-seg.active { background:#F25C0A; }
+  .pb-card-dark .pb-seg.fail { background:#EF4444; }
+
+  /* Horizontal step tracker */
+  .pb-steps {
+    display:flex; align-items:flex-start; width:100%; gap:0;
+  }
+  .pb-step {
+    display:flex; flex-direction:column; align-items:center;
+    flex:1; position:relative; min-width:0;
+  }
+  .pb-step-dot {
+    width:28px; height:28px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700;
+    border:2px solid #D1D5DB;
+    background:#fff; color:#9CA3AF;
+    z-index:1; position:relative;
+  }
+  .pb-step.done .pb-step-dot {
+    background:#10B981; border-color:#10B981; color:#fff;
+  }
+  .pb-step.active .pb-step-dot {
+    background:var(--brand); border-color:var(--brand); color:#fff;
+    box-shadow:0 0 0 4px rgba(242,92,10,.18);
+  }
+  .pb-step-label {
+    margin-top:8px;
+    font-size:11px; font-weight:600;
+    color:#9CA3AF; text-align:center;
+    line-height:1.25;
+  }
+  .pb-step.done .pb-step-label { color:#059669; }
+  .pb-step.active .pb-step-label { color:var(--brand); }
+  .pb-step-line {
+    position:absolute; top:14px; left:calc(50% + 16px); right:calc(-50% + 16px);
+    height:2px; background:#E5E7EB; z-index:0;
+  }
+  .pb-step.done .pb-step-line { background:#10B981; }
+  .pb-step:last-child .pb-step-line { display:none; }
+
+  /* Status text with check */
+  .pb-status {
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12.5px; font-weight:600;
+  }
+  .pb-status.ok { color:#059669; }
+  .pb-status.fail { color:#DC2626; }
+  .pb-status.pending { color:var(--brand); }
+  .pb-check {
+    width:16px; height:16px; border-radius:50%;
+    background:#10B981; color:#fff;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:700; flex-shrink:0;
+  }
+  .pb-check.fail { background:#DC2626; }
 
   /* ── ALERTS ──────────────────────────────────────────────────── */
   .alert {
@@ -493,26 +603,27 @@
   .alert-info { background:var(--brand-lt);color:#9A3412;border:1px solid rgba(242,92,10,.15); }
   .alert-warn { background:var(--yellow-lt);color:#92400E;border:1px solid rgba(217,119,6,.15); }
 
-  /* ── REQUEST TABS ────────────────────────────────────────────── */
+  /* ── REQUEST TABS (kit-style step cards) ─────────────────────── */
   .req-tabs {
     display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-    gap:10px;margin-bottom:20px;
+    gap:12px;margin-bottom:20px;
   }
   .req-tab {
     display:flex;align-items:center;gap:12px;
     padding:14px 16px;
-    background:#fff;border:1px solid var(--gray-200);
-    border-radius:var(--radius-lg);
+    background:#fff;border:1.5px solid var(--gray-200);
+    border-radius:12px;
     cursor:pointer;text-align:left;
-    transition:all .12s;box-shadow:var(--shadow-sm);
+    transition:all .15s;
     position:relative;overflow:hidden;
     font-family:inherit;
   }
   .req-tab::before { display:none; }
-  .req-tab:hover { border-color:var(--gray-300);box-shadow:var(--shadow); }
+  .req-tab:hover { border-color:#FDBA74; background:#FFF7ED; }
   .req-tab.active {
     border-color:var(--brand);
-    box-shadow:0 0 0 1px var(--brand), var(--shadow);
+    background:#FFF7ED;
+    box-shadow:0 0 0 3px rgba(242,92,10,.12);
   }
   .req-tab-icon {
     width:36px;height:36px;border-radius:8px;
@@ -999,6 +1110,31 @@
     <div class="page-header">
       <h1>System Requests</h1>
       <p>Submit requests, approve for payment queue, then mark as paid once funds are disbursed.</p>
+    </div>
+
+    <!-- Workflow step tracker (Progress Bar UI Design Kit) -->
+    <div class="pb-card" style="margin-bottom:16px">
+      <div class="pb-steps" id="reqWorkflowSteps">
+        <div class="pb-step active" data-step="drafts">
+          <div class="pb-step-dot">1</div>
+          <div class="pb-step-line"></div>
+          <div class="pb-step-label">Submit<br>Request</div>
+        </div>
+        <div class="pb-step" data-step="queue">
+          <div class="pb-step-dot">2</div>
+          <div class="pb-step-line"></div>
+          <div class="pb-step-label">Payment<br>Queue</div>
+        </div>
+        <div class="pb-step" data-step="paid">
+          <div class="pb-step-dot">3</div>
+          <div class="pb-step-line"></div>
+          <div class="pb-step-label">Paid &amp;<br>Disbursed</div>
+        </div>
+        <div class="pb-step" data-step="ack">
+          <div class="pb-step-dot">✓</div>
+          <div class="pb-step-label">Acknowledged</div>
+        </div>
+      </div>
     </div>
 
     <!-- Tab bar -->
@@ -2212,11 +2348,11 @@ function renderDashboard() {
       +'<td class="text-muted text-sm">'+g.dept+' &middot; '+g.country+'</td>'
       +'<td class="currency">'+getCurrency(g.project,g.type)+' '+fmt(budg)+'</td>'
       +'<td class="currency" style="color:var(--purple);font-weight:600">'+getCurrency(g.project,g.type)+' '+fmt(util)+'</td>'
-      +'<td><div style="display:flex;align-items:center;gap:8px">'
-        +'<div style="width:80px;height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden">'
-          +'<div style="width:'+pct+'%;height:100%;background:'+pc+'"></div>'
+      +'<td><div style="display:flex;align-items:center;gap:10px;min-width:120px">'
+        +'<div class="progress-wrap" style="width:90px">'
+          +'<div class="progress-fill '+(pct>85?'is-danger':pct>60?'is-warn':'is-success')+'" style="width:'+pct+'%"></div>'
         +'</div>'
-        +'<span class="text-sm text-muted">'+pct+'%</span>'
+        +'<span style="font-size:12.5px;font-weight:700;color:'+(pct>85?'var(--danger)':pct>60?'var(--warn)':'#059669')+'">'+pct+'%</span>'
       +'</div></td>'
     +'</tr>';
   }).join('');
@@ -2241,12 +2377,18 @@ function renderDashboard() {
     var util = totalActuals(g.project, g.type);
     var pct  = budg ? Math.min(100, Math.round(util/budg*100)) : 0;
     var pc   = pct>85?'var(--danger)':pct>60?'var(--warn)':'var(--amber)';
-    return '<div style="margin-bottom:14px">'
-      +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">'
-        +'<span class="font-600 text-sm">'+g.project+' ('+g.type+')</span>'
-        +'<span class="text-sm text-muted">'+getCurrency(g.project,g.type)+' '+fmt(util)+' of '+fmt(budg)+' &nbsp; <strong>'+pct+'%</strong></span>'
+    var fillCls = pct>85?'is-danger':pct>60?'is-warn':'is-success';
+    var statusTxt = pct>=100
+      ? '<span class="pb-status ok"><span class="pb-check">✓</span> Fully utilised</span>'
+      : pct>85
+        ? '<span class="pb-status fail"><span class="pb-check fail">!</span> Near limit</span>'
+        : '<span class="pb-status pending">'+pct+'% of budget</span>';
+    return '<div class="pb-card" style="margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px">'
+        +'<div><div class="pb-title">'+g.project+'</div><div class="pb-sub">'+g.type+' · '+getCurrency(g.project,g.type)+' '+fmt(util)+' of '+fmt(budg)+'</div></div>'
+        + statusTxt
       +'</div>'
-      +'<div class="progress-wrap"><div class="progress-fill" style="width:'+pct+'%;background:'+pc+'"></div></div>'
+      +'<div class="progress-wrap"><div class="progress-fill '+fillCls+'" style="width:'+pct+'%"></div></div>'
     +'</div>';
   }).join('');
 }
@@ -2446,7 +2588,7 @@ function renderBudgetView() {
         +'<div class="stat-sub">'+(allRemain<0?'Over budget':'Available')+'</div></div>'
       +'<div class="stat-card"><div class="stat-label">Usage</div>'
         +'<div class="stat-value" style="color:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--ink)')+'">'+allPct+'%</div>'
-        +'<div class="stat-sub"><div class="progress-wrap" style="margin-top:8px"><div class="progress-fill" style="width:'+Math.min(100,allPct)+'%;background:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--amber)')+'"></div></div></div></div>';
+        +'<div class="stat-sub"><div class="progress-wrap" style="margin-top:10px;height:10px"><div class="progress-fill '+(allPct>85?'is-danger':allPct>60?'is-warn':'is-success')+'" style="width:'+Math.min(100,allPct)+'%"></div></div></div></div>';
   }
 
   // One card per project+type group
@@ -2479,10 +2621,10 @@ function renderBudgetView() {
         + '<td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;color:'+(r<0?'var(--danger)':'var(--ink-mid)')+';white-space:nowrap">'+(r<0?'−':'')+fmt(Math.abs(r))+'</td>'
         + '<td style="padding:10px 20px 10px 12px;width:130px">'
           + '<div style="display:flex;align-items:center;gap:8px">'
-            + '<div style="flex:1;height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden">'
-              + '<div style="width:'+p+'%;height:100%;background:'+pc+';border-radius:3px"></div>'
+            + '<div class="progress-wrap" style="flex:1">'
+              + '<div class="progress-fill '+(p>85?'is-danger':p>60?'is-warn':'is-success')+'" style="width:'+p+'%"></div>'
             + '</div>'
-            + '<span style="font-size:11.5px;font-weight:600;color:'+pc+';min-width:30px;text-align:right">'+p+'%</span>'
+            + '<span style="font-size:12px;font-weight:700;color:'+pc+';min-width:32px;text-align:right">'+p+'%</span>'
           + '</div>'
         + '</td>'
       + '</tr>';
@@ -2525,9 +2667,9 @@ function renderBudgetView() {
           + '</div>'
           + '<div style="padding:12px 18px;background:'+(pct>85?'#fef2f2':pct>60?'#fffbeb':'#f0fdf4')+'">'
             + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px">Usage</div>'
-            + '<div style="display:flex;align-items:center;gap:8px">'
-              + '<div style="flex:1;height:5px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden">'
-                + '<div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+barClr+'"></div>'
+            + '<div style="display:flex;align-items:center;gap:10px">'
+              + '<div class="progress-wrap" style="flex:1">'
+                + '<div class="progress-fill '+(pct>85?'is-danger':pct>60?'is-warn':'is-success')+'" style="width:'+Math.min(100,pct)+'%"></div>'
               + '</div>'
               + '<span style="font-size:14px;font-weight:700;color:'+barClr+'">'+pct+'%</span>'
             + '</div>'
@@ -4399,6 +4541,22 @@ function switchReqTab(tab) {
   var panel = document.getElementById('reqpanel-'+tab);
   if (btn) btn.classList.add('active');
   if (panel) panel.style.display='';
+
+  // Sync workflow step tracker (Progress Bar UI Design Kit)
+  var order = ['drafts', 'queue', 'paid', 'ack'];
+  var idx = order.indexOf(tab);
+  if (idx < 0) idx = 0;
+  document.querySelectorAll('#reqWorkflowSteps .pb-step').forEach(function(step, i) {
+    step.classList.remove('done', 'active');
+    if (i < idx) step.classList.add('done');
+    else if (i === idx) step.classList.add('active');
+    var dot = step.querySelector('.pb-step-dot');
+    if (dot) {
+      if (i < idx) dot.textContent = '✓';
+      else if (i === 3) dot.textContent = '✓';
+      else dot.textContent = String(i + 1);
+    }
+  });
 }
 
 var _paidSort = 'date-desc';
