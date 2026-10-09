@@ -2750,9 +2750,9 @@ async function downloadAcknowledgedPDF() {
   const total  = paid.reduce(function(s,r){ return s+(parseFloat(r.amount)||0); }, 0);
   const ccy    = paid.length ? getCurrency(paid[0].project, paid[0].type) : 'KES';
 
-  // Soft brand theme (matches expense claim acknowledgement slips)
-  const BRAND    = [59, 130, 246];
-  const BRAND_LT = [30, 58, 95];
+  // Soft brand theme (matches expense claim acknowledgement slips) — fire orange
+  const BRAND    = [242, 92, 10];
+  const BRAND_LT = [254, 240, 230];
   const INK      = [17, 24, 39];
   const MUTED    = [107, 114, 128];
   const BRDR     = [209, 213, 219];
@@ -6350,10 +6350,10 @@ function ecfPopulateProjects() {
     var info = projects[p];
     var checked = prevChecked[p] ? ' checked' : '';
     var safe = p.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-    return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:#fff" onmouseover="this.style.borderColor=\'var(--brand)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
+    return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--card)" onmouseover="this.style.borderColor=\'var(--brand)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
       +'<input type="checkbox" class="ecf-proj-chk" value="'+safe+'"'+checked+' onchange="ecfOnProjectChange()" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0">'
       +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:13px;font-weight:600;color:var(--gray-900)">'+p.replace(/</g,'&lt;')+'</div>'
+        +'<div style="font-size:13px;font-weight:600;color:var(--ink)">'+p.replace(/</g,'&lt;')+'</div>'
         +'<div style="font-size:11px;color:var(--muted)">'+info.count+' paid request'+(info.count===1?'':'s')+' · '+info.total.toLocaleString()+'</div>'
       +'</div>'
       +'</label>';
@@ -6415,10 +6415,10 @@ function ecfLoadRequests() {
     html += '<label style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background=\'var(--gray-50)\'" onmouseout="this.style.background=\'\'">'
       +'<input type="checkbox" class="ecf-chk" data-ref="'+(r.ref||'').replace(/"/g,'&quot;')+'" data-project="'+(r.project||'').replace(/"/g,'&quot;')+'" data-i="'+i+'" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0" checked>'
       +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:12.5px;font-weight:600;color:var(--gray-900)">'+desc+'</div>'
+        +'<div style="font-size:12.5px;font-weight:600;color:var(--ink)">'+desc+'</div>'
         +'<div style="font-size:11px;color:var(--gray-500);margin-top:2px">'+(r.ref||'')+(cat?' &bull; '+cat:'')+(r.type?' &bull; '+r.type:'')+(r.date?' &bull; '+(typeof fmtDate==='function'?fmtDate(r.date):r.date):'')+'</div>'
       +'</div>'
-      +'<div style="font-size:13px;font-weight:700;color:var(--gray-900);white-space:nowrap">'+cur+' '+amt.toLocaleString()+'</div>'
+      +'<div style="font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap">'+cur+' '+amt.toLocaleString()+'</div>'
       +'</label>';
   });
   list.innerHTML = html;
@@ -7117,18 +7117,18 @@ function ecfBuildAckPDF(reqs, cur, claimant, adminSig, projectLabel) {
   var ML=10, MR=10, W=pw-ML-MR;
   var now=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
 
-  // Soft brand theme — muted fire orange (less intense than solid brand bar)
-  var BRAND   = [59, 130, 246];     // --brand #3B82F6 dark mode blue
-  var BRAND_LT= [30, 58, 95];       // dark blue tint
-  var BRAND_MID=[96, 165, 250];     // mid blue
+  // Soft brand theme — original fire orange (print / PDF stays branded)
+  var BRAND   = [242, 92, 10];      // --brand #F25C0A
+  var BRAND_LT= [254, 240, 230];    // warm tint header bg
+  var BRAND_MID=[255, 119, 48];     // mid brand
   var INK     = [17, 24, 39];       // gray-900
   var MUTED   = [107, 114, 128];    // gray-500
   var BRDR    = [209, 213, 219];    // gray-300
   var WHITE   = [255, 255, 255];
-  var ALT     = [30, 41, 59];       // dark alternate row
+  var ALT     = [255, 248, 245];    // barely-warm alternate row
   var GREEN   = [5, 150, 105];
   var AMBER   = [217, 119, 6];
-  var HDR_TXT = [147, 197, 253];    // light blue text on dark header
+  var HDR_TXT = [120, 50, 10];      // dark warm text on light header
 
   // Columns: no Finance Signature — Cost Item instead of Category
   // Usable width W ≈ 277mm
