@@ -5824,8 +5824,6 @@ function buildSidebar() {
       { type:'item', label:'Approved Budgets',view:'budgets',        icon:'budgets' },
       { type:'section', label:'Reports' },
       { type:'item', label:'Paid Requests',   view:'requests',       icon:'requests' },
-      { type:'item', label:'Transactions',    view:'transactions',   icon:'transactions' },
-      { type:'item', label:'Reconciliation',  view:'reconciliation', icon:'reconciliation' },
       { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
     ];
 
@@ -5834,12 +5832,9 @@ function buildSidebar() {
       { type:'section', label:'Cycle' },
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
-      { type:'item', label:'Load Funds',       view:'funds',          icon:'funds' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
       { type:'item', label:'Expense Claim',    view:'expenses',       icon:'expenses' },
-      { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
       { type:'section', label:'Reports' },
-      { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
       { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
     ];
 
@@ -5848,12 +5843,9 @@ function buildSidebar() {
       { type:'section', label:'Cycle' },
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
-      { type:'item', label:'Load Funds',       view:'funds',          icon:'funds' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
       { type:'item', label:'Expense Claim',    view:'expenses',       icon:'expenses' },
-      { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
       { type:'section', label:'Reports' },
-      { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
       { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
     ];
 
@@ -5862,12 +5854,9 @@ function buildSidebar() {
       { type:'section', label:'Cycle' },
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
-      { type:'item', label:'Load Funds',       view:'funds',          icon:'funds' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
       { type:'item', label:'Expense Claim',    view:'expenses',       icon:'expenses' },
-      { type:'item', label:'Reconciliation',   view:'reconciliation', icon:'reconciliation' },
       { type:'section', label:'Reports' },
-      { type:'item', label:'Transactions',     view:'transactions',   icon:'transactions' },
       { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
       { type:'section', label:'Admin' },
       { type:'item', label:'Manage Users',     view:'users',          icon:'users' },
@@ -7413,14 +7402,6 @@ function ecfInit() {
   <div class="mob-nav-item" id="mob-requests" onclick="showView('requests',null);setMobActive('mob-requests')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg>
     <span>Requests</span>
-  </div>
-  <div class="mob-nav-item approver-only non-requester-only" id="mob-funds" onclick="showView('funds',null);setMobActive('mob-funds')">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
-    <span>Funds</span>
-  </div>
-  <div class="mob-nav-item non-requester-only" id="mob-reconciliation" onclick="showView('reconciliation',null);setMobActive('mob-reconciliation')">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-    <span>Recon</span>
   </div>
   <div class="mob-nav-item" id="mob-history" onclick="showView('history',null);setMobActive('mob-history')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
