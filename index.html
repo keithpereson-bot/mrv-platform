@@ -6,7 +6,7 @@
 
 
 
-<!-- BUILD: v5-erp-ui-outlook -->
+<!-- BUILD: v5-erp-ui-workspace -->
 <title>MRV Finance Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -828,6 +828,367 @@
   }
   nav .desktop-only[style*="opacity"] { color:rgba(255,255,255,.7) !important; }
 
+
+
+  /* ═══════════════════════════════════════════════════════════
+     PROFESSIONAL WORKSPACE LAYOUT (Outlook-inspired shell)
+     ═══════════════════════════════════════════════════════════ */
+  .layout {
+    display:flex;
+    height:calc(100vh - 48px);
+    overflow:hidden;
+    background:#FAF9F8;
+  }
+  main {
+    flex:1;min-width:0;
+    padding:0;
+    overflow-y:auto;overflow-x:hidden;
+    background:#FAF9F8;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+  }
+  .view {
+    display:none;
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    padding:0 0 24px;
+  }
+  .view.active {
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* Workspace title bar (under blue nav) */
+  .page-header {
+    margin:0;
+    padding:12px 20px 10px;
+    border-bottom:1px solid #EDEBE9;
+    background:#FFFFFF;
+    position:sticky;
+    top:0;
+    z-index:20;
+    flex-shrink:0;
+  }
+  .page-header h1 {
+    font-size:18px;font-weight:600;
+    color:#201F1E;
+    letter-spacing:-.02em;
+    margin-bottom:2px;
+    line-height:1.25;
+  }
+  .page-header p {
+    font-size:12.5px;color:#605E5C;
+    margin:0;
+  }
+  .page-header .ws-actions {
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  }
+
+  /* Content padding inside views */
+  .view-body {
+    padding:16px 20px 0;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    flex:1;
+    min-height:0;
+  }
+
+  /* KPI strip */
+  .stats {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:10px;
+    margin-bottom:0;
+  }
+  .stat-card {
+    background:#FFFFFF;
+    border:1px solid #EDEBE9;
+    border-radius:2px;
+    border-left:3px solid var(--brand);
+    padding:12px 14px;
+    box-shadow:none;
+  }
+  .stat-label {
+    font-size:11px;font-weight:600;text-transform:uppercase;
+    letter-spacing:.04em;color:#605E5C;margin-bottom:4px;
+  }
+  .stat-value {
+    font-size:22px;font-weight:600;
+    color:#201F1E;line-height:1.15;letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* Workspace panels */
+  .ws-grid {
+    display:grid;
+    grid-template-columns:1.2fr 1fr;
+    gap:12px;
+    align-items:start;
+  }
+  .ws-grid-3 {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+  }
+  .ws-stack {
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .ws-panel {
+    background:#FFFFFF;
+    border:1px solid #EDEBE9;
+    border-radius:2px;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    overflow:hidden;
+  }
+  .ws-panel-header {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;
+    border-bottom:1px solid #EDEBE9;
+    background:#FAF9F8;
+    gap:8px;flex-wrap:wrap;
+    min-height:40px;
+  }
+  .ws-panel-title {
+    font-size:13px;font-weight:600;color:#201F1E;
+  }
+  .ws-panel-body { padding:0; flex:1; min-height:0; }
+  .ws-panel-body.padded { padding:14px; }
+
+  /* Cards inherit workspace look */
+  .card {
+    background:#FFFFFF;
+    border:1px solid #EDEBE9;
+    border-radius:2px;
+    box-shadow:none;
+    margin-bottom:0;
+    overflow:hidden;
+  }
+  .card-header {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;
+    border-bottom:1px solid #EDEBE9;
+    background:#FAF9F8;
+    border-radius:0;
+    gap:8px;flex-wrap:wrap;
+    min-height:40px;
+  }
+  .card-title {
+    font-size:13px;font-weight:600;
+    color:#201F1E;letter-spacing:-.01em;
+  }
+  .card-body { padding:14px; }
+
+  /* Tables denser like Outlook list */
+  th {
+    font-size:11px;font-weight:600;
+    text-transform:none;letter-spacing:0;
+    color:#605E5C;
+    padding:8px 12px;
+    text-align:left;
+    border-bottom:1px solid #EDEBE9;
+    background:#FAF9F8;
+    white-space:nowrap;
+  }
+  td {
+    padding:9px 12px;
+    font-size:13px;
+    border-bottom:1px solid #F3F2F1;
+    color:#323130;
+  }
+  tbody tr:hover td { background:#DEECF9; }
+  td:first-child {
+    color:#605E5C;font-size:12px;
+    font-family:'Segoe UI',monospace;font-weight:500;
+  }
+
+  /* Outlook-style tab strip for requests */
+  .req-tabs {
+    display:flex;
+    gap:0;
+    margin:0;
+    padding:0 20px;
+    background:#FFFFFF;
+    border-bottom:1px solid #EDEBE9;
+    flex-shrink:0;
+  }
+  .req-tab {
+    display:flex;align-items:center;gap:8px;
+    padding:10px 16px;
+    background:transparent;
+    border:none;
+    border-bottom:2px solid transparent;
+    border-radius:0;
+    cursor:pointer;text-align:left;
+    transition:all .12s;
+    font-family:inherit;
+    margin-bottom:-1px;
+    box-shadow:none;
+    position:relative;
+  }
+  .req-tab::before { display:none; }
+  .req-tab:hover { background:#F3F2F1; }
+  .req-tab.active {
+    border-bottom-color:var(--brand);
+    background:transparent;
+    box-shadow:none;
+  }
+  .req-tab-icon {
+    width:20px;height:20px;border-radius:2px;
+    background:transparent;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .req-tab.active .req-tab-icon { background:transparent; }
+  .req-tab.active .req-tab-icon svg { stroke:var(--brand); }
+  .req-tab-label {
+    font-size:10px;font-weight:600;color:#8A8886;
+    text-transform:uppercase;letter-spacing:.04em;
+    margin-bottom:0;
+  }
+  .req-tab.active .req-tab-label { color:var(--brand); }
+  .req-tab-title {
+    font-size:13px;font-weight:600;color:#323130;
+  }
+  .req-tab.active .req-tab-title { color:#201F1E; }
+  .req-tab-badge {
+    margin-left:6px;min-width:20px;height:18px;border-radius:9px;
+    background:#F3F2F1;color:#605E5C;
+    font-size:11px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0;
+  }
+  .req-tab.active .req-tab-badge { background:var(--brand);color:#fff; }
+
+  .req-panel {
+    padding:12px 20px 0;
+    flex:1;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+  }
+  .req-panel .card { flex:1; display:flex; flex-direction:column; min-height:0; }
+  .req-panel .card-body { flex:1; min-height:0; display:flex; flex-direction:column; }
+  .req-panel .table-scroll { flex:1; max-height:none; }
+
+  /* Sidebar workspace polish */
+  aside {
+    width:220px;
+    min-width:200px;
+  }
+  .aside-nav-scroll {
+    flex:1 1 auto;
+    overflow-y:auto;
+    padding:4px 0 8px;
+  }
+  .aside-signout {
+    border-top:1px solid #EDEBE9 !important;
+    background:#FAF9F8 !important;
+  }
+  .aside-signout:hover {
+    background:#EDEBE9 !important;
+  }
+
+  /* Two-col becomes workspace grid */
+  .two-col {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:12px;
+  }
+
+  /* Form density */
+  .form-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px; }
+  .form-group { margin-bottom:12px; }
+  label {
+    font-size:12px;font-weight:600;
+    color:#323130;
+    margin-bottom:4px;
+  }
+  input, select, textarea {
+    border-radius:2px;
+    padding:7px 10px;
+    font-size:13px;
+  }
+
+  /* Buttons — Fluent flat */
+  .btn {
+    border-radius:2px;
+    font-size:13px;font-weight:600;
+    padding:7px 14px;
+  }
+  .btn-sm { padding:5px 10px;font-size:12px;border-radius:2px; }
+
+  /* Modals Fluent */
+  .modal {
+    border-radius:2px;
+    border:1px solid #EDEBE9;
+  }
+  .modal-header {
+    background:#FAF9F8;
+    border-bottom:1px solid #EDEBE9;
+  }
+  .modal-footer {
+    background:#FAF9F8;
+    border-top:1px solid #EDEBE9;
+  }
+
+  /* Command-style secondary bar inside headers */
+  .ws-toolbar {
+    display:flex;align-items:center;justify-content:space-between;
+    gap:10px;flex-wrap:wrap;
+    padding:8px 20px;
+    background:#FFFFFF;
+    border-bottom:1px solid #EDEBE9;
+  }
+  .ws-toolbar-left, .ws-toolbar-right {
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  }
+
+  @media (max-width:1100px) {
+    .ws-grid { grid-template-columns:1fr; }
+    .ws-grid-3 { grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width:768px) {
+    .view-body, .req-panel { padding-left:14px;padding-right:14px; }
+    .page-header { padding:12px 14px 10px; }
+    .req-tabs { padding:0 8px; overflow-x:auto; }
+    .req-tab { padding:10px 12px; }
+    .ws-grid-3 { grid-template-columns:1fr; }
+    aside { width:250px; }
+  }
+
+
+  /* Requests workspace fill */
+  #view-requests.view.active {
+    display:flex;
+    flex-direction:column;
+  }
+  #view-requests .req-panel .card {
+    margin-bottom:12px;
+  }
+  /* Tighter table scroll in workspace */
+  .view-body .table-scroll {
+    max-height:min(420px, 55vh);
+  }
+  #view-requests .table-scroll {
+    max-height:min(560px, calc(100vh - 220px));
+  }
+  /* Sidebar active looks more Outlook */
+  .aside-item.active {
+    background:#E1DFDD;
+    color:#0078D4;
+  }
+  /* Sticky card headers inside scroll areas feel more app-like */
+  .card-header, .ws-panel-header {
+    position:sticky;
+    top:0;
+    z-index:2;
+  }
+
 </style>
 
 </head>
@@ -915,22 +1276,44 @@
 
   <!-- -- DASHBOARD -- -->
   <div id="view-dashboard" class="view">
-    <div class="page-header"><h1>Dashboard</h1><p>Monthly cycle overview</p></div>
-    <div id="dashStats" class="stats"></div>
-
-    <div class="two-col">
-      <div class="card">
-        <div class="card-header"><div class="card-title">Approved Projects</div><span class="badge badge-teal" id="dashProjCount"></span></div>
-        <div class="card-body" style="padding:0"><table><thead><tr><th>Project</th><th>Type</th><th>Dept / Country</th><th>Budgeted</th><th>Utilised (KES)</th><th>Usage</th></tr></thead><tbody id="dashProjTable"></tbody></table></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">Recent Payments</div><span class="badge badge-purple">This Month</span></div>
-        <div class="card-body" style="padding:0"><table><thead><tr><th>Ref</th><th>Project</th><th>Category / Line</th><th>Amount</th><th>Status</th></tr></thead><tbody id="dashPaymentsTable"></tbody></table></div>
+    <div class="page-header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+        <div>
+          <h1>Dashboard</h1>
+          <p>Monthly cycle overview · workspace</p>
+        </div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">Budget Utilisation by Project</div></div>
-      <div class="card-body"><div id="dashProgress" style="display:grid;gap:16px;"></div></div>
+    <div class="view-body">
+      <div id="dashStats" class="stats"></div>
+      <div class="ws-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Approved Projects</div>
+            <span class="badge badge-teal" id="dashProjCount"></span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="table-scroll">
+              <table><thead><tr><th>Project</th><th>Type</th><th>Dept / Country</th><th>Budgeted</th><th>Utilised (KES)</th><th>Usage</th></tr></thead><tbody id="dashProjTable"></tbody></table>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Recent Payments</div>
+            <span class="badge badge-purple">This Month</span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="table-scroll">
+              <table><thead><tr><th>Ref</th><th>Project</th><th>Category / Line</th><th>Amount</th><th>Status</th></tr></thead><tbody id="dashPaymentsTable"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Budget Utilisation by Project</div></div>
+        <div class="card-body"><div id="dashProgress" style="display:grid;gap:12px;"></div></div>
+      </div>
     </div>
   </div>
 
@@ -940,29 +1323,31 @@
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
         <div>
           <h1>Approved Budgets</h1>
-          <p>SMT-approved budgets &mdash; read-only. Click any project to see line-by-line detail.</p>
+          <p>SMT-approved budgets — read-only. Click any project for line detail.</p>
         </div>
-        <div style="display:flex;gap:8px;align-items:center">
+        <div class="ws-actions">
           <button class="btn btn-secondary btn-sm" onclick="toggleAllBudgetGroups(true)">Expand All</button>
           <button class="btn btn-secondary btn-sm" onclick="toggleAllBudgetGroups(false)">Collapse All</button>
         </div>
       </div>
     </div>
-
-    <!-- Summary stat row -->
-    <div id="budgetStatsRow" class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px"></div>
-
-    <!-- Project cards container -->
-    <div id="budgetProjectCards" style="display:grid;gap:16px;min-width:0"></div>
+    <div class="view-body">
+    <div id="budgetStatsRow" class="stats" style="grid-template-columns:repeat(4,1fr)"></div>
+    <div id="budgetProjectCards" style="display:grid;gap:12px;min-width:0"></div>
 
     <!-- Hidden legacy tbody for compat -->
     <table style="display:none"><tbody id="budgetDetailBody"></tbody></table>
     <div id="budgetLineCards"></div>
+    </div>
   </div>
 
   <!-- -- STEPS 2 & 3: LOAD FUNDS -- -->
   <div id="view-funds" class="view">
-    <div class="page-header"><h1>Load & Post Funds</h1><p>Steps 2 & 3 -- Consolidate cash requirements and post as Money-In</p></div>
+    <div class="page-header">
+      <h1>Load &amp; Post Funds</h1>
+      <p>Steps 2 &amp; 3 — consolidate cash requirements and post as Money-In</p>
+    </div>
+    <div class="view-body">
     <div class="two-col">
       <div class="card">
         <div class="card-header"><div class="card-title">Load Monthly Fund Requirement</div></div>
@@ -983,16 +1368,15 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 
   <!-- -- STEP 4: REQUESTS -- -->
   <div id="view-requests" class="view">
     <div class="page-header">
       <h1>System Requests</h1>
-      <p>Submit requests, approve for payment queue, then mark as paid once funds are disbursed.</p>
+      <p>Submit · approve · mark paid — full payment workflow</p>
     </div>
-
-    <!-- Tab bar -->
     <div class="req-tabs">
       <button class="req-tab active viewer-hidden" id="tab-drafts" onclick="switchReqTab('drafts')">
         <div class="req-tab-icon">
@@ -1121,10 +1505,9 @@
   <div id="view-expenses" class="view">
     <div class="page-header">
       <h1>Expense Claim Form</h1>
-      <p>One form per project — select a project, include its paid requests, sign, and export to PDF</p>
+      <p>Select project(s), include paid requests, sign, and export PDF</p>
     </div>
-
-    <!-- Step 1: Select project(s) -->
+    <div class="view-body">
     <div class="card">
       <div class="card-header">
         <div class="card-title">Step 1 &mdash; Select Project(s)</div>
@@ -1218,12 +1601,16 @@
         </button>
       </div>
     </div>
-
+    </div>
     </div>
 
   <!-- -- STEP 6: RECONCILIATION -- -->
   <div id="view-reconciliation" class="view">
-    <div class="page-header"><h1>Monthly Reconciliation</h1><p>Step 6 -- Reconcile balance vs expenditures and close the advance for the month</p></div>
+    <div class="page-header">
+      <h1>Monthly Reconciliation</h1>
+      <p>Step 6 — reconcile balance vs expenditures and close the advance</p>
+    </div>
+    <div class="view-body">
     <div id="reconStats" class="stats" style="grid-template-columns:repeat(3,1fr)"></div>
     <div class="card">
       <div class="card-header"><div class="card-title">Reconciliation Summary -- June 2026</div><button class="btn btn-secondary btn-sm" onclick="toast('PDF report downloaded!')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export PDF</button></div>
@@ -1241,13 +1628,18 @@
           <div class="form-group"><label>Carry-over / Return Amount</label><input type="number" placeholder="0"></div>
           <div class="form-group form-full"><label>Reconciliation Notes</label><textarea rows="2" placeholder="Notes on closing balance..."></textarea></div>
         </div>
-        <button class="btn btn-primary" onclick="closeAdvance()">Close & Reconcile -></button>
+        <button class="btn btn-primary" onclick="closeAdvance()">Close &amp; Reconcile →</button>
       </div>
+    </div>
     </div>
   </div>
   <!-- -- TRANSACTIONS -- -->
   <div id="view-transactions" class="view">
-    <div class="page-header"><h1>Transaction Audit Trail</h1><p>Complete log of all Money-In and Money-Out events with digital signatures</p></div>
+    <div class="page-header">
+      <h1>Transaction Audit Trail</h1>
+      <p>Complete log of Money-In and Money-Out events with digital signatures</p>
+    </div>
+    <div class="view-body">
     <div class="card">
       <div class="card-header"><div class="card-title">All Transactions -- June 2026</div><button class="btn btn-secondary btn-sm" onclick="toast('PDF with signatures downloaded!')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download with Signatures</button></div>
       <div class="card-body" style="padding:0">
@@ -1256,13 +1648,17 @@
         </tbody></table>
       </div>
     </div>
+    </div>
   </div>
 
   <!-- -- MY SIGNATURES -- -->
   <!-- -- GOOGLE SHEETS / APPS SCRIPT INTEGRATION -- -->
   <div id="view-sheets" class="view">
-    <div class="page-header"><h1>Google Sheets Integration</h1><p>Connect via Google Apps Script -- no OAuth setup, no Cloud Console, completely free.</p></div>
-
+    <div class="page-header">
+      <h1>Google Sheets Integration</h1>
+      <p>Connect via Google Apps Script — no OAuth, no Cloud Console</p>
+    </div>
+    <div class="view-body">
     <div class="alert alert-info">
       ℹ️ This uses a <strong>Google Apps Script Web App</strong> as a free backend. You only need a Google account. No API keys, no Cloud Console.
     </div>
@@ -1364,12 +1760,16 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 
   <!-- -- USERS (Admin only) -- -->
   <div id="view-users" class="view">
-    <div class="page-header"><h1>Manage Users</h1><p>Add, edit, or remove platform users. Passwords are hashed -- never stored in plain text.</p></div>
-
+    <div class="page-header">
+      <h1>Manage Users</h1>
+      <p>Add, edit, or remove platform users. Passwords are hashed — never stored in plain text.</p>
+    </div>
+    <div class="view-body">
     <div class="alert alert-warn" id="usersSheetWarning" style="display:none">
       !️ <strong>Google Sheets not connected.</strong> Users added here will only work on this device. Connect Google Sheets (Integration -> Google Sheets) so all devices can log in.
     </div>
@@ -1430,20 +1830,18 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 
   <!-- -- MY SUBMISSIONS (Requesters only) -- -->
   <div id="view-history" class="view">
     <div class="page-header">
       <h1>My Submissions</h1>
-      <p>All requests you have submitted &mdash; track approval and payment status in real time.</p>
+      <p>Track approval and payment status for your requests</p>
     </div>
-
-    <!-- Summary stat row -->
-    <div id="historyStats" class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px"></div>
-
-    <!-- Filter tabs -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <div class="view-body">
+    <div id="historyStats" class="stats" style="grid-template-columns:repeat(4,1fr)"></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn btn-primary btn-sm" id="hfilt-all"    onclick="filterHistory('all')">All</button>
       <button class="btn btn-ghost btn-sm"   id="hfilt-draft"  onclick="filterHistory('draft')">Drafts</button>
       <button class="btn btn-ghost btn-sm"   id="hfilt-approved" onclick="filterHistory('approved')">In Queue</button>
@@ -1482,6 +1880,7 @@
           </table>
         </div>
       </div>
+    </div>
     </div>
   </div>
 
