@@ -2576,6 +2576,133 @@ function persistDeletedToStorage() {
 }
 let deletedStore = loadDeletedFromStorage();
 
+// ── Local-write protection ─────────────────────────────────
+// Prevents auto-sync / server pulls from wiping requests that were
+// just created or edited on this device before Sheets has them.
+var _pendingLocalRefs = {};          // ref -> timestamp (ms)
+var _localWriteGraceUntil = 0;     // epoch ms — skip pulls until then
+var LOCAL_REF_PROTECT_MS = 120000; // keep local-only refs safe for 2 min
+var LOCAL_WRITE_GRACE_MS = 8000;   // skip pulls for 8s after any local mutation
+
+function markLocalWrite(ref) {
+  var now = Date.now();
+  _localWriteGraceUntil = now + LOCAL_WRITE_GRACE_MS;
+  if (ref) _pendingLocalRefs[String(ref)] = now;
+  // prune stale entries
+  Object.keys(_pendingLocalRefs).forEach(function(k) {
+    if (now - _pendingLocalRefs[k] > LOCAL_REF_PROTECT_MS) delete _pendingLocalRefs[k];
+  });
+}
+
+function isProtectedLocalRef(ref) {
+  if (!ref) return false;
+  var t = _pendingLocalRefs[String(ref)];
+  if (!t) return false;
+  if (Date.now() - t > LOCAL_REF_PROTECT_MS) {
+    delete _pendingLocalRefs[String(ref)];
+    return false;
+  }
+  return true;
+}
+
+function clearProtectedRef(ref) {
+  if (ref) delete _pendingLocalRefs[String(ref)];
+}
+
+/** True if pull/auto-sync should wait (push in flight or recent local write). */
+function shouldSkipPull() {
+  if (window._pushInProgress) return true;
+  if (Date.now() < _localWriteGraceUntil) return true;
+  return false;
+}
+
+/**
+ * Merge server request rows with local store.
+ * RULES (no silent data loss):
+ *  1. Never drop a local request only because Sheets doesn't have it yet.
+ *  2. Only drop a local request if it is in deletedStore AND not write-protected.
+ *  3. Never downgrade status (Draft < Pending < Approved < Paid).
+ *  4. Preserve local signature blobs when server has empty ones.
+ */
+var STATUS_RANK = { 'Draft':0, 'Pending':1, 'Approved':2, 'Paid':3 };
+
+function mergeRequestsFromServer(serverRows) {
+  if (!serverRows || !serverRows.length) {
+    // Empty server response must NOT wipe local data
+    return requestsStore.slice();
+  }
+
+  var localByRef = {};
+  (requestsStore || []).forEach(function(r) {
+    if (r && r.ref) localByRef[String(r.ref)] = r;
+  });
+
+  var deletedRefs = new Set(
+    (deletedStore || [])
+      .map(function(r) { return String(r.ref || ''); })
+      .filter(Boolean)
+  );
+
+  var imported = [];
+  var sheetsRefs = new Set();
+
+  serverRows.forEach(function(r) {
+    var ref = String(r['Ref #'] || r.ref || '').trim();
+    if (!ref) return;
+    sheetsRefs.add(ref);
+
+    // Once server has the ref, protection can clear
+    clearProtectedRef(ref);
+
+    // If user explicitly deleted this ref, skip re-import
+    if (deletedRefs.has(ref) && !isProtectedLocalRef(ref)) return;
+
+    var local = localByRef[ref];
+    var sheetsStatus = String(r['Status'] || r.status || 'Draft').trim();
+    var finalStatus = sheetsStatus;
+    if (local) {
+      var localRank  = STATUS_RANK[local.status]  || 0;
+      var sheetsRank = STATUS_RANK[sheetsStatus]  || 0;
+      if (localRank > sheetsRank) finalStatus = local.status;
+    }
+
+    imported.push({
+      ref:              ref,
+      project:          String(r['Project']          || r.project      || '').trim(),
+      type:             String(r['Type']              || r.type         || '').trim(),
+      category:         String(r['Category']          || r.category     || '').trim(),
+      costSummary:      String(r['Cost Summary']      || r.costSummary  || '').trim(),
+      costItem:         String(r['Cost Item']         || r.costItem     || '').trim(),
+      description:      String(r['Description']       || r.description  || '').trim(),
+      amount:           parseFloat(r['Amount (KES)']  || r['Amount'] || r.amount || 0) || 0,
+      requester:        String(r['Requester']         || r.requester    || '').trim(),
+      status:           finalStatus,
+      date:             String(r['Date']              || r.date         || '').trim(),
+      sigLabel:         r['Signed By']            || r.sigLabel         || (local && local.sigLabel)         || null,
+      sigTime:          r['Sign Time']            || r.sigTime          || (local && local.sigTime)          || null,
+      approvedBy:       r['Approved By']          || r.approvedBy       || (local && local.approvedBy)       || null,
+      approvedAt:       r['Approved At']          || r.approvedAt       || (local && local.approvedAt)       || null,
+      requesterSigName: r['Requester Sig Name']   || r.requesterSigName || (local && local.requesterSigName) || null,
+      requesterSigTime: r['Requester Sig Time']   || r.requesterSigTime || (local && local.requesterSigTime) || null,
+      sigDataUrl:       r['Sig Data']             || r.sigDataUrl       || (local && local.sigDataUrl)       || null,
+      requesterSig:     r['Requester Sig']        || r.requesterSig     || (local && local.requesterSig)     || null,
+    });
+  });
+
+  // Keep every local ref that Sheets doesn't have yet, unless user-deleted
+  // (and not write-protected — protected refs always survive)
+  var localOnly = (requestsStore || []).filter(function(r) {
+    if (!r || !r.ref) return false;
+    var ref = String(r.ref);
+    if (sheetsRefs.has(ref)) return false;
+    if (isProtectedLocalRef(ref)) return true;
+    if (deletedRefs.has(ref)) return false;
+    return true; // missing on server ≠ deleted
+  });
+
+  return imported.concat(localOnly);
+}
+
 // reqCounter always derived from current store (declared AFTER requestsStore)
 function calcReqCounter() {
   if (!requestsStore || !requestsStore.length) return 0;
@@ -4076,6 +4203,7 @@ function approveRequest(ref) {
   }
   if (!found) { toast('Request not found: ' + ref); return; }
 
+  markLocalWrite(ref);
   // Persist and redraw immediately
   persistRequestsToStorage();
   rebuildRequestsTable();
@@ -4101,6 +4229,7 @@ function confirmSignAndApprove() {
   entry.sigDataUrl = pendingModalSig;
   entry.sigLabel   = sigLabel;
   entry.sigTime    = sigTime;
+  markLocalWrite(entry.ref);
 
   closeModal('signApproveModal');
   persistRequestsToStorage();
@@ -4292,6 +4421,7 @@ function submitRequest() {
   reqCounter++;
   var num   = 'REQ-'+String(reqCounter).padStart(3,'0');
   var today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  markLocalWrite(num);
   requestsStore.push({
     ref:num, project:_rProject, type:_rType,
     category:_rCategory, costSummary:_rSummary, costItem:_rCostItem,
@@ -4711,72 +4841,40 @@ async function pushSigImages() {
   }
 }
 
-// Status rank: higher = more advanced in workflow. Pull can never downgrade.
-var STATUS_RANK = { 'Draft':0, 'Pending':1, 'Approved':2, 'Paid':3 };
+// Status rank defined earlier (merge protection)
 
 async function pullRequestsOnly() {
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
-  // Never pull while a push is in flight -- would overwrite local changes
-  if (window._pushInProgress) return;
+  // Never pull while a push is in flight or right after a local write
+  if (shouldSkipPull()) return;
   try {
     var res = await gasCall({ action: 'getRequests' });
-    if (!res || !res.ok || !res.requests || !res.requests.length) return;
+    if (!res || !res.ok) return;
+    // Empty server list must not wipe local requests
+    if (!res.requests || !res.requests.length) return;
 
-    // Build lookup of current local state
-    var localByRef = {};
-    requestsStore.forEach(function(r){ localByRef[r.ref] = r; });
-
-    var imported = res.requests.map(function(r) {
-      var ref    = String(r['Ref #'] || r.ref || '').trim();
-      var local  = localByRef[ref];
-      var sheetsStatus = String(r['Status'] || r.status || 'Draft').trim();
-
-      // Never downgrade status -- if local is more advanced, keep it
-      // This prevents Paid -> Approved revert when push is still propagating
-      var finalStatus = sheetsStatus;
-      if (local) {
-        var localRank  = STATUS_RANK[local.status]  || 0;
-        var sheetsRank = STATUS_RANK[sheetsStatus]  || 0;
-        if (localRank > sheetsRank) finalStatus = local.status;
+    var prevLen = (requestsStore || []).length;
+    var merged = mergeRequestsFromServer(res.requests);
+    // Only rewrite store/UI when something actually changed
+    var changed = merged.length !== prevLen;
+    if (!changed) {
+      var byRef = {};
+      merged.forEach(function(r){ byRef[r.ref] = r; });
+      for (var i = 0; i < requestsStore.length; i++) {
+        var a = requestsStore[i], b = byRef[a.ref];
+        if (!b || a.status !== b.status || String(a.amount) !== String(b.amount)) {
+          changed = true; break;
+        }
       }
-
-      return {
-        ref:              ref,
-        project:          String(r['Project']          || '').trim(),
-        type:             String(r['Type']              || '').trim(),
-        category:         String(r['Category']          || '').trim(),
-        costSummary:      String(r['Cost Summary']      || '').trim(),
-        costItem:         String(r['Cost Item']         || '').trim(),
-        description:      String(r['Description']       || '').trim(),
-        amount:           parseFloat(r['Amount (KES)']  || r['Amount'] || 0) || 0,
-        requester:        String(r['Requester']         || '').trim(),
-        status:           finalStatus,
-        date:             String(r['Date']              || '').trim(),
-        sigLabel:         r['Signed By']                || (local && local.sigLabel)         || null,
-        sigTime:          r['Sign Time']                || (local && local.sigTime)           || null,
-        approvedBy:       r['Approved By']              || (local && local.approvedBy)        || null,
-        approvedAt:       r['Approved At']              || (local && local.approvedAt)        || null,
-        requesterSigName: r['Requester Sig Name']       || (local && local.requesterSigName)  || null,
-        requesterSigTime: r['Requester Sig Time']       || (local && local.requesterSigTime)  || null,
-        // Sig images now included from Sheets (AppScript no longer skips them)
-        sigDataUrl:       r['Sig Data']      || (local && local.sigDataUrl)   || null,
-        requesterSig:     r['Requester Sig'] || (local && local.requesterSig) || null,
-      };
-    }).filter(function(r){ return r.ref; });
-
-    // Keep local-only refs that are NOT deleted
-    // (prevents deleted requests from re-appearing via localOnly merge)
-    var sheetsRefs   = new Set(imported.map(function(r){ return r.ref; }));
-    var deletedRefs  = new Set(deletedStore.map(function(r){ return r.ref; }));
-    var localOnly    = requestsStore.filter(function(r){
-      return !sheetsRefs.has(r.ref) && !deletedRefs.has(r.ref);
-    });
-    requestsStore  = imported.concat(localOnly);
-    reqCounter     = calcReqCounter();
+    }
+    requestsStore = merged;
+    reqCounter = calcReqCounter();
     persistRequestsToStorage();
-    rebuildRequestsTable();
-    renderHistory();
-    renderDashboard();
+    if (changed) {
+      rebuildRequestsTable();
+      renderHistory();
+      renderDashboard();
+    }
   } catch(e) {
     // Silent -- don't interrupt user
   }
@@ -4788,6 +4886,10 @@ async function pullFromSheets(silent) {
     if (!silent) toast('Please connect a Web App URL first'); 
     appendSyncLog('pullFromSheets: no URL, skipping');
     return; 
+  }
+  if (shouldSkipPull()) {
+    appendSyncLog('Pull deferred — local write/push in progress');
+    return;
   }
   if (!silent) appendSyncLog('Pulling... url=' + gsWebAppUrl.slice(0,40));
   try {
@@ -4824,35 +4926,22 @@ async function pullFromSheets(silent) {
         requesterSigTime: r['Requester Sig Time'] || r.requesterSigTime || null,
       })).filter(r => r.ref);
       if (imported.length > 0) {
-        // Smart merge: Sheets is authoritative for existing refs.
-        // For each imported record, preserve local-only fields (sigDataUrl, requesterSig)
-        // that may not yet be in Sheets (push in flight) or are stored locally.
-        var localByRef = {};
-        requestsStore.forEach(function(r){ localByRef[r.ref] = r; });
-
-        var merged = imported.map(function(r) {
-          var local = localByRef[r.ref];
-          if (local) {
-            // Prefer Sheets value but fall back to local for image fields
-            r.sigDataUrl   = r.sigDataUrl   || local.sigDataUrl   || null;
-            r.requesterSig = r.requesterSig || local.requesterSig || null;
-          }
-          return r;
-        });
-
-        // Keep local-only refs that are NOT deleted
-        var sheetsRefs  = new Set(imported.map(function(r){ return r.ref; }));
-        var deletedRefs3 = new Set(deletedStore.map(function(r){ return r.ref; }));
-        var localOnly   = requestsStore.filter(function(r){
-          return !sheetsRefs.has(r.ref) && !deletedRefs3.has(r.ref);
-        });
-        var newStore = merged.concat(localOnly);
-
-        requestsStore = newStore;
+        // Safe merge — never drop local-only / in-flight requests
+        requestsStore = mergeRequestsFromServer(imported.map(function(r) {
+          // re-shape to sheet-like keys so mergeRequestsFromServer can read them
+          return {
+            'Ref #': r.ref, 'Project': r.project, 'Type': r.type,
+            'Category': r.category, 'Cost Summary': r.costSummary, 'Cost Item': r.costItem,
+            'Description': r.description, 'Amount': r.amount, 'Requester': r.requester,
+            'Status': r.status, 'Date': r.date,
+            'Signed By': r.sigLabel, 'Sign Time': r.sigTime,
+            'Approved By': r.approvedBy, 'Approved At': r.approvedAt,
+            'Requester Sig Name': r.requesterSigName, 'Requester Sig Time': r.requesterSigTime,
+            'Sig Data': r.sigDataUrl, 'Requester Sig': r.requesterSig
+          };
+        }));
         reqCounter = calcReqCounter();
         persistRequestsToStorage();
-
-        // Always re-render -- 3s interval is fast enough, change detection was buggy
         rebuildRequestsTable();
         renderHistory();
         renderDashboard();
@@ -4918,7 +5007,19 @@ async function pullFromSheets(silent) {
         };
       }).filter(function(r){ return r.ref; });
       if (mappedDeleted.length > 0) {
-        deletedStore = mappedDeleted;
+        // Union by ref — never replace wholesale (avoids losing local delete reasons
+        // and avoids treating a partial server list as authoritative wipe list)
+        var byRef = {};
+        deletedStore.forEach(function(d){ if (d.ref) byRef[String(d.ref)] = d; });
+        var liveRefs = new Set((requestsStore || []).map(function(r){ return String(r.ref); }));
+        mappedDeleted.forEach(function(d) {
+          var ref = String(d.ref || '');
+          if (!ref) return;
+          // Do not record as deleted if still live locally (stale server race)
+          if (liveRefs.has(ref) || isProtectedLocalRef(ref)) return;
+          if (!byRef[ref]) byRef[ref] = d;
+        });
+        deletedStore = Object.keys(byRef).map(function(k){ return byRef[k]; });
         persistDeletedToStorage();
       }
     }
@@ -5126,6 +5227,7 @@ var _versionPollCount = 0;
 
 async function checkVersionAndSync() {
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
+  if (shouldSkipPull()) return;
   // Note: _pushInProgress is local-only; other devices won't have it set
 
   try {
@@ -6495,21 +6597,26 @@ async function afterLogin() {
     var chk = document.getElementById('autoSyncToggle');
     if (chk) chk.checked = true;
 
-    // Pull deleted refs first so merge correctly excludes them
+    // Pull deleted refs for awareness only — NEVER auto-delete local requests.
+    // Absence on server or a server deleted-list entry must not destroy local data.
+    // Only explicit user delete (deleteSelected / confirmDeleteRequest) removes requests.
     gasCall({ action:'getDeletedRefs' }).then(function(res) {
       if (res && res.ok && res.refs && res.refs.length) {
-        // Add any server-deleted refs to local deletedStore so merge excludes them
-        var existingRefs = new Set(deletedStore.map(function(r){ return r.ref; }));
+        var existingRefs = new Set(deletedStore.map(function(r){ return String(r.ref); }));
+        var localLive = new Set((requestsStore || []).map(function(r){ return String(r.ref); }));
         res.refs.forEach(function(ref) {
+          ref = String(ref || '');
+          if (!ref) return;
+          // If this device still has the request live, ignore server "deleted"
+          // (likely a stale pushAll race — do not destroy data).
+          if (localLive.has(ref) || isProtectedLocalRef(ref)) return;
           if (!existingRefs.has(ref)) {
             deletedStore.push({ ref:ref, deletedAt:'', deletedBy:'server' });
+            existingRefs.add(ref);
           }
         });
         try { localStorage.setItem('mrv_deleted', JSON.stringify(deletedStore)); } catch(e) {}
-        // Also remove from requestsStore immediately
-        var delSet = new Set(res.refs);
-        requestsStore = requestsStore.filter(function(r){ return !delSet.has(r.ref); });
-        persistRequestsToStorage();
+        // Do NOT filter requestsStore here — prevents silent data loss
       }
     }).catch(function(){}).finally(function() {
       // Then pull budgets + requests
@@ -6569,10 +6676,12 @@ function deleteSelected(tab) {
     var idx = requestsStore.findIndex(function(r){ return r.ref === ref; });
     if (idx < 0) return;
     var entry = requestsStore[idx];
-    // Archive to deleted store
+    // Explicit user delete — archive and clear write-protection
+    clearProtectedRef(ref);
     deletedStore.push(Object.assign({}, entry, { deletedAt: new Date().toISOString(), deletedBy: currentUser ? currentUser.name : 'Admin' }));
     requestsStore.splice(idx, 1);
   });
+  markLocalWrite(null); // grace period so pull doesn't race the delete push
 
   persistRequestsToStorage();
   rebuildRequestsTable();
@@ -6633,12 +6742,14 @@ function confirmDeleteRequest() {
                         + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
   deleted.deleteReason  = reason;
 
+  clearProtectedRef(deleted.ref);
   deletedStore.push(Object.assign({}, deleted));
   persistDeletedToStorage();
 
   // Remove from active requests
   requestsStore.splice(idx, 1);
   persistRequestsToStorage();
+  markLocalWrite(null);
 
   _pendingDeleteRef = null;
   closeModal('deleteReqModal');
@@ -6747,6 +6858,7 @@ function confirmBulkApprove(){
     var e=requestsStore.find(function(r){return r.ref===chk.dataset.ref;});
     if(!e)return;
     e.status='Paid'; e.sigDataUrl=pendingBulkSig; e.sigLabel=pendingBulkLabel; e.sigTime=t;
+    markLocalWrite(e.ref);
   });
   persistRequestsToStorage();
   closeModal('bulkApproveModal');
