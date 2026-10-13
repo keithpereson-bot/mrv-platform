@@ -1343,6 +1343,56 @@
     }
   }
 
+
+
+  /* Smart table toolbar */
+  .table-filter-bar {
+    display:flex;align-items:center;gap:8px;
+    padding:8px 14px;border-bottom:1px solid #EDEBE9;
+    background:#FAF9F8;flex-wrap:wrap;
+  }
+  .table-filter-wrap { position:relative;display:flex;align-items:center;flex:1;min-width:160px;max-width:320px; }
+  .table-filter-wrap svg { position:absolute;left:10px;color:#8A8886;pointer-events:none;z-index:1; }
+  .table-filter-input {
+    width:100%;
+    padding:7px 10px 7px 32px;
+    border:1px solid #C8C6C4;border-radius:2px;
+    font-size:12.5px;background:#FFFFFF;color:#201F1E;
+    font-family:inherit;
+  }
+  .table-filter-input:focus {
+    border-color:var(--brand);
+    box-shadow:0 0 0 1px var(--brand);
+    outline:none;
+  }
+  .table-filter-bar select.tbl-select {
+    width:auto;min-width:110px;max-width:160px;
+    padding:6px 8px;font-size:12px;
+    border:1px solid #C8C6C4;border-radius:2px;
+    background:#FFFFFF;color:#323130;
+    font-family:inherit;cursor:pointer;
+  }
+  .table-pagination {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 14px;border-top:1px solid #EDEBE9;
+    background:#FAF9F8;gap:10px;flex-wrap:wrap;
+    font-size:12px;color:#605E5C;
+  }
+  .pagination-controls { display:flex;align-items:center;gap:3px;flex-wrap:wrap; }
+  .page-btn {
+    min-width:30px;height:30px;padding:0 8px;
+    border:1px solid #EDEBE9;border-radius:2px;
+    background:#FFFFFF;color:#323130;
+    font-size:12px;font-weight:500;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;
+    transition:all .12s;font-family:inherit;
+  }
+  .page-btn:hover:not(:disabled) { background:#DEECF9;border-color:var(--brand);color:#0078D4; }
+  .page-btn.active { background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600; }
+  .page-btn:disabled { opacity:.35;cursor:not-allowed; }
+  .tbl-meta { font-size:11.5px;color:#8A8886;white-space:nowrap; }
+  .tbl-pagesize-label { font-size:11.5px;color:#605E5C;margin-right:4px; }
+
 </style>
 
 </head>
@@ -2959,6 +3009,12 @@ function renderDashboard() {
       +'<div class="progress-wrap"><div class="progress-fill" style="width:'+pct+'%;background:'+pc+'"></div></div>'
     +'</div>';
   }).join('');
+  try {
+    enableSmartTable('dashProjTable', { placeholder:'Search projects...', pageSize:10 });
+    enableSmartTable('dashPaymentsTable', { placeholder:'Search payments...', pageSize:10,
+      statusOptions:['Draft','Pending','Approved','Paid'] });
+  } catch(e) {}
+
 }
 
 // ============================================================
@@ -3006,6 +3062,8 @@ function renderReconciliation() {
   }).join('');
 
   populateSelect('reconProjectSelect', getProjects(), true);
+  try { enableSmartTable('reconTable', { placeholder:'Search reconciliation...', pageSize:20, projectFilter:true }); } catch(e) {}
+
 }
 
 // ============================================================
@@ -3074,6 +3132,8 @@ function renderTransactions() {
       + '<td><span class="badge ' + r.statusBadge + '">' + r.status + '</span></td>'
       + '</tr>';
   }).join('');
+  try { enableSmartTable('transactionsBody', { placeholder:'Search transactions...', pageSize:20 }); } catch(e) {}
+
 }
 
 // ============================================================
@@ -4844,6 +4904,8 @@ async function pushToSheets(opts) {
 
     // Update local version so we don't re-pull our own write
     if (res.version) _lastKnownVersion = res.version;
+    // Brief grace so the next version poll does not pull our own write back
+    _localWriteGraceUntil = Date.now() + LOCAL_WRITE_GRACE_MS;
 
     const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
     ['syncTimeRequests','syncTimeBudgets','syncTimeFunds','syncTimeExpenses','syncTimeSigs'].forEach(function(id) {
@@ -4903,11 +4965,15 @@ async function pullRequestsOnly() {
         }
       }
     }
+    // Safety: never replace a non-empty store with an empty merge
+    if ((!merged || !merged.length) && requestsStore && requestsStore.length) {
+      appendSyncLog('Pull ignored — empty merge would wipe ' + requestsStore.length + ' local requests');
+      return;
+    }
     requestsStore = merged;
     reqCounter = calcReqCounter();
     persistRequestsToStorage();
     if (typeof invalidateActualsCache === 'function') invalidateActualsCache();
-    // Always refresh UI after merge so Paid actuals and new rows stay visible
     rebuildRequestsTable();
     renderHistory();
     renderDashboard();
@@ -5110,7 +5176,16 @@ function sortPaid(rows) {
   });
 }
 
+var _rebuildReqTimer = null;
 function rebuildRequestsTable() {
+  // Debounce rapid consecutive rebuilds (sync storms) that flash empty tables
+  if (_rebuildReqTimer) clearTimeout(_rebuildReqTimer);
+  _rebuildReqTimer = setTimeout(function() {
+    _rebuildReqTimer = null;
+    _rebuildRequestsTableNow();
+  }, 30);
+}
+function _rebuildRequestsTableNow() {
   var role       = currentUser ? (currentUser.role||'requester') : 'requester';
   var userCtry   = currentUser ? (currentUser.country||'') : '';
   // Approvers can approve only their country's requests (or all if no country set)
@@ -5118,14 +5193,21 @@ function rebuildRequestsTable() {
   // Requesters can only delete their own drafts
   var canDelete  = role === 'admin' || role === 'approver';
 
-  // Country filter: all roles respect their assigned country (blank = all)
-  // If budgetLines not loaded yet, show all (avoids blank tables on first render)
+  // Country filter: blank country = all. Fail OPEN when project unknown.
+  // Requesters always see their own submissions (name/email match).
   var ctryFilter = function(r) {
     if (!userCtry) return true;
-    if (!budgetLines.length) return true; // budgets not loaded yet -- show all
-    return (r.project && budgetLines.some(function(l){
-      return l.project === r.project && l.country === userCtry;
-    }));
+    if (role === 'requester' && currentUser) {
+      var rname = (r.requester || '').trim().toLowerCase();
+      var uname = (currentUser.name || '').trim().toLowerCase();
+      var uemail = (currentUser.email || '').trim().toLowerCase();
+      if (rname && (rname === uname || rname === uemail)) return true;
+    }
+    if (!budgetLines || !budgetLines.length) return true;
+    var projLines = budgetLines.filter(function(l){ return l.project === r.project; });
+    // Project not in budget sheet yet — do not hide the request
+    if (!projLines.length) return true;
+    return projLines.some(function(l){ return l.country === userCtry; });
   };
   var allFiltered = requestsStore.filter(ctryFilter);
   var drafts   = allFiltered.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; });
@@ -5174,7 +5256,7 @@ function rebuildRequestsTable() {
         var approveBtn = canApprove
           ? '<button class="btn btn-primary btn-sm" data-aref="'+r.ref+'" onclick="approveRequest(this.dataset.aref)">Approve</button>'
           : '<span class="badge badge-gray">Awaiting approval</span>';
-        return '<tr>'
+        return '<tr data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
           + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.date)+'</td>')
           + '<td style="display:flex;gap:4px;align-items:center">'+approveBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
@@ -5188,7 +5270,7 @@ function rebuildRequestsTable() {
         var payBtn = canApprove
           ? '<button class="btn btn-amber btn-sm" data-mref="'+r.ref+'" data-mreq="'+r.requester+'" onclick="openSignAndApprove(this,this.dataset.mref,this.dataset.mreq)">Mark Paid</button>'
           : '<span class="badge badge-gold">Awaiting payment</span>';
-        return '<tr>'
+        return '<tr data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
           + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.approvedAt||r.date)+'</td>')
           + '<td style="display:flex;gap:4px;align-items:center">'+payBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
@@ -5208,7 +5290,7 @@ function rebuildRequestsTable() {
               + '</div>'
             + '</div></td>'
           : '<td><span class="badge badge-gray" style="font-size:10px">Pending</span></td>';
-        return '<tr>'
+        return '<tr data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
           + cols(r, '<td style="color:var(--success);font-size:12px;font-weight:500">'+(r.sigLabel||'--')+'</td>'
                   + '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.sigTime||r.date)+'</td>')
           + ackCell
@@ -5226,13 +5308,13 @@ function rebuildRequestsTable() {
   var hv = document.getElementById('view-history');
   if (hv && hv.classList.contains('active')) renderHistory();
 
-  // Apply pagination + filter to all three request tables
-  addTableFilter('bodyDrafts', 'Search requests...');
-  addTableFilter('bodyQueue',  'Search queue...');
-  addTableFilter('bodyPaid',   'Search paid requests...');
-  paginateTable('bodyDrafts', 20);
-  paginateTable('bodyQueue',  20);
-  paginateTable('bodyPaid',   20);
+  // Smart tables: search + status filter + pagination
+  enableSmartTable('bodyDrafts', { placeholder:'Search requests...', pageSize:20, projectFilter:true,
+    statusOptions:['Draft','Pending'] });
+  enableSmartTable('bodyQueue',  { placeholder:'Search queue...', pageSize:20, projectFilter:true,
+    statusOptions:['Approved'] });
+  enableSmartTable('bodyPaid',   { placeholder:'Search paid requests...', pageSize:20, projectFilter:true,
+    statusOptions:['Paid'] });
 }
 
 
@@ -5274,14 +5356,18 @@ async function checkVersionAndSync() {
     var serverVersion = res.version;
 
     if (_lastKnownVersion === -1) {
-      // First poll -- just store the version, do a full pull to init
+      // First poll only — record version; initial data already loaded in afterLogin
       _lastKnownVersion = serverVersion;
-      await pullRequestsOnly();
       return;
     }
 
     if (serverVersion !== _lastKnownVersion) {
-      // Something changed -- pull requests now
+      // External change — pull, unless we just wrote (grace / push flag)
+      if (shouldSkipPull()) {
+        // Adopt version so we do not stampede-pull once grace ends
+        _lastKnownVersion = serverVersion;
+        return;
+      }
       _lastKnownVersion = serverVersion;
       await pullRequestsOnly();
     }
@@ -5299,7 +5385,8 @@ async function checkVersionAndSync() {
 function startAutoSync() {
   clearInterval(gsAutoSyncTimer);
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
-  _lastKnownVersion = -1;
+  // Do NOT reset _lastKnownVersion here — that forced a full pull after every
+  // push and made requester rows vanish for several seconds.
   _versionPollCount = 0;
   gsAutoSyncTimer = setInterval(function() {
     checkVersionAndSync();
@@ -5781,6 +5868,8 @@ async function pushUsersToSheets() {
     if (res && res.ok) appendSyncLog('OK Users pushed to Sheets (' + usersStore.length + ')');
     else appendSyncLog('! pushUsers: ' + JSON.stringify(res));
   } catch(e) { appendSyncLog('X pushUsers error: ' + e.message); }
+  try { enableSmartTable('usersTableBody', { placeholder:'Search users...', pageSize:15 }); } catch(e) {}
+
 }
 
 
@@ -5924,10 +6013,6 @@ function filterHistory(filter) {
   var countEl = document.getElementById('historyCount');
   if (countEl) countEl.textContent = filtered.length + ' request' + (filtered.length===1?'':'s');
 
-  // Paginate history table
-  addTableFilter('historyBody', 'Search submissions...');
-  paginateTable('historyBody', 15);
-
   // Show "Sign All Paid" only if there are paid-but-unsigned requests
   var uname = currentUser ? (currentUser.name||'').toLowerCase().trim() : '';
   var unsignedPaid = requestsStore.filter(function(r){
@@ -5947,6 +6032,10 @@ function filterHistory(filter) {
           ? 'You have not submitted any requests yet. Click <strong>+ New Request</strong> on the Requests tab to get started.'
           : 'No requests match this filter.')
       + '</td></tr>';
+    enableSmartTable('historyBody', {
+      placeholder: 'Search submissions...', pageSize: 15, projectFilter: true,
+      statusOptions: ['Draft','Pending','Approved','Paid']
+    });
     return;
   }
 
@@ -5992,7 +6081,7 @@ function filterHistory(filter) {
       ackHtml = '<span style="color:var(--muted);font-size:12px">—</span>';
     }
 
-    return '<tr>'
+    return '<tr data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
       + '<td style="font-family:IBM Plex Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
       + '<td style="font-weight:500">'+r.project+'</td>'
       + '<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
@@ -6008,6 +6097,14 @@ function filterHistory(filter) {
       + '<td><span class="badge '+s.cls+'">'+s.label+'</span></td>'
     + '</tr>';
   }).join('');
+
+  // Smart table AFTER rows are in the DOM
+  enableSmartTable('historyBody', {
+    placeholder: 'Search submissions...',
+    pageSize: 15,
+    projectFilter: true,
+    statusOptions: ['Draft','Pending','Approved','Paid']
+  });
 }
 
 // ==============================================================
@@ -6310,86 +6407,146 @@ function setFontSize(size) {
 // Wraps any tbody with page controls. Usage:
 //   paginateTable('bodyDrafts', 20);
 // ==============================================================
-var _pageState = {};  // { tbodyId: { page, pageSize, allRows } }
+var _pageState = {};  // { tbodyId: { page, pageSize, allRows, filter, statusFilter } }
 
 function paginateTable(tbodyId, pageSize) {
-  pageSize = pageSize || 20;
+  pageSize = pageSize || (_pageState[tbodyId] && _pageState[tbodyId].pageSize) || 20;
   var tbody = document.getElementById(tbodyId);
   if (!tbody) return;
   var rows = Array.from(tbody.querySelectorAll('tr'));
-  if (rows.length === 0) { removePagination(tbodyId); return; }
+  // Keep empty-state single colspan rows out of paging
+  rows = rows.filter(function(r) {
+    var tds = r.querySelectorAll('td');
+    return !(tds.length === 1 && tds[0].hasAttribute('colspan'));
+  });
+  if (rows.length === 0) {
+    removePagination(tbodyId);
+    // still ensure filter bar exists
+    return;
+  }
 
+  var prev = _pageState[tbodyId] || {};
   _pageState[tbodyId] = {
-    page: (_pageState[tbodyId] && _pageState[tbodyId].filter === _pageState[tbodyId].filter)
-          ? (_pageState[tbodyId].page || 1) : 1,
+    page: prev.page || 1,
     pageSize: pageSize,
     allRows: rows,
-    filter: (_pageState[tbodyId] && _pageState[tbodyId].filter) || ''
+    filter: prev.filter || '',
+    statusFilter: prev.statusFilter || ''
   };
+  // restore filter input value if present
+  var inp = document.getElementById('filter-' + tbodyId);
+  if (inp && prev.filter) inp.value = prev.filter;
+  var sel = document.getElementById('statusfilter-' + tbodyId);
+  if (sel && prev.statusFilter) sel.value = prev.statusFilter;
+  var psz = document.getElementById('pagesize-' + tbodyId);
+  if (psz) psz.value = String(pageSize);
 
   applyPageFilter(tbodyId);
+}
+
+function _rowMatchesFilters(row, state) {
+  var term = (state.filter || '').toLowerCase().trim();
+  var st = (state.statusFilter || '').toLowerCase().trim();
+  var text = (row.textContent || '').toLowerCase();
+  if (term && text.indexOf(term) === -1) return false;
+  if (st) {
+    // Prefer badge text / data-status
+    var badge = row.querySelector('.badge');
+    var statusText = (row.getAttribute('data-status') || (badge ? badge.textContent : '') || '').toLowerCase().trim();
+    if (statusText.indexOf(st) === -1 && text.indexOf(st) === -1) return false;
+  }
+  return true;
 }
 
 function applyPageFilter(tbodyId) {
   var state = _pageState[tbodyId];
   if (!state) return;
-  var term  = (state.filter || '').toLowerCase();
-  var filtered = term
-    ? state.allRows.filter(function(r){ return r.textContent.toLowerCase().includes(term); })
-    : state.allRows;
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
 
-  var total = filtered.length;
-  var pages = Math.max(1, Math.ceil(total / state.pageSize));
-  state.page = Math.min(state.page, pages);
+  var filtered = state.allRows.filter(function(r){ return _rowMatchesFilters(r, state); });
+  var totalFiltered = filtered.length;
+  var totalAll = state.allRows.length;
+  var pages = Math.max(1, Math.ceil(totalFiltered / state.pageSize) || 1);
+  if (state.page > pages) state.page = pages;
+  if (state.page < 1) state.page = 1;
+
   var start = (state.page - 1) * state.pageSize;
-  var end   = start + state.pageSize;
+  var end = start + state.pageSize;
 
-  // Show/hide rows
+  // Hide all, show page slice
   state.allRows.forEach(function(r){ r.style.display = 'none'; });
   filtered.slice(start, end).forEach(function(r){ r.style.display = ''; });
 
-  renderPaginationBar(tbodyId, state.page, pages, total, filtered.length);
+  // Empty filter result message
+  var emptyId = 'empty-' + tbodyId;
+  var emptyEl = document.getElementById(emptyId);
+  if (totalFiltered === 0 && totalAll > 0) {
+    if (!emptyEl) {
+      emptyEl = document.createElement('tr');
+      emptyEl.id = emptyId;
+      var cols = (tbody.closest('table') && tbody.closest('table').querySelectorAll('thead th').length) || 6;
+      emptyEl.innerHTML = '<td colspan="'+cols+'" style="padding:28px;text-align:center;color:var(--muted)">No matching rows. Try a different search or clear filters.</td>';
+      tbody.appendChild(emptyEl);
+    }
+    emptyEl.style.display = '';
+  } else if (emptyEl) {
+    emptyEl.style.display = 'none';
+  }
+
+  renderPaginationBar(tbodyId, state.page, pages, totalFiltered, totalAll);
 }
 
 function renderPaginationBar(tbodyId, page, pages, totalFiltered, totalAll) {
-  // Find the card containing this tbody
   var tbody = document.getElementById(tbodyId);
   if (!tbody) return;
-  var card = tbody.closest('.card') || tbody.closest('[class*="card"]');
+  var card = tbody.closest('.card') || tbody.closest('.ws-panel') || tbody.parentElement;
   if (!card) return;
 
   var barId = 'pgbar-' + tbodyId;
   var existing = document.getElementById(barId);
   if (existing) existing.remove();
 
-  if (pages <= 1 && totalFiltered === totalAll) return; // no bar needed for single page with no filter
+  if (pages <= 1 && totalFiltered === totalAll && totalAll <= (_pageState[tbodyId].pageSize || 20)) {
+    // Still show compact count for awareness when few rows
+    if (totalAll === 0) return;
+  }
 
   var bar = document.createElement('div');
   bar.id = barId;
   bar.className = 'table-pagination';
 
+  var ps = _pageState[tbodyId].pageSize || 20;
+  var from = totalFiltered ? Math.min((page-1)*ps+1, totalFiltered) : 0;
+  var to = Math.min(page*ps, totalFiltered);
   var info = totalFiltered < totalAll
-    ? 'Showing ' + Math.min((page-1)*_pageState[tbodyId].pageSize+1, totalFiltered) + '–'
-      + Math.min(page*_pageState[tbodyId].pageSize, totalFiltered) + ' of ' + totalFiltered + ' (filtered from ' + totalAll + ')'
-    : 'Showing ' + Math.min((page-1)*_pageState[tbodyId].pageSize+1, totalFiltered) + '–'
-      + Math.min(page*_pageState[tbodyId].pageSize, totalFiltered) + ' of ' + totalAll;
+    ? ('Showing ' + from + '–' + to + ' of ' + totalFiltered + ' (filtered from ' + totalAll + ')')
+    : ('Showing ' + from + '–' + to + ' of ' + totalAll);
 
-  // Page buttons (max 7 shown)
-  var btns = '<div class="pagination-controls">';
   var tid = tbodyId;
-  btns += '<button class="page-btn" data-tid="'+tid+'" data-pg="'+(page-1)+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)" '+(page<=1?'disabled':'')+'>&#8249;</button>';
-  var range = pageRange(page, pages);
-  range.forEach(function(p) {
+  var btns = '<div class="pagination-controls">';
+  btns += '<button type="button" class="page-btn" data-tid="'+tid+'" data-pg="1" onclick="goPage(this.dataset.tid,+this.dataset.pg)" '+(page<=1?'disabled':'')+' title="First">«</button>';
+  btns += '<button type="button" class="page-btn" data-tid="'+tid+'" data-pg="'+(page-1)+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)" '+(page<=1?'disabled':'')+'>‹</button>';
+  pageRange(page, pages).forEach(function(p) {
     if (p === '...') {
-      btns += '<button class="page-btn" disabled style="border:none;background:none">…</button>';
+      btns += '<button type="button" class="page-btn" disabled style="border:none;background:none;min-width:20px">…</button>';
     } else {
-      btns += '<button class="page-btn'+(p===page?' active':'')+'" data-tid="'+tid+'" data-pg="'+p+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)">'+p+'</button>';
+      btns += '<button type="button" class="page-btn'+(p===page?' active':'')+'" data-tid="'+tid+'" data-pg="'+p+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)">'+p+'</button>';
     }
   });
-  btns += '<button class="page-btn" data-tid="'+tid+'" data-pg="'+(page+1)+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)" '+(page>=pages?'disabled':'')+'>&#8250;</button>';
+  btns += '<button type="button" class="page-btn" data-tid="'+tid+'" data-pg="'+(page+1)+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)" '+(page>=pages?'disabled':'')+'>›</button>';
+  btns += '<button type="button" class="page-btn" data-tid="'+tid+'" data-pg="'+pages+'" onclick="goPage(this.dataset.tid,+this.dataset.pg)" '+(page>=pages?'disabled':'')+' title="Last">»</button>';
   btns += '</div>';
 
-  bar.innerHTML = '<span style="white-space:nowrap">'+info+'</span>' + btns;
+  var sizeCtrl = '<span class="tbl-pagesize-label">Rows</span>'
+    + '<select class="tbl-select" id="pagesize-'+tid+'" data-tid="'+tid+'" onchange="changePageSize(this.dataset.tid,this.value)">'
+    + [10,20,50,100].map(function(n){
+        return '<option value="'+n+'"'+(n===ps?' selected':'')+'>'+n+'</option>';
+      }).join('')
+    + '</select>';
+
+  bar.innerHTML = '<span class="tbl-meta" style="white-space:nowrap">'+info+'</span>'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' + sizeCtrl + btns + '</div>';
   card.appendChild(bar);
 }
 
@@ -6397,7 +6554,7 @@ function pageRange(current, total) {
   if (total <= 7) return Array.from({length:total}, function(_,i){ return i+1; });
   var pages = [1];
   if (current > 3) pages.push('...');
-  for (var i = Math.max(2,current-1); i <= Math.min(total-1,current+1); i++) pages.push(i);
+  for (var i = Math.max(2, current-1); i <= Math.min(total-1, current+1); i++) pages.push(i);
   if (current < total-2) pages.push('...');
   pages.push(total);
   return pages;
@@ -6406,65 +6563,172 @@ function pageRange(current, total) {
 function goPage(tbodyId, page) {
   var state = _pageState[tbodyId];
   if (!state) return;
-  var pages = Math.ceil(state.allRows.filter(function(r){
-    var term = (state.filter||'').toLowerCase();
-    return !term || r.textContent.toLowerCase().includes(term);
-  }).length / state.pageSize);
+  var filtered = state.allRows.filter(function(r){ return _rowMatchesFilters(r, state); });
+  var pages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
   state.page = Math.max(1, Math.min(page, pages));
+  applyPageFilter(tbodyId);
+}
+
+function changePageSize(tbodyId, size) {
+  var state = _pageState[tbodyId];
+  if (!state) { paginateTable(tbodyId, parseInt(size,10)||20); return; }
+  state.pageSize = parseInt(size, 10) || 20;
+  state.page = 1;
   applyPageFilter(tbodyId);
 }
 
 function removePagination(tbodyId) {
   var b = document.getElementById('pgbar-' + tbodyId);
   if (b) b.remove();
-  delete _pageState[tbodyId];
+  var emptyEl = document.getElementById('empty-' + tbodyId);
+  if (emptyEl) emptyEl.remove();
+  // keep filter text in state but drop rows until next paginateTable
+  if (_pageState[tbodyId]) {
+    _pageState[tbodyId].allRows = [];
+  }
 }
 
 // ==============================================================
+// TABLE FILTER BARS
+// ==============================================================
+// ==============================================================
 // TABLE FILTER BARS -- inject into card headers
 // ==============================================================
-function addTableFilter(tbodyId, placeholder) {
+function addTableFilter(tbodyId, placeholder, options) {
+  options = options || {};
   var tbody = document.getElementById(tbodyId);
   if (!tbody) return;
-  var card = tbody.closest('.card');
+  var card = tbody.closest('.card') || tbody.closest('.ws-panel');
   if (!card) return;
   var filterId = 'filter-' + tbodyId;
-  if (document.getElementById(filterId)) return; // already added
+  if (document.getElementById(filterId)) {
+    // already present — just refresh pagination binding
+    return;
+  }
 
   var header = card.querySelector('.card-header');
-  if (!header) return;
-
   var bar = document.createElement('div');
   bar.className = 'table-filter-bar';
-  bar.innerHTML = '<div class="table-filter-wrap">'
+  bar.id = 'filterbar-' + tbodyId;
+
+  var html = '<div class="table-filter-wrap">'
     + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
-    + '<input id="'+filterId+'" class="table-filter-input" type="text" placeholder="'+(placeholder||'Search...')+'" '
-    + 'data-tid="'+tbodyId+'" oninput="filterTable(this.dataset.tid,this.value)">'
-    + '</div>'
-    + '<button class="btn btn-ghost btn-sm" style="font-size:11.5px" data-tid="'+tbodyId+'" onclick="clearFilter(this.dataset.tid)">Clear</button>';
-  header.insertAdjacentElement('afterend', bar);
+    + '<input id="'+filterId+'" class="table-filter-input" type="search" placeholder="'+(placeholder||'Search...')+'" '
+    + 'data-tid="'+tbodyId+'" oninput="filterTable(this.dataset.tid,this.value)" autocomplete="off">'
+    + '</div>';
+
+  // Optional status filter
+  if (options.statusOptions && options.statusOptions.length) {
+    html += '<select class="tbl-select" id="statusfilter-'+tbodyId+'" data-tid="'+tbodyId+'" onchange="filterTableStatus(this.dataset.tid,this.value)">'
+      + '<option value="">All statuses</option>';
+    options.statusOptions.forEach(function(s) {
+      html += '<option value="'+s+'">'+s+'</option>';
+    });
+    html += '</select>';
+  }
+
+  // Optional project filter (values filled dynamically)
+  if (options.projectFilter) {
+    html += '<select class="tbl-select" id="projectfilter-'+tbodyId+'" data-tid="'+tbodyId+'" onchange="filterTableProject(this.dataset.tid,this.value)">'
+      + '<option value="">All projects</option></select>';
+  }
+
+  html += '<button type="button" class="btn btn-ghost btn-sm" style="font-size:11.5px" data-tid="'+tbodyId+'" onclick="clearFilter(this.dataset.tid)">Clear</button>';
+  bar.innerHTML = html;
+
+  if (header) header.insertAdjacentElement('afterend', bar);
+  else card.insertBefore(bar, card.firstChild);
 }
 
 function filterTable(tbodyId, value) {
   var state = _pageState[tbodyId];
   if (!state) {
-    // Init pagination if not done yet
-    var tbody = document.getElementById(tbodyId);
-    if (!tbody) return;
-    var rows = Array.from(tbody.querySelectorAll('tr'));
-    _pageState[tbodyId] = { page:1, pageSize:20, allRows:rows, filter:value };
-  } else {
-    state.filter = value;
-    state.page = 1;
+    paginateTable(tbodyId, 20);
+    state = _pageState[tbodyId];
   }
+  if (!state) return;
+  state.filter = value || '';
+  state.page = 1;
   applyPageFilter(tbodyId);
 }
+
+function filterTableStatus(tbodyId, value) {
+  var state = _pageState[tbodyId];
+  if (!state) {
+    paginateTable(tbodyId, 20);
+    state = _pageState[tbodyId];
+  }
+  if (!state) return;
+  state.statusFilter = value || '';
+  state.page = 1;
+  applyPageFilter(tbodyId);
+}
+
+function filterTableProject(tbodyId, value) {
+  var state = _pageState[tbodyId];
+  if (!state) {
+    paginateTable(tbodyId, 20);
+    state = _pageState[tbodyId];
+  }
+  if (!state) return;
+  // encode project filter into the text filter channel with a marker
+  state.projectFilter = value || '';
+  state.page = 1;
+  // monkey-patch match via data attribute preference
+  applyPageFilter(tbodyId);
+}
+
+// Extend matcher for project filter
+var _origRowMatches = _rowMatchesFilters;
+_rowMatchesFilters = function(row, state) {
+  if (!_origRowMatches(row, state)) return false;
+  var pf = (state.projectFilter || '').toLowerCase().trim();
+  if (!pf) return true;
+  var proj = (row.getAttribute('data-project') || row.textContent || '').toLowerCase();
+  return proj.indexOf(pf) !== -1;
+};
 
 function clearFilter(tbodyId) {
   var el = document.getElementById('filter-' + tbodyId);
   if (el) el.value = '';
+  var st = document.getElementById('statusfilter-' + tbodyId);
+  if (st) st.value = '';
+  var pr = document.getElementById('projectfilter-' + tbodyId);
+  if (pr) pr.value = '';
+  var state = _pageState[tbodyId];
+  if (state) {
+    state.filter = '';
+    state.statusFilter = '';
+    state.projectFilter = '';
+    state.page = 1;
+  }
   filterTable(tbodyId, '');
 }
+
+/** Populate project dropdown options from current table rows */
+function refreshProjectFilterOptions(tbodyId) {
+  var sel = document.getElementById('projectfilter-' + tbodyId);
+  var tbody = document.getElementById(tbodyId);
+  if (!sel || !tbody) return;
+  var projects = {};
+  Array.from(tbody.querySelectorAll('tr')).forEach(function(r) {
+    var p = r.getAttribute('data-project') || '';
+    if (p) projects[p] = true;
+  });
+  var cur = sel.value;
+  var names = Object.keys(projects).sort();
+  sel.innerHTML = '<option value="">All projects</option>' +
+    names.map(function(p){ return '<option value="'+p.replace(/"/g,'&quot;')+'">'+p.replace(/</g,'&lt;')+'</option>'; }).join('');
+  if (cur) sel.value = cur;
+}
+
+function enableSmartTable(tbodyId, opts) {
+  opts = opts || {};
+  addTableFilter(tbodyId, opts.placeholder || 'Search...', opts);
+  paginateTable(tbodyId, opts.pageSize || 20);
+  if (opts.projectFilter) refreshProjectFilterOptions(tbodyId);
+}
+
 
 // ==============================================================
 // END AUTH SYSTEM
