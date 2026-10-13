@@ -2575,6 +2575,18 @@ function persistDeletedToStorage() {
   try { localStorage.setItem('mrv_deleted', JSON.stringify(deletedStore)); } catch(e) {}
 }
 let deletedStore = loadDeletedFromStorage();
+// Purge polluted tombstones from earlier builds (deletedBy:"server" wiped live data)
+(function cleanupDeletedStore() {
+  try {
+    var before = deletedStore.length;
+    deletedStore = (deletedStore || []).filter(function(d) {
+      return d && d.ref && String(d.deletedBy || '') !== 'server';
+    });
+    if (deletedStore.length !== before) {
+      try { localStorage.setItem('mrv_deleted', JSON.stringify(deletedStore)); } catch(e) {}
+    }
+  } catch(e) {}
+})();
 
 // ── Local-write protection ─────────────────────────────────
 // Prevents auto-sync / server pulls from wiping requests that were
@@ -2582,7 +2594,7 @@ let deletedStore = loadDeletedFromStorage();
 var _pendingLocalRefs = {};          // ref -> timestamp (ms)
 var _localWriteGraceUntil = 0;     // epoch ms — skip pulls until then
 var LOCAL_REF_PROTECT_MS = 120000; // keep local-only refs safe for 2 min
-var LOCAL_WRITE_GRACE_MS = 8000;   // skip pulls for 8s after any local mutation
+var LOCAL_WRITE_GRACE_MS = 2500;   // brief skip so pull does not race a just-finished push
 
 function markLocalWrite(ref) {
   var now = Date.now();
@@ -2629,7 +2641,7 @@ var STATUS_RANK = { 'Draft':0, 'Pending':1, 'Approved':2, 'Paid':3 };
 function mergeRequestsFromServer(serverRows) {
   if (!serverRows || !serverRows.length) {
     // Empty server response must NOT wipe local data
-    return requestsStore.slice();
+    return (requestsStore || []).slice();
   }
 
   var localByRef = {};
@@ -2637,34 +2649,44 @@ function mergeRequestsFromServer(serverRows) {
     if (r && r.ref) localByRef[String(r.ref)] = r;
   });
 
-  var deletedRefs = new Set(
-    (deletedStore || [])
-      .map(function(r) { return String(r.ref || ''); })
-      .filter(Boolean)
-  );
+  // Only treat as deleted when WE archived it (explicit user delete).
+  // Ignore stale "server" tombstones — they caused mass data loss.
+  var deletedRefs = new Set();
+  (deletedStore || []).forEach(function(d) {
+    var ref = String((d && d.ref) || '');
+    if (!ref) return;
+    var by = String((d && d.deletedBy) || '');
+    // Keep user-initiated deletes; drop anonymous/server pollution
+    if (by && by !== 'server') deletedRefs.add(ref);
+  });
 
   var imported = [];
   var sheetsRefs = new Set();
+  var resurrected = []; // refs live on server but were in deletedStore
 
   serverRows.forEach(function(r) {
     var ref = String(r['Ref #'] || r.ref || '').trim();
     if (!ref) return;
     sheetsRefs.add(ref);
-
-    // Once server has the ref, protection can clear
     clearProtectedRef(ref);
 
-    // If user explicitly deleted this ref, skip re-import
-    if (deletedRefs.has(ref) && !isProtectedLocalRef(ref)) return;
+    // Live on server ⇒ not deleted. Resurrect if tombstoned.
+    if (deletedRefs.has(ref)) {
+      deletedRefs.delete(ref);
+      resurrected.push(ref);
+    }
 
     var local = localByRef[ref];
-    var sheetsStatus = String(r['Status'] || r.status || 'Draft').trim();
+    var sheetsStatus = String(r['Status'] || r.status || 'Draft').trim() || 'Draft';
     var finalStatus = sheetsStatus;
     if (local) {
-      var localRank  = STATUS_RANK[local.status]  || 0;
-      var sheetsRank = STATUS_RANK[sheetsStatus]  || 0;
+      var localRank  = (STATUS_RANK && STATUS_RANK[local.status])  || 0;
+      var sheetsRank = (STATUS_RANK && STATUS_RANK[sheetsStatus])  || 0;
       if (localRank > sheetsRank) finalStatus = local.status;
     }
+
+    var amount = parseFloat(r['Amount (KES)'] != null ? r['Amount (KES)'] : (r['Amount'] != null ? r['Amount'] : r.amount));
+    if (isNaN(amount)) amount = 0;
 
     imported.push({
       ref:              ref,
@@ -2674,7 +2696,7 @@ function mergeRequestsFromServer(serverRows) {
       costSummary:      String(r['Cost Summary']      || r.costSummary  || '').trim(),
       costItem:         String(r['Cost Item']         || r.costItem     || '').trim(),
       description:      String(r['Description']       || r.description  || '').trim(),
-      amount:           parseFloat(r['Amount (KES)']  || r['Amount'] || r.amount || 0) || 0,
+      amount:           amount,
       requester:        String(r['Requester']         || r.requester    || '').trim(),
       status:           finalStatus,
       date:             String(r['Date']              || r.date         || '').trim(),
@@ -2689,15 +2711,26 @@ function mergeRequestsFromServer(serverRows) {
     });
   });
 
-  // Keep every local ref that Sheets doesn't have yet, unless user-deleted
-  // (and not write-protected — protected refs always survive)
+  // Purge resurrected + pure server tombstones from deletedStore
+  if (resurrected.length || (deletedStore || []).some(function(d){ return String(d.deletedBy||'') === 'server'; })) {
+    var resSet = new Set(resurrected);
+    deletedStore = (deletedStore || []).filter(function(d) {
+      var ref = String((d && d.ref) || '');
+      if (resSet.has(ref)) return false;
+      if (String((d && d.deletedBy) || '') === 'server') return false;
+      return true;
+    });
+    try { persistDeletedToStorage(); } catch(e) {}
+  }
+
+  // Local-only rows: keep unless this user explicitly deleted them
   var localOnly = (requestsStore || []).filter(function(r) {
     if (!r || !r.ref) return false;
     var ref = String(r.ref);
     if (sheetsRefs.has(ref)) return false;
     if (isProtectedLocalRef(ref)) return true;
     if (deletedRefs.has(ref)) return false;
-    return true; // missing on server ≠ deleted
+    return true;
   });
 
   return imported.concat(localOnly);
@@ -4422,6 +4455,9 @@ function submitRequest() {
   var num   = 'REQ-'+String(reqCounter).padStart(3,'0');
   var today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
   markLocalWrite(num);
+  // Ensure new ref is not blocked by a stale tombstone
+  deletedStore = (deletedStore || []).filter(function(d){ return String(d.ref) !== String(num); });
+  try { persistDeletedToStorage(); } catch(e) {}
   requestsStore.push({
     ref:num, project:_rProject, type:_rType,
     category:_rCategory, costSummary:_rSummary, costItem:_rCostItem,
@@ -4711,7 +4747,7 @@ async function pushToSheets(opts) {
   }
   window._pushInProgress = true;
   // Safety: force-clear the flag after 20s in case of silent failure
-  var _pushSafetyTimer = setTimeout(function(){ window._pushInProgress = false; }, 20000);
+  var _pushSafetyTimer = setTimeout(function(){ window._pushInProgress = false; }, 12000);
   appendSyncLog(opts.fast ? 'Quick-push to Sheets...' : 'Pushing to Sheets...');
   try {
     // Requests — always preserve existing signature images so a full sheet
@@ -4870,13 +4906,13 @@ async function pullRequestsOnly() {
     requestsStore = merged;
     reqCounter = calcReqCounter();
     persistRequestsToStorage();
-    if (changed) {
-      rebuildRequestsTable();
-      renderHistory();
-      renderDashboard();
-    }
+    if (typeof invalidateActualsCache === 'function') invalidateActualsCache();
+    // Always refresh UI after merge so Paid actuals and new rows stay visible
+    rebuildRequestsTable();
+    renderHistory();
+    renderDashboard();
   } catch(e) {
-    // Silent -- don't interrupt user
+    console.warn('pullRequestsOnly:', e);
   }
 }
 
@@ -6600,25 +6636,10 @@ async function afterLogin() {
     // Pull deleted refs for awareness only — NEVER auto-delete local requests.
     // Absence on server or a server deleted-list entry must not destroy local data.
     // Only explicit user delete (deleteSelected / confirmDeleteRequest) removes requests.
-    gasCall({ action:'getDeletedRefs' }).then(function(res) {
-      if (res && res.ok && res.refs && res.refs.length) {
-        var existingRefs = new Set(deletedStore.map(function(r){ return String(r.ref); }));
-        var localLive = new Set((requestsStore || []).map(function(r){ return String(r.ref); }));
-        res.refs.forEach(function(ref) {
-          ref = String(ref || '');
-          if (!ref) return;
-          // If this device still has the request live, ignore server "deleted"
-          // (likely a stale pushAll race — do not destroy data).
-          if (localLive.has(ref) || isProtectedLocalRef(ref)) return;
-          if (!existingRefs.has(ref)) {
-            deletedStore.push({ ref:ref, deletedAt:'', deletedBy:'server' });
-            existingRefs.add(ref);
-          }
-        });
-        try { localStorage.setItem('mrv_deleted', JSON.stringify(deletedStore)); } catch(e) {}
-        // Do NOT filter requestsStore here — prevents silent data loss
-      }
-    }).catch(function(){}).finally(function() {
+    // Intentionally ignore getDeletedRefs for store mutation.
+    // Server delete lists were polluting local state and hiding live requests.
+    // User deletes are tracked locally and pushed via deletedStore.
+    Promise.resolve().then(function() {
       // Then pull budgets + requests
       pullBudgetLinesFromSheets()
         .catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); })
