@@ -298,7 +298,7 @@
     box-shadow:none;
     margin-bottom:12px;
     transition:none;
-    min-width:0;overflow:hidden;
+    min-width:0;overflow:visible;
   }
   .card-header {
     display:flex;align-items:center;justify-content:space-between;
@@ -383,12 +383,12 @@
   .form-group { margin-bottom:12px; }
   .form-full { grid-column:1/-1; }
 
-  table { width:100%;border-collapse:collapse;min-width:0; }
+  table { width:100%;border-collapse:collapse;min-width:480px; }
   .table-scroll {
     overflow-x:auto;overflow-y:auto;
     -webkit-overflow-scrolling:touch;
-    width:100%;max-height:420px;position:relative;
-    scrollbar-width:thin;scrollbar-color:#475569 transparent;
+    width:100%;max-height:min(520px, 65vh);position:relative;
+    scrollbar-width:thin;scrollbar-color:#C8C6C4 transparent;
   }
   .table-scroll::-webkit-scrollbar { width:5px;height:5px; }
   .table-scroll::-webkit-scrollbar-track { background:transparent; }
@@ -945,7 +945,7 @@
     display:flex;
     flex-direction:column;
     min-width:0;
-    overflow:hidden;
+    overflow:visible;
   }
   .ws-panel-header {
     display:flex;align-items:center;justify-content:space-between;
@@ -968,7 +968,7 @@
     border-radius:2px;
     box-shadow:none;
     margin-bottom:0;
-    overflow:hidden;
+    overflow:visible;
   }
   .card-header {
     display:flex;align-items:center;justify-content:space-between;
@@ -1189,6 +1189,160 @@
     z-index:2;
   }
 
+
+
+  /* ═══════════════════════════════════════════════════════════
+     TABLE / PANEL DISPLAY FIXES
+     ═══════════════════════════════════════════════════════════ */
+  /* Cards that hold tables must allow horizontal overflow */
+  .card {
+    overflow: visible !important;
+  }
+  .card-body {
+    overflow: visible;
+    min-width: 0;
+  }
+  .card-body[style*="padding:0"],
+  .card-body[style*="padding: 0"] {
+    overflow: hidden; /* scroll lives on .table-scroll */
+  }
+
+  /* Tables: allow natural width + horizontal scroll parent */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 560px; /* prevent column squash */
+  }
+  .table-scroll {
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-height: none; /* was 420px — was clipping content */
+    min-height: 0;
+    position: relative;
+  }
+  /* Dashboard / workspace tables: comfortable height */
+  .view-body .table-scroll {
+    max-height: min(480px, 60vh);
+  }
+  #view-requests .table-scroll {
+    max-height: min(560px, calc(100vh - 220px));
+  }
+
+  /* Dashboard: stack panels full width so wide tables are readable */
+  #view-dashboard .ws-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  #view-dashboard .ws-grid > .card {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Expense Claim form grids — responsive, not crushed */
+  #view-expenses .card-body > div[style*="grid-template-columns:repeat(3"] {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+    gap: 12px 16px !important;
+  }
+  /* ECF preview must scroll horizontally */
+  #view-expenses .card-body,
+  #ecfPreview {
+    max-width: 100%;
+  }
+  #view-expenses [style*="overflow-x:auto"] {
+    overflow-x: auto !important;
+    max-width: 100%;
+  }
+  #ecfPreview {
+    min-width: 720px;
+    display: block;
+  }
+
+  /* Google Sheets setup guide: responsive columns */
+  .sheets-setup-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+    gap: 12px !important;
+  }
+  /* Sheets sync table */
+  #view-sheets .table-scroll,
+  #view-sheets .card-body {
+    overflow-x: auto;
+  }
+  #view-sheets table {
+    min-width: 420px;
+  }
+  /* Sync control card must not stay blocked after connect
+     (JS clears style; ensure base styles allow interaction) */
+  #syncControlCard {
+    transition: opacity .2s;
+  }
+  #syncControlCard[style*="opacity:.5"],
+  #syncControlCard[style*="opacity: .5"] {
+    /* keep intentional disabled state when not connected */
+  }
+
+  /* Prevent view-body from clipping children */
+  .view-body {
+    overflow: visible;
+    min-width: 0;
+  }
+  .view.active {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* two-col: don't force tables into tiny columns */
+  .two-col {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+  .two-col .card {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .two-col .table-scroll {
+    max-width: 100%;
+  }
+
+  /* Sticky thead needs a real scroll container */
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #FAF9F8;
+  }
+
+
+  #view-dashboard .view-body,
+  #view-sheets .view-body,
+  #view-expenses .view-body {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  #view-dashboard .card,
+  #view-sheets .card,
+  #view-expenses .card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  /* Sheet tabs content readable */
+  #view-sheets .two-col {
+    grid-template-columns: 1.2fr 1fr;
+  }
+  @media (max-width: 900px) {
+    #view-sheets .two-col {
+      grid-template-columns: 1fr;
+    }
+  }
+
 </style>
 
 </head>
@@ -1294,7 +1448,7 @@
           </div>
           <div class="card-body" style="padding:0">
             <div class="table-scroll">
-              <table><thead><tr><th>Project</th><th>Type</th><th>Dept / Country</th><th>Budgeted</th><th>Utilised (KES)</th><th>Usage</th></tr></thead><tbody id="dashProjTable"></tbody></table>
+              <table style="min-width:720px"><thead><tr><th>Project</th><th>Type</th><th>Dept / Country</th><th>Budgeted</th><th>Utilised (KES)</th><th>Usage</th></tr></thead><tbody id="dashProjTable"></tbody></table>
             </div>
           </div>
         </div>
@@ -1305,7 +1459,7 @@
           </div>
           <div class="card-body" style="padding:0">
             <div class="table-scroll">
-              <table><thead><tr><th>Ref</th><th>Project</th><th>Category / Line</th><th>Amount</th><th>Status</th></tr></thead><tbody id="dashPaymentsTable"></tbody></table>
+              <table style="min-width:560px"><thead><tr><th>Ref</th><th>Project</th><th>Category / Line</th><th>Amount</th><th>Status</th></tr></thead><tbody id="dashPaymentsTable"></tbody></table>
             </div>
           </div>
         </div>
@@ -1549,7 +1703,7 @@
         <button class="btn btn-ghost btn-sm" onclick="ecfAutoHeader()">&#8635; Auto-fill from data</button>
       </div>
       <div class="card-body">
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px 20px">
+        <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px 16px">
           <div class="form-group" style="margin:0"><label>Burn Entity</label><input id="ecfEntity" type="text" placeholder="e.g. BMTZ (Tanzania)"></div>
           <div class="form-group" style="margin:0"><label>Date</label><input id="ecfDate" type="date"></div>
           <div class="form-group" style="margin:0"><label>Profit Centre</label><input id="ecfProfitCentre" type="text" placeholder="e.g. 24 Carbon"></div>
@@ -1615,8 +1769,10 @@
     <div class="card">
       <div class="card-header"><div class="card-title">Reconciliation Summary -- June 2026</div><button class="btn btn-secondary btn-sm" onclick="toast('PDF report downloaded!')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export PDF</button></div>
       <div class="card-body" style="padding:0">
-        <table><thead><tr><th>Project</th><th>Type</th><th>Dept</th><th>Budgeted</th><th>Paid Out</th><th>Remaining (KES)</th><th>Usage</th></tr></thead>
+        <div class="table-scroll">
+        <table style="min-width:640px"><thead><tr><th>Project</th><th>Type</th><th>Dept</th><th>Budgeted</th><th>Paid Out</th><th>Remaining (KES)</th><th>Usage</th></tr></thead>
         <tbody id="reconTable"></tbody></table>
+        </div>
       </div>
     </div>
     <div class="card">
@@ -1643,9 +1799,11 @@
     <div class="card">
       <div class="card-header"><div class="card-title">All Transactions -- June 2026</div><button class="btn btn-secondary btn-sm" onclick="toast('PDF with signatures downloaded!')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download with Signatures</button></div>
       <div class="card-body" style="padding:0">
-        <table><thead><tr><th>Ref</th><th>Type</th><th>Project</th><th>Description</th><th>Amount</th><th>Date</th><th>Signed By</th><th>Status</th></tr></thead><tbody id="transactionsBody">
+        <div class="table-scroll">
+        <table style="min-width:720px"><thead><tr><th>Ref</th><th>Type</th><th>Project</th><th>Description</th><th>Amount</th><th>Date</th><th>Signed By</th><th>Status</th></tr></thead><tbody id="transactionsBody">
           <tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No transactions yet</td></tr>
         </tbody></table>
+        </div>
       </div>
     </div>
     </div>
@@ -1703,15 +1861,17 @@
         <div class="two-col" style="gap:12px">
           <div>
             <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Sheet Tabs</div>
-            <table><thead><tr><th>Tab</th><th>Contents</th><th>Last Sync</th></tr></thead>
+            <div class="table-scroll">
+            <table style="min-width:400px"><thead><tr><th>Tab</th><th>Contents</th><th>Last Sync</th></tr></thead>
             <tbody>
-              <tr><td>Requests</td><td>Payment requests & approvals</td><td id="syncTimeRequests" class="text-muted text-sm">--</td></tr>
-              <tr><td>Budgets</td><td>SMT project budgets & loaded funds</td><td id="syncTimeBudgets" class="text-muted text-sm">--</td></tr>
+              <tr><td>Requests</td><td>Payment requests &amp; approvals</td><td id="syncTimeRequests" class="text-muted text-sm">--</td></tr>
+              <tr><td>Budgets</td><td>SMT project budgets &amp; loaded funds</td><td id="syncTimeBudgets" class="text-muted text-sm">--</td></tr>
               <tr><td>FundsLedger</td><td>Money-In fund posts</td><td id="syncTimeFunds" class="text-muted text-sm">--</td></tr>
               <tr><td>Expenses</td><td>Weekly expense log</td><td id="syncTimeExpenses" class="text-muted text-sm">--</td></tr>
               <tr><td>Signatures</td><td>Saved signature images (base64)</td><td id="syncTimeSigs" class="text-muted text-sm">--</td></tr>
             </tbody>
             </table>
+            </div>
             <div style="margin-top:12px">
               <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);cursor:pointer">
                 <input type="checkbox" id="autoSyncToggle" onchange="toggleAutoSync(this.checked)" style="width:auto">
@@ -1733,7 +1893,7 @@
     <div class="card">
       <div class="card-header"><div class="card-title">Setup Guide -- 5 minutes, no Cloud Console needed</div></div>
       <div class="card-body">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+        <div class="sheets-setup-grid" style="display:grid;gap:14px">
           <div style="padding:14px;background:var(--teal-pale);border-radius:10px">
             <div style="font-size:18px;margin-bottom:6px">1️⃣</div>
             <div style="font-weight:600;font-size:12.5px;margin-bottom:5px">Create a Google Sheet</div>
@@ -2126,7 +2286,7 @@
     <div class="modal-body" style="display:grid;gap:16px">
 
       <!-- Header fields -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
         <div class="form-group" style="margin:0">
           <label>Burn Entity</label>
           <input id="ecBurnEntity" type="text" value="BMTZ (Tanzania)">
