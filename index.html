@@ -1630,7 +1630,7 @@
               Export Excel
             </button>
             <button class="btn btn-primary btn-sm viewer-hidden" onclick="openNewRequestModal()">+ New Request</button>
-      <button class="btn btn-secondary btn-sm" id="reqFormSettingsBtn" onclick="openReqFormSettings()" style="display:none" title="Request form rules">
+      <button class="btn btn-secondary btn-sm admin-only" id="reqFormSettingsBtn" onclick="openReqFormSettings()" title="Request form rules — standard amounts, categories, clients, limits">
         Form Settings
       </button>
           </div>
@@ -2351,6 +2351,16 @@
         <div style="font-size:13px;font-weight:600;margin-bottom:8px">Form managers (non-admin)</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Emails of users who may edit these settings (in addition to admins).</p>
         <input id="reqFormManagers" type="text" placeholder="email1@..., email2@..." style="width:100%">
+      </div>
+
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Clients (Client SN directory)</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Used to validate Client SN on requests. Prefer the <strong>Clients</strong> sheet (pulled on login). You can also maintain a local list here.</p>
+        <div style="display:grid;grid-template-columns:1.2fr 0.9fr 1fr 0.9fr 32px;gap:6px;font-size:11px;color:var(--muted);margin-bottom:4px">
+          <span>Client Name</span><span>Client SN</span><span>Project</span><span>Country</span><span></span>
+        </div>
+        <div id="reqClientsList" style="display:grid;gap:6px;max-height:180px;overflow-y:auto"></div>
+        <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addClientRow()">+ Add client</button>
       </div>
 
     </div>
@@ -4082,6 +4092,8 @@ async function downloadRequestsPDF() {
 
 // -- Navigation ---------------------------------------------
 function showView(id, el) {
+  try { if (arguments[0] === "requests" || arguments[0] === "history") updateReqFormSettingsBtn(); } catch(e) {}
+
   if (id === 'expenses') { setTimeout(ecfInit, 80); }
   if (!id || id === 'undefined') { console.warn('showView called with bad id:', id); return; }
   var viewEl = document.getElementById('view-' + id);
@@ -4465,13 +4477,18 @@ var _transportRows = [];
 // Cost lines that require transport breakdown
 var TRANSPORT_LINES = [
   'enumerator training transport',
-  'enumerator field transport'
+  'enumerator field transport',
+  'training transport',
+  'field transport'
 ];
 // Cost lines that require Client SN
 var CLIENT_SN_LINES = [
   'enumerator field airtime',
   'enumerator field transport',
-  'incentives'
+  'field airtime',
+  'field transport',
+  'incentives',
+  'incentive'
 ];
 // Keywords for standard-amount categories
 var STD_AMOUNT_KEYWORDS = ['transport', 'airtime', 'incentive'];
@@ -4479,13 +4496,19 @@ var STD_AMOUNT_KEYWORDS = ['transport', 'airtime', 'incentive'];
 function _normLine(s) {
   return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
-function needsTransportBreakdown(summary) {
+function _lineMatches(summary, patterns) {
   var n = _normLine(summary);
-  return TRANSPORT_LINES.some(function(x){ return n === x || n.indexOf(x) !== -1; });
+  if (!n) return false;
+  return patterns.some(function(x) {
+    var p = _normLine(x);
+    return n === p || n.indexOf(p) !== -1 || p.indexOf(n) !== -1;
+  });
+}
+function needsTransportBreakdown(summary) {
+  return _lineMatches(summary, TRANSPORT_LINES);
 }
 function needsClientSN(summary) {
-  var n = _normLine(summary);
-  return CLIENT_SN_LINES.some(function(x){ return n === x || n.indexOf(x) !== -1; });
+  return _lineMatches(summary, CLIENT_SN_LINES);
 }
 function isStdAmountLine(summary) {
   var n = _normLine(summary);
@@ -4515,7 +4538,14 @@ function canManageReqForm() {
 
 function updateReqFormSettingsBtn() {
   var btn = document.getElementById('reqFormSettingsBtn');
-  if (btn) btn.style.display = canManageReqForm() ? '' : 'none';
+  if (!btn) return;
+  // Visible for admin (admin-only CSS) and form managers
+  if (canManageReqForm()) {
+    btn.style.display = '';
+    btn.classList.remove('admin-only'); // form managers who are not admin
+  } else {
+    btn.style.display = 'none';
+  }
 }
 
 // ── Clients store ────────────────────────────────────────
@@ -4559,12 +4589,18 @@ async function pullClientsFromSheets() {
 function getClientBySN(sn) {
   sn = String(sn || '').trim().toLowerCase();
   if (!sn) return null;
-  var ctry = getUserCountry();
-  return (clientsStore || []).find(function(c) {
-    if (String(c.clientSN || '').trim().toLowerCase() !== sn) return false;
-    if (ctry && c.country && String(c.country).trim() !== ctry) return false;
-    return true;
-  }) || null;
+  var ctry = (typeof getUserCountry === 'function' ? getUserCountry() : null) || '';
+  ctry = String(ctry || '').trim().toLowerCase();
+  // Prefer country match; if none, fall back to SN-only so local lists still work
+  var all = (clientsStore || []).filter(function(c) {
+    return String(c.clientSN || '').trim().toLowerCase() === sn;
+  });
+  if (!all.length) return null;
+  if (!ctry) return all[0];
+  var inCountry = all.filter(function(c) {
+    return !c.country || String(c.country).trim().toLowerCase() === ctry;
+  });
+  return inCountry[0] || all[0];
 }
 
 // ── Category visibility ──────────────────────────────────
@@ -4847,14 +4883,14 @@ function selectReqCat(cat, btn) {
     b.style.color = 'var(--ink)';
   });
   if (btn) {
-    btn.style.background = 'var(--brand-lt)';
+    btn.style.background = '#DEECF9';
     btn.style.borderColor = 'var(--brand)';
-    btn.style.color = 'var(--brand-dk)';
+    btn.style.color = '#004578';
   }
   var lines = getCostSummaries(_rProject, _rType, cat);
   var list = document.getElementById('reqLineList');
   list.innerHTML = '';
-  var isRequester = currentUser && currentUser.role === 'requester';
+  var hideBudget = !currentUser || currentUser.role === 'requester' || currentUser.role === 'viewer';
   lines.forEach(function(line, idx) {
     var row = document.createElement('div');
     row.style.cssText = 'padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px';
@@ -4864,7 +4900,7 @@ function selectReqCat(cat, btn) {
       + (line.costItem ? '<div style="font-size:11px;color:var(--muted)">'+line.costItem+'</div>' : '') + '</div>';
     // Requesters must not see budgeted / balance
     var right = '';
-    if (!isRequester) {
+    if (!hideBudget) {
       var bud = parseFloat(line.budgetedAmount)||0;
       var act = getActualForLine(_rProject, _rType, cat, line.costSummary, line.costItem);
       var rem = bud - act;
@@ -4890,53 +4926,64 @@ function selectReqLine(line) {
 
   var isRequester = currentUser && currentUser.role === 'requester';
   var hint = document.getElementById('rBudgetHint');
-  if (isRequester) {
-    hint.textContent = '';
-    hint.style.display = 'none';
-  } else {
-    hint.style.display = '';
-    var bud = parseFloat(line.budgetedAmount)||0;
-    var act = getActualForLine(_rProject, _rType, _rCategory, _rSummary, _rCostItem);
-    var rem = bud - act;
-    hint.innerHTML = 'Budgeted: <span>'+getCurrency(_rProject,_rType)+' '+bud.toLocaleString()+'</span>'
-      +'  |  Actual: <span style="color:var(--success)">'+getCurrency(_rProject,_rType)+' '+act.toLocaleString()+'</span>'
-      +'  |  Remaining: <strong style="color:'+(rem<0?'var(--danger)':'var(--ink)')
-      +'">'+(rem<0?'OVERRUN ':'')+getCurrency(_rProject,_rType)+' '+Math.abs(rem).toLocaleString()+'</strong>';
+  if (hint) {
+    if (isRequester) {
+      hint.textContent = '';
+      hint.style.display = 'none';
+    } else {
+      hint.style.display = '';
+      var bud = parseFloat(line.budgetedAmount)||0;
+      var act = getActualForLine(_rProject, _rType, _rCategory, _rSummary, _rCostItem);
+      var rem = bud - act;
+      hint.innerHTML = 'Budgeted: <span>'+getCurrency(_rProject,_rType)+' '+bud.toLocaleString()+'</span>'
+        +'  |  Actual: <span style="color:var(--success)">'+getCurrency(_rProject,_rType)+' '+act.toLocaleString()+'</span>'
+        +'  |  Remaining: <strong style="color:'+(rem<0?'var(--danger)':'var(--ink)')
+        +'">'+(rem<0?'OVERRUN ':'')+getCurrency(_rProject,_rType)+' '+Math.abs(rem).toLocaleString()+'</strong>';
+    }
   }
 
   // Standard amount
   var std = getStdAmountForLine(_rSummary, _rProject);
   var amtEl = document.getElementById('rAmount');
   var badge = document.getElementById('rAmountStdBadge');
-  if (std != null && std > 0) {
-    amtEl.value = std;
-    amtEl.readOnly = true;
-    badge.style.display = '';
-  } else {
-    amtEl.readOnly = false;
-    badge.style.display = 'none';
-    if (!amtEl.value) amtEl.value = '';
+  if (amtEl) {
+    if (std != null && std > 0) {
+      amtEl.value = std;
+      amtEl.readOnly = true;
+      if (badge) badge.style.display = '';
+    } else {
+      amtEl.readOnly = false;
+      if (badge) badge.style.display = 'none';
+      if (!amtEl.value) amtEl.value = '';
+    }
   }
 
   // Client SN block
   var needClient = needsClientSN(_rSummary);
-  document.getElementById('reqClientBlock').style.display = needClient ? '' : 'none';
+  var clientBlock = document.getElementById('reqClientBlock');
+  if (clientBlock) clientBlock.style.display = needClient ? '' : 'none';
   if (!needClient) {
-    document.getElementById('rClientSN').value = '';
-    document.getElementById('rClientName').value = '';
+    var snEl = document.getElementById('rClientSN'); if (snEl) snEl.value = '';
+    var nmEl = document.getElementById('rClientName'); if (nmEl) nmEl.value = '';
     _rClientSN = ''; _rClientName = '';
-    document.getElementById('reqExcessBlock').style.display = 'none';
+    var ex = document.getElementById('reqExcessBlock'); if (ex) ex.style.display = 'none';
     _rExcess = false;
   } else {
+    var snHint = document.getElementById('rClientSNHint');
+    if (snHint && !(clientsStore && clientsStore.length)) {
+      snHint.textContent = 'No clients loaded. Admin: Form Settings → add Clients, or pull Clients sheet.';
+      snHint.style.color = 'var(--warn)';
+    }
     onClientSNInput();
   }
 
   // Transport breakdown
   var needT = needsTransportBreakdown(_rSummary);
-  document.getElementById('reqTransportBlock').style.display = needT ? '' : 'none';
+  var tBlock = document.getElementById('reqTransportBlock');
+  if (tBlock) tBlock.style.display = needT ? '' : 'none';
   if (needT) {
     if (!_transportRows.length) {
-      _transportRows = [{ desc:'', qty:1, unit: std || 0 }];
+      _transportRows = [{ desc:'', qty:1, unit: (std != null ? std : 0) }];
     }
     renderTransportRows();
   } else {
@@ -5164,13 +5211,63 @@ function submitRequest() {
 
 // ── Admin: Request Form Settings UI ──────────────────────
 function openReqFormSettings() {
-  if (!canManageReqForm()) { toast('Not allowed'); return; }
+  if (!canManageReqForm()) { toast('Not allowed — admin or form manager only'); return; }
   reqFormConfig = loadReqFormConfig();
   renderStdAmountRows();
   renderCatRuleRows();
   renderProjLimitRows();
-  document.getElementById('reqFormManagers').value = (reqFormConfig.formManagers || []).join(', ');
+  renderClientsRows();
+  var mgr = document.getElementById('reqFormManagers');
+  if (mgr) mgr.value = (reqFormConfig.formManagers || []).join(', ');
   openModal('reqSettingsModal');
+}
+
+function renderClientsRows() {
+  var box = document.getElementById('reqClientsList');
+  if (!box) return;
+  var list = (clientsStore || []).slice();
+  if (!list.length) {
+    box.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 0">No clients loaded. Add rows below or pull the Clients sheet.</div>';
+    return;
+  }
+  box.innerHTML = list.map(function(c, i) {
+    return '<div style="display:grid;grid-template-columns:1.2fr 0.9fr 1fr 0.9fr 32px;gap:6px;align-items:center">'
+      + '<input type="text" data-cl-name="'+i+'" value="'+String(c.clientName||'').replace(/"/g,'&quot;')+'" placeholder="Name">'
+      + '<input type="text" data-cl-sn="'+i+'" value="'+String(c.clientSN||'').replace(/"/g,'&quot;')+'" placeholder="SN">'
+      + '<input type="text" data-cl-proj="'+i+'" value="'+String(c.project||'').replace(/"/g,'&quot;')+'" placeholder="Project">'
+      + '<input type="text" data-cl-ctry="'+i+'" value="'+String(c.country||'').replace(/"/g,'&quot;')+'" placeholder="Country">'
+      + '<button type="button" class="btn btn-ghost btn-sm" onclick="removeClientRow('+i+')">×</button>'
+      + '</div>';
+  }).join('');
+}
+function addClientRow() {
+  collectClientsRows();
+  clientsStore = clientsStore || [];
+  clientsStore.push({ clientName:'', clientSN:'', project:'', country: (currentUser && currentUser.country) || '' });
+  renderClientsRows();
+}
+function removeClientRow(i) {
+  collectClientsRows();
+  clientsStore.splice(i, 1);
+  renderClientsRows();
+}
+function collectClientsRows() {
+  var box = document.getElementById('reqClientsList');
+  if (!box) return;
+  var n = box.querySelectorAll('[data-cl-sn]').length;
+  var list = [];
+  for (var i = 0; i < n; i++) {
+    var sn = (box.querySelector('[data-cl-sn="'+i+'"]') || {}).value || '';
+    sn = String(sn).trim();
+    if (!sn) continue;
+    list.push({
+      clientName: String((box.querySelector('[data-cl-name="'+i+'"]') || {}).value || '').trim(),
+      clientSN: sn,
+      project: String((box.querySelector('[data-cl-proj="'+i+'"]') || {}).value || '').trim(),
+      country: String((box.querySelector('[data-cl-ctry="'+i+'"]') || {}).value || '').trim()
+    });
+  }
+  clientsStore = list;
 }
 
 function renderStdAmountRows() {
@@ -5321,12 +5418,15 @@ function saveReqFormConfig() {
   collectStdAmountRows();
   collectCatRules();
   collectProjLimitRows();
-  var mgr = (document.getElementById('reqFormManagers').value || '')
+  collectClientsRows();
+  persistClients();
+  var mgrEl = document.getElementById('reqFormManagers');
+  var mgr = (mgrEl && mgrEl.value || '')
     .split(',').map(function(x){ return x.trim(); }).filter(Boolean);
   reqFormConfig.formManagers = mgr;
   saveReqFormConfigToStorage(reqFormConfig);
   closeModal('reqSettingsModal');
-  toast('Request form settings saved');
+  toast('Request form settings saved (' + (clientsStore||[]).length + ' clients)');
   updateReqFormSettingsBtn();
 }
 
