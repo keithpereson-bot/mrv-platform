@@ -1630,8 +1630,11 @@
               Export Excel
             </button>
             <button class="btn btn-primary btn-sm viewer-hidden" onclick="openNewRequestModal()">+ New Request</button>
-      <button class="btn btn-secondary btn-sm admin-only" id="reqFormSettingsBtn" onclick="openReqFormSettings()" title="Request form rules — standard amounts, categories, clients, limits">
+      <button class="btn btn-secondary btn-sm admin-only" id="reqFormSettingsBtn" onclick="openReqFormSettings()" title="Request form rules — standard amounts, categories, limits">
         Form Settings
+      </button>
+      <button class="btn btn-ghost btn-sm admin-only" onclick="pullClientsFromSheets().then(function(){ toast((clientsStore&&clientsStore.length?clientsStore.length:0)+' clients from sheet'); }).catch(function(){})" title="Refresh Client SN list from Clients sheet">
+        Pull Clients
       </button>
           </div>
         </div>
@@ -2353,15 +2356,6 @@
         <input id="reqFormManagers" type="text" placeholder="email1@..., email2@..." style="width:100%">
       </div>
 
-      <div>
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Clients (Client SN directory)</div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Used to validate Client SN on requests. Prefer the <strong>Clients</strong> sheet (pulled on login). You can also maintain a local list here.</p>
-        <div style="display:grid;grid-template-columns:1.2fr 0.9fr 1fr 0.9fr 32px;gap:6px;font-size:11px;color:var(--muted);margin-bottom:4px">
-          <span>Client Name</span><span>Client SN</span><span>Project</span><span>Country</span><span></span>
-        </div>
-        <div id="reqClientsList" style="display:grid;gap:6px;max-height:180px;overflow-y:auto"></div>
-        <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addClientRow()">+ Add client</button>
-      </div>
 
     </div>
     <div class="modal-footer">
@@ -4569,17 +4563,23 @@ function mapClientRow_(r) {
   };
 }
 
-/** Dedicated Clients pull (Apps Script action: getClients) */
+/** Dedicated Clients pull (Apps Script action: getClients) — sheet is source of truth */
 async function pullClientsFromSheets() {
-  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') {
+    appendSyncLog('Clients: no Web App URL — cannot pull Clients sheet');
+    return;
+  }
   try {
     var res = await gasCall({ action: 'getClients' });
-    if (!res || !res.ok) return;
+    if (!res || !res.ok) {
+      appendSyncLog('Clients pull failed: ' + ((res && res.error) || 'not ok'));
+      return;
+    }
     var rows = res.clients || res.data || [];
-    if (!rows.length) return;
-    clientsStore = rows.map(mapClientRow_).filter(function(c){ return c.clientSN; });
+    // Sheet wins: even empty response clears local cache so form cannot use stale SNs
+    clientsStore = (rows || []).map(mapClientRow_).filter(function(c){ return c.clientSN; });
     persistClients();
-    appendSyncLog('Clients pulled: ' + clientsStore.length);
+    appendSyncLog('Clients pulled from sheet: ' + clientsStore.length);
   } catch(e) {
     appendSyncLog('Clients pull failed: ' + (e.message || e));
   }
@@ -4971,7 +4971,7 @@ function selectReqLine(line) {
   } else {
     var snHint = document.getElementById('rClientSNHint');
     if (snHint && !(clientsStore && clientsStore.length)) {
-      snHint.textContent = 'No clients loaded. Admin: Form Settings → add Clients, or pull Clients sheet.';
+      snHint.textContent = 'No clients loaded from the Clients sheet. Admin: ensure Clients tab exists, run setupSheets, then Pull / re-login.';
       snHint.style.color = 'var(--warn)';
     }
     onClientSNInput();
@@ -5216,59 +5216,15 @@ function openReqFormSettings() {
   renderStdAmountRows();
   renderCatRuleRows();
   renderProjLimitRows();
-  renderClientsRows();
   var mgr = document.getElementById('reqFormManagers');
   if (mgr) mgr.value = (reqFormConfig.formManagers || []).join(', ');
   openModal('reqSettingsModal');
 }
 
-function renderClientsRows() {
-  var box = document.getElementById('reqClientsList');
-  if (!box) return;
-  var list = (clientsStore || []).slice();
-  if (!list.length) {
-    box.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 0">No clients loaded. Add rows below or pull the Clients sheet.</div>';
-    return;
-  }
-  box.innerHTML = list.map(function(c, i) {
-    return '<div style="display:grid;grid-template-columns:1.2fr 0.9fr 1fr 0.9fr 32px;gap:6px;align-items:center">'
-      + '<input type="text" data-cl-name="'+i+'" value="'+String(c.clientName||'').replace(/"/g,'&quot;')+'" placeholder="Name">'
-      + '<input type="text" data-cl-sn="'+i+'" value="'+String(c.clientSN||'').replace(/"/g,'&quot;')+'" placeholder="SN">'
-      + '<input type="text" data-cl-proj="'+i+'" value="'+String(c.project||'').replace(/"/g,'&quot;')+'" placeholder="Project">'
-      + '<input type="text" data-cl-ctry="'+i+'" value="'+String(c.country||'').replace(/"/g,'&quot;')+'" placeholder="Country">'
-      + '<button type="button" class="btn btn-ghost btn-sm" onclick="removeClientRow('+i+')">×</button>'
-      + '</div>';
-  }).join('');
-}
-function addClientRow() {
-  collectClientsRows();
-  clientsStore = clientsStore || [];
-  clientsStore.push({ clientName:'', clientSN:'', project:'', country: (currentUser && currentUser.country) || '' });
-  renderClientsRows();
-}
-function removeClientRow(i) {
-  collectClientsRows();
-  clientsStore.splice(i, 1);
-  renderClientsRows();
-}
-function collectClientsRows() {
-  var box = document.getElementById('reqClientsList');
-  if (!box) return;
-  var n = box.querySelectorAll('[data-cl-sn]').length;
-  var list = [];
-  for (var i = 0; i < n; i++) {
-    var sn = (box.querySelector('[data-cl-sn="'+i+'"]') || {}).value || '';
-    sn = String(sn).trim();
-    if (!sn) continue;
-    list.push({
-      clientName: String((box.querySelector('[data-cl-name="'+i+'"]') || {}).value || '').trim(),
-      clientSN: sn,
-      project: String((box.querySelector('[data-cl-proj="'+i+'"]') || {}).value || '').trim(),
-      country: String((box.querySelector('[data-cl-ctry="'+i+'"]') || {}).value || '').trim()
-    });
-  }
-  clientsStore = list;
-}
+
+
+
+
 
 function renderStdAmountRows() {
   var box = document.getElementById('reqStdAmountsList');
@@ -5418,15 +5374,13 @@ function saveReqFormConfig() {
   collectStdAmountRows();
   collectCatRules();
   collectProjLimitRows();
-  collectClientsRows();
-  persistClients();
   var mgrEl = document.getElementById('reqFormManagers');
   var mgr = (mgrEl && mgrEl.value || '')
     .split(',').map(function(x){ return x.trim(); }).filter(Boolean);
   reqFormConfig.formManagers = mgr;
   saveReqFormConfigToStorage(reqFormConfig);
   closeModal('reqSettingsModal');
-  toast('Request form settings saved (' + (clientsStore||[]).length + ' clients)');
+  toast('Request form settings saved');
   updateReqFormSettingsBtn();
 }
 
@@ -5939,11 +5893,11 @@ async function pullFromSheets(silent) {
       }
     }
 
-    // -- Clients sheet --
-    if (res.clients && res.clients.length > 0) {
-      clientsStore = res.clients.map(mapClientRow_).filter(function(c){ return c.clientSN; });
+    // -- Clients sheet (source of truth for Client SN) --
+    if (res.clients) {
+      clientsStore = (res.clients || []).map(mapClientRow_).filter(function(c){ return c.clientSN; });
       persistClients();
-      appendSyncLog('Clients: ' + clientsStore.length);
+      appendSyncLog('Clients from sheet: ' + clientsStore.length);
     }
 
     // -- Budgets -- handled separately by pullBudgetLinesFromSheets()
