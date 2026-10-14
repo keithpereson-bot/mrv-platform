@@ -1659,7 +1659,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table id="tblQueue"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllQueue" onchange="toggleAllChecks('queue',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Approved</th><th>Action</th></tr></thead>
+            <table id="tblQueue"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllQueue" onchange="toggleAllChecks('queue',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Payee #</th><th>Approved</th><th>Action</th></tr></thead>
             <tbody id="bodyQueue"></tbody></table>
           </div>
         </div>
@@ -1697,7 +1697,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table id="tblPaid"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllPaid" onchange="toggleAllChecks('paid',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Finance Signatory</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
+            <table id="tblPaid"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllPaid" onchange="toggleAllChecks('paid',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Payee #</th><th>Finance Signatory</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
             <tbody id="bodyPaid"></tbody></table>
           </div>
         </div>
@@ -2021,6 +2021,11 @@
             </select>
             <div style="font-size:11.5px;color:var(--muted);margin-top:5px">User can only view, submit or approve requests for this country. Leave blank for full access.</div>
           </div>
+          <div class="form-group" id="payeeFieldGroup">
+            <label>Payee number (M-Pesa / bank)</label>
+            <input id="newUserPayee" type="text" placeholder="e.g. 0712 345 678">
+            <div style="font-size:11.5px;color:var(--muted);margin-top:5px">For Requesters / Enumerators — shown to approvers &amp; finance on Payment Queue and Paid tabs.</div>
+          </div>
           <div class="form-group"><label>Password</label><input id="newUserPass" type="password" placeholder="Min 6 characters"></div>
           <div class="form-group"><label>Confirm Password</label><input id="newUserPass2" type="password" placeholder="Repeat password"></div>
           <button class="btn btn-primary" onclick="addUser()" style="width:100%">Add User</button>
@@ -2035,9 +2040,9 @@
         </div>
         <div class="card-body" style="padding:0">
           <table>
-            <thead><tr><th>Name / Email</th><th>Role</th><th>Country</th><th></th></tr></thead>
+            <thead><tr><th>Name / Email</th><th>Role</th><th>Country</th><th>Payee #</th><th></th></tr></thead>
             <tbody id="usersTableBody">
-              <tr><td colspan="4" class="text-muted text-sm" style="padding:20px;text-align:center">No users yet -- add one to get started</td></tr>
+              <tr><td colspan="5" class="text-muted text-sm" style="padding:20px;text-align:center">No users yet -- add one to get started</td></tr>
             </tbody>
           </table>
         </div>
@@ -2297,9 +2302,12 @@
       </div>
 
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('requestModal')">Cancel</button>
-      <button class="btn btn-primary" id="submitReqBtn" onclick="submitRequest()" disabled style="opacity:.5">Submit Request</button>
+    <div class="modal-footer" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+      <button type="button" class="btn btn-ghost" onclick="clearRequestFormDraft()" title="Clear saved draft and reset form">Clear form</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="closeModal('requestModal');saveRequestFormDraft()">Save &amp; close</button>
+        <button class="btn btn-primary" id="submitReqBtn" onclick="submitRequest()" disabled style="opacity:.5">Submit Request</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2317,8 +2325,11 @@
     <div class="modal-body" style="display:grid;gap:18px;max-height:70vh;overflow-y:auto">
 
       <div>
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Standard amounts (Transport / Airtime / Incentives)</div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">When set, requesters cannot edit the amount — it is filled automatically.</p>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Standard amounts by project (Transport / Airtime / Incentives)</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Set amount per <strong>project + cost line</strong>. Different projects can have different rates. When set, requesters cannot edit the amount.</p>
+        <div style="display:grid;grid-template-columns:1.2fr 1.4fr 100px 32px;gap:8px;font-size:11px;color:var(--muted);margin-bottom:4px">
+          <span>Project</span><span>Cost line</span><span>Amount</span><span></span>
+        </div>
         <div id="reqStdAmountsList" style="display:grid;gap:8px"></div>
         <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addStdAmountRow()">+ Add standard amount</button>
       </div>
@@ -2856,6 +2867,7 @@ function mergeRequestsFromServer(serverRows) {
       clientName:       r['Client Name']          || r.clientName       || (local && local.clientName)       || '',
       isExcess:         (r['Is Excess'] || r.isExcess || (local && local.isExcess)) ? true : false,
       excessReason:     r['Excess Reason']        || r.excessReason     || (local && local.excessReason)     || '',
+      payeeNumber:      r['Payee Number']         || r.payeeNumber      || (local && local.payeeNumber)      || '',
       transportBreakdown: (function(){
         var raw = r['Transport Breakdown'] || r.transportBreakdown || (local && local.transportBreakdown) || null;
         if (!raw) return null;
@@ -4518,6 +4530,32 @@ function persistClients() {
 }
 var clientsStore = loadClientsFromStorage();
 
+function mapClientRow_(r) {
+  return {
+    clientName: String(r['Client Name'] || r.clientName || r['Name'] || '').trim(),
+    clientSN:   String(r['Client SN'] || r.clientSN || r['SN'] || '').trim(),
+    project:    String(r['Project'] || r.project || '').trim(),
+    country:    String(r['Country'] || r.country || '').trim()
+  };
+}
+
+/** Dedicated Clients pull (Apps Script action: getClients) */
+async function pullClientsFromSheets() {
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
+  try {
+    var res = await gasCall({ action: 'getClients' });
+    if (!res || !res.ok) return;
+    var rows = res.clients || res.data || [];
+    if (!rows.length) return;
+    clientsStore = rows.map(mapClientRow_).filter(function(c){ return c.clientSN; });
+    persistClients();
+    appendSyncLog('Clients pulled: ' + clientsStore.length);
+  } catch(e) {
+    appendSyncLog('Clients pull failed: ' + (e.message || e));
+  }
+}
+
+
 function getClientBySN(sn) {
   sn = String(sn || '').trim().toLowerCase();
   if (!sn) return null;
@@ -4551,17 +4589,32 @@ function isCategoryVisibleForUser(cat) {
     || allowed2.map(function(x){ return String(x).toLowerCase(); }).indexOf(String(currentUser.role||'').toLowerCase()) !== -1;
 }
 
-function getStdAmountForLine(summary) {
-  var map = reqFormConfig.stdAmounts || {};
-  // exact key
-  if (map[summary] != null && map[summary] !== '') return parseFloat(map[summary]) || 0;
-  // case-insensitive key match
-  var n = _normLine(summary);
-  var keys = Object.keys(map);
-  for (var i = 0; i < keys.length; i++) {
-    if (_normLine(keys[i]) === n) return parseFloat(map[keys[i]]) || 0;
-  }
-  return null;
+/** Standard amount for a project + cost line (null if not configured). */
+function getStdAmountForLine(summary, project) {
+  project = project || _rProject || '';
+  var list = normalizeStdAmounts_(reqFormConfig.stdAmounts);
+  var nLine = _normLine(summary);
+  var nProj = String(project || '').trim().toLowerCase();
+  var match = null;
+  list.forEach(function(row) {
+    if (_normLine(row.costLine) !== nLine) return;
+    var rp = String(row.project || '').trim().toLowerCase();
+    if (rp && rp === nProj) match = row;
+    else if (!rp && match == null) match = row; // legacy blank project = fallback
+  });
+  if (!match || match.amount === '' || match.amount == null) return null;
+  var n = parseFloat(match.amount);
+  return isNaN(n) ? null : n;
+}
+
+/** Normalize legacy map {line: amt} or list into [{project, costLine, amount}] */
+function normalizeStdAmounts_(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.filter(function(r){ return r && r.costLine; });
+  // legacy object map costLine -> amount
+  return Object.keys(raw).map(function(k) {
+    return { project: '', costLine: k, amount: raw[k] };
+  });
 }
 
 function countRequestsForClientSN(project, clientSN) {
@@ -4583,39 +4636,159 @@ function getProjectRequestLimit(project) {
 }
 
 // ── Modal open / cascade ─────────────────────────────────
+function reqDraftKey() {
+  var email = currentUser && currentUser.email ? currentUser.email.toLowerCase() : 'anon';
+  return 'mrv_req_form_draft_' + email;
+}
+
+function saveRequestFormDraft() {
+  try {
+    var draft = {
+      project: _rProject || (document.getElementById('reqProject') || {}).value || '',
+      type: _rType || '',
+      category: _rCategory || '',
+      summary: _rSummary || '',
+      costItem: _rCostItem || '',
+      amount: (document.getElementById('rAmount') || {}).value || '',
+      name: (document.getElementById('rName') || {}).value || '',
+      desc: (document.getElementById('rDesc') || {}).value || '',
+      clientSN: (document.getElementById('rClientSN') || {}).value || '',
+      clientName: (document.getElementById('rClientName') || {}).value || '',
+      excessReason: (document.getElementById('rExcessReason') || {}).value || '',
+      transportRows: _transportRows || [],
+      savedAt: Date.now()
+    };
+    // Only persist if user started filling something
+    if (!draft.project && !draft.amount && !draft.desc && !draft.clientSN) {
+      localStorage.removeItem(reqDraftKey());
+      return;
+    }
+    localStorage.setItem(reqDraftKey(), JSON.stringify(draft));
+  } catch(e) {}
+}
+
+function loadRequestFormDraft() {
+  try {
+    var s = localStorage.getItem(reqDraftKey());
+    return s ? JSON.parse(s) : null;
+  } catch(e) { return null; }
+}
+
+function clearRequestFormDraft() {
+  try { localStorage.removeItem(reqDraftKey()); } catch(e) {}
+  _rProject=''; _rType=''; _rCategory=''; _rSummary=''; _rCostItem='';
+  _rClientSN=''; _rClientName=''; _rExcess=false;
+  _transportRows = [];
+  resetRequestFormUI_();
+  toast('Form cleared');
+}
+
+function resetRequestFormUI_() {
+  var ps = document.getElementById('reqProject');
+  if (ps) {
+    ps.innerHTML = '<option value="">— Select —</option>' +
+      getProjects().map(function(p){ return '<option>'+p+'</option>'; }).join('');
+    ps.value = '';
+  }
+  var ts = document.getElementById('reqType');
+  if (ts) { ts.innerHTML = '<option value="">— Select —</option>'; ts.disabled = true; }
+  var td = document.getElementById('reqTypeDisplay');
+  if (td) td.value = '';
+  ['reqCatRow','reqLineRow','reqDetailsRow','reqClientBlock','reqTransportBlock','reqExcessBlock'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  var amt = document.getElementById('rAmount');
+  if (amt) { amt.value = ''; amt.readOnly = false; }
+  var badge = document.getElementById('rAmountStdBadge');
+  if (badge) badge.style.display = 'none';
+  var nm = document.getElementById('rName');
+  if (nm) nm.value = currentUser ? currentUser.name : '';
+  ['rDesc','rClientSN','rClientName','rExcessReason'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  var hint = document.getElementById('rClientSNHint'); if (hint) hint.textContent = '';
+  var bh = document.getElementById('rBudgetHint'); if (bh) bh.textContent = '';
+  var btn = document.getElementById('submitReqBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+  var step = document.getElementById('reqStepHint');
+  if (step) step.textContent = 'Step 1 — Select project';
+}
+
 function openNewRequestModal() {
   _rProject=''; _rType=''; _rCategory=''; _rSummary=''; _rCostItem='';
   _rClientSN=''; _rClientName=''; _rExcess=false;
   _transportRows = [];
-  var ps = document.getElementById('reqProject');
-  ps.innerHTML = '<option value="">— Select —</option>' +
-    getProjects().map(function(p){ return '<option>'+p+'</option>'; }).join('');
-  document.getElementById('reqType').innerHTML = '<option value="">— Select —</option>';
-  document.getElementById('reqType').disabled = true;
-  var td = document.getElementById('reqTypeDisplay');
-  if (td) td.value = '';
-  document.getElementById('reqCatRow').style.display    = 'none';
-  document.getElementById('reqLineRow').style.display   = 'none';
-  document.getElementById('reqDetailsRow').style.display = 'none';
-  document.getElementById('reqClientBlock').style.display = 'none';
-  document.getElementById('reqTransportBlock').style.display = 'none';
-  document.getElementById('reqExcessBlock').style.display = 'none';
-  document.getElementById('rAmount').value = '';
-  document.getElementById('rAmount').readOnly = false;
-  document.getElementById('rAmountStdBadge').style.display = 'none';
-  document.getElementById('rName').value = currentUser ? currentUser.name : '';
-  document.getElementById('rDesc').value = '';
-  document.getElementById('rClientSN').value = '';
-  document.getElementById('rClientName').value = '';
-  document.getElementById('rClientSNHint').textContent = '';
-  document.getElementById('rExcessReason').value = '';
-  document.getElementById('rBudgetHint').textContent = '';
-  document.getElementById('submitReqBtn').disabled = true;
-  document.getElementById('submitReqBtn').style.opacity = '.5';
-  document.getElementById('reqStepHint').textContent = 'Step 1 — Select project';
+  resetRequestFormUI_();
   updateReqFormSettingsBtn();
   openModal('requestModal');
+
+  // Restore in-progress draft if any
+  var draft = loadRequestFormDraft();
+  if (!draft || !draft.project) return;
+
+  var ps = document.getElementById('reqProject');
+  if (!ps) return;
+  // Ensure project option exists
+  var hasProj = Array.from(ps.options).some(function(o){ return o.value === draft.project || o.text === draft.project; });
+  if (!hasProj && draft.project) {
+    var opt = document.createElement('option');
+    opt.value = draft.project; opt.textContent = draft.project;
+    ps.appendChild(opt);
+  }
+  ps.value = draft.project;
+  onReqProjectChange();
+
+  // After type auto-selected, restore category/line if possible
+  setTimeout(function() {
+    if (draft.category) {
+      var catBtn = null;
+      document.querySelectorAll('#reqCatBtns button').forEach(function(b){
+        if (b.textContent === draft.category) catBtn = b;
+      });
+      if (catBtn) selectReqCat(draft.category, catBtn);
+    }
+    setTimeout(function() {
+      if (draft.summary) {
+        var lines = getCostSummaries(_rProject, _rType, _rCategory || draft.category);
+        var line = lines.find(function(l){ return l.costSummary === draft.summary; });
+        if (line) selectReqLine(line);
+      }
+      if (draft.amount != null && draft.amount !== '') {
+        var amtEl = document.getElementById('rAmount');
+        if (amtEl && !amtEl.readOnly) amtEl.value = draft.amount;
+      }
+      if (draft.name) document.getElementById('rName').value = draft.name;
+      if (draft.desc) document.getElementById('rDesc').value = draft.desc;
+      if (draft.clientSN) {
+        document.getElementById('rClientSN').value = draft.clientSN;
+        onClientSNInput();
+      }
+      if (draft.excessReason) document.getElementById('rExcessReason').value = draft.excessReason;
+      if (draft.transportRows && draft.transportRows.length) {
+        _transportRows = draft.transportRows;
+        renderTransportRows();
+      }
+      checkReqReady();
+      toast('Restored your saved form draft');
+    }, 50);
+  }, 50);
 }
+
+// Auto-save draft while typing (debounced)
+var _reqDraftTimer = null;
+function scheduleRequestFormDraftSave() {
+  if (_reqDraftTimer) clearTimeout(_reqDraftTimer);
+  _reqDraftTimer = setTimeout(function(){ saveRequestFormDraft(); }, 400);
+}
+document.addEventListener('input', function(e) {
+  if (!e.target) return;
+  var id = e.target.id || '';
+  if (/^(rAmount|rName|rDesc|rClientSN|rExcessReason|reqProject)$/.test(id) ||
+      (e.target.closest && e.target.closest('#reqTransportRows'))) {
+    scheduleRequestFormDraftSave();
+  }
+});
+
 
 function onReqProjectChange() {
   _rProject = document.getElementById('reqProject').value;
@@ -4732,7 +4905,7 @@ function selectReqLine(line) {
   }
 
   // Standard amount
-  var std = getStdAmountForLine(_rSummary);
+  var std = getStdAmountForLine(_rSummary, _rProject);
   var amtEl = document.getElementById('rAmount');
   var badge = document.getElementById('rAmountStdBadge');
   if (std != null && std > 0) {
@@ -4851,7 +5024,7 @@ function updateTransportRow(i, field, val) {
   if (field === 'unit') _transportRows[i].unit = parseFloat(val) || 0;
   renderTransportRows();
   // Sync amount from breakdown unless standardized
-  var std = getStdAmountForLine(_rSummary);
+  var std = getStdAmountForLine(_rSummary, _rProject);
   if (std == null || !(std > 0)) {
     document.getElementById('rAmount').value = transportBreakdownTotal();
   }
@@ -4945,6 +5118,17 @@ function submitRequest() {
   deletedStore = (deletedStore || []).filter(function(d){ return String(d.ref) !== String(num); });
   try { persistDeletedToStorage(); } catch(e) {}
 
+  var payee = '';
+  if (currentUser && currentUser.payeeNumber) payee = String(currentUser.payeeNumber);
+  else {
+    var uMatch = (usersStore || []).find(function(u){
+      var em = (u.email||'').toLowerCase();
+      var nm = (u.name||'').toLowerCase();
+      return em === name.toLowerCase() || nm === name.toLowerCase() ||
+        (currentUser && em === (currentUser.email||'').toLowerCase());
+    });
+    if (uMatch && uMatch.payeeNumber) payee = String(uMatch.payeeNumber);
+  }
   var entry = {
     ref:num, project:_rProject, type:_rType,
     category:_rCategory, costSummary:_rSummary, costItem:_rCostItem,
@@ -4955,7 +5139,8 @@ function submitRequest() {
     clientName: clientName || '',
     transportBreakdown: transportBreakdown,
     isExcess: !!_rExcess,
-    excessReason: excessReason || ''
+    excessReason: excessReason || '',
+    payeeNumber: payee || ''
   };
   requestsStore.push(entry);
   persistRequestsToStorage();
@@ -4972,6 +5157,7 @@ function submitRequest() {
     }
   } catch(e) {}
 
+  try { localStorage.removeItem(reqDraftKey()); } catch(e) {}
   toast('Request submitted — ' + num + (_rExcess ? ' (excess — reason recorded)' : '') + ' (syncing in background)');
   backgroundPush({ fast: true, skipActuals: true });
 }
@@ -4990,46 +5176,66 @@ function openReqFormSettings() {
 function renderStdAmountRows() {
   var box = document.getElementById('reqStdAmountsList');
   if (!box) return;
-  var map = reqFormConfig.stdAmounts || {};
-  var keys = Object.keys(map);
-  if (!keys.length) {
-    // seed common lines
-    keys = ['Enumerator Training Transport', 'Enumerator field Transport', 'Enumerator Field Airtime', 'Incentives'];
-    keys.forEach(function(k){ if (map[k] == null) map[k] = ''; });
-    reqFormConfig.stdAmounts = map;
+  var list = normalizeStdAmounts_(reqFormConfig.stdAmounts);
+  if (!list.length) {
+    list = [
+      { project: '', costLine: 'Enumerator Training Transport', amount: '' },
+      { project: '', costLine: 'Enumerator field Transport', amount: '' },
+      { project: '', costLine: 'Enumerator Field Airtime', amount: '' },
+      { project: '', costLine: 'Incentives', amount: '' }
+    ];
+    reqFormConfig.stdAmounts = list;
   }
-  box.innerHTML = keys.map(function(k, i) {
-    return '<div style="display:grid;grid-template-columns:1fr 120px 32px;gap:8px;align-items:center">'
-      + '<input type="text" data-std-key="'+i+'" value="'+String(k).replace(/"/g,'&quot;')+'" placeholder="Cost line name">'
-      + '<input type="number" data-std-val="'+i+'" value="'+map[k]+'" placeholder="Amount" min="0">'
+  var projects = (typeof getProjects === 'function' ? getProjects() : []) || [];
+  var projOpts = function(selected) {
+    var s = String(selected || '');
+    return '<option value="">— Select project —</option>' +
+      projects.map(function(p){
+        return '<option value="'+String(p).replace(/"/g,'&quot;')+'"'+(p===s?' selected':'')+'>'+String(p).replace(/</g,'&lt;')+'</option>';
+      }).join('');
+  };
+  box.innerHTML = list.map(function(row, i) {
+    return '<div style="display:grid;grid-template-columns:1.2fr 1.4fr 100px 32px;gap:8px;align-items:center">'
+      + '<select data-std-proj="'+i+'">'+projOpts(row.project)+'</select>'
+      + '<input type="text" data-std-line="'+i+'" value="'+String(row.costLine||'').replace(/"/g,'&quot;')+'" placeholder="Cost line name">'
+      + '<input type="number" data-std-val="'+i+'" value="'+(row.amount===''||row.amount==null?'':row.amount)+'" placeholder="Amount" min="0">'
       + '<button type="button" class="btn btn-ghost btn-sm" onclick="removeStdAmountRow('+i+')">×</button>'
       + '</div>';
   }).join('');
 }
 function addStdAmountRow() {
   collectStdAmountRows();
-  reqFormConfig.stdAmounts['New line ' + (Object.keys(reqFormConfig.stdAmounts).length+1)] = '';
+  var list = normalizeStdAmounts_(reqFormConfig.stdAmounts);
+  list.push({ project: '', costLine: '', amount: '' });
+  reqFormConfig.stdAmounts = list;
   renderStdAmountRows();
 }
 function removeStdAmountRow(i) {
   collectStdAmountRows();
-  var keys = Object.keys(reqFormConfig.stdAmounts || {});
-  if (keys[i]) delete reqFormConfig.stdAmounts[keys[i]];
+  var list = normalizeStdAmounts_(reqFormConfig.stdAmounts);
+  list.splice(i, 1);
+  reqFormConfig.stdAmounts = list;
   renderStdAmountRows();
 }
 function collectStdAmountRows() {
   var box = document.getElementById('reqStdAmountsList');
   if (!box) return;
-  var map = {};
-  var keyInputs = box.querySelectorAll('[data-std-key]');
-  var valInputs = box.querySelectorAll('[data-std-val]');
-  keyInputs.forEach(function(inp, idx) {
-    var k = (inp.value || '').trim();
-    if (!k) return;
-    var v = valInputs[idx] ? valInputs[idx].value : '';
-    map[k] = v === '' ? '' : (parseFloat(v) || 0);
-  });
-  reqFormConfig.stdAmounts = map;
+  var list = [];
+  var n = box.querySelectorAll('[data-std-line]').length;
+  for (var i = 0; i < n; i++) {
+    var projEl = box.querySelector('[data-std-proj="'+i+'"]');
+    var lineEl = box.querySelector('[data-std-line="'+i+'"]');
+    var valEl  = box.querySelector('[data-std-val="'+i+'"]');
+    var line = lineEl ? (lineEl.value || '').trim() : '';
+    if (!line) continue;
+    var v = valEl ? valEl.value : '';
+    list.push({
+      project: projEl ? (projEl.value || '').trim() : '',
+      costLine: line,
+      amount: v === '' ? '' : (parseFloat(v) || 0)
+    });
+  }
+  reqFormConfig.stdAmounts = list;
 }
 
 function renderCatRuleRows() {
@@ -5412,6 +5618,7 @@ async function pushToSheets(opts) {
         clientName:       r.clientName || '',
         isExcess:         r.isExcess ? 'Yes' : '',
         excessReason:     r.excessReason || '',
+        payeeNumber:      r.payeeNumber || '',
         transportBreakdown: r.transportBreakdown ? JSON.stringify(r.transportBreakdown) : '',
         // Only include base64 when it exists (avoids shipping empty fields)
         sigDataUrl:       (r.sigDataUrl && r.sigDataUrl.length > 50) ? r.sigDataUrl : '',
@@ -5634,14 +5841,7 @@ async function pullFromSheets(silent) {
 
     // -- Clients sheet --
     if (res.clients && res.clients.length > 0) {
-      clientsStore = res.clients.map(function(r) {
-        return {
-          clientName: String(r['Client Name'] || r.clientName || r['Name'] || '').trim(),
-          clientSN:   String(r['Client SN'] || r.clientSN || r['SN'] || '').trim(),
-          project:    String(r['Project'] || r.project || '').trim(),
-          country:    String(r['Country'] || r.country || '').trim()
-        };
-      }).filter(function(c){ return c.clientSN; });
+      clientsStore = res.clients.map(mapClientRow_).filter(function(c){ return c.clientSN; });
       persistClients();
       appendSyncLog('Clients: ' + clientsStore.length);
     }
@@ -5830,10 +6030,23 @@ function _rebuildRequestsTableNow() {
       : '';
   };
 
-  var cols = function(r, extra) {
+  var lookupPayee = function(r) {
+    if (r.payeeNumber) return r.payeeNumber;
+    var reqName = (r.requester || '').trim().toLowerCase();
+    if (!reqName) return '';
+    var u = (usersStore || []).find(function(x){
+      return (x.name||'').trim().toLowerCase() === reqName ||
+             (x.email||'').trim().toLowerCase() === reqName;
+    });
+    return u && u.payeeNumber ? u.payeeNumber : '';
+  };
+  var cols = function(r, extra, withPayee) {
     var chkCell = canDelete
       ? '<td style="padding:6px 6px 6px 14px"><input type="checkbox" class="req-chk" data-ref="'+r.ref+'" onchange="onReqCheckChange()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--danger)"></td>'
       : '<td></td>';
+    var payeeCell = withPayee
+      ? '<td style="font-family:IBM Plex Mono,monospace;font-size:12px;white-space:nowrap">'+(lookupPayee(r)||'<span style="color:var(--muted)">—</span>')+'</td>'
+      : '';
     return chkCell + '<td style="font-family:IBM Plex Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
       +'<td style="font-weight:500">'+r.project+'</td>'
       +'<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
@@ -5841,6 +6054,7 @@ function _rebuildRequestsTableNow() {
       +'<td style="color:var(--muted);font-size:12px">'+(r.costSummary||r.description||'--')+'</td>'
       +'<td class="currency" style="font-weight:600;white-space:nowrap">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
       +'<td style="font-size:12.5px">'+(r.requester||'')+'</td>'
+      + payeeCell
       + extra;
   };
 
@@ -5867,7 +6081,7 @@ function _rebuildRequestsTableNow() {
           ? '<button class="btn btn-amber btn-sm" data-mref="'+r.ref+'" data-mreq="'+r.requester+'" onclick="openSignAndApprove(this,this.dataset.mref,this.dataset.mreq)">Mark Paid</button>'
           : '<span class="badge badge-gold">Awaiting payment</span>';
         return '<tr data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
-          + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.approvedAt||r.date)+'</td>')
+          + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.approvedAt||r.date)+'</td>', true)
           + '<td style="display:flex;gap:4px;align-items:center">'+payBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
       }).join('');
@@ -5888,7 +6102,7 @@ function _rebuildRequestsTableNow() {
           : '<td><span class="badge badge-gray" style="font-size:10px">Pending</span></td>';
         return '<tr data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
           + cols(r, '<td style="color:var(--success);font-size:12px;font-weight:500">'+(r.sigLabel||'--')+'</td>'
-                  + '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.sigTime||r.date)+'</td>')
+                  + '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.sigTime||r.date)+'</td>', true)
           + ackCell
           + '<td style="display:flex;gap:4px;align-items:center">'
             +'<button class="btn btn-ghost btn-sm" data-rref="'+r.ref+'" data-ramt="'+r.amount+'" data-rlab="'+(r.sigLabel||r.requester)+'" onclick="showReceipt(this.dataset.rref,this.dataset.ramt,this.dataset.rlab)">Receipt</button>'
@@ -6146,7 +6360,10 @@ async function doLogin() {
       try {
         const fresh = await gasCall({ action: 'getUsers' });
         if (fresh && fresh.ok && Array.isArray(fresh.data)) {
-          usersStore = fresh.data;
+          usersStore = (fresh.data || []).map(function(u){
+            if (u.payeeNumber == null && u['Payee Number']) u.payeeNumber = u['Payee Number'];
+            return u;
+          });
           persistUsersToStorage();
         }
       } catch(e) { /* offline -- use cached store */ }
@@ -6370,6 +6587,8 @@ async function addUser() {
   const email   = (document.getElementById('newUserEmail').value   || '').trim().toLowerCase();
   const role    = document.getElementById('newUserRole').value;
   const country = (document.getElementById('newUserCountry').value || '');
+  const payeeEl = document.getElementById('newUserPayee');
+  const payee   = payeeEl ? (payeeEl.value || '').trim() : '';
   const pass    = (document.getElementById('newUserPass').value    || '');
   const pass2   = (document.getElementById('newUserPass2').value   || '');
   if (!name || !email || !pass) { toast('Please fill all fields'); return; }
@@ -6377,10 +6596,10 @@ async function addUser() {
   if (pass.length < 6)          { toast('Password must be at least 6 characters'); return; }
   if (usersStore.find(u => (u.email||'').toLowerCase() === email)) { toast('A user with that email already exists'); return; }
   const hash = await hashPassword(pass);
-  const user = { id: Date.now(), name, email, role, country, hash, created: new Date().toLocaleDateString('en-GB') };
+  const user = { id: Date.now(), name, email, role, country, payeeNumber: payee, hash, created: new Date().toLocaleDateString('en-GB') };
   usersStore.push(user);
   persistUsersToStorage();
-  ['newUserName','newUserEmail','newUserPass','newUserPass2'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['newUserName','newUserEmail','newUserPass','newUserPass2','newUserPayee'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   renderUsersTable();
   await pushUsersToSheets();
   toast('User added -- ' + (country ? 'restricted to ' + country : 'all countries'));
@@ -6450,6 +6669,7 @@ function renderUsersTable() {
       + '<td style="font-weight:500;color:var(--ink)">'+(u.name||'--')+'<div style="font-size:11px;color:var(--muted)">'+(u.email||'')+'</div></td>'
       + '<td><select data-uid="'+u.id+'" data-field="role" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;'+(isSelf?'opacity:.5;pointer-events:none':'')+'">'+roleOpts+'</select></td>'
       + '<td><select data-uid="'+u.id+'" data-field="country" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px">'+countryOpts+'</select></td>'
+      + '<td><input type="text" data-uid="'+u.id+'" data-field="payeeNumber" value="'+String(u.payeeNumber||'').replace(/"/g,'&quot;')+'" placeholder="Payee #" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;width:120px;font-family:IBM Plex Mono,monospace"></td>'
       + '<td style="white-space:nowrap">'
         + (isSelf ? '' : '<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser('+u.id+')">Remove</button>')
       + '</td>'
@@ -7503,9 +7723,10 @@ async function afterLogin() {
     // User deletes are tracked locally and pushed via deletedStore.
     Promise.resolve().then(function() {
       // Then pull budgets + requests
-      pullBudgetLinesFromSheets()
-        .catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); })
-        .finally(function() {
+      Promise.all([
+        pullBudgetLinesFromSheets().catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); }),
+        pullClientsFromSheets().catch(function(e){ appendSyncLog('Clients pull failed: ' + (e.message||e)); })
+      ]).finally(function() {
           pullRequestsOnly()
             .catch(function(e){ appendSyncLog('Pull failed: ' + e.message); })
             .finally(function() {
