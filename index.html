@@ -1630,6 +1630,9 @@
               Export Excel
             </button>
             <button class="btn btn-primary btn-sm viewer-hidden" onclick="openNewRequestModal()">+ New Request</button>
+      <button class="btn btn-secondary btn-sm" id="reqFormSettingsBtn" onclick="openReqFormSettings()" style="display:none" title="Request form rules">
+        Form Settings
+      </button>
           </div>
         </div>
         <div class="card-body" style="padding:0">
@@ -2197,45 +2200,78 @@
     <div class="modal-header">
       <div>
         <strong>New Payment Request</strong>
-        <div id="reqStepHint" style="font-size:12px;color:var(--muted);margin-top:2px">Step 1 -- Select project and type</div>
+        <div id="reqStepHint" style="font-size:12px;color:var(--muted);margin-top:2px">Step 1 — Select project</div>
       </div>
-      <button class="close-btn" onclick="closeModal('requestModal')">x</button>
+      <button class="close-btn" onclick="closeModal('requestModal')">×</button>
     </div>
     <div class="modal-body" style="display:grid;gap:14px">
 
-      <!-- Row 1: Project + Type -->
+      <!-- Project (type auto-selected) -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="form-group" style="margin:0">
           <label>Project</label>
           <select id="reqProject" onchange="onReqProjectChange()">
-            <option value="">-- Select --</option>
+            <option value="">— Select —</option>
           </select>
         </div>
         <div class="form-group" style="margin:0">
-          <label>Type</label>
-          <select id="reqType" onchange="onReqTypeChange()" disabled>
-            <option value="">-- Select --</option>
+          <label>Type <span style="font-weight:400;color:var(--muted)">(auto)</span></label>
+          <input id="reqTypeDisplay" type="text" readonly placeholder="Select a project first" style="background:var(--surface);cursor:default">
+          <select id="reqType" style="display:none" onchange="onReqTypeChange()" disabled>
+            <option value="">— Select —</option>
           </select>
         </div>
       </div>
 
-      <!-- Row 2: Category buttons -->
+      <!-- Category buttons -->
       <div id="reqCatRow" style="display:none">
         <label style="margin-bottom:8px">Category (Form)</label>
         <div id="reqCatBtns" style="display:flex;flex-wrap:wrap;gap:8px"></div>
       </div>
 
-      <!-- Row 3: Budget line picker -->
+      <!-- Budget line picker -->
       <div id="reqLineRow" style="display:none">
-        <label style="margin-bottom:8px">Budget Line -- select cost summary</label>
+        <label style="margin-bottom:8px">Budget Line — select cost summary</label>
         <div id="reqLineList" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--card)"></div>
       </div>
 
-      <!-- Row 4: Amount + name + notes -->
+      <!-- Details -->
       <div id="reqDetailsRow" style="display:none;border-top:1px solid var(--border);padding-top:14px">
+
+        <!-- Client SN (certain cost lines) -->
+        <div id="reqClientBlock" style="display:none;margin-bottom:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:6px">
+          <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--ink)">Client attribution</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group" style="margin:0">
+              <label>Client SN <span style="color:var(--danger)">*</span></label>
+              <input id="rClientSN" type="text" placeholder="Enter valid Client SN" oninput="onClientSNInput()" autocomplete="off">
+              <div id="rClientSNHint" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>Client Name</label>
+              <input id="rClientName" type="text" readonly placeholder="Auto-filled from SN" style="background:var(--surface);cursor:default">
+            </div>
+          </div>
+        </div>
+
+        <!-- Transport breakdown -->
+        <div id="reqTransportBlock" style="display:none;margin-bottom:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-size:12px;font-weight:600;color:var(--ink)">Transport breakdown <span style="color:var(--danger)">*</span></div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="addTransportRow()">+ Add row</button>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 0.7fr 0.9fr 0.9fr 32px;gap:6px;font-size:11px;color:var(--muted);margin-bottom:4px;padding:0 2px">
+            <span>Description / route</span><span>Qty</span><span>Unit cost</span><span>Total</span><span></span>
+          </div>
+          <div id="reqTransportRows" style="display:grid;gap:6px"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px;font-size:12px">
+            <span>Breakdown total: <strong id="reqTransportSum">0</strong></span>
+          </div>
+        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
           <div class="form-group" style="margin:0">
-            <label>Amount</label>
+            <label>Amount <span id="rAmountStdBadge" style="display:none;font-size:10px;font-weight:600;color:var(--brand);margin-left:6px">STANDARD</span></label>
             <input id="rAmount" type="number" placeholder="0" oninput="checkReqReady()">
             <div id="rBudgetHint" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
           </div>
@@ -2244,6 +2280,16 @@
             <input id="rName" type="text" placeholder="Full name">
           </div>
         </div>
+
+        <!-- Excess request reason -->
+        <div id="reqExcessBlock" style="display:none;margin-bottom:12px;padding:12px;background:#FFF4CE;border:1px solid #FFE17A;border-radius:6px">
+          <div style="font-size:12px;font-weight:600;color:#835C00;margin-bottom:6px">Excess request — limit reached for this Client SN on this project</div>
+          <div class="form-group" style="margin:0">
+            <label>Reason for excess request <span style="color:var(--danger)">*</span></label>
+            <textarea id="rExcessReason" rows="2" placeholder="Explain why an additional request is needed..." oninput="checkReqReady()" style="width:100%;resize:vertical"></textarea>
+          </div>
+        </div>
+
         <div class="form-group" style="margin:0">
           <label>Notes</label>
           <input id="rDesc" type="text" placeholder="Additional context">
@@ -2257,6 +2303,54 @@
     </div>
   </div>
 </div>
+
+<!-- Request Form Settings (admin / form managers) -->
+<div id="reqSettingsModal" class="modal-overlay" onclick="closeModalOutside(event,'reqSettingsModal')">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div>
+        <strong>Request Form Settings</strong>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Standard amounts, category access, project limits</div>
+      </div>
+      <button class="close-btn" onclick="closeModal('reqSettingsModal')">×</button>
+    </div>
+    <div class="modal-body" style="display:grid;gap:18px;max-height:70vh;overflow-y:auto">
+
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Standard amounts (Transport / Airtime / Incentives)</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">When set, requesters cannot edit the amount — it is filled automatically.</p>
+        <div id="reqStdAmountsList" style="display:grid;gap:8px"></div>
+        <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addStdAmountRow()">+ Add standard amount</button>
+      </div>
+
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Category form availability</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Unavailable categories are hidden from requesters. Optionally restrict by role.</p>
+        <div id="reqCatRulesList" style="display:grid;gap:8px"></div>
+      </div>
+
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Project request limits (per Client SN)</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Max requests per Client SN within a project. Excess requests require a reason.</p>
+        <div id="reqProjLimitsList" style="display:grid;gap:8px"></div>
+        <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addProjLimitRow()">+ Add project limit</button>
+      </div>
+
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Form managers (non-admin)</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Emails of users who may edit these settings (in addition to admins).</p>
+        <input id="reqFormManagers" type="text" placeholder="email1@..., email2@..." style="width:100%">
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('reqSettingsModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveReqFormConfig()">Save settings</button>
+    </div>
+  </div>
+</div>
+
+
 
 <!-- Sign & Approve Modal -->
 <div id="signApproveModal" class="modal-overlay" onclick="closeModalOutside(event,'signApproveModal')">
@@ -2758,6 +2852,16 @@ function mergeRequestsFromServer(serverRows) {
       requesterSigTime: r['Requester Sig Time']   || r.requesterSigTime || (local && local.requesterSigTime) || null,
       sigDataUrl:       r['Sig Data']             || r.sigDataUrl       || (local && local.sigDataUrl)       || null,
       requesterSig:     r['Requester Sig']        || r.requesterSig     || (local && local.requesterSig)     || null,
+      clientSN:         r['Client SN']            || r.clientSN         || (local && local.clientSN)         || '',
+      clientName:       r['Client Name']          || r.clientName       || (local && local.clientName)       || '',
+      isExcess:         (r['Is Excess'] || r.isExcess || (local && local.isExcess)) ? true : false,
+      excessReason:     r['Excess Reason']        || r.excessReason     || (local && local.excessReason)     || '',
+      transportBreakdown: (function(){
+        var raw = r['Transport Breakdown'] || r.transportBreakdown || (local && local.transportBreakdown) || null;
+        if (!raw) return null;
+        if (typeof raw === 'object') return raw;
+        try { return JSON.parse(raw); } catch(e) { return null; }
+      })(),
     });
   });
 
@@ -4338,48 +4442,219 @@ function confirmSignAndApprove() {
 // ========================================================
 // REQUEST FORM -- cascading: Project > Type > Category > Line > Amount
 // ========================================================
-var _rProject='', _rType='', _rCategory='', _rSummary='', _rCostItem='';
 
+// ========================================================
+// REQUEST FORM (enhanced)
+// ========================================================
+var _rProject='', _rType='', _rCategory='', _rSummary='', _rCostItem='';
+var _rClientSN='', _rClientName='', _rExcess=false;
+var _transportRows = [];
+
+// Cost lines that require transport breakdown
+var TRANSPORT_LINES = [
+  'enumerator training transport',
+  'enumerator field transport'
+];
+// Cost lines that require Client SN
+var CLIENT_SN_LINES = [
+  'enumerator field airtime',
+  'enumerator field transport',
+  'incentives'
+];
+// Keywords for standard-amount categories
+var STD_AMOUNT_KEYWORDS = ['transport', 'airtime', 'incentive'];
+
+function _normLine(s) {
+  return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+function needsTransportBreakdown(summary) {
+  var n = _normLine(summary);
+  return TRANSPORT_LINES.some(function(x){ return n === x || n.indexOf(x) !== -1; });
+}
+function needsClientSN(summary) {
+  var n = _normLine(summary);
+  return CLIENT_SN_LINES.some(function(x){ return n === x || n.indexOf(x) !== -1; });
+}
+function isStdAmountLine(summary) {
+  var n = _normLine(summary);
+  return STD_AMOUNT_KEYWORDS.some(function(k){ return n.indexOf(k) !== -1; });
+}
+
+// ── Config persistence ───────────────────────────────────
+function loadReqFormConfig() {
+  try {
+    var s = localStorage.getItem('mrv_req_form_config');
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return { stdAmounts: {}, categoryRules: {}, projectLimits: {}, formManagers: [] };
+}
+function saveReqFormConfigToStorage(cfg) {
+  try { localStorage.setItem('mrv_req_form_config', JSON.stringify(cfg)); } catch(e) {}
+}
+var reqFormConfig = loadReqFormConfig();
+
+function canManageReqForm() {
+  if (!currentUser) return false;
+  if (currentUser.role === 'admin') return true;
+  var email = (currentUser.email || '').trim().toLowerCase();
+  var managers = (reqFormConfig.formManagers || []).map(function(e){ return String(e).trim().toLowerCase(); });
+  return managers.indexOf(email) !== -1;
+}
+
+function updateReqFormSettingsBtn() {
+  var btn = document.getElementById('reqFormSettingsBtn');
+  if (btn) btn.style.display = canManageReqForm() ? '' : 'none';
+}
+
+// ── Clients store ────────────────────────────────────────
+function loadClientsFromStorage() {
+  try {
+    var s = localStorage.getItem('mrv_clients');
+    return s ? JSON.parse(s) : [];
+  } catch(e) { return []; }
+}
+function persistClients() {
+  try { localStorage.setItem('mrv_clients', JSON.stringify(clientsStore)); } catch(e) {}
+}
+var clientsStore = loadClientsFromStorage();
+
+function getClientBySN(sn) {
+  sn = String(sn || '').trim().toLowerCase();
+  if (!sn) return null;
+  var ctry = getUserCountry();
+  return (clientsStore || []).find(function(c) {
+    if (String(c.clientSN || '').trim().toLowerCase() !== sn) return false;
+    if (ctry && c.country && String(c.country).trim() !== ctry) return false;
+    return true;
+  }) || null;
+}
+
+// ── Category visibility ──────────────────────────────────
+function isCategoryVisibleForUser(cat) {
+  var rules = (reqFormConfig.categoryRules || {})[cat];
+  if (!rules) return true; // default available to all
+  if (rules.available === false) {
+    // Only users with matching role (or admin) see it
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin') return true;
+    var allowed = rules.allowedRoles || [];
+    if (!allowed.length) return false;
+    return allowed.indexOf(currentUser.role) !== -1
+      || allowed.map(function(x){ return String(x).toLowerCase(); }).indexOf(String(currentUser.role||'').toLowerCase()) !== -1;
+  }
+  // available true — optional role restriction
+  var allowed2 = rules.allowedRoles || [];
+  if (!allowed2.length) return true;
+  if (!currentUser) return false;
+  if (currentUser.role === 'admin') return true;
+  return allowed2.indexOf(currentUser.role) !== -1
+    || allowed2.map(function(x){ return String(x).toLowerCase(); }).indexOf(String(currentUser.role||'').toLowerCase()) !== -1;
+}
+
+function getStdAmountForLine(summary) {
+  var map = reqFormConfig.stdAmounts || {};
+  // exact key
+  if (map[summary] != null && map[summary] !== '') return parseFloat(map[summary]) || 0;
+  // case-insensitive key match
+  var n = _normLine(summary);
+  var keys = Object.keys(map);
+  for (var i = 0; i < keys.length; i++) {
+    if (_normLine(keys[i]) === n) return parseFloat(map[keys[i]]) || 0;
+  }
+  return null;
+}
+
+function countRequestsForClientSN(project, clientSN) {
+  var sn = String(clientSN || '').trim().toLowerCase();
+  if (!sn || !project) return 0;
+  return (requestsStore || []).filter(function(r) {
+    if ((r.project || '') !== project) return false;
+    if (String(r.clientSN || '').trim().toLowerCase() !== sn) return false;
+    // count non-deleted live requests
+    return true;
+  }).length;
+}
+
+function getProjectRequestLimit(project) {
+  var lim = (reqFormConfig.projectLimits || {})[project];
+  if (lim == null || lim === '') return null;
+  var n = parseInt(lim, 10);
+  return isNaN(n) ? null : n;
+}
+
+// ── Modal open / cascade ─────────────────────────────────
 function openNewRequestModal() {
   _rProject=''; _rType=''; _rCategory=''; _rSummary=''; _rCostItem='';
+  _rClientSN=''; _rClientName=''; _rExcess=false;
+  _transportRows = [];
   var ps = document.getElementById('reqProject');
-  ps.innerHTML = '<option value="">-- Select --</option>' +
+  ps.innerHTML = '<option value="">— Select —</option>' +
     getProjects().map(function(p){ return '<option>'+p+'</option>'; }).join('');
-  document.getElementById('reqType').innerHTML = '<option value="">-- Select --</option>';
+  document.getElementById('reqType').innerHTML = '<option value="">— Select —</option>';
   document.getElementById('reqType').disabled = true;
+  var td = document.getElementById('reqTypeDisplay');
+  if (td) td.value = '';
   document.getElementById('reqCatRow').style.display    = 'none';
   document.getElementById('reqLineRow').style.display   = 'none';
   document.getElementById('reqDetailsRow').style.display = 'none';
+  document.getElementById('reqClientBlock').style.display = 'none';
+  document.getElementById('reqTransportBlock').style.display = 'none';
+  document.getElementById('reqExcessBlock').style.display = 'none';
   document.getElementById('rAmount').value = '';
+  document.getElementById('rAmount').readOnly = false;
+  document.getElementById('rAmountStdBadge').style.display = 'none';
   document.getElementById('rName').value = currentUser ? currentUser.name : '';
   document.getElementById('rDesc').value = '';
+  document.getElementById('rClientSN').value = '';
+  document.getElementById('rClientName').value = '';
+  document.getElementById('rClientSNHint').textContent = '';
+  document.getElementById('rExcessReason').value = '';
+  document.getElementById('rBudgetHint').textContent = '';
   document.getElementById('submitReqBtn').disabled = true;
   document.getElementById('submitReqBtn').style.opacity = '.5';
-  document.getElementById('reqStepHint').textContent = 'Step 1 -- Select project and type';
+  document.getElementById('reqStepHint').textContent = 'Step 1 — Select project';
+  updateReqFormSettingsBtn();
   openModal('requestModal');
 }
 
 function onReqProjectChange() {
   _rProject = document.getElementById('reqProject').value;
   _rType=''; _rCategory=''; _rSummary='';
+  var types = _rProject ? getTypes(_rProject) : [];
   var ts = document.getElementById('reqType');
-  ts.innerHTML = '<option value="">-- Select --</option>' +
-    getTypes(_rProject).map(function(t){ return '<option>'+t+'</option>'; }).join('');
-  ts.disabled = !_rProject;
-  document.getElementById('reqCatRow').style.display    = 'none';
-  document.getElementById('reqLineRow').style.display   = 'none';
-  document.getElementById('reqDetailsRow').style.display = 'none';
+  var td = document.getElementById('reqTypeDisplay');
+  ts.innerHTML = '<option value="">— Select —</option>' +
+    types.map(function(t){ return '<option>'+t+'</option>'; }).join('');
+
+  // Auto-pick type (always automatic — no manual choice)
+  if (types.length >= 1) {
+    ts.value = types[0];
+    if (td) td.value = types.length === 1 ? types[0] : (types[0] + (types.length > 1 ? ' (+'+(types.length-1)+' other)' : ''));
+    // If multiple types, still use first; type is derived from project budget lines
+    ts.disabled = true;
+    onReqTypeChange();
+  } else {
+    ts.disabled = true;
+    if (td) td.value = '';
+    document.getElementById('reqCatRow').style.display    = 'none';
+    document.getElementById('reqLineRow').style.display   = 'none';
+    document.getElementById('reqDetailsRow').style.display = 'none';
+  }
 }
 
 function onReqTypeChange() {
   _rType = document.getElementById('reqType').value;
   _rCategory = ''; _rSummary = '';
   if (!_rType) return;
-  var cats = getCategories(_rProject, _rType);
+  var cats = getCategories(_rProject, _rType).filter(isCategoryVisibleForUser);
   var container = document.getElementById('reqCatBtns');
   container.innerHTML = '';
+  if (!cats.length) {
+    container.innerHTML = '<span style="font-size:12px;color:var(--muted)">No categories available for your role on this project.</span>';
+  }
   cats.forEach(function(c) {
     var btn = document.createElement('button');
+    btn.type = 'button';
     btn.textContent = c;
     btn.style.cssText = 'padding:7px 16px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink);font-family:inherit;font-size:13px;cursor:pointer;transition:all .15s';
     btn.addEventListener('click', function(){ selectReqCat(c, btn); });
@@ -4388,165 +4663,467 @@ function onReqTypeChange() {
   document.getElementById('reqCatRow').style.display = '';
   document.getElementById('reqLineRow').style.display = 'none';
   document.getElementById('reqDetailsRow').style.display = 'none';
-  document.getElementById('reqStepHint').textContent = 'Step 2 -- Pick a category';
+  document.getElementById('reqStepHint').textContent = 'Step 2 — Pick a category';
 }
 
 function selectReqCat(cat, btn) {
   _rCategory = cat; _rSummary = '';
-
-  // Highlight selected category button
   document.querySelectorAll('#reqCatBtns button').forEach(function(b) {
     b.style.background = 'var(--surface)';
     b.style.borderColor = 'var(--border)';
     b.style.color = 'var(--ink)';
   });
-  btn.style.background = 'var(--ink)';
-  btn.style.borderColor = 'var(--ink)';
-  btn.style.color = '#fff';
-
+  if (btn) {
+    btn.style.background = 'var(--brand-lt)';
+    btn.style.borderColor = 'var(--brand)';
+    btn.style.color = 'var(--brand-dk)';
+  }
   var lines = getCostSummaries(_rProject, _rType, cat);
-  var container = document.getElementById('reqLineList');
-  container.innerHTML = '';
-
-  lines.forEach(function(line) {
-    // Capture all four keys explicitly in this scope -- fixes closure bug
-    var proj    = _rProject;
-    var type    = _rType;
-    var catKey  = cat;          // exact category this button belongs to
-    var summary = line.costSummary;
-    var item    = line.costItem;
-    var budgeted= line.budgetedAmount;
-
-    // Re-read actuals live so remaining balance is always current
-    var act   = getActualForLine(proj, type, catKey, summary, item);
-    var rem   = budgeted - act;
-    var pct   = budgeted ? Math.min(100, Math.round(act / budgeted * 100)) : 0;
-    var color = pct > 85 ? 'var(--danger)' : pct > 60 ? 'var(--warn)' : 'var(--success)';
-
-    var div = document.createElement('div');
-    div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;'
-      + 'gap:12px;padding:13px 16px;cursor:pointer;transition:background .1s;'
-      + 'border-bottom:1px solid var(--border)';
-    div.addEventListener('mouseenter', function() { if (!div.dataset.sel) div.style.background = 'var(--surface)'; });
-    div.addEventListener('mouseleave', function() { if (!div.dataset.sel) div.style.background = ''; });
-
-    // Click captures proj/type/catKey/summary/item/budgeted in this iteration's scope
-    div.addEventListener('click', function() {
-      selectReqLine(proj, type, catKey, summary, item, budgeted, div);
-    });
-
-    var left = document.createElement('div');
-    left.style.cssText = 'flex:1;min-width:0';
-    left.innerHTML =
-      '<div style="font-weight:600;font-size:13px;color:var(--ink)">' + summary + '</div>'
-      + '<div style="font-size:11.5px;color:var(--muted);margin-top:2px">' + item + '</div>'
-      + '<div style="display:flex;align-items:center;gap:8px;margin-top:6px">'
-        + '<div style="flex:1;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden">'
-          + '<div style="width:' + pct + '%;height:100%;background:' + color + '"></div>'
-        + '</div>'
-        + '<span style="font-size:10.5px;color:var(--muted);white-space:nowrap">' + pct + '% used</span>'
-      + '</div>';
-
-    var right = document.createElement('div');
-    right.style.cssText = 'text-align:right;flex-shrink:0';
-    right.innerHTML =
-      '<div class="js-currency" style="font-size:13px">' + getCurrency(proj,type) + ' ' + budgeted.toLocaleString() + '</div>'
-      + '<div style="font-size:11px;color:' + (rem < 0 ? 'var(--danger)' : 'var(--muted)') + '">'
-        + (rem < 0 ? '-' : '') + getCurrency(proj, type) + ' ' + Math.abs(rem).toLocaleString() + ' rem.</div>';
-
-    div.appendChild(left);
-    div.appendChild(right);
-    container.appendChild(div);
+  var list = document.getElementById('reqLineList');
+  list.innerHTML = '';
+  var isRequester = currentUser && currentUser.role === 'requester';
+  lines.forEach(function(line, idx) {
+    var row = document.createElement('div');
+    row.style.cssText = 'padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px';
+    row.onmouseenter = function(){ this.style.background='var(--surface)'; };
+    row.onmouseleave = function(){ this.style.background=''; };
+    var left = '<div><div style="font-weight:600;font-size:13px">'+(line.costSummary||'')+'</div>'
+      + (line.costItem ? '<div style="font-size:11px;color:var(--muted)">'+line.costItem+'</div>' : '') + '</div>';
+    // Requesters must not see budgeted / balance
+    var right = '';
+    if (!isRequester) {
+      var bud = parseFloat(line.budgetedAmount)||0;
+      var act = getActualForLine(_rProject, _rType, cat, line.costSummary, line.costItem);
+      var rem = bud - act;
+      right = '<div style="text-align:right;font-size:11px;color:var(--muted)">Budgeted '+getCurrency(_rProject,_rType)+' '+bud.toLocaleString()
+        +'<br><span style="color:'+(rem<0?'var(--danger)':'var(--success)')+'">Rem '+getCurrency(_rProject,_rType)+' '+rem.toLocaleString()+'</span></div>';
+    }
+    row.innerHTML = left + right;
+    row.addEventListener('click', function(){ selectReqLine(line); });
+    list.appendChild(row);
   });
-
-  // Remove bottom border from last item
-  if (container.lastChild) container.lastChild.style.borderBottom = 'none';
-
   document.getElementById('reqLineRow').style.display = '';
   document.getElementById('reqDetailsRow').style.display = 'none';
-  document.getElementById('reqStepHint').textContent = 'Step 3 -- Select the budget line';
+  document.getElementById('reqStepHint').textContent = 'Step 3 — Select budget line';
 }
 
-
-function selectReqLine(proj, type, cat, summary, costItem, budgeted, el) {
-  // Store ALL FOUR matching keys so the request maps to exactly the right budget line
-  _rProject  = proj;
-  _rType     = type;
-  _rCategory = cat;
-  _rSummary  = summary;
-  _rCostItem = costItem;
-
+function selectReqLine(line) {
+  _rSummary = line.costSummary || '';
+  _rCostItem = line.costItem || '';
   document.querySelectorAll('#reqLineList > div').forEach(function(d){
-    d.style.background=''; d.dataset.sel='';
+    d.style.outline = '';
   });
-  el.style.background = 'var(--amber-lt)';
-  el.dataset.sel = '1';
+  // highlight is best-effort
 
-  var act = getActualForLine(proj, type, cat, summary, costItem);
-  var rem = budgeted - act;
-  document.getElementById('rBudgetHint').innerHTML =
-    'Budgeted: <strong>'+getCurrency(proj,type)+' '+budgeted.toLocaleString()+'</strong>'
-    +'  |  Spent: <span style="color:var(--success)">'+getCurrency(proj,type)+' '+act.toLocaleString()+'</span>'
-    +'  |  Remaining: <strong style="color:'+(rem<0?'var(--danger)':'var(--ink)')
-    +'">'+(rem<0?'OVERRUN ':'')+getCurrency(proj,type)+' '+Math.abs(rem).toLocaleString()+'</strong>';
+  var isRequester = currentUser && currentUser.role === 'requester';
+  var hint = document.getElementById('rBudgetHint');
+  if (isRequester) {
+    hint.textContent = '';
+    hint.style.display = 'none';
+  } else {
+    hint.style.display = '';
+    var bud = parseFloat(line.budgetedAmount)||0;
+    var act = getActualForLine(_rProject, _rType, _rCategory, _rSummary, _rCostItem);
+    var rem = bud - act;
+    hint.innerHTML = 'Budgeted: <span>'+getCurrency(_rProject,_rType)+' '+bud.toLocaleString()+'</span>'
+      +'  |  Actual: <span style="color:var(--success)">'+getCurrency(_rProject,_rType)+' '+act.toLocaleString()+'</span>'
+      +'  |  Remaining: <strong style="color:'+(rem<0?'var(--danger)':'var(--ink)')
+      +'">'+(rem<0?'OVERRUN ':'')+getCurrency(_rProject,_rType)+' '+Math.abs(rem).toLocaleString()+'</strong>';
+  }
+
+  // Standard amount
+  var std = getStdAmountForLine(_rSummary);
+  var amtEl = document.getElementById('rAmount');
+  var badge = document.getElementById('rAmountStdBadge');
+  if (std != null && std > 0) {
+    amtEl.value = std;
+    amtEl.readOnly = true;
+    badge.style.display = '';
+  } else {
+    amtEl.readOnly = false;
+    badge.style.display = 'none';
+    if (!amtEl.value) amtEl.value = '';
+  }
+
+  // Client SN block
+  var needClient = needsClientSN(_rSummary);
+  document.getElementById('reqClientBlock').style.display = needClient ? '' : 'none';
+  if (!needClient) {
+    document.getElementById('rClientSN').value = '';
+    document.getElementById('rClientName').value = '';
+    _rClientSN = ''; _rClientName = '';
+    document.getElementById('reqExcessBlock').style.display = 'none';
+    _rExcess = false;
+  } else {
+    onClientSNInput();
+  }
+
+  // Transport breakdown
+  var needT = needsTransportBreakdown(_rSummary);
+  document.getElementById('reqTransportBlock').style.display = needT ? '' : 'none';
+  if (needT) {
+    if (!_transportRows.length) {
+      _transportRows = [{ desc:'', qty:1, unit: std || 0 }];
+    }
+    renderTransportRows();
+  } else {
+    _transportRows = [];
+  }
+
   document.getElementById('reqDetailsRow').style.display = '';
-  document.getElementById('reqStepHint').textContent = 'Step 4 -- Enter amount and submit';
-  document.getElementById('rAmount').focus();
+  document.getElementById('reqStepHint').textContent = 'Step 4 — Complete details and submit';
+  if (!amtEl.readOnly) amtEl.focus();
   checkReqReady();
 }
 
+function onClientSNInput() {
+  var sn = (document.getElementById('rClientSN').value || '').trim();
+  var hint = document.getElementById('rClientSNHint');
+  var nameEl = document.getElementById('rClientName');
+  _rClientSN = sn;
+  _rClientName = '';
+  nameEl.value = '';
+  if (!sn) {
+    hint.textContent = 'Enter a Client SN valid for your country.';
+    hint.style.color = 'var(--muted)';
+    document.getElementById('reqExcessBlock').style.display = 'none';
+    _rExcess = false;
+    checkReqReady();
+    return;
+  }
+  var client = getClientBySN(sn);
+  if (!client) {
+    hint.textContent = 'No matching Client SN found for your country.';
+    hint.style.color = 'var(--danger)';
+    document.getElementById('reqExcessBlock').style.display = 'none';
+    _rExcess = false;
+    checkReqReady();
+    return;
+  }
+  // Optional: match project
+  if (client.project && _rProject && client.project !== _rProject) {
+    hint.textContent = 'Client belongs to project "'+client.project+'" — selected project is "'+_rProject+'".';
+    hint.style.color = 'var(--warn)';
+  } else {
+    hint.textContent = 'Valid client.';
+    hint.style.color = 'var(--success)';
+  }
+  _rClientName = client.clientName || '';
+  nameEl.value = _rClientName;
+
+  // Excess check
+  var lim = getProjectRequestLimit(_rProject);
+  if (lim != null && lim > 0) {
+    var cnt = countRequestsForClientSN(_rProject, sn);
+    if (cnt >= lim) {
+      _rExcess = true;
+      document.getElementById('reqExcessBlock').style.display = '';
+      hint.textContent = (hint.textContent ? hint.textContent + ' ' : '') + 'Limit '+lim+' reached ('+cnt+' existing). Reason required.';
+      hint.style.color = 'var(--warn)';
+    } else {
+      _rExcess = false;
+      document.getElementById('reqExcessBlock').style.display = 'none';
+      document.getElementById('rExcessReason').value = '';
+    }
+  } else {
+    _rExcess = false;
+    document.getElementById('reqExcessBlock').style.display = 'none';
+  }
+  checkReqReady();
+}
+
+// ── Transport rows ───────────────────────────────────────
+function addTransportRow() {
+  _transportRows.push({ desc:'', qty:1, unit:0 });
+  renderTransportRows();
+  checkReqReady();
+}
+function removeTransportRow(i) {
+  _transportRows.splice(i, 1);
+  if (!_transportRows.length) _transportRows.push({ desc:'', qty:1, unit:0 });
+  renderTransportRows();
+  checkReqReady();
+}
+function updateTransportRow(i, field, val) {
+  if (!_transportRows[i]) return;
+  if (field === 'desc') _transportRows[i].desc = val;
+  if (field === 'qty') _transportRows[i].qty = parseFloat(val) || 0;
+  if (field === 'unit') _transportRows[i].unit = parseFloat(val) || 0;
+  renderTransportRows();
+  // Sync amount from breakdown unless standardized
+  var std = getStdAmountForLine(_rSummary);
+  if (std == null || !(std > 0)) {
+    document.getElementById('rAmount').value = transportBreakdownTotal();
+  }
+  checkReqReady();
+}
+function transportBreakdownTotal() {
+  return _transportRows.reduce(function(s, r) {
+    return s + (parseFloat(r.qty)||0) * (parseFloat(r.unit)||0);
+  }, 0);
+}
+function renderTransportRows() {
+  var box = document.getElementById('reqTransportRows');
+  if (!box) return;
+  box.innerHTML = _transportRows.map(function(r, i) {
+    var tot = (parseFloat(r.qty)||0) * (parseFloat(r.unit)||0);
+    return '<div style="display:grid;grid-template-columns:2fr 0.7fr 0.9fr 0.9fr 32px;gap:6px;align-items:center">'
+      + '<input type="text" value="'+String(r.desc||'').replace(/"/g,'&quot;')+'" placeholder="e.g. Office to field site" oninput="updateTransportRow('+i+',\'desc\',this.value)">'
+      + '<input type="number" value="'+(r.qty||'')+'" min="0" step="1" oninput="updateTransportRow('+i+',\'qty\',this.value)">'
+      + '<input type="number" value="'+(r.unit||'')+'" min="0" step="1" oninput="updateTransportRow('+i+',\'unit\',this.value)">'
+      + '<input type="text" readonly value="'+tot.toLocaleString()+'" style="background:var(--surface)">'
+      + '<button type="button" class="btn btn-ghost btn-sm" onclick="removeTransportRow('+i+')" title="Remove">×</button>'
+      + '</div>';
+  }).join('');
+  var sumEl = document.getElementById('reqTransportSum');
+  if (sumEl) sumEl.textContent = transportBreakdownTotal().toLocaleString();
+}
+
 function checkReqReady() {
-  var amt  = parseInt(document.getElementById('rAmount').value||0);
+  var amt  = parseFloat(document.getElementById('rAmount').value||0);
   var name = (document.getElementById('rName').value||'').trim();
-  var ok   = _rProject && _rType && _rCategory && _rSummary && amt>0 && name;
+  var ok   = !!( _rProject && _rType && _rCategory && _rSummary && amt>0 && name );
+
+  if (needsClientSN(_rSummary)) {
+    var client = getClientBySN(document.getElementById('rClientSN').value);
+    if (!client) ok = false;
+  }
+  if (needsTransportBreakdown(_rSummary)) {
+    var tSum = transportBreakdownTotal();
+    if (!_transportRows.length || tSum <= 0) ok = false;
+    // breakdown must match amount (allow 1 unit float slack)
+    if (Math.abs(tSum - amt) > 0.5) ok = false;
+  }
+  if (_rExcess) {
+    var reason = (document.getElementById('rExcessReason').value || '').trim();
+    if (!reason) ok = false;
+  }
+
   var btn  = document.getElementById('submitReqBtn');
-  btn.disabled     = !ok;
-  btn.style.opacity = ok ? '1' : '.5';
+  if (btn) {
+    btn.disabled     = !ok;
+    btn.style.opacity = ok ? '1' : '.5';
+  }
 }
 
 function submitRequest() {
-  var amount = parseInt(document.getElementById('rAmount').value||0);
+  var amount = parseFloat(document.getElementById('rAmount').value||0);
   var name   = (document.getElementById('rName').value||'').trim();
   var desc   = (document.getElementById('rDesc').value||'').trim();
   if (!_rProject||!_rType||!_rCategory||!_rSummary) { toast('Please complete all selections'); return; }
   if (!amount||amount<=0) { toast('Please enter a valid amount'); return; }
   if (!name) { toast('Please enter requester name'); return; }
+
+  var clientSN = '', clientName = '';
+  if (needsClientSN(_rSummary)) {
+    var client = getClientBySN(document.getElementById('rClientSN').value);
+    if (!client) { toast('Enter a valid Client SN for your country'); return; }
+    clientSN = String(client.clientSN || document.getElementById('rClientSN').value).trim();
+    clientName = client.clientName || '';
+  }
+
+  var transportBreakdown = null;
+  if (needsTransportBreakdown(_rSummary)) {
+    var tSum = transportBreakdownTotal();
+    if (tSum <= 0) { toast('Complete the transport breakdown'); return; }
+    if (Math.abs(tSum - amount) > 0.5) { toast('Transport breakdown total must equal the request amount'); return; }
+    transportBreakdown = _transportRows.map(function(r){
+      return { desc: r.desc||'', qty: parseFloat(r.qty)||0, unit: parseFloat(r.unit)||0, total: (parseFloat(r.qty)||0)*(parseFloat(r.unit)||0) };
+    });
+  }
+
+  var excessReason = '';
+  if (_rExcess) {
+    excessReason = (document.getElementById('rExcessReason').value || '').trim();
+    if (!excessReason) { toast('Provide a reason for the excess request'); return; }
+  }
+
   reqCounter++;
   var num   = 'REQ-'+String(reqCounter).padStart(3,'0');
   var today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
   markLocalWrite(num);
-  // Ensure new ref is not blocked by a stale tombstone
   deletedStore = (deletedStore || []).filter(function(d){ return String(d.ref) !== String(num); });
   try { persistDeletedToStorage(); } catch(e) {}
-  requestsStore.push({
+
+  var entry = {
     ref:num, project:_rProject, type:_rType,
     category:_rCategory, costSummary:_rSummary, costItem:_rCostItem,
     description: desc||(_rCategory+' -- '+_rSummary),
     amount:amount, requester:name,
-    status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today
-  });
+    status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today,
+    clientSN: clientSN || '',
+    clientName: clientName || '',
+    transportBreakdown: transportBreakdown,
+    isExcess: !!_rExcess,
+    excessReason: excessReason || ''
+  };
+  requestsStore.push(entry);
   persistRequestsToStorage();
   closeModal('requestModal');
 
-  // Show immediately in the app — don't wait for Sheets
   rebuildRequestsTable();
   renderDashboard();
   renderHistory();
   populateAllDropdowns();
-  // Jump to System Requests so the new draft is visible right away
   try {
     showView('requests', null);
-    var draftsTab = document.querySelector('[data-req-tab="drafts"], .req-tab[onclick*="drafts"]');
     if (typeof switchReqTab === 'function') {
       try { switchReqTab('drafts'); } catch(e) {}
     }
   } catch(e) {}
 
-  toast('Request submitted — ' + num + ' (syncing in background)');
-
-  // Fast background push (no signature images, no actuals)
+  toast('Request submitted — ' + num + (_rExcess ? ' (excess — reason recorded)' : '') + ' (syncing in background)');
   backgroundPush({ fast: true, skipActuals: true });
 }
+
+// ── Admin: Request Form Settings UI ──────────────────────
+function openReqFormSettings() {
+  if (!canManageReqForm()) { toast('Not allowed'); return; }
+  reqFormConfig = loadReqFormConfig();
+  renderStdAmountRows();
+  renderCatRuleRows();
+  renderProjLimitRows();
+  document.getElementById('reqFormManagers').value = (reqFormConfig.formManagers || []).join(', ');
+  openModal('reqSettingsModal');
+}
+
+function renderStdAmountRows() {
+  var box = document.getElementById('reqStdAmountsList');
+  if (!box) return;
+  var map = reqFormConfig.stdAmounts || {};
+  var keys = Object.keys(map);
+  if (!keys.length) {
+    // seed common lines
+    keys = ['Enumerator Training Transport', 'Enumerator field Transport', 'Enumerator Field Airtime', 'Incentives'];
+    keys.forEach(function(k){ if (map[k] == null) map[k] = ''; });
+    reqFormConfig.stdAmounts = map;
+  }
+  box.innerHTML = keys.map(function(k, i) {
+    return '<div style="display:grid;grid-template-columns:1fr 120px 32px;gap:8px;align-items:center">'
+      + '<input type="text" data-std-key="'+i+'" value="'+String(k).replace(/"/g,'&quot;')+'" placeholder="Cost line name">'
+      + '<input type="number" data-std-val="'+i+'" value="'+map[k]+'" placeholder="Amount" min="0">'
+      + '<button type="button" class="btn btn-ghost btn-sm" onclick="removeStdAmountRow('+i+')">×</button>'
+      + '</div>';
+  }).join('');
+}
+function addStdAmountRow() {
+  collectStdAmountRows();
+  reqFormConfig.stdAmounts['New line ' + (Object.keys(reqFormConfig.stdAmounts).length+1)] = '';
+  renderStdAmountRows();
+}
+function removeStdAmountRow(i) {
+  collectStdAmountRows();
+  var keys = Object.keys(reqFormConfig.stdAmounts || {});
+  if (keys[i]) delete reqFormConfig.stdAmounts[keys[i]];
+  renderStdAmountRows();
+}
+function collectStdAmountRows() {
+  var box = document.getElementById('reqStdAmountsList');
+  if (!box) return;
+  var map = {};
+  var keyInputs = box.querySelectorAll('[data-std-key]');
+  var valInputs = box.querySelectorAll('[data-std-val]');
+  keyInputs.forEach(function(inp, idx) {
+    var k = (inp.value || '').trim();
+    if (!k) return;
+    var v = valInputs[idx] ? valInputs[idx].value : '';
+    map[k] = v === '' ? '' : (parseFloat(v) || 0);
+  });
+  reqFormConfig.stdAmounts = map;
+}
+
+function renderCatRuleRows() {
+  var box = document.getElementById('reqCatRulesList');
+  if (!box) return;
+  var cats = [...new Set((budgetLines || []).map(function(l){ return l.category; }).filter(Boolean))].sort();
+  var rules = reqFormConfig.categoryRules || {};
+  if (!cats.length) {
+    box.innerHTML = '<span style="font-size:12px;color:var(--muted)">No categories loaded yet. Pull budgets first.</span>';
+    return;
+  }
+  box.innerHTML = cats.map(function(c) {
+    var r = rules[c] || { available: true, allowedRoles: [] };
+    var avail = r.available !== false;
+    var roles = (r.allowedRoles || []).join(', ');
+    return '<div style="display:grid;grid-template-columns:1.4fr 110px 1fr;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">'
+      + '<div style="font-size:12.5px;font-weight:500">'+c.replace(/</g,'&lt;')+'</div>'
+      + '<label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer">'
+      + '<input type="checkbox" data-cat-avail="'+c.replace(/"/g,'&quot;')+'" '+(avail?'checked':'')+'> Available</label>'
+      + '<input type="text" data-cat-roles="'+c.replace(/"/g,'&quot;')+'" value="'+roles.replace(/"/g,'&quot;')+'" placeholder="Roles e.g. requester, approver (blank=all)">'
+      + '</div>';
+  }).join('');
+}
+function collectCatRules() {
+  var box = document.getElementById('reqCatRulesList');
+  if (!box) return;
+  var rules = {};
+  box.querySelectorAll('[data-cat-avail]').forEach(function(cb) {
+    var c = cb.getAttribute('data-cat-avail');
+    var rolesInp = box.querySelector('[data-cat-roles="'+c.replace(/"/g,'\\"')+'"]');
+    var roles = rolesInp ? (rolesInp.value || '').split(',').map(function(x){ return x.trim(); }).filter(Boolean) : [];
+    rules[c] = { available: !!cb.checked, allowedRoles: roles };
+  });
+  reqFormConfig.categoryRules = rules;
+}
+
+function renderProjLimitRows() {
+  var box = document.getElementById('reqProjLimitsList');
+  if (!box) return;
+  var map = reqFormConfig.projectLimits || {};
+  var keys = Object.keys(map);
+  if (!keys.length) {
+    box.innerHTML = '<span style="font-size:12px;color:var(--muted)">No limits set. Add a project limit below.</span>';
+    return;
+  }
+  box.innerHTML = keys.map(function(k, i) {
+    return '<div style="display:grid;grid-template-columns:1fr 100px 32px;gap:8px;align-items:center">'
+      + '<input type="text" data-pl-key="'+i+'" value="'+String(k).replace(/"/g,'&quot;')+'" placeholder="Project name">'
+      + '<input type="number" data-pl-val="'+i+'" value="'+map[k]+'" min="1" placeholder="Max">'
+      + '<button type="button" class="btn btn-ghost btn-sm" onclick="removeProjLimitRow('+i+')">×</button>'
+      + '</div>';
+  }).join('');
+}
+function addProjLimitRow() {
+  collectProjLimitRows();
+  var projects = getProjects();
+  var name = projects[0] || ('Project ' + (Object.keys(reqFormConfig.projectLimits||{}).length+1));
+  if (!reqFormConfig.projectLimits) reqFormConfig.projectLimits = {};
+  reqFormConfig.projectLimits[name] = 1;
+  renderProjLimitRows();
+}
+function removeProjLimitRow(i) {
+  collectProjLimitRows();
+  var keys = Object.keys(reqFormConfig.projectLimits || {});
+  if (keys[i]) delete reqFormConfig.projectLimits[keys[i]];
+  renderProjLimitRows();
+}
+function collectProjLimitRows() {
+  var box = document.getElementById('reqProjLimitsList');
+  if (!box) return;
+  var map = {};
+  var keyInputs = box.querySelectorAll('[data-pl-key]');
+  var valInputs = box.querySelectorAll('[data-pl-val]');
+  keyInputs.forEach(function(inp, idx) {
+    var k = (inp.value || '').trim();
+    if (!k) return;
+    map[k] = parseInt(valInputs[idx] ? valInputs[idx].value : '1', 10) || 1;
+  });
+  reqFormConfig.projectLimits = map;
+}
+
+function saveReqFormConfig() {
+  collectStdAmountRows();
+  collectCatRules();
+  collectProjLimitRows();
+  var mgr = (document.getElementById('reqFormManagers').value || '')
+    .split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+  reqFormConfig.formManagers = mgr;
+  saveReqFormConfigToStorage(reqFormConfig);
+  closeModal('reqSettingsModal');
+  toast('Request form settings saved');
+  updateReqFormSettingsBtn();
+}
+
 
 function submitExpense() {
   if (!pendingExpSig) { toast('Please provide a recipient signature before submitting'); return; }
@@ -4831,6 +5408,11 @@ async function pushToSheets(opts) {
         approvedAt:       r.approvedAt       || '',
         requesterSigName: r.requesterSigName || '',
         requesterSigTime: r.requesterSigTime || '',
+        clientSN:         r.clientSN || '',
+        clientName:       r.clientName || '',
+        isExcess:         r.isExcess ? 'Yes' : '',
+        excessReason:     r.excessReason || '',
+        transportBreakdown: r.transportBreakdown ? JSON.stringify(r.transportBreakdown) : '',
         // Only include base64 when it exists (avoids shipping empty fields)
         sigDataUrl:       (r.sigDataUrl && r.sigDataUrl.length > 50) ? r.sigDataUrl : '',
         requesterSig:     (r.requesterSig && r.requesterSig.length > 50) ? r.requesterSig : '',
@@ -5048,6 +5630,20 @@ async function pullFromSheets(silent) {
         renderHistory();
         renderDashboard();
       }
+    }
+
+    // -- Clients sheet --
+    if (res.clients && res.clients.length > 0) {
+      clientsStore = res.clients.map(function(r) {
+        return {
+          clientName: String(r['Client Name'] || r.clientName || r['Name'] || '').trim(),
+          clientSN:   String(r['Client SN'] || r.clientSN || r['SN'] || '').trim(),
+          project:    String(r['Project'] || r.project || '').trim(),
+          country:    String(r['Country'] || r.country || '').trim()
+        };
+      }).filter(function(c){ return c.clientSN; });
+      persistClients();
+      appendSyncLog('Clients: ' + clientsStore.length);
     }
 
     // -- Budgets -- handled separately by pullBudgetLinesFromSheets()
@@ -6853,6 +7449,8 @@ function buildSidebar() {
 
 // Called by loginSuccess() after a successful sign-in
 async function afterLogin() {
+  try { updateReqFormSettingsBtn(); } catch(e) {}
+
   // ── STEP 0: Build sidebar for this role ─────────────────────
   buildSidebar();
 
