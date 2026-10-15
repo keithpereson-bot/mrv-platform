@@ -13,6 +13,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -1474,6 +1475,206 @@
   #tblBudgetProjects thead th[data-sort]:hover { color: var(--brand); }
   #tblBudgetProjects thead th .sort-ind { font-size: 10px; margin-left: 4px; opacity: .5; }
 
+
+  /* ── Approved Budgets: sleek charts + KPI ── */
+  .budget-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .budget-kpi-row .stat-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #fff;
+    padding: 16px 18px 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  .budget-kpi-row .stat-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--brand);
+  }
+  .budget-kpi-row .stat-card.kpi-spent::before { background: #8764B8; }
+  .budget-kpi-row .stat-card.kpi-remain::before { background: #107C10; }
+  .budget-kpi-row .stat-card.kpi-usage::before { background: #C19C00; }
+  .budget-kpi-row .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .budget-kpi-row .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .budget-kpi-row .stat-sub {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .budget-charts-row {
+    display: grid;
+    grid-template-columns: 1.2fr 0.9fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 1100px) {
+    .budget-charts-row { grid-template-columns: 1fr 1fr; }
+    .budget-charts-row .budget-chart-card:last-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 700px) {
+    .budget-charts-row { grid-template-columns: 1fr; }
+    .budget-kpi-row { grid-template-columns: 1fr 1fr; }
+  }
+
+  .budget-chart-card {
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    overflow: hidden;
+  }
+  .budget-chart-card .card-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #FCFCFB 0%, #F8F7F6 100%);
+  }
+  .budget-chart-card .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .budget-chart-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px 18px;
+    min-height: 200px;
+  }
+  .budget-chart-body-center {
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+  }
+  .budget-chart-canvas-wrap {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    flex-shrink: 0;
+  }
+  .budget-donut-wrap {
+    width: 160px;
+    height: 160px;
+  }
+  .budget-chart-canvas-wrap canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .budget-donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .budget-donut-pct {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .budget-donut-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .budget-chart-legend {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .budget-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--ink-mid, #323130);
+    min-width: 0;
+  }
+  .budget-legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .budget-legend-name {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .budget-legend-val {
+    font-weight: 600;
+    font-size: 11.5px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .budget-util-legend {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+  }
+  .budget-util-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--ink-mid, #323130);
+    font-weight: 500;
+  }
+  .budget-util-item .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .budget-util-item .dot.spent { background: #8764B8; }
+  .budget-util-item .dot.remain { background: #C8C6C4; }
+
+  #budgetProjectsCard {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  }
+  #budgetProjectsCard .card-header {
+    background: linear-gradient(180deg, #FCFCFB 0%, #F8F7F6 100%);
+  }
+  #tblBudgetProjects thead th {
+    font-size: 10.5px;
+    letter-spacing: .06em;
+    background: #FAF9F8;
+  }
+  #tblBudgetProjects tbody tr.bgt-master.is-open {
+    background: linear-gradient(90deg, #E8F2FC 0%, #F3F9FF 100%);
+  }
+
 </style>
 
 </head>
@@ -1617,7 +1818,50 @@
       </div>
     </div>
     <div class="view-body">
-    <div id="budgetStatsRow" class="stats" style="grid-template-columns:repeat(4,1fr)"></div>
+    <div id="budgetStatsRow" class="stats budget-kpi-row"></div>
+
+    <div class="budget-charts-row" id="budgetChartsRow">
+      <div class="card budget-chart-card">
+        <div class="card-header">
+          <div class="card-title">Allocation by project</div>
+        </div>
+        <div class="budget-chart-body">
+          <div class="budget-chart-canvas-wrap">
+            <canvas id="budgetChartByProject"></canvas>
+          </div>
+          <div class="budget-chart-legend" id="budgetLegendByProject"></div>
+        </div>
+      </div>
+      <div class="card budget-chart-card">
+        <div class="card-header">
+          <div class="card-title">Utilisation</div>
+        </div>
+        <div class="budget-chart-body budget-chart-body-center">
+          <div class="budget-chart-canvas-wrap budget-donut-wrap">
+            <canvas id="budgetChartUtilisation"></canvas>
+            <div class="budget-donut-center" id="budgetUtilCenter">
+              <div class="budget-donut-pct" id="budgetUtilPct">0%</div>
+              <div class="budget-donut-label">used</div>
+            </div>
+          </div>
+          <div class="budget-util-legend" id="budgetLegendUtil">
+            <div class="budget-util-item"><span class="dot spent"></span> Spent</div>
+            <div class="budget-util-item"><span class="dot remain"></span> Remaining</div>
+          </div>
+        </div>
+      </div>
+      <div class="card budget-chart-card">
+        <div class="card-header">
+          <div class="card-title">By type</div>
+        </div>
+        <div class="budget-chart-body">
+          <div class="budget-chart-canvas-wrap">
+            <canvas id="budgetChartByType"></canvas>
+          </div>
+          <div class="budget-chart-legend" id="budgetLegendByType"></div>
+        </div>
+      </div>
+    </div>
 
     <div class="card" id="budgetProjectsCard">
       <div class="card-header">
@@ -3383,6 +3627,193 @@ function populateAllDropdowns() {
 // ============================================================
 // APPROVED BUDGETS VIEW
 // ============================================================
+
+// ── Budget doughnut / pie charts ───────────────────────────
+var _budgetCharts = { project: null, util: null, type: null };
+
+var BUDGET_CHART_COLORS = [
+  '#0078D4', '#8764B8', '#00B7C3', '#107C10', '#C19C00',
+  '#D13438', '#CA5010', '#038387', '#5C2D91', '#004E8C',
+  '#69797E', '#498205', '#881798', '#A4262C'
+];
+
+function destroyBudgetCharts() {
+  ['project', 'util', 'type'].forEach(function(k) {
+    if (_budgetCharts[k]) {
+      try { _budgetCharts[k].destroy(); } catch(e) {}
+      _budgetCharts[k] = null;
+    }
+  });
+}
+
+function renderBudgetCharts(rows, allTotal, allActual, allRemain, allPct, ccy) {
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js not loaded');
+    return;
+  }
+  destroyBudgetCharts();
+
+  var chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(50,49,48,.92)',
+        titleFont: { size: 12, weight: '600' },
+        bodyFont: { size: 12 },
+        padding: 10,
+        cornerRadius: 6,
+        displayColors: true,
+        boxWidth: 10,
+        boxHeight: 10
+      }
+    },
+    cutout: '68%',
+    borderWidth: 2,
+    borderColor: '#fff',
+    hoverOffset: 4
+  };
+
+  // 1) Allocation by project
+  var byProj = {};
+  rows.forEach(function(r) {
+    var name = r.g.project || 'Unknown';
+    byProj[name] = (byProj[name] || 0) + r.total;
+  });
+  var projLabels = Object.keys(byProj).sort(function(a,b){ return byProj[b]-byProj[a]; });
+  var projData = projLabels.map(function(k){ return byProj[k]; });
+  var projColors = projLabels.map(function(_,i){ return BUDGET_CHART_COLORS[i % BUDGET_CHART_COLORS.length]; });
+
+  var ctx1 = document.getElementById('budgetChartByProject');
+  if (ctx1) {
+    _budgetCharts.project = new Chart(ctx1, {
+      type: 'doughnut',
+      data: {
+        labels: projLabels,
+        datasets: [{ data: projData, backgroundColor: projColors, borderColor: '#fff', borderWidth: 2 }]
+      },
+      options: Object.assign({}, chartDefaults, {
+        plugins: Object.assign({}, chartDefaults.plugins, {
+          tooltip: Object.assign({}, chartDefaults.plugins.tooltip, {
+            callbacks: {
+              label: function(ctx) {
+                var v = ctx.raw || 0;
+                var pct = allTotal ? Math.round(v/allTotal*100) : 0;
+                return ' ' + (ccy||'') + ' ' + (typeof fmt==='function'?fmt(v):v) + ' ('+pct+'%)';
+              }
+            }
+          })
+        })
+      })
+    });
+  }
+  var leg1 = document.getElementById('budgetLegendByProject');
+  if (leg1) {
+    leg1.innerHTML = projLabels.map(function(name, i) {
+      var v = byProj[name];
+      var pct = allTotal ? Math.round(v/allTotal*100) : 0;
+      return '<div class="budget-legend-item" title="'+String(name).replace(/"/g,'&quot;')+'">'
+        + '<span class="budget-legend-swatch" style="background:'+projColors[i]+'"></span>'
+        + '<span class="budget-legend-name">'+String(name).replace(/</g,'&lt;')+'</span>'
+        + '<span class="budget-legend-val">'+pct+'%</span>'
+        + '</div>';
+    }).join('');
+  }
+
+  // 2) Utilisation doughnut (spent vs remaining)
+  var spent = Math.max(0, allActual);
+  var remain = Math.max(0, allRemain);
+  // If over budget, show spent full + over as extra segment
+  var utilData, utilColors, utilLabels;
+  if (allRemain < 0) {
+    utilData = [spent, Math.abs(allRemain)];
+    utilColors = ['#8764B8', '#D13438'];
+    utilLabels = ['Spent', 'Over budget'];
+  } else {
+    utilData = [spent, remain || 0.0001]; // tiny slice if zero
+    utilColors = ['#8764B8', '#E1DFDD'];
+    utilLabels = ['Spent', 'Remaining'];
+  }
+
+  var pctEl = document.getElementById('budgetUtilPct');
+  if (pctEl) {
+    pctEl.textContent = allPct + '%';
+    pctEl.style.color = allPct > 85 ? '#D13438' : allPct > 60 ? '#C19C00' : '#323130';
+  }
+
+  var ctx2 = document.getElementById('budgetChartUtilisation');
+  if (ctx2) {
+    _budgetCharts.util = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: utilLabels,
+        datasets: [{ data: utilData, backgroundColor: utilColors, borderColor: '#fff', borderWidth: 2 }]
+      },
+      options: Object.assign({}, chartDefaults, {
+        cutout: '72%',
+        plugins: Object.assign({}, chartDefaults.plugins, {
+          tooltip: Object.assign({}, chartDefaults.plugins.tooltip, {
+            callbacks: {
+              label: function(ctx) {
+                var v = ctx.raw || 0;
+                return ' ' + (ccy||'') + ' ' + (typeof fmt==='function'?fmt(v):v);
+              }
+            }
+          })
+        })
+      })
+    });
+  }
+
+  // 3) By type
+  var byType = {};
+  rows.forEach(function(r) {
+    var name = r.g.type || 'Other';
+    byType[name] = (byType[name] || 0) + r.total;
+  });
+  var typeLabels = Object.keys(byType).sort(function(a,b){ return byType[b]-byType[a]; });
+  var typeData = typeLabels.map(function(k){ return byType[k]; });
+  var typeColors = typeLabels.map(function(_,i){ return BUDGET_CHART_COLORS[(i+3) % BUDGET_CHART_COLORS.length]; });
+
+  var ctx3 = document.getElementById('budgetChartByType');
+  if (ctx3) {
+    _budgetCharts.type = new Chart(ctx3, {
+      type: 'doughnut',
+      data: {
+        labels: typeLabels,
+        datasets: [{ data: typeData, backgroundColor: typeColors, borderColor: '#fff', borderWidth: 2 }]
+      },
+      options: Object.assign({}, chartDefaults, {
+        plugins: Object.assign({}, chartDefaults.plugins, {
+          tooltip: Object.assign({}, chartDefaults.plugins.tooltip, {
+            callbacks: {
+              label: function(ctx) {
+                var v = ctx.raw || 0;
+                var pct = allTotal ? Math.round(v/allTotal*100) : 0;
+                return ' ' + (ccy||'') + ' ' + (typeof fmt==='function'?fmt(v):v) + ' ('+pct+'%)';
+              }
+            }
+          })
+        })
+      })
+    });
+  }
+  var leg3 = document.getElementById('budgetLegendByType');
+  if (leg3) {
+    leg3.innerHTML = typeLabels.map(function(name, i) {
+      var v = byType[name];
+      var pct = allTotal ? Math.round(v/allTotal*100) : 0;
+      return '<div class="budget-legend-item">'
+        + '<span class="budget-legend-swatch" style="background:'+typeColors[i]+'"></span>'
+        + '<span class="budget-legend-name">'+String(name).replace(/</g,'&lt;')+'</span>'
+        + '<span class="budget-legend-val">'+pct+'%</span>'
+        + '</div>';
+    }).join('');
+  }
+}
+
+
 function renderBudgetView() {
   var tbody = document.getElementById('budgetProjectCards');
   if (!tbody) return;
@@ -3462,20 +3893,25 @@ function renderBudgetView() {
 
   var statsEl = document.getElementById('budgetStatsRow');
   if (statsEl) {
+    var usageClr = allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--ink)';
+    var remainClr = allRemain<0?'var(--danger)':'var(--success)';
     statsEl.innerHTML =
       '<div class="stat-card"><div class="stat-label">Total Approved</div>'
         +'<div class="stat-value teal">'+fmtK(allTotal,topCcy)+'</div>'
         +'<div class="stat-sub">'+budgetLines.length+' lines · '+rows.length+' project'+(rows.length===1?'':'s')+'</div></div>'
-      +'<div class="stat-card"><div class="stat-label">Spent to Date</div>'
-        +'<div class="stat-value purple">'+fmtK(allActual,topCcy)+'</div>'
+      +'<div class="stat-card kpi-spent"><div class="stat-label">Spent to Date</div>'
+        +'<div class="stat-value" style="color:#8764B8">'+fmtK(allActual,topCcy)+'</div>'
         +'<div class="stat-sub">Paid requests only</div></div>'
-      +'<div class="stat-card"><div class="stat-label">Remaining</div>'
-        +'<div class="stat-value" style="color:'+(allRemain<0?'var(--danger)':'var(--success)')+'">'+fmtK(Math.abs(allRemain),topCcy)+'</div>'
+      +'<div class="stat-card kpi-remain"><div class="stat-label">Remaining</div>'
+        +'<div class="stat-value" style="color:'+remainClr+'">'+fmtK(Math.abs(allRemain),topCcy)+'</div>'
         +'<div class="stat-sub">'+(allRemain<0?'Over budget':'Available')+'</div></div>'
-      +'<div class="stat-card"><div class="stat-label">Usage</div>'
-        +'<div class="stat-value" style="color:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--ink)')+'">'+allPct+'%</div>'
+      +'<div class="stat-card kpi-usage"><div class="stat-label">Usage</div>'
+        +'<div class="stat-value" style="color:'+usageClr+'">'+allPct+'%</div>'
         +'<div class="stat-sub"><div class="progress-wrap" style="margin-top:8px"><div class="progress-fill" style="width:'+Math.min(100,allPct)+'%;background:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--amber)')+'"></div></div></div></div>';
   }
+
+  // Charts
+  try { renderBudgetCharts(rows, allTotal, allActual, allRemain, allPct, topCcy); } catch(e) { console.warn('budget charts', e); }
 
   var countEl = document.getElementById('budgetProjectCount');
   if (countEl) countEl.textContent = rows.length + ' group' + (rows.length===1?'':'s');
