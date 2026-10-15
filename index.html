@@ -2039,7 +2039,7 @@
       <button class="btn btn-secondary btn-sm admin-only" id="reqFormSettingsBtn" onclick="openReqFormSettings()" title="Request form rules — standard amounts, categories, limits">
         Form Settings
       </button>
-      <button class="btn btn-ghost btn-sm admin-only" onclick="pullClientsFromSheets().then(function(){ toast((clientsStore&&clientsStore.length?clientsStore.length:0)+' clients from sheet'); }).catch(function(){})" title="Refresh Client SN list from Clients sheet">
+      <button class="btn btn-ghost btn-sm admin-only" onclick="pullClientsFromSheets().then(function(){ toast((clientsStore&&clientsStore.length?clientsStore.length:0)+' Client SN(s) from Clients sheet'); try{populateClientSNSelect('');}catch(e){} }).catch(function(e){ toast('Clients pull failed'); })" title="Refresh Client SN list from Clients sheet">
         Pull Clients
       </button>
           </div>
@@ -2658,8 +2658,10 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="form-group" style="margin:0">
               <label>Client SN <span style="color:var(--danger)">*</span></label>
-              <input id="rClientSN" type="text" placeholder="Enter valid Client SN" oninput="onClientSNInput()" autocomplete="off">
-              <div id="rClientSNHint" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+              <select id="rClientSN" onchange="onClientSNInput()">
+                <option value="">— Select Client SN from sheet —</option>
+              </select>
+              <div id="rClientSNHint" style="font-size:11px;color:var(--muted);margin-top:4px">Loaded from the Clients Google Sheet only</div>
             </div>
             <div class="form-group" style="margin:0">
               <label>Client Name</label>
@@ -5391,7 +5393,18 @@ function loadClientsFromStorage() {
 function persistClients() {
   try { localStorage.setItem('mrv_clients', JSON.stringify(clientsStore)); } catch(e) {}
 }
-var clientsStore = loadClientsFromStorage();
+var clientsStore = (function() {
+  var list = loadClientsFromStorage();
+  // Drop known offline demo SNs — Clients must come from the sheet
+  var demo = { 'sn-001':1, 'sn-002':1, 'sn-003':1, 'sn-100':1, 'sn-101':1, 'sn-102':1, 'sn-103':1 };
+  list = (list || []).filter(function(c) {
+    var sn = String(c.clientSN || '').trim().toLowerCase();
+    if (demo[sn]) return false;
+    if (/^sample client/i.test(c.clientName || '')) return false;
+    return true;
+  });
+  return list;
+})();
 
 function mapClientRow_(r) {
   return {
@@ -5430,16 +5443,77 @@ function getClientBySN(sn) {
   if (!sn) return null;
   var ctry = (typeof getUserCountry === 'function' ? getUserCountry() : null) || '';
   ctry = String(ctry || '').trim().toLowerCase();
-  // Prefer country match; if none, fall back to SN-only so local lists still work
+  var proj = (_rProject || (document.getElementById('reqProject') || {}).value || '').trim().toLowerCase();
   var all = (clientsStore || []).filter(function(c) {
     return String(c.clientSN || '').trim().toLowerCase() === sn;
   });
   if (!all.length) return null;
-  if (!ctry) return all[0];
-  var inCountry = all.filter(function(c) {
-    return !c.country || String(c.country).trim().toLowerCase() === ctry;
+  // Prefer match on country + project when available
+  var scored = all.map(function(c) {
+    var score = 0;
+    var cc = String(c.country || '').trim().toLowerCase();
+    var cp = String(c.project || '').trim().toLowerCase();
+    if (ctry && cc && cc === ctry) score += 2;
+    if (ctry && cc && cc !== ctry) score -= 5;
+    if (proj && cp && cp === proj) score += 2;
+    return { c: c, score: score };
+  }).sort(function(a,b){ return b.score - a.score; });
+  if (scored[0].score < 0) return null; // wrong country
+  return scored[0].c;
+}
+
+/** Fill Client SN dropdown from Clients sheet data only (clientsStore). */
+function populateClientSNSelect(selectedSN) {
+  var sel = document.getElementById('rClientSN');
+  if (!sel) return;
+  var ctry = (typeof getUserCountry === 'function' ? getUserCountry() : null) || '';
+  ctry = String(ctry || '').trim().toLowerCase();
+  var proj = (_rProject || (document.getElementById('reqProject') || {}).value || '').trim().toLowerCase();
+
+  var list = (clientsStore || []).filter(function(c) {
+    if (!c.clientSN) return false;
+    var cc = String(c.country || '').trim().toLowerCase();
+    if (ctry && cc && cc !== ctry) return false;
+    return true;
   });
-  return inCountry[0] || all[0];
+
+  // Prefer clients for current project, but still list others for same country
+  list.sort(function(a, b) {
+    var ap = String(a.project || '').trim().toLowerCase() === proj ? 0 : 1;
+    var bp = String(b.project || '').trim().toLowerCase() === proj ? 0 : 1;
+    if (ap !== bp) return ap - bp;
+    return String(a.clientSN).localeCompare(String(b.clientSN));
+  });
+
+  var prev = selectedSN != null ? String(selectedSN) : (sel.value || '');
+  sel.innerHTML = '';
+  var opt0 = document.createElement('option');
+  opt0.value = '';
+  opt0.textContent = list.length
+    ? '— Select Client SN (' + list.length + ' from sheet) —'
+    : '— No clients in sheet — pull Clients first —';
+  sel.appendChild(opt0);
+
+  list.forEach(function(c) {
+    var o = document.createElement('option');
+    o.value = c.clientSN;
+    var label = c.clientSN + (c.clientName ? ' — ' + c.clientName : '');
+    if (c.project) label += ' (' + c.project + ')';
+    o.textContent = label;
+    if (String(c.clientSN) === String(prev)) o.selected = true;
+    sel.appendChild(o);
+  });
+
+  var hint = document.getElementById('rClientSNHint');
+  if (hint) {
+    if (!list.length) {
+      hint.textContent = 'No Client SNs available. Admin: add rows on the Clients sheet, deploy Apps Script, then Pull Clients.';
+      hint.style.color = 'var(--warn)';
+    } else {
+      hint.textContent = list.length + ' Client SN(s) from Clients sheet' + (ctry ? ' · country: ' + ctry : '');
+      hint.style.color = 'var(--muted)';
+    }
+  }
 }
 
 // ── Category visibility ──────────────────────────────────
@@ -5636,7 +5710,7 @@ function openNewRequestModal() {
       if (draft.name) document.getElementById('rName').value = draft.name;
       if (draft.desc) document.getElementById('rDesc').value = draft.desc;
       if (draft.clientSN) {
-        document.getElementById('rClientSN').value = draft.clientSN;
+        populateClientSNSelect(draft.clientSN);
         onClientSNInput();
       }
       if (draft.excessReason) document.getElementById('rExcessReason').value = draft.excessReason;
@@ -5669,6 +5743,15 @@ document.addEventListener('input', function(e) {
 function onReqProjectChange() {
   _rProject = document.getElementById('reqProject').value;
   _rType=''; _rCategory=''; _rSummary='';
+  // Refresh Client SN list for this project / country (sheet data only)
+  try {
+    if (document.getElementById('reqClientBlock') &&
+        document.getElementById('reqClientBlock').style.display !== 'none') {
+      populateClientSNSelect('');
+      onClientSNInput();
+    }
+  } catch(e) {}
+
   var types = _rProject ? getTypes(_rProject) : [];
   var ts = document.getElementById('reqType');
   var td = document.getElementById('reqTypeDisplay');
@@ -5798,7 +5881,7 @@ function selectReqLine(line) {
     }
   }
 
-  // Client SN block
+  // Client SN block — dropdown filled only from Clients sheet
   var needClient = needsClientSN(_rSummary);
   var clientBlock = document.getElementById('reqClientBlock');
   if (clientBlock) clientBlock.style.display = needClient ? '' : 'none';
@@ -5809,11 +5892,7 @@ function selectReqLine(line) {
     var ex = document.getElementById('reqExcessBlock'); if (ex) ex.style.display = 'none';
     _rExcess = false;
   } else {
-    var snHint = document.getElementById('rClientSNHint');
-    if (snHint && !(clientsStore && clientsStore.length)) {
-      snHint.textContent = 'No clients loaded from the Clients sheet. Admin: ensure Clients tab exists, run setupSheets, then Pull / re-login.';
-      snHint.style.color = 'var(--warn)';
-    }
+    populateClientSNSelect(_rClientSN || '');
     onClientSNInput();
   }
 
@@ -5837,62 +5916,76 @@ function selectReqLine(line) {
 }
 
 function onClientSNInput() {
-  var sn = (document.getElementById('rClientSN').value || '').trim();
+  var snEl = document.getElementById('rClientSN');
+  var sn = (snEl && snEl.value || '').trim();
   var hint = document.getElementById('rClientSNHint');
   var nameEl = document.getElementById('rClientName');
   _rClientSN = sn;
   _rClientName = '';
-  nameEl.value = '';
+  if (nameEl) nameEl.value = '';
+  var excessEl = document.getElementById('reqExcessBlock');
+
   if (!sn) {
-    hint.textContent = 'Enter a Client SN valid for your country.';
-    hint.style.color = 'var(--muted)';
-    document.getElementById('reqExcessBlock').style.display = 'none';
+    if (hint) {
+      var n = (clientsStore || []).length;
+      hint.textContent = n
+        ? 'Select a Client SN from the Clients sheet list.'
+        : 'No clients loaded — pull the Clients sheet first.';
+      hint.style.color = n ? 'var(--muted)' : 'var(--warn)';
+    }
+    if (excessEl) excessEl.style.display = 'none';
     _rExcess = false;
     checkReqReady();
     return;
   }
   var client = getClientBySN(sn);
   if (!client) {
-    hint.textContent = 'No matching Client SN found for your country.';
-    hint.style.color = 'var(--danger)';
-    document.getElementById('reqExcessBlock').style.display = 'none';
+    if (hint) {
+      hint.textContent = 'Selected SN is not valid for your country / project.';
+      hint.style.color = 'var(--danger)';
+    }
+    if (excessEl) excessEl.style.display = 'none';
     _rExcess = false;
     checkReqReady();
     return;
   }
-  // Optional: match project
-  if (client.project && _rProject && client.project !== _rProject) {
-    hint.textContent = 'Client belongs to project "'+client.project+'" — selected project is "'+_rProject+'".';
-    hint.style.color = 'var(--warn)';
-  } else {
-    hint.textContent = 'Valid client.';
-    hint.style.color = 'var(--success)';
-  }
   _rClientName = client.clientName || '';
-  nameEl.value = _rClientName;
-
-  // Excess check
-  var lim = getProjectRequestLimit(_rProject);
+  if (nameEl) {
+    nameEl.value = _rClientName;
+    nameEl.readOnly = true;
+  }
+  if (hint) {
+    if (client.project && _rProject && client.project !== _rProject) {
+      hint.textContent = 'Client project "' + client.project + '" differs from selected project "' + _rProject + '".';
+      hint.style.color = 'var(--warn)';
+    } else {
+      hint.textContent = 'Client: ' + (_rClientName || sn) + ' (from Clients sheet)';
+      hint.style.color = 'var(--success)';
+    }
+  }
+  // Project request limit / excess
+  var lim = typeof getProjectRequestLimit === 'function' ? getProjectRequestLimit(_rProject) : null;
   if (lim != null && lim > 0) {
     var cnt = countRequestsForClientSN(_rProject, sn);
     if (cnt >= lim) {
       _rExcess = true;
-      document.getElementById('reqExcessBlock').style.display = '';
-      hint.textContent = (hint.textContent ? hint.textContent + ' ' : '') + 'Limit '+lim+' reached ('+cnt+' existing). Reason required.';
-      hint.style.color = 'var(--warn)';
+      if (excessEl) excessEl.style.display = '';
+      if (hint) {
+        hint.textContent = (hint.textContent || '') + ' · Excess: ' + cnt + '/' + lim + ' requests for this SN.';
+        hint.style.color = 'var(--warn)';
+      }
     } else {
       _rExcess = false;
-      document.getElementById('reqExcessBlock').style.display = 'none';
-      document.getElementById('rExcessReason').value = '';
+      if (excessEl) excessEl.style.display = 'none';
     }
   } else {
     _rExcess = false;
-    document.getElementById('reqExcessBlock').style.display = 'none';
+    if (excessEl) excessEl.style.display = 'none';
   }
   checkReqReady();
 }
 
-// ── Transport rows ───────────────────────────────────────
+
 function addTransportRow() {
   _transportRows.push({ desc:'', qty:1, unit:0 });
   renderTransportRows();
@@ -8565,32 +8658,8 @@ function buildSidebar() {
 
 /** Offline demo budgets + clients so request form can be tested without Sheets */
 function seedDemoDataIfEmpty() {
-  var seeded = false;
-  // Always ensure demo clients exist when Clients sheet has not been pulled
-  if (!clientsStore || !clientsStore.length) {
-    clientsStore = [
-      { clientName:'Sample Client A', clientSN:'SN-001', project:'Demo Project', country:'Kenya' },
-      { clientName:'Sample Client B', clientSN:'SN-002', project:'Demo Project', country:'Kenya' },
-      { clientName:'Sample Client C', clientSN:'SN-003', project:'Demo Project', country:'Uganda' }
-    ];
-    // Also add clients for any projects already in budgets
-    try {
-      var projs = [...new Set((budgetLines||[]).map(function(l){ return l.project; }).filter(Boolean))];
-      var countries = [...new Set((budgetLines||[]).map(function(l){ return l.country; }).filter(Boolean))];
-      var ctry = countries[0] || 'Kenya';
-      projs.slice(0, 4).forEach(function(p, i) {
-        clientsStore.push({
-          clientName: 'Client ' + (i+1) + ' (' + p + ')',
-          clientSN: 'SN-' + String(100+i),
-          project: p,
-          country: ctry
-        });
-      });
-    } catch(e) {}
-    persistClients();
-    seeded = true;
-  }
-  if (budgetLines && budgetLines.length) return seeded;
+  // Clients are NEVER seeded locally — only from the Clients Google Sheet
+  if (budgetLines && budgetLines.length) return false;
   budgetLines = [
     { project:'Demo Project', type:'Field', country:'Kenya', category:'Field Operations',
       costSummary:'Enumerator Training Transport', costItem:'Training', unitOfMeasure:'Trip',
@@ -8635,7 +8704,7 @@ function seedDemoDataIfEmpty() {
     reqFormConfig.projectLimits['Demo Project'] = 1;
     saveReqFormConfigToStorage(reqFormConfig);
   }
-  appendSyncLog('Demo data loaded (no Budgets/Clients from Sheets yet)');
+  appendSyncLog('Demo budgets loaded (Clients still require Clients sheet pull)');
   return true;
 }
 
