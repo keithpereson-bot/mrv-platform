@@ -1920,49 +1920,6 @@
     <div class="view-body">
     <div id="budgetStatsRow" class="stats budget-kpi-row"></div>
 
-    <div class="budget-charts-row" id="budgetChartsRow">
-      <div class="card budget-chart-card">
-        <div class="card-header">
-          <div class="card-title">Allocation by project</div>
-        </div>
-        <div class="budget-chart-body">
-          <div class="budget-chart-canvas-wrap">
-            <canvas id="budgetChartByProject"></canvas>
-          </div>
-          <div class="budget-chart-legend" id="budgetLegendByProject"></div>
-        </div>
-      </div>
-      <div class="card budget-chart-card">
-        <div class="card-header">
-          <div class="card-title">Utilisation</div>
-        </div>
-        <div class="budget-chart-body budget-chart-body-center">
-          <div class="budget-chart-canvas-wrap budget-donut-wrap">
-            <canvas id="budgetChartUtilisation"></canvas>
-            <div class="budget-donut-center" id="budgetUtilCenter">
-              <div class="budget-donut-pct" id="budgetUtilPct">0%</div>
-              <div class="budget-donut-label">used</div>
-            </div>
-          </div>
-          <div class="budget-util-legend" id="budgetLegendUtil">
-            <div class="budget-util-item"><span class="dot spent"></span> Spent</div>
-            <div class="budget-util-item"><span class="dot remain"></span> Remaining</div>
-          </div>
-        </div>
-      </div>
-      <div class="card budget-chart-card">
-        <div class="card-header">
-          <div class="card-title">By type</div>
-        </div>
-        <div class="budget-chart-body">
-          <div class="budget-chart-canvas-wrap">
-            <canvas id="budgetChartByType"></canvas>
-          </div>
-          <div class="budget-chart-legend" id="budgetLegendByType"></div>
-        </div>
-      </div>
-    </div>
-
     <div class="card" id="budgetProjectsCard">
       <div class="card-header">
         <div class="card-title">Projects</div>
@@ -3737,183 +3694,6 @@ var BUDGET_CHART_COLORS = [
   '#69797E', '#498205', '#881798', '#A4262C'
 ];
 
-function destroyBudgetCharts() {
-  ['project', 'util', 'type'].forEach(function(k) {
-    if (_budgetCharts[k]) {
-      try { _budgetCharts[k].destroy(); } catch(e) {}
-      _budgetCharts[k] = null;
-    }
-  });
-}
-
-function renderBudgetCharts(rows, allTotal, allActual, allRemain, allPct, ccy) {
-  if (typeof Chart === 'undefined') {
-    console.warn('Chart.js not loaded');
-    return;
-  }
-  destroyBudgetCharts();
-
-  var chartDefaults = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: 'rgba(50,49,48,.92)',
-        titleFont: { size: 12, weight: '600' },
-        bodyFont: { size: 12 },
-        padding: 10,
-        cornerRadius: 6,
-        displayColors: true,
-        boxWidth: 10,
-        boxHeight: 10
-      }
-    },
-    cutout: '68%',
-    borderWidth: 2,
-    borderColor: '#fff',
-    hoverOffset: 4
-  };
-
-  // 1) Allocation by project
-  var byProj = {};
-  rows.forEach(function(r) {
-    var name = r.g.project || 'Unknown';
-    byProj[name] = (byProj[name] || 0) + r.total;
-  });
-  var projLabels = Object.keys(byProj).sort(function(a,b){ return byProj[b]-byProj[a]; });
-  var projData = projLabels.map(function(k){ return byProj[k]; });
-  var projColors = projLabels.map(function(_,i){ return BUDGET_CHART_COLORS[i % BUDGET_CHART_COLORS.length]; });
-
-  var ctx1 = document.getElementById('budgetChartByProject');
-  if (ctx1) {
-    _budgetCharts.project = new Chart(ctx1, {
-      type: 'doughnut',
-      data: {
-        labels: projLabels,
-        datasets: [{ data: projData, backgroundColor: projColors, borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: Object.assign({}, chartDefaults, {
-        plugins: Object.assign({}, chartDefaults.plugins, {
-          tooltip: Object.assign({}, chartDefaults.plugins.tooltip, {
-            callbacks: {
-              label: function(ctx) {
-                var v = ctx.raw || 0;
-                var pct = allTotal ? Math.round(v/allTotal*100) : 0;
-                return ' ' + (ccy||'') + ' ' + (typeof fmt==='function'?fmt(v):v) + ' ('+pct+'%)';
-              }
-            }
-          })
-        })
-      })
-    });
-  }
-  var leg1 = document.getElementById('budgetLegendByProject');
-  if (leg1) {
-    leg1.innerHTML = projLabels.map(function(name, i) {
-      var v = byProj[name];
-      var pct = allTotal ? Math.round(v/allTotal*100) : 0;
-      return '<div class="budget-legend-item" title="'+String(name).replace(/"/g,'&quot;')+'">'
-        + '<span class="budget-legend-swatch" style="background:'+projColors[i]+'"></span>'
-        + '<span class="budget-legend-name">'+String(name).replace(/</g,'&lt;')+'</span>'
-        + '<span class="budget-legend-val">'+pct+'%</span>'
-        + '</div>';
-    }).join('');
-  }
-
-  // 2) Utilisation doughnut (spent vs remaining)
-  var spent = Math.max(0, allActual);
-  var remain = Math.max(0, allRemain);
-  // If over budget, show spent full + over as extra segment
-  var utilData, utilColors, utilLabels;
-  if (allRemain < 0) {
-    utilData = [spent, Math.abs(allRemain)];
-    utilColors = ['#8764B8', '#D13438'];
-    utilLabels = ['Spent', 'Over budget'];
-  } else {
-    utilData = [spent, remain || 0.0001]; // tiny slice if zero
-    utilColors = ['#8764B8', '#E1DFDD'];
-    utilLabels = ['Spent', 'Remaining'];
-  }
-
-  var pctEl = document.getElementById('budgetUtilPct');
-  if (pctEl) {
-    pctEl.textContent = allPct + '%';
-    pctEl.style.color = allPct > 85 ? '#D13438' : allPct > 60 ? '#C19C00' : '#323130';
-  }
-
-  var ctx2 = document.getElementById('budgetChartUtilisation');
-  if (ctx2) {
-    _budgetCharts.util = new Chart(ctx2, {
-      type: 'doughnut',
-      data: {
-        labels: utilLabels,
-        datasets: [{ data: utilData, backgroundColor: utilColors, borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: Object.assign({}, chartDefaults, {
-        cutout: '72%',
-        plugins: Object.assign({}, chartDefaults.plugins, {
-          tooltip: Object.assign({}, chartDefaults.plugins.tooltip, {
-            callbacks: {
-              label: function(ctx) {
-                var v = ctx.raw || 0;
-                return ' ' + (ccy||'') + ' ' + (typeof fmt==='function'?fmt(v):v);
-              }
-            }
-          })
-        })
-      })
-    });
-  }
-
-  // 3) By type
-  var byType = {};
-  rows.forEach(function(r) {
-    var name = r.g.type || 'Other';
-    byType[name] = (byType[name] || 0) + r.total;
-  });
-  var typeLabels = Object.keys(byType).sort(function(a,b){ return byType[b]-byType[a]; });
-  var typeData = typeLabels.map(function(k){ return byType[k]; });
-  var typeColors = typeLabels.map(function(_,i){ return BUDGET_CHART_COLORS[(i+3) % BUDGET_CHART_COLORS.length]; });
-
-  var ctx3 = document.getElementById('budgetChartByType');
-  if (ctx3) {
-    _budgetCharts.type = new Chart(ctx3, {
-      type: 'doughnut',
-      data: {
-        labels: typeLabels,
-        datasets: [{ data: typeData, backgroundColor: typeColors, borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: Object.assign({}, chartDefaults, {
-        plugins: Object.assign({}, chartDefaults.plugins, {
-          tooltip: Object.assign({}, chartDefaults.plugins.tooltip, {
-            callbacks: {
-              label: function(ctx) {
-                var v = ctx.raw || 0;
-                var pct = allTotal ? Math.round(v/allTotal*100) : 0;
-                return ' ' + (ccy||'') + ' ' + (typeof fmt==='function'?fmt(v):v) + ' ('+pct+'%)';
-              }
-            }
-          })
-        })
-      })
-    });
-  }
-  var leg3 = document.getElementById('budgetLegendByType');
-  if (leg3) {
-    leg3.innerHTML = typeLabels.map(function(name, i) {
-      var v = byType[name];
-      var pct = allTotal ? Math.round(v/allTotal*100) : 0;
-      return '<div class="budget-legend-item">'
-        + '<span class="budget-legend-swatch" style="background:'+typeColors[i]+'"></span>'
-        + '<span class="budget-legend-name">'+String(name).replace(/</g,'&lt;')+'</span>'
-        + '<span class="budget-legend-val">'+pct+'%</span>'
-        + '</div>';
-    }).join('');
-  }
-}
-
-
 function renderBudgetView() {
   var tbody = document.getElementById('budgetProjectCards');
   if (!tbody) return;
@@ -4010,8 +3790,6 @@ function renderBudgetView() {
         +'<div class="stat-sub"><div class="progress-wrap" style="margin-top:8px"><div class="progress-fill" style="width:'+Math.min(100,allPct)+'%;background:'+(allPct>85?'var(--danger)':allPct>60?'var(--warn)':'var(--amber)')+'"></div></div></div></div>';
   }
 
-  // Charts
-  try { renderBudgetCharts(rows, allTotal, allActual, allRemain, allPct, topCcy); } catch(e) { console.warn('budget charts', e); }
 
   var countEl = document.getElementById('budgetProjectCount');
   if (countEl) countEl.textContent = rows.length + ' group' + (rows.length===1?'':'s');
@@ -4112,25 +3890,11 @@ function renderBudgetView() {
           + '<div class="bgt-detail-grid">'
             + '<div class="bgt-row-charts">'
               + '<div class="bgt-row-chart-block">'
-                + '<div class="bgt-row-chart-title">Budget by category</div>'
+                + '<div class="bgt-row-chart-title">By category</div>'
                 + '<div class="bgt-row-chart-wrap">'
                   + '<canvas id="bgt-cat-chart-'+r.gid+'" width="160" height="160"></canvas>'
                 + '</div>'
                 + '<div class="bgt-row-legend" id="bgt-cat-legend-'+r.gid+'"></div>'
-              + '</div>'
-              + '<div class="bgt-row-chart-block">'
-                + '<div class="bgt-row-chart-title">Utilisation</div>'
-                + '<div class="bgt-row-chart-wrap bgt-row-util-wrap">'
-                  + '<canvas id="bgt-util-chart-'+r.gid+'" width="140" height="140"></canvas>'
-                  + '<div class="bgt-row-util-center">'
-                    + '<div class="bgt-row-util-pct" style="color:'+barClr+'">'+r.pct+'%</div>'
-                    + '<div class="bgt-row-util-label">used</div>'
-                  + '</div>'
-                + '</div>'
-                + '<div class="bgt-row-util-legend">'
-                  + '<span><i class="sw spent"></i>Spent</span>'
-                  + '<span><i class="sw remain"></i>Remaining</span>'
-                + '</div>'
               + '</div>'
             + '</div>'
             + '<div class="bgt-detail-table-col">'
@@ -4413,18 +4177,15 @@ function toggleBudgetCard(gid) {
   }
 }
 
-/** Build category + utilisation doughnuts for one expanded project row */
+/** Doughnut: budget by category for one expanded project row */
 function renderProjectRowCharts(gid, master) {
   if (typeof Chart === 'undefined') return;
   window._rowBudgetCharts = window._rowBudgetCharts || {};
 
-  // Destroy previous charts for this gid
   if (window._rowBudgetCharts[gid]) {
-    ['cat', 'util'].forEach(function(k) {
-      if (window._rowBudgetCharts[gid][k]) {
-        try { window._rowBudgetCharts[gid][k].destroy(); } catch(e) {}
-      }
-    });
+    if (window._rowBudgetCharts[gid].cat) {
+      try { window._rowBudgetCharts[gid].cat.destroy(); } catch(e) {}
+    }
   }
   window._rowBudgetCharts[gid] = {};
 
@@ -4435,31 +4196,17 @@ function renderProjectRowCharts(gid, master) {
   });
   if (!lines.length) return;
 
-  // Aggregate by category
   var byCat = {};
-  var total = 0, actual = 0;
+  var total = 0;
   lines.forEach(function(l) {
     var cat = l.category || 'Other';
     var bud = parseFloat(l.budgetedAmount) || 0;
     byCat[cat] = (byCat[cat] || 0) + bud;
     total += bud;
-    actual += getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem);
   });
-  var remain = total - actual;
   var labels = Object.keys(byCat).sort(function(a,b){ return byCat[b]-byCat[a]; });
   var data = labels.map(function(k){ return byCat[k]; });
   var colors = labels.map(function(_,i){ return BUDGET_CHART_COLORS[i % BUDGET_CHART_COLORS.length]; });
-
-  var tipOpts = {
-    backgroundColor: 'rgba(50,49,48,.92)',
-    titleFont: { size: 11, weight: '600' },
-    bodyFont: { size: 11 },
-    padding: 8,
-    cornerRadius: 6,
-    displayColors: true,
-    boxWidth: 8,
-    boxHeight: 8
-  };
 
   var catCanvas = document.getElementById('bgt-cat-chart-' + gid);
   if (catCanvas) {
@@ -4475,7 +4222,15 @@ function renderProjectRowCharts(gid, master) {
         cutout: '62%',
         plugins: {
           legend: { display: false },
-          tooltip: Object.assign({}, tipOpts, {
+          tooltip: {
+            backgroundColor: 'rgba(50,49,48,.92)',
+            titleFont: { size: 11, weight: '600' },
+            bodyFont: { size: 11 },
+            padding: 8,
+            cornerRadius: 6,
+            displayColors: true,
+            boxWidth: 8,
+            boxHeight: 8,
             callbacks: {
               label: function(ctx) {
                 var v = ctx.raw || 0;
@@ -4483,7 +4238,7 @@ function renderProjectRowCharts(gid, master) {
                 return ' ' + (typeof fmt==='function'?fmt(v):v) + ' ('+pct+'%)';
               }
             }
-          })
+          }
         }
       }
     });
@@ -4499,43 +4254,6 @@ function renderProjectRowCharts(gid, master) {
         + '<span class="budget-legend-val">'+pct+'%</span>'
         + '</div>';
     }).join('');
-  }
-
-  var utilCanvas = document.getElementById('bgt-util-chart-' + gid);
-  if (utilCanvas) {
-    var utilData, utilColors, utilLabels;
-    if (remain < 0) {
-      utilData = [Math.max(0, actual), Math.abs(remain)];
-      utilColors = ['#8764B8', '#D13438'];
-      utilLabels = ['Spent', 'Over'];
-    } else {
-      utilData = [Math.max(0, actual), Math.max(0.0001, remain)];
-      utilColors = ['#8764B8', '#E1DFDD'];
-      utilLabels = ['Spent', 'Remaining'];
-    }
-    window._rowBudgetCharts[gid].util = new Chart(utilCanvas, {
-      type: 'doughnut',
-      data: {
-        labels: utilLabels,
-        datasets: [{ data: utilData, backgroundColor: utilColors, borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '70%',
-        plugins: {
-          legend: { display: false },
-          tooltip: Object.assign({}, tipOpts, {
-            callbacks: {
-              label: function(ctx) {
-                var v = ctx.raw || 0;
-                return ' ' + (typeof fmt==='function'?fmt(v):v);
-              }
-            }
-          })
-        }
-      }
-    });
   }
 }
 
