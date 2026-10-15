@@ -5392,72 +5392,106 @@ function persistClients() {
   try { localStorage.setItem('mrv_clients', JSON.stringify(clientsStore)); } catch(e) {}
 }
 var clientsStore = (function() {
+  var pulled = null;
+  try { pulled = localStorage.getItem('mrv_clients_pulled_at'); } catch(e) {}
+  if (!pulled) {
+    try { localStorage.removeItem('mrv_clients'); } catch(e) {}
+    return [];
+  }
   var list = loadClientsFromStorage();
-  // Drop known offline demo SNs — Clients must come from the sheet
-  var demo = { 'sn-001':1, 'sn-002':1, 'sn-003':1, 'sn-100':1, 'sn-101':1, 'sn-102':1, 'sn-103':1 };
-  list = (list || []).filter(function(c) {
-    var sn = String(c.clientSN || '').trim().toLowerCase();
-    if (demo[sn]) return false;
-    if (/^sample client/i.test(c.clientName || '')) return false;
-    return true;
-  });
-  return list;
+  return (list || []).map(function(c) {
+    var sn = c.clientSN;
+    if (typeof sn === 'number' && isFinite(sn)) sn = String(Math.round(sn));
+    else sn = String(sn == null ? '' : sn).trim();
+    if (/^\d+\.0+$/.test(sn)) sn = sn.replace(/\.0+$/, '');
+    return {
+      clientName: String(c.clientName || '').trim(),
+      clientSN: sn,
+      project: String(c.project || '').trim(),
+      country: String(c.country || '').trim()
+    };
+  }).filter(function(c){ return !!c.clientSN; });
 })();
 
+function normalizeClientSN_(v) {
+  if (v == null || v === '') return '';
+  // Sheets may send numbers; avoid "12346.0" and scientific notation
+  if (typeof v === 'number' && isFinite(v)) {
+    return String(Math.round(v));
+  }
+  var s = String(v).trim();
+  // pure numeric strings with trailing .0
+  if (/^\d+\.0+$/.test(s)) s = s.replace(/\.0+$/, '');
+  return s;
+}
+
 function mapClientRow_(r) {
+  if (!r || typeof r !== 'object') return { clientName:'', clientSN:'', project:'', country:'' };
   return {
     clientName: String(r['Client Name'] || r.clientName || r['Name'] || '').trim(),
-    clientSN:   String(r['Client SN'] || r.clientSN || r['SN'] || '').trim(),
+    clientSN:   normalizeClientSN_(r['Client SN'] != null ? r['Client SN'] : (r.clientSN != null ? r.clientSN : r['SN'])),
     project:    String(r['Project'] || r.project || '').trim(),
     country:    String(r['Country'] || r.country || '').trim()
   };
 }
 
-/** Dedicated Clients pull (Apps Script action: getClients) — sheet is source of truth */
+/** Dedicated Clients pull — sheet is the only source of truth for valid SNs */
 async function pullClientsFromSheets() {
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') {
     appendSyncLog('Clients: no Web App URL — cannot pull Clients sheet');
-    return;
+    return { ok: false, error: 'no url' };
   }
   try {
     var res = await gasCall({ action: 'getClients' });
     if (!res || !res.ok) {
       appendSyncLog('Clients pull failed: ' + ((res && res.error) || 'not ok'));
-      return;
+      return { ok: false, error: (res && res.error) || 'not ok' };
     }
     var rows = res.clients || res.data || [];
-    // Sheet wins: even empty response clears local cache so form cannot use stale SNs
-    clientsStore = (rows || []).map(mapClientRow_).filter(function(c){ return c.clientSN; });
+    // Always replace local list with sheet contents (never merge — prevents stale SNs)
+    clientsStore = (rows || []).map(mapClientRow_).filter(function(c){ return !!c.clientSN; });
+    // De-dupe by SN (keep first)
+    var seen = {};
+    clientsStore = clientsStore.filter(function(c) {
+      var k = c.clientSN.toLowerCase();
+      if (seen[k]) return false;
+      seen[k] = true;
+      return true;
+    });
     persistClients();
-    appendSyncLog('Clients pulled from sheet: ' + clientsStore.length);
+    try { localStorage.setItem('mrv_clients_pulled_at', String(Date.now())); } catch(e) {}
+    window._clientsSheetSynced = true;
+    appendSyncLog('Clients pulled from sheet: ' + clientsStore.length + ' SN(s)');
+    return { ok: true, count: clientsStore.length };
   } catch(e) {
     appendSyncLog('Clients pull failed: ' + (e.message || e));
+    return { ok: false, error: e.message || String(e) };
   }
 }
 
-
+/**
+ * Exact Client SN lookup against clientsStore (from Clients sheet only).
+ * SN must match exactly (case-insensitive trim). No partial matches.
+ * If the user has a country restriction, the client row must match that country
+ * when the client row has a country set.
+ */
 function getClientBySN(sn) {
-  sn = String(sn || '').trim().toLowerCase();
+  sn = normalizeClientSN_(sn);
   if (!sn) return null;
-  var ctry = (typeof getUserCountry === 'function' ? getUserCountry() : null) || '';
-  ctry = String(ctry || '').trim().toLowerCase();
-  var proj = (_rProject || (document.getElementById('reqProject') || {}).value || '').trim().toLowerCase();
-  var all = (clientsStore || []).filter(function(c) {
-    return String(c.clientSN || '').trim().toLowerCase() === sn;
-  });
-  if (!all.length) return null;
-  // Prefer match on country + project when available
-  var scored = all.map(function(c) {
-    var score = 0;
+  var snKey = sn.toLowerCase();
+  var ctry = '';
+  try { ctry = String((typeof getUserCountry === 'function' ? getUserCountry() : '') || '').trim().toLowerCase(); } catch(e) {}
+
+  var match = null;
+  (clientsStore || []).forEach(function(c) {
+    if (match) return;
+    var csn = normalizeClientSN_(c.clientSN);
+    if (!csn || csn.toLowerCase() !== snKey) return;
     var cc = String(c.country || '').trim().toLowerCase();
-    var cp = String(c.project || '').trim().toLowerCase();
-    if (ctry && cc && cc === ctry) score += 2;
-    if (ctry && cc && cc !== ctry) score -= 5;
-    if (proj && cp && cp === proj) score += 2;
-    return { c: c, score: score };
-  }).sort(function(a,b){ return b.score - a.score; });
-  if (scored[0].score < 0) return null; // wrong country
-  return scored[0].c;
+    if (ctry && cc && cc !== ctry) return; // wrong country
+    match = c;
+  });
+  return match;
 }
 
 /** Client SN is typed (not a dropdown). Kept for call-site compatibility. */
@@ -5911,8 +5945,17 @@ function selectReqLine(line) {
     var ex = document.getElementById('reqExcessBlock'); if (ex) ex.style.display = 'none';
     _rExcess = false;
   } else {
-    populateClientSNSelect(_rClientSN || '');
-    onClientSNInput();
+    // Refresh Clients from sheet when possible so typed SNs validate against live data
+    var existingSN = (document.getElementById('rClientSN') || {}).value || _rClientSN || '';
+    var after = function() {
+      populateClientSNSelect(existingSN);
+      onClientSNInput();
+    };
+    if (gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
+      pullClientsFromSheets().then(after).catch(after);
+    } else {
+      after();
+    }
   }
 
   // Transport breakdown
@@ -6850,9 +6893,18 @@ async function pullFromSheets(silent) {
 
     // -- Clients sheet (source of truth for Client SN) --
     if (res.clients) {
-      clientsStore = (res.clients || []).map(mapClientRow_).filter(function(c){ return c.clientSN; });
+      clientsStore = (res.clients || []).map(mapClientRow_).filter(function(c){ return !!c.clientSN; });
+      var seenC = {};
+      clientsStore = clientsStore.filter(function(c) {
+        var k = c.clientSN.toLowerCase();
+        if (seenC[k]) return false;
+        seenC[k] = true;
+        return true;
+      });
       persistClients();
-      appendSyncLog('Clients from sheet: ' + clientsStore.length);
+      try { localStorage.setItem('mrv_clients_pulled_at', String(Date.now())); } catch(e) {}
+      window._clientsSheetSynced = true;
+      appendSyncLog('Clients from sheet: ' + clientsStore.length + ' SN(s)');
     }
 
     // -- Budgets -- handled separately by pullBudgetLinesFromSheets()
