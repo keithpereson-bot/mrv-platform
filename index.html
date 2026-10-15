@@ -2658,10 +2658,8 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="form-group" style="margin:0">
               <label>Client SN <span style="color:var(--danger)">*</span></label>
-              <select id="rClientSN" onchange="onClientSNInput()">
-                <option value="">— Select Client SN from sheet —</option>
-              </select>
-              <div id="rClientSNHint" style="font-size:11px;color:var(--muted);margin-top:4px">Loaded from the Clients Google Sheet only</div>
+              <input id="rClientSN" type="text" placeholder="Type Client SN (from sheet)" oninput="onClientSNInput()" autocomplete="off" spellcheck="false">
+              <div id="rClientSNHint" style="font-size:11px;color:var(--muted);margin-top:4px">Must match a Client SN on the Clients sheet</div>
             </div>
             <div class="form-group" style="margin:0">
               <label>Client Name</label>
@@ -5462,7 +5460,27 @@ function getClientBySN(sn) {
   return scored[0].c;
 }
 
-/** Fill Client SN dropdown from Clients sheet data only (clientsStore). */
+/** Client SN is typed (not a dropdown). Kept for call-site compatibility. */
+function populateClientSNSelect(selectedSN) {
+  var el = document.getElementById('rClientSN');
+  if (!el) return;
+  if (selectedSN != null && selectedSN !== '') {
+    el.value = String(selectedSN);
+  }
+  var hint = document.getElementById('rClientSNHint');
+  if (hint) {
+    var n = (clientsStore || []).length;
+    if (!n) {
+      hint.textContent = 'No clients loaded from the Clients sheet. Admin: Pull Clients after adding rows.';
+      hint.style.color = 'var(--warn)';
+    } else {
+      hint.textContent = n + ' Client SN(s) available from sheet — type to match.';
+      hint.style.color = 'var(--muted)';
+    }
+  }
+}
+
+
 function populateClientSNSelect(selectedSN) {
   var sel = document.getElementById('rClientSN');
   if (!sel) return;
@@ -5710,7 +5728,8 @@ function openNewRequestModal() {
       if (draft.name) document.getElementById('rName').value = draft.name;
       if (draft.desc) document.getElementById('rDesc').value = draft.desc;
       if (draft.clientSN) {
-        populateClientSNSelect(draft.clientSN);
+        var snEl = document.getElementById('rClientSN');
+        if (snEl) snEl.value = draft.clientSN;
         onClientSNInput();
       }
       if (draft.excessReason) document.getElementById('rExcessReason').value = draft.excessReason;
@@ -5920,17 +5939,17 @@ function onClientSNInput() {
   var sn = (snEl && snEl.value || '').trim();
   var hint = document.getElementById('rClientSNHint');
   var nameEl = document.getElementById('rClientName');
+  var excessEl = document.getElementById('reqExcessBlock');
   _rClientSN = sn;
   _rClientName = '';
   if (nameEl) nameEl.value = '';
-  var excessEl = document.getElementById('reqExcessBlock');
 
   if (!sn) {
     if (hint) {
       var n = (clientsStore || []).length;
       hint.textContent = n
-        ? 'Select a Client SN from the Clients sheet list.'
-        : 'No clients loaded — pull the Clients sheet first.';
+        ? 'Type a Client SN from the Clients sheet (column “Client SN”).'
+        : 'No clients loaded — admin must Pull Clients from the sheet first.';
       hint.style.color = n ? 'var(--muted)' : 'var(--warn)';
     }
     if (excessEl) excessEl.style.display = 'none';
@@ -5938,10 +5957,12 @@ function onClientSNInput() {
     checkReqReady();
     return;
   }
+
   var client = getClientBySN(sn);
   if (!client) {
     if (hint) {
-      hint.textContent = 'Selected SN is not valid for your country / project.';
+      hint.textContent = 'No match for “' + sn + '” on the Clients sheet' +
+        ((typeof getUserCountry === 'function' && getUserCountry()) ? ' for your country.' : '.');
       hint.style.color = 'var(--danger)';
     }
     if (excessEl) excessEl.style.display = 'none';
@@ -5949,6 +5970,7 @@ function onClientSNInput() {
     checkReqReady();
     return;
   }
+
   _rClientName = client.clientName || '';
   if (nameEl) {
     nameEl.value = _rClientName;
@@ -5956,14 +5978,14 @@ function onClientSNInput() {
   }
   if (hint) {
     if (client.project && _rProject && client.project !== _rProject) {
-      hint.textContent = 'Client project "' + client.project + '" differs from selected project "' + _rProject + '".';
+      hint.textContent = 'Matched “' + _rClientName + '” — sheet project is “' + client.project + '” (selected: “' + _rProject + '”).';
       hint.style.color = 'var(--warn)';
     } else {
-      hint.textContent = 'Client: ' + (_rClientName || sn) + ' (from Clients sheet)';
+      hint.textContent = 'Matched: ' + (_rClientName || sn);
       hint.style.color = 'var(--success)';
     }
   }
-  // Project request limit / excess
+
   var lim = typeof getProjectRequestLimit === 'function' ? getProjectRequestLimit(_rProject) : null;
   if (lim != null && lim > 0) {
     var cnt = countRequestsForClientSN(_rProject, sn);
