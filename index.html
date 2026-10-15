@@ -4751,6 +4751,7 @@ function resetRequestFormUI_() {
 }
 
 function openNewRequestModal() {
+  try { if (!budgetLines || !budgetLines.length) seedDemoDataIfEmpty(); } catch(e) {}
   _rProject=''; _rType=''; _rCategory=''; _rSummary=''; _rCostItem='';
   _rClientSN=''; _rClientName=''; _rExcess=false;
   _transportRows = [];
@@ -6486,7 +6487,7 @@ function clearLoginCache() {
 }
 
 function loginSuccess(user) {
-  currentUser = { name: user.name, email: user.email, role: user.role, country: user.country || '' };
+  currentUser = { name: user.name, email: user.email, role: user.role, country: user.country || '', payeeNumber: user.payeeNumber || '' };
   localStorage.setItem(SESSION_KEY, JSON.stringify({
     user:    currentUser,
     version: SESSION_VERSION,
@@ -7722,6 +7723,83 @@ function buildSidebar() {
 }
 
 // Called by loginSuccess() after a successful sign-in
+
+/** Offline demo budgets + clients so request form can be tested without Sheets */
+function seedDemoDataIfEmpty() {
+  var seeded = false;
+  // Always ensure demo clients exist when Clients sheet has not been pulled
+  if (!clientsStore || !clientsStore.length) {
+    clientsStore = [
+      { clientName:'Sample Client A', clientSN:'SN-001', project:'Demo Project', country:'Kenya' },
+      { clientName:'Sample Client B', clientSN:'SN-002', project:'Demo Project', country:'Kenya' },
+      { clientName:'Sample Client C', clientSN:'SN-003', project:'Demo Project', country:'Uganda' }
+    ];
+    // Also add clients for any projects already in budgets
+    try {
+      var projs = [...new Set((budgetLines||[]).map(function(l){ return l.project; }).filter(Boolean))];
+      var countries = [...new Set((budgetLines||[]).map(function(l){ return l.country; }).filter(Boolean))];
+      var ctry = countries[0] || 'Kenya';
+      projs.slice(0, 4).forEach(function(p, i) {
+        clientsStore.push({
+          clientName: 'Client ' + (i+1) + ' (' + p + ')',
+          clientSN: 'SN-' + String(100+i),
+          project: p,
+          country: ctry
+        });
+      });
+    } catch(e) {}
+    persistClients();
+    seeded = true;
+  }
+  if (budgetLines && budgetLines.length) return seeded;
+  budgetLines = [
+    { project:'Demo Project', type:'Field', country:'Kenya', category:'Field Operations',
+      costSummary:'Enumerator Training Transport', costItem:'Training', unitOfMeasure:'Trip',
+      budgetedAmount:50000, currency:'KES', actual:0 },
+    { project:'Demo Project', type:'Field', country:'Kenya', category:'Field Operations',
+      costSummary:'Enumerator field Transport', costItem:'Field', unitOfMeasure:'Trip',
+      budgetedAmount:80000, currency:'KES', actual:0 },
+    { project:'Demo Project', type:'Field', country:'Kenya', category:'Field Operations',
+      costSummary:'Enumerator Field Airtime', costItem:'Airtime', unitOfMeasure:'Unit',
+      budgetedAmount:30000, currency:'KES', actual:0 },
+    { project:'Demo Project', type:'Field', country:'Kenya', category:'Field Operations',
+      costSummary:'Incentives', costItem:'Incentive', unitOfMeasure:'Person',
+      budgetedAmount:100000, currency:'KES', actual:0 },
+    { project:'Demo Project', type:'Field', country:'Kenya', category:'HR Payments',
+      costSummary:'Stipends', costItem:'Stipend', unitOfMeasure:'Person',
+      budgetedAmount:200000, currency:'KES', actual:0 }
+  ];
+  try { budgetStore = buildBudgetStore(); } catch(e) {}
+  try { localStorage.setItem('mrv_budget_lines', JSON.stringify(budgetLines)); } catch(e) {}
+
+  // Seed example std amounts for demo project
+  reqFormConfig = loadReqFormConfig();
+  var list = normalizeStdAmounts_(reqFormConfig.stdAmounts);
+  if (!list.length) {
+    reqFormConfig.stdAmounts = [
+      { project:'Demo Project', costLine:'Enumerator Training Transport', amount:1500 },
+      { project:'Demo Project', costLine:'Enumerator field Transport', amount:2000 },
+      { project:'Demo Project', costLine:'Enumerator Field Airtime', amount:500 },
+      { project:'Demo Project', costLine:'Incentives', amount:1000 }
+    ];
+    saveReqFormConfigToStorage(reqFormConfig);
+  }
+  // Mark Stipends unavailable to requesters (demo for category rules)
+  if (!reqFormConfig.categoryRules || !reqFormConfig.categoryRules['HR Payments']) {
+    reqFormConfig.categoryRules = reqFormConfig.categoryRules || {};
+    reqFormConfig.categoryRules['HR Payments'] = { available:false, allowedRoles:['admin','approver','manager'] };
+    saveReqFormConfigToStorage(reqFormConfig);
+  }
+  // Demo project limit
+  if (!reqFormConfig.projectLimits || reqFormConfig.projectLimits['Demo Project'] == null) {
+    reqFormConfig.projectLimits = reqFormConfig.projectLimits || {};
+    reqFormConfig.projectLimits['Demo Project'] = 1;
+    saveReqFormConfigToStorage(reqFormConfig);
+  }
+  appendSyncLog('Demo data loaded (no Budgets/Clients from Sheets yet)');
+  return true;
+}
+
 async function afterLogin() {
   try { updateReqFormSettingsBtn(); } catch(e) {}
 
@@ -7781,6 +7859,9 @@ async function afterLogin() {
         pullBudgetLinesFromSheets().catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); }),
         pullClientsFromSheets().catch(function(e){ appendSyncLog('Clients pull failed: ' + (e.message||e)); })
       ]).finally(function() {
+          // If Sheets returned nothing, seed demo so form features are usable
+          try { seedDemoDataIfEmpty(); } catch(e) {}
+          try { populateAllDropdowns(); renderDashboard(); rebuildRequestsTable(); } catch(e) {}
           pullRequestsOnly()
             .catch(function(e){ appendSyncLog('Pull failed: ' + e.message); })
             .finally(function() {
@@ -7788,6 +7869,10 @@ async function afterLogin() {
             });
         });
     });
+  } else {
+    // Offline / no Web App URL
+    try { seedDemoDataIfEmpty(); } catch(e) {}
+    try { populateAllDropdowns(); renderDashboard(); rebuildRequestsTable(); } catch(e) {}
   }
 }
 
