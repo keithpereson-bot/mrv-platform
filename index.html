@@ -1675,6 +1675,106 @@
     background: linear-gradient(90deg, #E8F2FC 0%, #F3F9FF 100%);
   }
 
+
+  /* Per-project expand charts */
+  .bgt-detail-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  @media (max-width: 960px) {
+    .bgt-detail-grid { grid-template-columns: 1fr; }
+  }
+  .bgt-row-charts {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 14px 12px;
+  }
+  .bgt-row-chart-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .bgt-row-chart-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+    align-self: flex-start;
+  }
+  .bgt-row-chart-wrap {
+    position: relative;
+    width: 150px;
+    height: 150px;
+  }
+  .bgt-row-util-wrap {
+    width: 130px;
+    height: 130px;
+  }
+  .bgt-row-chart-wrap canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .bgt-row-util-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .bgt-row-util-pct {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .bgt-row-util-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .bgt-row-legend {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 110px;
+    overflow-y: auto;
+  }
+  .bgt-row-legend .budget-legend-item {
+    font-size: 11.5px;
+  }
+  .bgt-row-util-legend {
+    display: flex;
+    gap: 14px;
+    font-size: 11.5px;
+    color: var(--ink-mid, #323130);
+  }
+  .bgt-row-util-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .bgt-row-util-legend .sw {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .bgt-row-util-legend .sw.spent { background: #8764B8; }
+  .bgt-row-util-legend .sw.remain { background: #C8C6C4; }
+  .bgt-detail-table-col {
+    min-width: 0;
+  }
+
 </style>
 
 </head>
@@ -4009,22 +4109,49 @@ function renderBudgetView() {
             + '<div><div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:2px">Usage</div>'
               + '<div style="font-size:14px;font-weight:700;color:'+barClr+'">'+r.pct+'%</div></div>'
           + '</div>'
-          + '<div class="table-scroll">'
-          + '<table class="bgt-lines-table">'
-            + '<thead><tr>'
-              + '<th>Category</th><th>Cost Summary</th><th>Cost Item</th><th>Unit</th><th style="text-align:center">CCY</th>'
-              + '<th style="text-align:right">Budgeted</th><th style="text-align:right">Actual</th>'
-              + '<th style="text-align:right">Remaining</th><th>Utilisation</th>'
-            + '</tr></thead>'
-            + '<tbody id="'+tbodyId+'">'+lineRows+'</tbody>'
-            + '<tfoot><tr style="background:var(--surface);font-weight:700">'
-              + '<td colspan="5" style="padding:8px 10px;font-size:11px;color:var(--muted);text-transform:uppercase">Total</td>'
-              + '<td style="text-align:right;padding:8px 10px">'+fmt(r.total)+'</td>'
-              + '<td style="text-align:right;padding:8px 10px;color:var(--success)">'+fmt(r.actual)+'</td>'
-              + '<td style="text-align:right;padding:8px 10px;color:'+(r.remain<0?'var(--danger)':'var(--ink)')+'">'+fmt(r.remain)+'</td>'
-              + '<td style="padding:8px 10px;color:'+barClr+'">'+r.pct+'% used</td>'
-            + '</tr></tfoot>'
-          + '</table>'
+          + '<div class="bgt-detail-grid">'
+            + '<div class="bgt-row-charts">'
+              + '<div class="bgt-row-chart-block">'
+                + '<div class="bgt-row-chart-title">Budget by category</div>'
+                + '<div class="bgt-row-chart-wrap">'
+                  + '<canvas id="bgt-cat-chart-'+r.gid+'" width="160" height="160"></canvas>'
+                + '</div>'
+                + '<div class="bgt-row-legend" id="bgt-cat-legend-'+r.gid+'"></div>'
+              + '</div>'
+              + '<div class="bgt-row-chart-block">'
+                + '<div class="bgt-row-chart-title">Utilisation</div>'
+                + '<div class="bgt-row-chart-wrap bgt-row-util-wrap">'
+                  + '<canvas id="bgt-util-chart-'+r.gid+'" width="140" height="140"></canvas>'
+                  + '<div class="bgt-row-util-center">'
+                    + '<div class="bgt-row-util-pct" style="color:'+barClr+'">'+r.pct+'%</div>'
+                    + '<div class="bgt-row-util-label">used</div>'
+                  + '</div>'
+                + '</div>'
+                + '<div class="bgt-row-util-legend">'
+                  + '<span><i class="sw spent"></i>Spent</span>'
+                  + '<span><i class="sw remain"></i>Remaining</span>'
+                + '</div>'
+              + '</div>'
+            + '</div>'
+            + '<div class="bgt-detail-table-col">'
+              + '<div class="table-scroll">'
+              + '<table class="bgt-lines-table">'
+                + '<thead><tr>'
+                  + '<th>Category</th><th>Cost Summary</th><th>Cost Item</th><th>Unit</th><th style="text-align:center">CCY</th>'
+                  + '<th style="text-align:right">Budgeted</th><th style="text-align:right">Actual</th>'
+                  + '<th style="text-align:right">Remaining</th><th>Utilisation</th>'
+                + '</tr></thead>'
+                + '<tbody id="'+tbodyId+'">'+lineRows+'</tbody>'
+                + '<tfoot><tr style="background:var(--surface);font-weight:700">'
+                  + '<td colspan="5" style="padding:8px 10px;font-size:11px;color:var(--muted);text-transform:uppercase">Total</td>'
+                  + '<td style="text-align:right;padding:8px 10px">'+fmt(r.total)+'</td>'
+                  + '<td style="text-align:right;padding:8px 10px;color:var(--success)">'+fmt(r.actual)+'</td>'
+                  + '<td style="text-align:right;padding:8px 10px;color:'+(r.remain<0?'var(--danger)':'var(--ink)')+'">'+fmt(r.remain)+'</td>'
+                  + '<td style="padding:8px 10px;color:'+barClr+'">'+r.pct+'% used</td>'
+                + '</tr></tfoot>'
+              + '</table>'
+              + '</div>'
+            + '</div>'
           + '</div>'
         + '</div>'
       + '</td>'
@@ -4048,8 +4175,14 @@ function renderBudgetView() {
   // Detail rows are paired and hidden/shown with master
   enableBudgetSmartTable(types, countries);
 
-  // Re-apply pagination filters after expand state restored
-  // Smart table sees all tr including detail — we need custom handling
+  // Re-draw charts for rows that were open before re-render
+  requestAnimationFrame(function() {
+    document.querySelectorAll('#budgetProjectCards tr.bgt-master.is-open').forEach(function(master) {
+      var gid = master.dataset.gid;
+      if (!gid) return;
+      try { renderProjectRowCharts(gid, master); } catch(e) {}
+    });
+  });
 }
 
 var _budgetSort = { key: 'project', dir: 1 };
@@ -4272,20 +4405,150 @@ function toggleBudgetCard(gid) {
     master.classList.add('is-open');
     body.style.display = '';
     if (arr) arr.style.transform = 'rotate(180deg)';
-    // Nested line filter — scoped inside detail (do not use enableSmartTable;
-    // that attaches to the parent Projects card and pollutes the toolbar)
-    setupBudgetLineFilter(gid, body);
+    try { setupBudgetLineFilter(gid, body); } catch(e) {}
+    // Render per-project doughnuts after paint so canvas has size
+    requestAnimationFrame(function() {
+      try { renderProjectRowCharts(gid, master); } catch(e) { console.warn(e); }
+    });
+  }
+}
+
+/** Build category + utilisation doughnuts for one expanded project row */
+function renderProjectRowCharts(gid, master) {
+  if (typeof Chart === 'undefined') return;
+  window._rowBudgetCharts = window._rowBudgetCharts || {};
+
+  // Destroy previous charts for this gid
+  if (window._rowBudgetCharts[gid]) {
+    ['cat', 'util'].forEach(function(k) {
+      if (window._rowBudgetCharts[gid][k]) {
+        try { window._rowBudgetCharts[gid][k].destroy(); } catch(e) {}
+      }
+    });
+  }
+  window._rowBudgetCharts[gid] = {};
+
+  var project = master ? (master.dataset.project || '') : '';
+  var type = master ? (master.dataset.type || '') : '';
+  var lines = (budgetLines || []).filter(function(l) {
+    return l.project === project && (!type || l.type === type);
+  });
+  if (!lines.length) return;
+
+  // Aggregate by category
+  var byCat = {};
+  var total = 0, actual = 0;
+  lines.forEach(function(l) {
+    var cat = l.category || 'Other';
+    var bud = parseFloat(l.budgetedAmount) || 0;
+    byCat[cat] = (byCat[cat] || 0) + bud;
+    total += bud;
+    actual += getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem);
+  });
+  var remain = total - actual;
+  var labels = Object.keys(byCat).sort(function(a,b){ return byCat[b]-byCat[a]; });
+  var data = labels.map(function(k){ return byCat[k]; });
+  var colors = labels.map(function(_,i){ return BUDGET_CHART_COLORS[i % BUDGET_CHART_COLORS.length]; });
+
+  var tipOpts = {
+    backgroundColor: 'rgba(50,49,48,.92)',
+    titleFont: { size: 11, weight: '600' },
+    bodyFont: { size: 11 },
+    padding: 8,
+    cornerRadius: 6,
+    displayColors: true,
+    boxWidth: 8,
+    boxHeight: 8
+  };
+
+  var catCanvas = document.getElementById('bgt-cat-chart-' + gid);
+  if (catCanvas) {
+    window._rowBudgetCharts[gid].cat = new Chart(catCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{ data: data, backgroundColor: colors, borderColor: '#fff', borderWidth: 2 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: { display: false },
+          tooltip: Object.assign({}, tipOpts, {
+            callbacks: {
+              label: function(ctx) {
+                var v = ctx.raw || 0;
+                var pct = total ? Math.round(v/total*100) : 0;
+                return ' ' + (typeof fmt==='function'?fmt(v):v) + ' ('+pct+'%)';
+              }
+            }
+          })
+        }
+      }
+    });
+  }
+
+  var leg = document.getElementById('bgt-cat-legend-' + gid);
+  if (leg) {
+    leg.innerHTML = labels.map(function(name, i) {
+      var pct = total ? Math.round(byCat[name]/total*100) : 0;
+      return '<div class="budget-legend-item">'
+        + '<span class="budget-legend-swatch" style="background:'+colors[i]+'"></span>'
+        + '<span class="budget-legend-name">'+String(name).replace(/</g,'&lt;')+'</span>'
+        + '<span class="budget-legend-val">'+pct+'%</span>'
+        + '</div>';
+    }).join('');
+  }
+
+  var utilCanvas = document.getElementById('bgt-util-chart-' + gid);
+  if (utilCanvas) {
+    var utilData, utilColors, utilLabels;
+    if (remain < 0) {
+      utilData = [Math.max(0, actual), Math.abs(remain)];
+      utilColors = ['#8764B8', '#D13438'];
+      utilLabels = ['Spent', 'Over'];
+    } else {
+      utilData = [Math.max(0, actual), Math.max(0.0001, remain)];
+      utilColors = ['#8764B8', '#E1DFDD'];
+      utilLabels = ['Spent', 'Remaining'];
+    }
+    window._rowBudgetCharts[gid].util = new Chart(utilCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: utilLabels,
+        datasets: [{ data: utilData, backgroundColor: utilColors, borderColor: '#fff', borderWidth: 2 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: { display: false },
+          tooltip: Object.assign({}, tipOpts, {
+            callbacks: {
+              label: function(ctx) {
+                var v = ctx.raw || 0;
+                return ' ' + (typeof fmt==='function'?fmt(v):v);
+              }
+            }
+          })
+        }
+      }
+    });
   }
 }
 
 function setupBudgetLineFilter(gid, body) {
   if (!body) return;
-  var wrap = body.querySelector('.bgt-detail-inner');
-  if (!wrap) return;
   var filterId = 'bgt-line-filter-' + gid;
   if (document.getElementById(filterId)) return;
   var tbody = body.querySelector('tbody[id^="bgt-lines-"]');
   if (!tbody) return;
+
+  // Prefer the table column container (new layout); fall back to detail-inner
+  var host = body.querySelector('.bgt-detail-table-col') || body.querySelector('.bgt-detail-inner');
+  if (!host) return;
 
   var bar = document.createElement('div');
   bar.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap';
@@ -4294,9 +4557,13 @@ function setupBudgetLineFilter(gid, body) {
     + '<input id="'+filterId+'" class="table-filter-input" type="search" placeholder="Filter cost lines…" autocomplete="off">'
     + '</div>'
     + '<span id="'+filterId+'-count" style="font-size:11.5px;color:var(--muted)"></span>';
-  var scroll = body.querySelector('.table-scroll');
-  if (scroll) wrap.insertBefore(bar, scroll);
-  else wrap.insertBefore(bar, wrap.firstChild);
+
+  var scroll = host.querySelector('.table-scroll');
+  if (scroll && scroll.parentNode === host) {
+    host.insertBefore(bar, scroll);
+  } else {
+    host.insertBefore(bar, host.firstChild);
+  }
 
   var input = document.getElementById(filterId);
   var countEl = document.getElementById(filterId + '-count');
@@ -4321,12 +4588,17 @@ function toggleAllBudgetGroups(expand) {
     if (!gid) return;
     var body = document.getElementById(gid + '-body');
     var arr = document.getElementById(gid + '-arr');
-    // Only toggle masters currently visible on page
     if (master.style.display === 'none') return;
     if (expand) {
       master.classList.add('is-open');
       if (body) body.style.display = '';
       if (arr) arr.style.transform = 'rotate(180deg)';
+      if (body) {
+        setupBudgetLineFilter(gid, body);
+        requestAnimationFrame(function() {
+          try { renderProjectRowCharts(gid, master); } catch(e) {}
+        });
+      }
     } else {
       master.classList.remove('is-open');
       if (body) body.style.display = 'none';
