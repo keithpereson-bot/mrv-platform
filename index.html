@@ -5442,12 +5442,28 @@ async function pullClientsFromSheets() {
     return { ok: false, error: 'no url' };
   }
   try {
-    var res = await gasCall({ action: 'getClients' });
-    if (!res || !res.ok) {
-      appendSyncLog('Clients pull failed: ' + ((res && res.error) || 'not ok'));
-      return { ok: false, error: (res && res.error) || 'not ok' };
+    var res = null;
+    var rows = [];
+    // Prefer getClients; fall back to getAll if deployment is older
+    try {
+      res = await gasCall({ action: 'getClients' });
+    } catch (e1) {
+      res = { ok: false, error: e1.message || String(e1) };
     }
-    var rows = res.clients || res.data || [];
+    if (res && res.ok && (res.clients || res.data)) {
+      rows = res.clients || res.data || [];
+    } else {
+      var errMsg = (res && res.error) ? String(res.error) : 'getClients failed';
+      appendSyncLog('getClients unavailable (' + errMsg + ') — trying getAll…');
+      var all = await gasCall({ action: 'getAll' });
+      if (!all || !all.ok) {
+        appendSyncLog('Clients pull failed: ' + errMsg);
+        return { ok: false, error: errMsg };
+      }
+      rows = all.clients || [];
+      if (!rows.length && all.Clients) rows = all.Clients;
+    }
+
     // Always replace local list with sheet contents (never merge — prevents stale SNs)
     clientsStore = (rows || []).map(mapClientRow_).filter(function(c){ return !!c.clientSN; });
     // De-dupe by SN (keep first)
@@ -6540,7 +6556,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // App configuration
 // Configuration
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxwoZvVVgeHP5BfjTP4QrFvFOl82WeohomkDB08unaopepnkpgxJ_F3IDIZuWgMhjY/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyw93mFocIR4Ee3EUPTg3Gm2-NUkmfuTZTtHzHRZP9453OKORb7-k_EOzAOl_BKErQ/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- use hardcoded URL if set, otherwise fall back to localStorage
@@ -7385,6 +7401,27 @@ function applyLoginUrl() {
 }
 
 // -- Login ------------------------------------------------------
+
+/** Normalize user row from Sheets / local into app shape (hash from Password column). */
+function normalizeUserFromSheet_(u) {
+  if (!u) return u;
+  var email = String(u.email || u.Email || '').toLowerCase().trim();
+  var storedPass = String(u.hash || u.Hash || u.password || u.Password || '').trim();
+  return {
+    id: u.id || email || Date.now(),
+    name: String(u.name || u.Name || '').trim(),
+    email: email,
+    role: String(u.role || u.Role || 'requester').toLowerCase().trim(),
+    country: String(u.country || u.Country || '').trim(),
+    payeeNumber: String(u.payeeNumber || u['Payee Number'] || '').trim(),
+    // App login reads .hash; Sheets column is "Password" (hash or plain)
+    hash: storedPass,
+    password: storedPass,
+    active: String(u.active != null ? u.active : (u.Active != null ? u.Active : 'true')).toLowerCase() !== 'false',
+    created: u.created || u.Created || ''
+  };
+}
+
 async function doLogin() {
   const emailEl = document.getElementById('loginEmail');
   const passEl  = document.getElementById('loginPassword');
@@ -7421,28 +7458,50 @@ async function doLogin() {
       try {
         const fresh = await gasCall({ action: 'getUsers' });
         if (fresh && fresh.ok && Array.isArray(fresh.data)) {
-          usersStore = (fresh.data || []).map(function(u){
-            if (u.payeeNumber == null && u['Payee Number']) u.payeeNumber = u['Payee Number'];
-            return u;
-          });
+          usersStore = (fresh.data || []).map(normalizeUserFromSheet_);
           persistUsersToStorage();
         }
       } catch(e) { /* offline -- use cached store */ }
     }
 
-    // 3. Match against fresh store (hash comparison -- all lowercase keys from AppScript)
-    const user = usersStore.find(function(u) {
-      const uEmail = String(u.email || u.Email || '').toLowerCase().trim();
-      const uHash  = String(u.hash  || u.Hash  || '').trim();
-      return uEmail === email && uHash === hash;
-    });
+    // 3. Match against store — Password column may hold SHA-256 hash OR legacy plain text
+    var user = null;
+    var matchedPlain = false;
+    for (var ui = 0; ui < usersStore.length; ui++) {
+      var u = usersStore[ui];
+      var uEmail = String(u.email || u.Email || '').toLowerCase().trim();
+      if (uEmail !== email) continue;
+      // inactive users cannot sign in
+      if (String(u.active || 'true').toLowerCase() === 'false') continue;
+      var stored = String(u.hash || u.Hash || u.password || u.Password || '').trim();
+      if (!stored) continue;
+      if (stored === hash) {
+        user = u;
+        matchedPlain = false;
+        break;
+      }
+      // Legacy: sheet still has plain-text password
+      if (stored === pass) {
+        user = u;
+        matchedPlain = true;
+        break;
+      }
+    }
 
     if (user) {
+      // Upgrade plain-text sheet password to hash on successful login
+      if (matchedPlain) {
+        user.hash = hash;
+        user.password = hash;
+        try { persistUsersToStorage(); } catch(e) {}
+        try { pushUsersToSheets(); } catch(e) {}
+      }
       loginSuccess({
         name:    String(user.name    || user.Name    || email),
         email:   String(user.email   || user.Email   || email),
         role:    String(user.role    || user.Role    || 'requester').toLowerCase().trim(),
-        country: String(user.country || user.Country || '').trim()
+        country: String(user.country || user.Country || '').trim(),
+        payeeNumber: String(user.payeeNumber || user['Payee Number'] || '').trim()
       });
     } else {
       if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') {
@@ -7657,7 +7716,7 @@ async function addUser() {
   if (pass.length < 6)          { toast('Password must be at least 6 characters'); return; }
   if (usersStore.find(u => (u.email||'').toLowerCase() === email)) { toast('A user with that email already exists'); return; }
   const hash = await hashPassword(pass);
-  const user = { id: Date.now(), name, email, role, country, payeeNumber: payee, hash, created: new Date().toLocaleDateString('en-GB') };
+  const user = { id: Date.now(), name, email, role, country, payeeNumber: payee, hash: hash, password: hash, active: true, created: new Date().toLocaleDateString('en-GB') };
   usersStore.push(user);
   persistUsersToStorage();
   ['newUserName','newUserEmail','newUserPass','newUserPass2','newUserPayee'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
@@ -7784,7 +7843,7 @@ async function checkUsersSheetStatus() {
     if (res.ok) {
       if (ok) ok.style.display = '';
       // Replace local cache with Sheets data (Sheets is always authoritative)
-      usersStore = (res.data || []);
+      usersStore = (res.data || []).map(normalizeUserFromSheet_);
       persistUsersToStorage();
       renderUsersTable();
     } else {
