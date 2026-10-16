@@ -2437,9 +2437,11 @@
             <input id="newUserPayee" type="text" placeholder="e.g. 0712 345 678">
             <div style="font-size:11.5px;color:var(--muted);margin-top:5px">For Requesters / Enumerators — shown to approvers &amp; finance on Payment Queue and Paid tabs.</div>
           </div>
-          <div class="form-group"><label>Password</label><input id="newUserPass" type="password" placeholder="Min 6 characters"></div>
-          <div class="form-group"><label>Confirm Password</label><input id="newUserPass2" type="password" placeholder="Repeat password"></div>
-          <button class="btn btn-primary" onclick="addUser()" style="width:100%">Add User</button>
+          <form id="addUserForm" onsubmit="event.preventDefault();addUser();return false;" autocomplete="off">
+          <div class="form-group"><label>Password</label><input id="newUserPass" name="new-password" type="password" placeholder="Min 6 characters" autocomplete="new-password"></div>
+          <div class="form-group"><label>Confirm Password</label><input id="newUserPass2" name="confirm-password" type="password" placeholder="Repeat password" autocomplete="new-password"></div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Add User</button>
+          </form>
         </div>
       </div>
 
