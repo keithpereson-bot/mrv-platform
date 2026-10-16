@@ -1794,16 +1794,18 @@
       <input id="loginUrlInput" type="text" placeholder="https://script.google.com/macros/s/..." style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;box-sizing:border-box">
       <button onclick="applyLoginUrl()" style="margin-top:8px;width:100%;padding:7px;background:#0078D4;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">Save & Connect</button>
     </div>
+    <form id="loginForm" onsubmit="event.preventDefault();doLogin();return false;" autocomplete="on">
     <div class="form-group">
       <label>Email</label>
-      <input id="loginEmail" type="email" placeholder="you@organisation.com" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="email">
+      <input id="loginEmail" name="username" type="email" placeholder="you@organisation.com" autocomplete="username">
     </div>
     <div class="form-group">
       <label>Password</label>
-      <input id="loginPassword" type="password" placeholder="--------" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password">
+      <input id="loginPassword" name="password" type="password" placeholder="--------" autocomplete="current-password">
     </div>
     <div id="loginError" style="display:none;color:#A4262C;font-size:12.5px;margin-bottom:12px;padding:10px 12px;background:#FDE7E9;border-radius:2px;border:1px solid #F1A9A9"></div>
-    <button class="btn btn-primary" style="width:100%;padding:11px;font-size:13.5px;border-radius:7px;justify-content:center" onclick="doLogin()" id="loginBtn">Sign In</button>
+    <button type="submit" class="btn btn-primary" style="width:100%;padding:11px;font-size:13.5px;border-radius:7px;justify-content:center" id="loginBtn">Sign In</button>
+    </form>
     <div style="margin-top:16px;text-align:center">
       <button onclick="clearLoginCache()" style="background:none;border:none;font-size:11.5px;color:var(--muted);cursor:pointer;font-family:inherit">Having trouble? Clear local cache</button>
     </div>
@@ -7414,12 +7416,48 @@ function normalizeUserFromSheet_(u) {
     role: String(u.role || u.Role || 'requester').toLowerCase().trim(),
     country: String(u.country || u.Country || '').trim(),
     payeeNumber: String(u.payeeNumber || u['Payee Number'] || '').trim(),
-    // App login reads .hash; Sheets column is "Password" (hash or plain)
     hash: storedPass,
     password: storedPass,
     active: String(u.active != null ? u.active : (u.Active != null ? u.Active : 'true')).toLowerCase() !== 'false',
     created: u.created || u.Created || ''
   };
+}
+
+/**
+ * Merge sheet users with local cache.
+ * If the sheet Password cell is empty but local still has a hash (from before a bad push),
+ * keep the local credential so existing users can still sign in.
+ */
+function mergeUsersFromSheet_(sheetList) {
+  var localByEmail = {};
+  (usersStore || []).forEach(function(u) {
+    var e = String(u.email || '').toLowerCase().trim();
+    if (e) localByEmail[e] = u;
+  });
+  var merged = (sheetList || []).map(function(raw) {
+    var u = normalizeUserFromSheet_(raw);
+    var local = localByEmail[u.email];
+    if (local) {
+      var localCred = String(local.hash || local.password || '').trim();
+      if (!u.hash && localCred) {
+        u.hash = localCred;
+        u.password = localCred;
+      }
+      if (!u.payeeNumber && local.payeeNumber) u.payeeNumber = local.payeeNumber;
+      if (local.id) u.id = local.id;
+    }
+    return u;
+  });
+  // Keep local-only users not yet on the sheet
+  var sheetEmails = {};
+  merged.forEach(function(u){ sheetEmails[u.email] = true; });
+  (usersStore || []).forEach(function(u) {
+    var e = String(u.email || '').toLowerCase().trim();
+    if (e && !sheetEmails[e]) {
+      merged.push(normalizeUserFromSheet_(u));
+    }
+  });
+  return merged;
 }
 
 async function doLogin() {
@@ -7453,34 +7491,46 @@ async function doLogin() {
       }
     }
 
-    // 2. Always pull fresh users from Sheets first (don't rely on stale cache)
-    if (gsWebAppUrl) {
+    // 2. Pull users from Sheets, but preserve local passwords if sheet Password is blank
+    var pullErr = '';
+    if (gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
       try {
         const fresh = await gasCall({ action: 'getUsers' });
         if (fresh && fresh.ok && Array.isArray(fresh.data)) {
-          usersStore = (fresh.data || []).map(normalizeUserFromSheet_);
+          usersStore = mergeUsersFromSheet_(fresh.data || []);
           persistUsersToStorage();
+        } else {
+          pullErr = (fresh && fresh.error) ? String(fresh.error) : 'getUsers failed';
         }
-      } catch(e) { /* offline -- use cached store */ }
+      } catch(e) {
+        pullErr = e.message || String(e);
+        /* offline -- use cached store */
+      }
     }
 
-    // 3. Match against store — Password column may hold SHA-256 hash OR legacy plain text
+    // 3. Match — Password may be SHA-256 hash or legacy plain text
     var user = null;
     var matchedPlain = false;
+    var foundEmail = false;
+    var emptyPassword = false;
     for (var ui = 0; ui < usersStore.length; ui++) {
       var u = usersStore[ui];
       var uEmail = String(u.email || u.Email || '').toLowerCase().trim();
       if (uEmail !== email) continue;
-      // inactive users cannot sign in
-      if (String(u.active || 'true').toLowerCase() === 'false') continue;
+      foundEmail = true;
+      if (u.active === false || String(u.active).toLowerCase() === 'false') {
+        err.textContent = 'This account is inactive. Contact an administrator.';
+        err.style.display = 'block';
+        btn.textContent = 'Sign In'; btn.disabled = false;
+        return;
+      }
       var stored = String(u.hash || u.Hash || u.password || u.Password || '').trim();
-      if (!stored) continue;
+      if (!stored) { emptyPassword = true; continue; }
       if (stored === hash) {
         user = u;
         matchedPlain = false;
         break;
       }
-      // Legacy: sheet still has plain-text password
       if (stored === pass) {
         user = u;
         matchedPlain = true;
@@ -7489,7 +7539,6 @@ async function doLogin() {
     }
 
     if (user) {
-      // Upgrade plain-text sheet password to hash on successful login
       if (matchedPlain) {
         user.hash = hash;
         user.password = hash;
@@ -7508,11 +7557,15 @@ async function doLogin() {
         err.innerHTML = 'Google Sheets not connected. Enter your Web App URL below, then try again.'
           + '<br><br><input id="quickUrlInput" type="text" placeholder="https://script.google.com/macros/s/..." '
           + 'style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;margin-top:4px">'
-          + '<button onclick="saveQuickUrl()" style="margin-top:8px;padding:6px 14px;background:var(--teal);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">Connect & Retry</button>';
+          + '<button type="button" onclick="saveQuickUrl()" style="margin-top:8px;padding:6px 14px;background:var(--teal);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">Connect & Retry</button>';
       } else if (usersStore.length === 0) {
-        err.textContent = 'No users found. Ask your Admin to add your account in Manage Users.';
+        err.textContent = 'No users found' + (pullErr ? ' (' + pullErr + ')' : '') + '. Ask Admin to add your account, or use admin@mrv.app / admin123.';
+      } else if (foundEmail && emptyPassword) {
+        err.textContent = 'Account found but no password is set in the Users sheet. Admin: open Manage Users and set a new password, or put the password in the Password column and Push Users.';
+      } else if (foundEmail) {
+        err.textContent = 'Incorrect password for this email.';
       } else {
-        err.textContent = 'Incorrect email or password.';
+        err.textContent = 'No account with that email. Check spelling or ask Admin to add you in Manage Users.';
       }
       err.style.display = 'block';
     }
@@ -7725,6 +7778,21 @@ async function addUser() {
   toast('User added -- ' + (country ? 'restricted to ' + country : 'all countries'));
 }
 
+async function resetUserPassword(id) {
+  var user = usersStore.find(function(u){ return u.id === id || String(u.id) === String(id); });
+  if (!user) { toast('User not found'); return; }
+  var pwd = prompt('New password for ' + (user.email || user.name) + ' (min 6 characters):');
+  if (pwd == null) return;
+  pwd = String(pwd);
+  if (pwd.length < 6) { toast('Password must be at least 6 characters'); return; }
+  var h = await hashPassword(pwd);
+  user.hash = h;
+  user.password = h;
+  persistUsersToStorage();
+  try { await pushUsersToSheets(); } catch(e) {}
+  toast('Password updated for ' + (user.email || ''));
+}
+
 async function updateUserField(id, field, value) {
   var user = usersStore.find(function(u){ return u.id === id; });
   if (!user) return;
@@ -7791,6 +7859,7 @@ function renderUsersTable() {
       + '<td><select data-uid="'+u.id+'" data-field="country" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px">'+countryOpts+'</select></td>'
       + '<td><input type="text" data-uid="'+u.id+'" data-field="payeeNumber" value="'+String(u.payeeNumber||'').replace(/"/g,'&quot;')+'" placeholder="Payee #" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;width:120px;font-family:IBM Plex Mono,monospace"></td>'
       + '<td style="white-space:nowrap">'
+        + '<button type="button" class="btn btn-ghost btn-sm" onclick="resetUserPassword('+u.id+')" title="Set a new password">Set pwd</button>'
         + (isSelf ? '' : '<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser('+u.id+')">Remove</button>')
       + '</td>'
       + '</tr>';
@@ -7843,7 +7912,7 @@ async function checkUsersSheetStatus() {
     if (res.ok) {
       if (ok) ok.style.display = '';
       // Replace local cache with Sheets data (Sheets is always authoritative)
-      usersStore = (res.data || []).map(normalizeUserFromSheet_);
+      usersStore = mergeUsersFromSheet_(res.data || []);
       persistUsersToStorage();
       renderUsersTable();
     } else {
