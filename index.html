@@ -2435,7 +2435,7 @@
           </div>
           <div class="form-group" id="payeeFieldGroup">
             <label>Payee number (M-Pesa / bank)</label>
-            <input id="newUserPayee" type="text" placeholder="e.g. 0712 345 678">
+            <input id="newUserPayee" name="tel" type="text" placeholder="e.g. 0712 345 678" autocomplete="tel">
             <div style="font-size:11.5px;color:var(--muted);margin-top:5px">For Requesters / Enumerators — shown to approvers &amp; finance on Payment Queue and Paid tabs.</div>
           </div>
           <div class="form-group"><label>Password</label><input id="newUserPass" name="new-password" type="password" placeholder="Min 6 characters" autocomplete="new-password"></div>
@@ -6591,7 +6591,11 @@ async function connectWebApp() {
   try {
     const res = await gasCall({ action: 'ping' });
     if (!res.ok) throw new Error(res.error || 'Unknown error');
+    url = normalizeWebAppUrl_(url);
+    if (!url) { appendSyncLog('Invalid Web App URL'); throw new Error('Invalid Web App URL — use the /exec link from Deploy'); }
     gsWebAppUrl = url;
+    window._gas404Until = 0;
+    window._gas404Count = 0;
     localStorage.setItem('mrv_webapp_url', btoa(unescape(encodeURIComponent(url))));
     gsConnected = true;
     document.getElementById('connStatusBadge').className = 'badge badge-teal';
@@ -6630,34 +6634,81 @@ function disconnectWebApp() {
 
 // -- Core fetch wrapper --------------------------------------
 async function gasCall(payload) {
-  const url = gsWebAppUrl || (document.getElementById('webAppUrl') && document.getElementById('webAppUrl').value.trim());
+  var raw = gsWebAppUrl || (document.getElementById('webAppUrl') && document.getElementById('webAppUrl').value.trim()) || '';
+  var url = normalizeWebAppUrl_(raw);
   if (!url) throw new Error('No Web App URL set');
 
-  // 30-second timeout -- prevents hanging on Apps Script cold starts
-  const controller = new AbortController();
-  const timer = setTimeout(function() { controller.abort(); }, 120000);
+  // Circuit breaker: after repeated 404s, stop hammering a dead deployment
+  if (window._gas404Until && Date.now() < window._gas404Until) {
+    throw new Error('HTTP 404 — Web App URL not found (sync paused). Redeploy Apps Script and paste the new /exec URL.');
+  }
+
+  var controller = new AbortController();
+  var timer = setTimeout(function() { controller.abort(); }, 120000);
 
   try {
-    let resp;
-    if (payload.action === 'ping') {
-      resp = await fetch(url + '?action=ping', { redirect:'follow', signal:controller.signal });
+    var resp;
+    var action = (payload && payload.action) || '';
+    // GET for read-only probes — easier to verify in the browser address bar
+    if (action === 'ping' || action === 'getVersion') {
+      resp = await fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + 'action=' + encodeURIComponent(action), {
+        method: 'GET',
+        redirect: 'follow',
+        signal: controller.signal
+      });
     } else {
       resp = await fetch(url, {
-        method:  'POST',
-        redirect:'follow',
-        headers: { 'Content-Type': 'text/plain' },
-        body:    JSON.stringify(payload),
-        signal:  controller.signal,
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload || {}),
+        signal: controller.signal
       });
     }
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    return await resp.json();
-  } catch(e) {
-    if (e.name === 'AbortError') throw new Error('Request timed out (30s) -- Apps Script may be slow');
+    if (!resp.ok) {
+      if (resp.status === 404) {
+        window._gas404Count = (window._gas404Count || 0) + 1;
+        // Pause auto-sync for 2 minutes after first 404, longer if repeated
+        window._gas404Until = Date.now() + (window._gas404Count > 3 ? 10 * 60 * 1000 : 2 * 60 * 1000);
+        gsConnected = false;
+        try {
+          var b = document.getElementById('connStatusBadge');
+          if (b) { b.className = 'badge badge-red'; b.textContent = 'URL 404 — redeploy'; }
+          updateSheetStatusPill && updateSheetStatusPill();
+        } catch (e2) {}
+        throw new Error('HTTP 404 — Web App URL not found. Open the /exec link in a browser: you must see JSON, not an error page. Then Deploy → New version and paste the NEW URL.');
+      }
+      throw new Error('HTTP ' + resp.status);
+    }
+    window._gas404Count = 0;
+    window._gas404Until = 0;
+    var data = await resp.json();
+    return data;
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('Request timed out — Apps Script may be cold-starting; retry in a few seconds');
     throw e;
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** Normalize Apps Script Web App URL to .../exec (no trailing slash, no /dev). */
+function normalizeWebAppUrl_(u) {
+  u = String(u || '').trim();
+  if (!u) return '';
+  // User sometimes pastes the googleusercontent echo URL — reject it
+  if (/script\.googleusercontent\.com/i.test(u) || /\/macros\/echo/i.test(u)) {
+    appendSyncLog && appendSyncLog('Rejected invalid URL (googleusercontent/echo). Use the Deploy → Web app /exec link.');
+    return '';
+  }
+  u = u.replace(/\s+/g, '');
+  u = u.replace(/\/+$/, '');
+  // Prefer /exec over /dev
+  if (/\/dev$/i.test(u)) u = u.replace(/\/dev$/i, '/exec');
+  if (/script\.google\.com\/macros\/s\//i.test(u) && !/\/exec$/i.test(u) && !/\/dev$/i.test(u)) {
+    u = u + '/exec';
+  }
+  return u;
 }
 
 // -- Push all data to Sheets ---------------------------------
@@ -7244,6 +7295,7 @@ var _versionPollCount = 0;
 async function checkVersionAndSync() {
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
   if (shouldSkipPull()) return;
+  if (window._gas404Until && Date.now() < window._gas404Until) return;
   // Note: _pushInProgress is local-only; other devices won't have it set
 
   try {
@@ -7401,14 +7453,30 @@ function bootAuth() {
 }
 
 function applyLoginUrl() {
-  var url = (document.getElementById('loginUrlInput').value || '').trim();
-  if (!url.startsWith('https://')) { toast('Please enter a valid URL'); return; }
+  var url = normalizeWebAppUrl_((document.getElementById('loginUrlInput').value || '').trim());
+  if (!url || !url.startsWith('https://')) { toast('Enter a valid Web App URL ending in /exec'); return; }
   gsWebAppUrl = url;
-  gsConnected = true;
+  window._gas404Until = 0;
+  window._gas404Count = 0;
+  gsConnected = false; // true only after successful ping
   localStorage.setItem('mrv_webapp_url', btoa(unescape(encodeURIComponent(url))));
   var urlRow = document.getElementById('loginUrlRow');
   if (urlRow) urlRow.style.display = 'none';
-  toast('Connected to Sheets');
+  toast('URL saved — testing connection…');
+  gasCall({ action: 'ping' }).then(function(res) {
+    if (res && res.ok) {
+      gsConnected = true;
+      toast('Connected to Sheets');
+      try {
+        var b = document.getElementById('connStatusBadge');
+        if (b) { b.className = 'badge badge-teal'; b.textContent = 'OK Connected'; }
+      } catch(e) {}
+    } else {
+      toast('URL saved but ping failed');
+    }
+  }).catch(function(e) {
+    toast((e && e.message) || 'Connection failed — check deployment');
+  });
 }
 
 // -- Login ------------------------------------------------------
