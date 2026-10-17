@@ -6705,7 +6705,14 @@ async function gasCall(payload) {
     var data = await resp.json();
     return data;
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('Request timed out — Apps Script may be cold-starting; retry in a few seconds');
+    if (e.name === 'AbortError' || /timed out|TIMEOUT|Failed to fetch|NetworkError|ERR_CONNECTION/i.test(String(e.message||e))) {
+      window._gas404Count = (window._gas404Count || 0) + 1;
+      window._gas404Until = Date.now() + 3 * 60 * 1000;
+      gsConnected = false;
+      throw new Error(e.name === 'AbortError'
+        ? 'Request timed out — Apps Script unreachable. Working offline with local data.'
+        : ('Sheets unreachable (' + (e.message || e) + '). Working offline.'));
+    }
     throw e;
   } finally {
     clearTimeout(timer);
@@ -7601,81 +7608,97 @@ async function doLogin() {
       }
     }
 
-    // 2. Pull users from Sheets, but preserve local passwords if sheet Password is blank
-    var pullErr = '';
-    if (gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
-      try {
-        const fresh = await gasCall({ action: 'getUsers' });
-        if (fresh && fresh.ok && Array.isArray(fresh.data)) {
-          usersStore = mergeUsersFromSheet_(fresh.data || []);
-          persistUsersToStorage();
-        } else {
-          pullErr = (fresh && fresh.error) ? String(fresh.error) : 'getUsers failed';
+    // 2. Match local users FIRST (works offline when Sheets times out)
+    function matchUserInStore_(store) {
+      var result = { user: null, matchedPlain: false, foundEmail: false, emptyPassword: false, inactive: false };
+      for (var ui = 0; ui < (store || []).length; ui++) {
+        var u = store[ui];
+        var uEmail = String(u.email || u.Email || '').toLowerCase().trim();
+        if (uEmail !== email) continue;
+        result.foundEmail = true;
+        if (u.active === false || String(u.active).toLowerCase() === 'false') {
+          result.inactive = true;
+          return result;
         }
-      } catch(e) {
+        var stored = String(u.hash || u.Hash || u.password || u.Password || '').trim();
+        if (!stored) { result.emptyPassword = true; continue; }
+        if (stored === hash) {
+          result.user = u;
+          result.matchedPlain = false;
+          return result;
+        }
+        if (stored === pass) {
+          result.user = u;
+          result.matchedPlain = true;
+          return result;
+        }
+      }
+      return result;
+    }
+
+    var match = matchUserInStore_(usersStore);
+
+    // 3. If not found locally, try Sheets briefly (8s) — never clear local store on failure
+    var pullErr = '';
+    if (!match.user && gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
+      try {
+        var fresh = await Promise.race([
+          gasCall({ action: 'getUsers' }),
+          new Promise(function(_, rej) {
+            setTimeout(function() { rej(new Error('Sheets timed out')); }, 8000);
+          })
+        ]);
+        if (fresh && fresh.ok && Array.isArray(fresh.data) && fresh.data.length) {
+          usersStore = mergeUsersFromSheet_(fresh.data);
+          persistUsersToStorage();
+          match = matchUserInStore_(usersStore);
+        } else if (fresh && !fresh.ok) {
+          pullErr = String(fresh.error || 'getUsers failed');
+        }
+      } catch (e) {
         pullErr = e.message || String(e);
-        /* offline -- use cached store */
+        // keep local usersStore unchanged
       }
     }
 
-    // 3. Match — Password may be SHA-256 hash or legacy plain text
-    var user = null;
-    var matchedPlain = false;
-    var foundEmail = false;
-    var emptyPassword = false;
-    for (var ui = 0; ui < usersStore.length; ui++) {
-      var u = usersStore[ui];
-      var uEmail = String(u.email || u.Email || '').toLowerCase().trim();
-      if (uEmail !== email) continue;
-      foundEmail = true;
-      if (u.active === false || String(u.active).toLowerCase() === 'false') {
-        err.textContent = 'This account is inactive. Contact an administrator.';
-        err.style.display = 'block';
-        btn.textContent = 'Sign In'; btn.disabled = false;
-        return;
-      }
-      var stored = String(u.hash || u.Hash || u.password || u.Password || '').trim();
-      if (!stored) { emptyPassword = true; continue; }
-      if (stored === hash) {
-        user = u;
-        matchedPlain = false;
-        break;
-      }
-      if (stored === pass) {
-        user = u;
-        matchedPlain = true;
-        break;
-      }
+    if (match.inactive) {
+      err.textContent = 'This account is inactive. Contact an administrator.';
+      err.style.display = 'block';
+      btn.textContent = 'Sign In'; btn.disabled = false;
+      return;
     }
 
-    if (user) {
-      if (matchedPlain) {
-        user.hash = hash;
-        user.password = hash;
+    if (match.user) {
+      if (match.matchedPlain) {
+        match.user.hash = hash;
+        match.user.password = hash;
         try { persistUsersToStorage(); } catch(e) {}
-        try { pushUsersToSheets(); } catch(e) {}
+        // Only push if Sheets is reachable — ignore failures
+        try {
+          if (!(window._gas404Until && Date.now() < window._gas404Until)) {
+            pushUsersToSheets();
+          }
+        } catch(e) {}
       }
       loginSuccess({
-        name:    String(user.name    || user.Name    || email),
-        email:   String(user.email   || user.Email   || email),
-        role:    String(user.role    || user.Role    || 'requester').toLowerCase().trim(),
-        country: String(user.country || user.Country || '').trim(),
-        payeeNumber: String(user.payeeNumber || user['Payee Number'] || '').trim()
+        name:    String(match.user.name    || match.user.Name    || email),
+        email:   String(match.user.email   || match.user.Email   || email),
+        role:    String(match.user.role    || match.user.Role    || 'requester').toLowerCase().trim(),
+        country: String(match.user.country || match.user.Country || '').trim(),
+        payeeNumber: String(match.user.payeeNumber || match.user['Payee Number'] || '').trim()
       });
     } else {
-      if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') {
-        err.innerHTML = 'Google Sheets not connected. Enter your Web App URL below, then try again.'
-          + '<br><br><input id="quickUrlInput" type="text" placeholder="https://script.google.com/macros/s/..." '
-          + 'style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;margin-top:4px">'
-          + '<button type="button" onclick="saveQuickUrl()" style="margin-top:8px;padding:6px 14px;background:var(--teal);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">Connect & Retry</button>';
-      } else if (usersStore.length === 0) {
-        err.textContent = 'No users found' + (pullErr ? ' (' + pullErr + ')' : '') + '. Ask Admin to add your account, or use admin@mrv.app / admin123.';
-      } else if (foundEmail && emptyPassword) {
-        err.textContent = 'Account found but no password is set in the Users sheet. Admin: open Manage Users and set a new password, or put the password in the Password column and Push Users.';
-      } else if (foundEmail) {
-        err.textContent = 'Incorrect password for this email.';
+      if (match.foundEmail && match.emptyPassword) {
+        err.textContent = 'Account found but no password is set. An administrator must set a password under Manage Users.';
+      } else if (match.foundEmail) {
+        err.textContent = 'Incorrect password.';
+      } else if (!(usersStore && usersStore.length)) {
+        err.textContent = 'No user accounts on this device. An administrator must sign in and add users (Sheets is currently unreachable).';
       } else {
-        err.textContent = 'No account with that email. Check spelling or ask Admin to add you in Manage Users.';
+        err.textContent = 'No account with that email on this device. Check the email or ask an administrator to add you.';
+      }
+      if (pullErr) {
+        err.textContent += ' (Directory sync unavailable)';
       }
       err.style.display = 'block';
     }
