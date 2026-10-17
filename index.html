@@ -3267,6 +3267,7 @@ function mergeRequestsFromServer(serverRows) {
       description:      String(r['Description']       || r.description  || '').trim(),
       amount:           amount,
       requester:        String(r['Requester']         || r.requester    || '').trim(),
+      createdBy:        String((local && local.createdBy) || r.createdBy || r['Created By'] || '').trim().toLowerCase(),
       status:           finalStatus,
       date:             String(r['Date']              || r.date         || '').trim(),
       sigLabel:         r['Signed By']            || r.sigLabel         || (local && local.sigLabel)         || null,
@@ -6206,6 +6207,7 @@ function submitRequest() {
     category:_rCategory, costSummary:_rSummary, costItem:_rCostItem,
     description: desc||(_rCategory+' -- '+_rSummary),
     amount:amount, requester:name,
+    createdBy: (currentUser && currentUser.email) ? String(currentUser.email).toLowerCase() : '',
     status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today,
     clientSN: clientSN || '',
     clientName: clientName || '',
@@ -6217,6 +6219,24 @@ function submitRequest() {
   requestsStore.push(entry);
   persistRequestsToStorage();
   closeModal('requestModal');
+
+  // Clear table search/status filters so the new row is not hidden
+  try {
+    ['bodyDrafts','bodyQueue','bodyPaid'].forEach(function(tid) {
+      if (_pageState && _pageState[tid]) {
+        _pageState[tid].filter = '';
+        _pageState[tid].statusFilter = '';
+        _pageState[tid].projectFilter = '';
+        _pageState[tid].page = 1;
+      }
+      var inp = document.getElementById('filter-' + tid);
+      if (inp) inp.value = '';
+      var st = document.getElementById('statusfilter-' + tid);
+      if (st) st.value = '';
+      var pf = document.getElementById('projectfilter-' + tid);
+      if (pf) pf.value = '';
+    });
+  } catch(e) {}
 
   rebuildRequestsTable();
   renderDashboard();
@@ -6230,7 +6250,7 @@ function submitRequest() {
   } catch(e) {}
 
   try { localStorage.removeItem(reqDraftKey()); } catch(e) {}
-  toast('Request submitted — ' + num + (_rExcess ? ' (excess — reason recorded)' : '') + ' (syncing in background)');
+  toast('Request ' + num + ' saved — open System Requests → Drafts/Pending' + (_rExcess ? ' (excess noted)' : '') + (window._gas404Until ? ' · Sheets offline (local only)' : ''));
   backgroundPush({ fast: true, skipActuals: true });
 }
 
@@ -7128,20 +7148,29 @@ function _rebuildRequestsTableNow() {
   // Requesters can only delete their own drafts
   var canDelete  = role === 'admin' || role === 'approver';
 
-  // Country filter: blank country = all. Fail OPEN when project unknown.
-  // Requesters always see their own submissions (name/email match).
+  // Visibility: admin/manager see all. Requesters always see their own.
+  // Country restriction only for others' requests when user has a country set.
   var ctryFilter = function(r) {
-    if (!userCtry) return true;
-    if (role === 'requester' && currentUser) {
-      var rname = (r.requester || '').trim().toLowerCase();
-      var uname = (currentUser.name || '').trim().toLowerCase();
-      var uemail = (currentUser.email || '').trim().toLowerCase();
-      if (rname && (rname === uname || rname === uemail)) return true;
-    }
+    if (!r) return false;
+    // Admins / managers / users with no country restriction see everything
+    if (role === 'admin' || role === 'manager' || !userCtry) return true;
+
+    var uname = (currentUser && currentUser.name || '').trim().toLowerCase();
+    var uemail = (currentUser && currentUser.email || '').trim().toLowerCase();
+    var rname = (r.requester || '').trim().toLowerCase();
+    var createdBy = (r.createdBy || r.requesterEmail || '').trim().toLowerCase();
+
+    // Always show own submissions (by creator email or requester name field)
+    if (uemail && createdBy && createdBy === uemail) return true;
+    if (uname && rname && rname === uname) return true;
+    if (uemail && rname && rname === uemail) return true;
+    // Loose: requester field contains login name
+    if (uname && rname && rname.indexOf(uname) !== -1) return true;
+
+    // Approvers: country-scoped
     if (!budgetLines || !budgetLines.length) return true;
     var projLines = budgetLines.filter(function(l){ return l.project === r.project; });
-    // Project not in budget sheet yet — do not hide the request
-    if (!projLines.length) return true;
+    if (!projLines.length) return true; // unknown project — do not hide
     return projLines.some(function(l){ return l.country === userCtry; });
   };
   var allFiltered = requestsStore.filter(ctryFilter);
@@ -7200,7 +7229,11 @@ function _rebuildRequestsTableNow() {
   // ── Tab 1: Drafts/Pending ──
   var bd_el = document.getElementById('bodyDrafts');
   if (bd_el) bd_el.innerHTML = drafts.length===0
-    ? '<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">No pending requests</td></tr>'
+    ? '<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">'
+      + ((requestsStore && requestsStore.length)
+          ? ('No pending requests visible (' + requestsStore.length + ' total in store — check tab filters or country).')
+          : 'No pending requests')
+      + '</td></tr>'
     : drafts.map(function(r) {
         var approveBtn = canApprove
           ? '<button class="btn btn-primary btn-sm" data-aref="'+r.ref+'" onclick="approveRequest(this.dataset.aref)">Approve</button>'
