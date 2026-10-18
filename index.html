@@ -1946,9 +1946,9 @@
   .cfg-row { display:grid; gap:8px; align-items:center; }
   .cfg-row-std { grid-template-columns:1.1fr 1.5fr 110px 32px; }
   .cfg-row-lim { grid-template-columns:1fr 110px 32px; }
-  .cfg-row-cat { grid-template-columns:1.2fr 90px 2fr; padding:6px 0; border-bottom:1px solid var(--border); }
+  .cfg-row-cat { grid-template-columns:1fr 2.4fr; padding:6px 0; border-bottom:1px solid var(--border); }
   .cfg-head { font-size:11px; color:var(--muted); margin-bottom:4px; }
-  .cfg-cat-head { display:grid; grid-template-columns:1.2fr 90px 2fr; gap:8px; font-size:11px; color:var(--muted); font-weight:600; }
+  .cfg-cat-head { display:grid; grid-template-columns:1fr 2.4fr; gap:8px; font-size:11px; color:var(--muted); font-weight:600; }
   .cfg-roles { display:flex; flex-wrap:wrap; gap:4px 12px; }
   .cfg-check { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:400; text-transform:none; letter-spacing:0; color:var(--ink); cursor:pointer; margin:0; }
   .cfg-check input { width:auto; margin:0; }
@@ -1963,10 +1963,16 @@
   .rq-sn-hint { font-size:11px; margin-top:4px; }
   @media (max-width:768px) {
     .cfg-row-std { grid-template-columns:1fr 1fr; }
-    .cfg-row-cat, .cfg-cat-head { grid-template-columns:1fr 80px; }
-    .cfg-row-cat .cfg-roles { grid-column:1 / -1; }
+    .cfg-row-cat, .cfg-cat-head { grid-template-columns:1fr; }
     .cfg-cat-head span:last-child { display:none; }
   }
+  /* Excess requests — bluish row + visible justification */
+  tr.rq-excess-row, tr.rq-excess-row > td { background:#E6F0FA !important; }
+  tr.rq-excess-row:hover, tr.rq-excess-row:hover > td { background:#D8E8F7 !important; }
+  tr.rq-excess-row > td:first-child { box-shadow:inset 3px 0 0 #2B88D8; }
+  .rq-excess-tag { margin-top:4px; display:flex; gap:6px; align-items:baseline; font-size:11.5px; color:var(--ink); max-width:420px; white-space:normal; }
+  .rq-excess-badge { flex-shrink:0; font-size:9.5px; font-weight:700; letter-spacing:.05em; color:#fff; background:#2B88D8; border-radius:3px; padding:1px 5px; }
+  .rq-excess-why { font-style:italic; }
   /* Floating new-request button */
   .rq-fab { position:fixed; right:24px; bottom:24px; width:54px; height:54px; border-radius:50%; border:none; background:var(--brand); color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.25); cursor:pointer; z-index:110; display:flex; align-items:center; justify-content:center; transition:transform .12s, box-shadow .12s; }
   .rq-fab:hover { transform:scale(1.06); box-shadow:0 8px 22px rgba(0,0,0,.3); }
@@ -2803,7 +2809,7 @@
 
       <div>
         <div style="font-size:13px;font-weight:600;margin-bottom:8px">Standard amounts by project (Transport / Airtime / Incentives)</div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Set amount per <strong>project + cost line</strong>. A project-specific amount overrides an "All projects" amount. When set, requesters cannot edit the amount (for transport lines the breakdown must add up to it).</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Set amount per <strong>project + cost line</strong>. A project-specific amount overrides an "All projects" amount. When set, requesters cannot edit the amount, and standardized transport needs no route breakdown.</p>
         <div class="cfg-row cfg-row-std cfg-head">
           <span>Project</span><span>Budget line (Category › Cost summary — Cost item)</span><span>Amount</span><span></span>
         </div>
@@ -2812,8 +2818,8 @@
       </div>
 
       <div>
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Category form availability</div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Unavailable categories are hidden from requesters. Optionally restrict by role.</p>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Who can see each form</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Leave all roles unticked to show a form to everyone. Ticking roles hides it from all other roles.</p>
         <div id="reqCatRulesList" style="display:grid;gap:8px"></div>
       </div>
 
@@ -5659,21 +5665,12 @@ function _catRule(cat) {
 }
 function isCategoryVisibleForUser(cat) {
   var rules = _catRule(cat);
-  if (!rules) return true;
-  if (rules.available === false) {
-    if (!currentUser) return false;
-    if (currentUser.role === 'admin') return true;
-    var allowed = rules.allowedRoles || [];
-    if (!allowed.length) return false;
-    return allowed.indexOf(currentUser.role) !== -1
-      || allowed.map(function(x){ return String(x).toLowerCase(); }).indexOf(String(currentUser.role||'').toLowerCase()) !== -1;
-  }
-  var allowed2 = rules.allowedRoles || [];
-  if (!allowed2.length) return true;
+  var allowed = (rules && rules.allowedRoles) || [];
+  if (!allowed.length) return true;           // no roles ticked → everyone
   if (!currentUser) return false;
   if (currentUser.role === 'admin') return true;
-  return allowed2.indexOf(currentUser.role) !== -1
-    || allowed2.map(function(x){ return String(x).toLowerCase(); }).indexOf(String(currentUser.role||'').toLowerCase()) !== -1;
+  var role = String(currentUser.role || '').toLowerCase();
+  return allowed.map(function(x){ return String(x).toLowerCase().trim(); }).indexOf(role) !== -1;
 }
 
 /** Standard amount for a project + cost line (null if not configured). */
@@ -5798,6 +5795,11 @@ function reqClientHtml(r) {
       + '<span class="rq-client-tag-k">Client</span> '
       + '<strong>' + _rqEsc(r.clientName || '—') + '</strong>'
       + ' <span class="rq-client-tag-sn">SN ' + _rqEsc(r.clientSN) + '</span>'
+      + '</div>';
+  }
+  if (r.isExcess === true || r.isExcess === 'Yes') {
+    out += '<div class="rq-excess-tag"><span class="rq-excess-badge">EXCESS</span> '
+      + (r.excessReason ? '<span class="rq-excess-why">' + _rqEsc(r.excessReason) + '</span>' : '<span class="rq-muted">No justification given</span>')
       + '</div>';
   }
   if (r._members && r._members.length > 1) {
@@ -6175,9 +6177,9 @@ function _reqCardHtml(f, idx, v) {
     h += '<div class="rq-step"><div class="rq-step-label"><span>2</span>Form</div><div class="rq-chips">'
       + (cats.length ? cats.map(function(c) {
           var rl = _catRule(c);
-          var restricted = rl && (rl.available === false || (rl.allowedRoles || []).length);
+          var restricted = rl && (rl.allowedRoles || []).length;
           return '<button type="button" class="rq-chip' + (c === f.category ? ' is-on' : '') + '" data-act="cat" data-f="' + f.id + '" data-v="' + _rqEsc(c) + '"'
-            + (restricted ? ' title="Restricted in Form Settings — only admins and allowed roles see this form"' : '') + '>'
+            + (restricted ? ' title="Restricted in Form Settings — only admins and the ticked roles see this form"' : '') + '>'
             + _rqEsc(c) + (restricted ? ' <span class="rq-lockchip">🔒</span>' : '') + '</button>';
         }).join('') : '<span class="rq-muted">No forms available for your role on this project.</span>')
       + '</div></div>';
@@ -6836,20 +6838,18 @@ function renderCatRuleRows() {
     box.innerHTML = '<span style="font-size:12px;color:var(--muted)">No forms loaded yet. Pull budgets first.</span>';
     return;
   }
-  box.innerHTML = '<div class="cfg-cat-head"><span>Form</span><span>Available</span><span>Restrict to roles <span style="font-weight:400">(none ticked = everyone)</span></span></div>'
+  box.innerHTML = '<div class="cfg-cat-head"><span>Form</span><span>Visible only to <span style="font-weight:400">(none ticked = everyone)</span></span></div>'
     + cats.map(function(c, i) {
-      var r = rules[c] || { available: true, allowedRoles: [] };
-      var avail = r.available !== false;
+      var r = rules[c] || { allowedRoles: [] };
       var roles = (r.allowedRoles || []).map(function(x){ return String(x).toLowerCase().trim(); });
       return '<div class="cfg-row cfg-row-cat" data-cat-idx="'+i+'" data-cat-name="'+_cfgEsc(c)+'">'
         + '<div style="font-size:12.5px;font-weight:500">'+_cfgEsc(c)+'</div>'
-        + '<label class="cfg-check"><input type="checkbox" data-cat-avail '+(avail?'checked':'')+'> Yes</label>'
         + '<div class="cfg-roles">' + REQ_ROLES.map(function(role) {
             return '<label class="cfg-check"><input type="checkbox" data-cat-role="'+role+'" '+(roles.indexOf(role)!==-1?'checked':'')+'> '+role.charAt(0).toUpperCase()+role.slice(1)+'</label>';
           }).join('') + '</div>'
         + '</div>';
     }).join('')
-    + '<p style="font-size:11.5px;color:var(--muted);margin-top:6px">Unticking <strong>Available</strong> hides the form from everyone except admins and the roles ticked. Admins always see every form.</p>';
+    + '<p style="font-size:11.5px;color:var(--muted);margin-top:6px">Tick roles to limit a form to those roles only. Admins always see every form.</p>';
 }
 function collectCatRules() {
   var box = document.getElementById('reqCatRulesList');
@@ -6857,11 +6857,9 @@ function collectCatRules() {
   var rules = {};
   box.querySelectorAll('[data-cat-idx]').forEach(function(row) {
     var c = row.getAttribute('data-cat-name');
-    var availEl = row.querySelector('[data-cat-avail]');
     var roles = Array.from(row.querySelectorAll('[data-cat-role]:checked')).map(function(x){ return x.getAttribute('data-cat-role'); });
-    var avail = availEl ? !!availEl.checked : true;
-    if (avail && !roles.length) return; // default — no rule needed
-    rules[c] = { available: avail, allowedRoles: roles };
+    if (!roles.length) return; // everyone
+    rules[c] = { available: true, allowedRoles: roles };
   });
   reqFormConfig.categoryRules = rules;
 }
@@ -7818,7 +7816,7 @@ function _rebuildRequestsTableNow() {
         var approveBtn = canApprove
           ? '<button class="btn btn-primary btn-sm" data-aref="'+r.ref+'" onclick="approveRequest(this.dataset.aref)">Approve</button>'
           : '<span class="badge badge-gray">Awaiting approval</span>';
-        return '<tr data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
+        return '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
           + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.date)+'</td>')
           + '<td style="display:flex;gap:4px;align-items:center">'+approveBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
@@ -7832,7 +7830,7 @@ function _rebuildRequestsTableNow() {
         var payBtn = canApprove
           ? '<button class="btn btn-amber btn-sm" data-mref="'+r.ref+'" data-mreq="'+r.requester+'" onclick="openSignAndApprove(this,this.dataset.mref,this.dataset.mreq)">Mark Paid</button>'
           : '<span class="badge badge-gold">Awaiting payment</span>';
-        return '<tr data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
+        return '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
           + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.approvedAt||r.date)+'</td>', true)
           + '<td style="display:flex;gap:4px;align-items:center">'+payBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
@@ -7852,7 +7850,7 @@ function _rebuildRequestsTableNow() {
               + '</div>'
             + '</div></td>'
           : '<td><span class="badge badge-gray" style="font-size:10px">Pending</span></td>';
-        return '<tr data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
+        return '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
           + cols(r, '<td style="color:var(--success);font-size:12px;font-weight:500">'+(r.sigLabel||'--')+'</td>'
                   + '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.sigTime||r.date)+'</td>', true)
           + ackCell
@@ -8794,7 +8792,7 @@ function filterHistory(filter) {
       ackHtml = '<span style="color:var(--muted);font-size:12px">—</span>';
     }
 
-    return '<tr data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
+    return '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
       + '<td style="font-family:IBM Plex Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
       + '<td style="font-weight:500">'+r.project+'</td>'
       + '<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
