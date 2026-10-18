@@ -1948,7 +1948,6 @@
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
         <div>
           <h1>Dashboard</h1>
-          <p>Monthly cycle overview · workspace</p>
         </div>
       </div>
     </div>
@@ -2075,7 +2074,6 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
         </div>
         <div>
-          <div class="req-tab-label">Step 1</div>
           <div class="req-tab-title">Requests</div>
         </div>
         <span class="req-tab-badge" id="badge-drafts">0</span>
@@ -2085,7 +2083,6 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
         </div>
         <div>
-          <div class="req-tab-label">Step 2</div>
           <div class="req-tab-title">Payment Queue</div>
         </div>
         <span class="req-tab-badge" id="badge-queue">0</span>
@@ -2095,7 +2092,6 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </div>
         <div>
-          <div class="req-tab-label">Step 3</div>
           <div class="req-tab-title">Paid Requests</div>
         </div>
         <span class="req-tab-badge" id="badge-paid">0</span>
@@ -2208,7 +2204,7 @@
     <div class="view-body">
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 1 &mdash; Select Project(s)</div>
+        <div class="card-title">Select Project(s)</div>
         <div style="display:flex;gap:6px">
           <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(true)">All</button>
           <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(false)">None</button>
@@ -2218,17 +2214,14 @@
         <div id="ecfProjectList" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto">
           <div style="padding:12px;text-align:center;color:var(--muted);font-size:13px">Loading projects…</div>
         </div>
-        <div style="font-size:11.5px;color:var(--muted);margin-top:10px">
-          Select one or more projects. Each selected project gets its own expense claim form.
-          Multiple projects are exported together as a <strong>ZIP</strong> file.
-        </div>
+
       </div>
     </div>
 
     <!-- Step 2: Select paid requests for that project -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 2 &mdash; Select Paid Requests to Include</div>
+        <div class="card-title">Paid Requests</div>
         <div style="display:flex;gap:6px;align-items:center">
           <span class="badge badge-gray" id="ecfReqCount" style="margin-right:4px">0</span>
           <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(true)">All</button>
@@ -2243,7 +2236,7 @@
     <!-- Step 3: Header fields -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 3 &mdash; Form Header</div>
+        <div class="card-title">Form Header</div>
         <button class="btn btn-ghost btn-sm" onclick="ecfAutoHeader()">&#8635; Auto-fill from data</button>
       </div>
       <div class="card-body">
@@ -2270,7 +2263,7 @@
     <!-- Step 4: Preview -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 4 &mdash; Form Preview</div>
+        <div class="card-title">Form Preview</div>
         <button class="btn btn-secondary btn-sm" onclick="ecfRefreshPreview()">&#8635; Refresh Preview</button>
       </div>
       <div style="padding:16px;overflow-x:auto;background:#FAF9F8">
@@ -2283,11 +2276,10 @@
     <!-- Step 5: Signature + Export -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 5 &mdash; Admin Signature &amp; Export PDF</div>
+        <div class="card-title">Admin Signature &amp; Export PDF</div>
       </div>
       <div class="card-body">
-        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Your <strong>saved signature</strong> will be used automatically as the Claimant signature. Draw below only if you have no saved signature.</p>
-        <canvas id="ecfSigCanvas" width="500" height="130"
+<canvas id="ecfSigCanvas" width="500" height="130"
           style="border:1.5px solid var(--border);border-radius:var(--radius);cursor:crosshair;background:#FAFAFA;display:block;touch-action:none;max-width:100%;margin-bottom:10px"></canvas>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px">
           <button class="btn btn-ghost btn-sm" onclick="ecfClearSig()">Clear</button>
@@ -2306,7 +2298,6 @@
   <div id="view-reconciliation" class="view">
     <div class="page-header">
       <h1>Monthly Reconciliation</h1>
-      <p>Step 6 — reconcile balance vs expenditures and close the advance</p>
     </div>
     <div class="view-body">
     <div id="reconStats" class="stats" style="grid-template-columns:repeat(3,1fr)"></div>
@@ -2322,7 +2313,6 @@
     <div class="card">
       <div class="card-header"><div class="card-title">Close Advance Balance</div></div>
       <div class="card-body">
-        <div class="alert alert-warn">!️ Closing the advance will mark this cycle as complete and carry any unspent balance forward.</div>
         <div class="form-grid">
           <div class="form-group"><label>Select Project to Close</label><select id="reconProjectSelect"></select></div>
           <div class="form-group"><label>Carry-over / Return Amount</label><input type="number" placeholder="0"></div>
@@ -2337,7 +2327,6 @@
   <div id="view-transactions" class="view">
     <div class="page-header">
       <h1>Transaction Audit Trail</h1>
-      <p>Complete log of Money-In and Money-Out events with digital signatures</p>
     </div>
     <div class="view-body">
     <div class="card">
@@ -2358,24 +2347,17 @@
   <div id="view-sheets" class="view">
     <div class="page-header">
       <h1>Google Sheets Integration</h1>
-      <p>Connect via Google Apps Script — no OAuth, no Cloud Console</p>
     </div>
     <div class="view-body">
-    <div class="alert alert-info">
-      ℹ️ This uses a <strong>Google Apps Script Web App</strong> as a free backend. You only need a Google account. No API keys, no Cloud Console.
-    </div>
-
-    <!-- Step 1: Web App URL -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Step 1 -- Paste your Web App URL</div>
+        <div class="card-title">Web App URL</div>
         <span id="connStatusBadge" class="badge badge-gray">Not connected</span>
       </div>
       <div class="card-body">
         <div class="form-group">
           <label>Apps Script Web App URL</label>
           <input id="webAppUrl" type="text" placeholder="https://script.google.com/macros/s/…/exec" value="">
-          <div style="font-size:11.5px;color:var(--muted);margin-top:5px">Paste the URL from <strong>Deploy -> Manage deployments</strong> in your Apps Script project.</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="connectWebApp()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Connect & Test</button>
@@ -2395,7 +2377,7 @@
     <!-- Step 2: Sync -->
     <div class="card" id="syncControlCard" style="opacity:.5;pointer-events:none">
       <div class="card-header">
-        <div class="card-title">Step 2 -- Sync Data</div>
+        <div class="card-title">Sync Data</div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-secondary btn-sm" onclick="pullFromSheets()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/></svg> Pull from Sheets</button>
           <button class="btn btn-primary btn-sm" onclick="pushToSheets()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg> Push to Sheets</button>
@@ -2433,45 +2415,10 @@
       </div>
     </div>
 
-    <!-- Setup guide -->
-    <div class="card">
-      <div class="card-header"><div class="card-title">Setup Guide -- 5 minutes, no Cloud Console needed</div></div>
-      <div class="card-body">
-        <div class="sheets-setup-grid" style="display:grid;gap:14px">
-          <div style="padding:14px;background:var(--teal-pale);border-radius:10px">
-            <div style="font-size:18px;margin-bottom:6px">1️⃣</div>
-            <div style="font-weight:600;font-size:12.5px;margin-bottom:5px">Create a Google Sheet</div>
-            <div style="font-size:11.5px;color:var(--muted)">Go to <a href="https://sheets.google.com" target="_blank" style="color:var(--teal)">sheets.google.com</a> and create a new blank spreadsheet. Name it <em>MRV Platform Data</em>.</div>
-          </div>
-          <div style="padding:14px;background:var(--teal-pale);border-radius:10px">
-            <div style="font-size:18px;margin-bottom:6px">2️⃣</div>
-            <div style="font-weight:600;font-size:12.5px;margin-bottom:5px">Open Apps Script</div>
-            <div style="font-size:11.5px;color:var(--muted)">In the sheet, go to <strong>Extensions -> Apps Script</strong>. Delete any existing code, then paste the entire <strong>MRV_AppScript.js</strong> file provided.</div>
-          </div>
-          <div style="padding:14px;background:var(--teal-pale);border-radius:10px">
-            <div style="font-size:18px;margin-bottom:6px">3️⃣</div>
-            <div style="font-weight:600;font-size:12.5px;margin-bottom:5px">Deploy as Web App</div>
-            <div style="font-size:11.5px;color:var(--muted)">Click <strong>Deploy -> New deployment</strong>. Type: <em>Web app</em>. Execute as: <em>Me</em>. Who has access: <em>Anyone</em>. Click Deploy and copy the URL.</div>
-          </div>
-          <div style="padding:14px;background:var(--teal-pale);border-radius:10px">
-            <div style="font-size:18px;margin-bottom:6px">4️⃣</div>
-            <div style="font-weight:600;font-size:12.5px;margin-bottom:5px">Paste URL & Connect</div>
-            <div style="font-size:11.5px;color:var(--muted)">Paste the Web App URL into the field above and click <strong>Connect & Test</strong>. Then push your data. Done!</div>
-          </div>
-        </div>
-        <div class="alert alert-warn" style="margin-top:16px;margin-bottom:0">
-          !️ When deploying, set <strong>Execute as: Me</strong> and <strong>Who has access: Anyone</strong>. This lets the app read/write your sheet without requiring users to sign in. The URL acts as a secret key -- keep it private.
-        </div>
-      </div>
-    </div>
-    </div>
-  </div>
-
   <!-- -- USERS (Admin only) -- -->
   <div id="view-users" class="view">
     <div class="page-header">
       <h1>Manage Users</h1>
-      <p>Add, edit, or remove platform users. Passwords are hashed — never stored in plain text.</p>
     </div>
     <div class="view-body">
     <div class="alert alert-warn" id="usersSheetWarning" style="display:none">
@@ -2483,9 +2430,6 @@
     <div class="alert alert-info" id="usersSheetOk" style="display:none;justify-content:space-between;align-items:center">
       <span>OK Connected to Google Sheets -- users sync across all devices.</span>
       <button class="btn btn-ghost btn-sm" onclick="clearUserCache()" style="white-space:nowrap;margin-left:12px">↺ Refresh list</button>
-    </div>
-    <div class="alert alert-warn">
-      User accounts are stored in the <strong>Users</strong> tab of your Google Sheet. Add users below -- they can log in from any device instantly.
     </div>
 
     <div class="two-col" style="align-items:start">
@@ -2698,7 +2642,6 @@
     <div class="modal-header">
       <div>
         <strong>New Payment Request</strong>
-        <div id="reqStepHint" style="font-size:12px;color:var(--muted);margin-top:2px">Step 1 — Select project</div>
       </div>
       <button class="close-btn" onclick="closeModal('requestModal')">×</button>
     </div>
@@ -5820,7 +5763,7 @@ function resetRequestFormUI_() {
   var btn = document.getElementById('submitReqBtn');
   if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
   var step = document.getElementById('reqStepHint');
-  if (step) step.textContent = 'Step 1 — Select project';
+  if (step) step.textContent = '';
 }
 
 function openNewRequestModal() {
@@ -5956,7 +5899,7 @@ function onReqTypeChange() {
   document.getElementById('reqCatRow').style.display = '';
   document.getElementById('reqLineRow').style.display = 'none';
   document.getElementById('reqDetailsRow').style.display = 'none';
-  document.getElementById('reqStepHint').textContent = 'Step 2 — Pick a category';
+  var hint=document.getElementById('reqStepHint'); if(hint) hint.textContent='';
 }
 
 function selectReqCat(cat, btn) {
@@ -5997,7 +5940,7 @@ function selectReqCat(cat, btn) {
   });
   document.getElementById('reqLineRow').style.display = '';
   document.getElementById('reqDetailsRow').style.display = 'none';
-  document.getElementById('reqStepHint').textContent = 'Step 3 — Select budget line';
+  var hint = document.getElementById('reqStepHint'); if (hint) hint.textContent = '';
 }
 
 function selectReqLine(line) {
@@ -6080,7 +6023,7 @@ function selectReqLine(line) {
   }
 
   document.getElementById('reqDetailsRow').style.display = '';
-  document.getElementById('reqStepHint').textContent = 'Step 4 — Complete details and submit';
+  var hint=document.getElementById('reqStepHint'); if(hint) hint.textContent='';
   if (!amtEl.readOnly) amtEl.focus();
   checkReqReady();
 }
