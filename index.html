@@ -1987,6 +1987,28 @@
     .table-pagination { flex-wrap:wrap !important; }
     .table-pagination .page-btn[title="First"], .table-pagination .page-btn[title="Last"] { display:none !important; }
   }
+  /* Sign-up via invite link */
+  #joinScreen { position:fixed; inset:0; z-index:10000; background:#FAF9F8; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:20px 0; }
+  #joinScreen.visible { display:flex; }
+  #joinScreen .login-box { margin:auto; }
+  #joinScreen .wordmark-icon { width:36px; height:36px; border-radius:8px; background:var(--brand); display:flex; align-items:center; justify-content:center; }
+  #joinScreen .login-wordmark span { font-weight:700; font-size:15px; }
+  .join-country { font-size:12.5px; color:#605E5C; background:#DEECF9; border:1px solid #C7E0F4; border-radius:6px; padding:8px 12px; margin-bottom:14px; }
+  .join-country strong { color:#004578; }
+  .join-hint { font-size:11px; color:#8A8886; margin-top:4px; }
+  /* Invite links card */
+  .inv-row { display:grid; grid-template-columns:130px 1fr auto; gap:10px; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); }
+  .inv-row:last-child { border-bottom:none; }
+  .inv-country { font-weight:600; font-size:13px; }
+  .inv-meta { font-size:11px; color:var(--muted); }
+  .inv-link { font-family:'IBM Plex Mono',monospace; font-size:11.5px !important; background:#FAF9F8 !important; color:#323130; padding:6px 8px !important; }
+  .inv-link.is-off { color:var(--muted); text-decoration:line-through; }
+  .inv-actions { display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
+  .inv-src { font-size:9.5px; font-weight:700; letter-spacing:.04em; color:#004578; background:#DEECF9; border-radius:3px; padding:1px 5px; margin-left:4px; vertical-align:middle; }
+  @media (max-width:768px) {
+    .inv-row { grid-template-columns:1fr; gap:6px; }
+    .inv-actions { justify-content:flex-start; }
+  }
   /* Floating new-request button */
   .rq-fab { position:fixed; right:24px; bottom:24px; width:54px; height:54px; border-radius:50%; border:none; background:var(--brand); color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.25); cursor:pointer; z-index:110; display:flex; align-items:center; justify-content:center; transition:transform .12s, box-shadow .12s; }
   .rq-fab:hover { transform:scale(1.06); box-shadow:0 8px 22px rgba(0,0,0,.3); }
@@ -2032,6 +2054,40 @@
     </form>
     <div style="margin-top:16px;text-align:center">
       <button onclick="clearLoginCache()" style="background:none;border:none;font-size:11.5px;color:var(--muted);cursor:pointer;font-family:inherit">Having trouble? Clear local cache</button>
+    </div>
+  </div>
+</div>
+
+<!-- -- SIGN-UP VIA COUNTRY INVITE LINK -- -->
+<div id="joinScreen">
+  <div class="login-box" style="width:420px">
+    <div class="login-wordmark">
+      <div class="wordmark-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></div>
+      <span>MRV Platform</span>
+    </div>
+    <div id="joinLoading" style="font-size:13px;color:#8A8886;padding:20px 0">Checking your sign-up link…</div>
+    <div id="joinInvalid" style="display:none">
+      <h2 style="font-size:20px;font-weight:700;margin:0 0 8px;color:#201F1E">Link not valid</h2>
+      <p id="joinInvalidMsg" style="font-size:13px;color:#A4262C;margin:0 0 18px"></p>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="leaveJoinScreen()">Go to sign in</button>
+    </div>
+    <form id="joinForm" style="display:none" onsubmit="event.preventDefault();submitJoin();return false;" autocomplete="on">
+      <h2 style="font-size:20px;font-weight:700;margin:0 0 4px;color:#201F1E">Create your account</h2>
+      <p style="font-size:13px;color:#8A8886;margin:0 0 18px">Fill in your details to get access.</p>
+      <div class="join-country">Country <strong id="joinCountry">—</strong></div>
+      <div class="form-group"><label>Full name</label><input id="joinName" type="text" autocomplete="name" placeholder="e.g. Alice Omondi"></div>
+      <div class="form-group"><label>Email</label><input id="joinEmail" type="email" autocomplete="email" placeholder="you@example.com"><div class="join-hint">Any email you can access — you will use it to sign in.</div></div>
+      <div class="form-group"><label>M-Pesa / payee number</label><input id="joinPayee" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 0712 345 678"><div class="join-hint">Payments for your requests are sent to this number.</div></div>
+      <div class="form-group"><label>Password</label><input id="joinPass" type="password" autocomplete="new-password" placeholder="Min 6 characters"></div>
+      <div class="form-group"><label>Confirm password</label><input id="joinPass2" type="password" autocomplete="new-password" placeholder="Repeat password"></div>
+      <div id="joinError" style="display:none;color:#A4262C;font-size:12.5px;margin-bottom:12px;padding:10px 12px;background:#FDE7E9;border-radius:4px;border:1px solid #F1A9A9"></div>
+      <button type="submit" class="btn btn-primary" id="joinBtn" style="width:100%;padding:11px;font-size:13.5px;border-radius:7px;justify-content:center">Create account</button>
+      <div style="margin-top:14px;text-align:center"><button type="button" onclick="leaveJoinScreen()" style="background:none;border:none;font-size:12px;color:var(--brand);cursor:pointer;font-family:inherit">Already have an account? Sign in</button></div>
+    </form>
+    <div id="joinDone" style="display:none">
+      <h2 style="font-size:20px;font-weight:700;margin:0 0 8px;color:#201F1E">Account created ✓</h2>
+      <p style="font-size:13px;color:#605E5C;margin:0 0 18px">You can now sign in with <strong id="joinDoneEmail"></strong>. Your access is set to <strong id="joinDoneCountry"></strong>.</p>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px" onclick="leaveJoinScreen(true)">Sign in</button>
     </div>
   </div>
 </div>
@@ -2570,6 +2626,27 @@
     <div class="alert alert-info" id="usersSheetOk" style="display:none;justify-content:space-between;align-items:center">
       <span>OK Connected to Google Sheets -- users sync across all devices.</span>
       <button class="btn btn-ghost btn-sm" onclick="clearUserCache()" style="white-space:nowrap;margin-left:12px">↺ Refresh list</button>
+    </div>
+
+    <div class="card" id="inviteLinksCard" style="margin-bottom:16px">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Sign-up links by country</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Share a country's link. People who open it fill in their details and are added as <strong>Requesters</strong> for that country. You can change their role or country below at any time.</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="form-group" style="margin-bottom:10px">
+          <label>App address used in links</label>
+          <div style="display:flex;gap:8px">
+            <input id="inviteAppUrl" type="url" placeholder="https://your-site.github.io/mrv/" style="flex:1">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="saveInviteAppUrl()">Save</button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">The web address people open to use the app (e.g. your GitHub Pages link).</div>
+        </div>
+        <div id="inviteSyncNote" class="alert alert-warn" style="display:none;margin-bottom:10px"></div>
+        <div id="inviteLinksList"><div style="font-size:12px;color:var(--muted)">Loading…</div></div>
+      </div>
     </div>
 
     <div class="two-col" style="align-items:start">
@@ -8048,6 +8125,7 @@ function hideLoginScreen() {
 
 // -- Called from the single DOMContentLoaded --------------------
 function bootAuth() {
+  if (maybeShowJoinScreen()) return;
   try {
     const raw  = localStorage.getItem(SESSION_KEY);
     const sess = raw ? JSON.parse(raw) : null;
@@ -8115,8 +8193,15 @@ function normalizeUserFromSheet_(u) {
   if (!u) return u;
   var email = String(u.email || u.Email || '').toLowerCase().trim();
   var storedPass = String(u.hash || u.Hash || u.password || u.Password || '').trim();
+  var _nid = u.id;
+  if (typeof _nid !== 'number' && !/^\d+$/.test(String(_nid || ''))) {
+    // Stable numeric id from email (table buttons need a number)
+    var h = 5381, src = email || String(Date.now());
+    for (var i = 0; i < src.length; i++) h = ((h * 33) ^ src.charCodeAt(i)) >>> 0;
+    _nid = h;
+  } else { _nid = +_nid; }
   return {
-    id: u.id || email || Date.now(),
+    id: _nid,
     name: String(u.name || u.Name || '').trim(),
     email: email,
     role: String(u.role || u.Role || 'requester').toLowerCase().trim(),
@@ -8125,7 +8210,8 @@ function normalizeUserFromSheet_(u) {
     hash: storedPass,
     password: storedPass,
     active: String(u.active != null ? u.active : (u.Active != null ? u.Active : 'true')).toLowerCase() !== 'false',
-    created: u.created || u.Created || ''
+    created: u.created || u.Created || '',
+    source: u.source || u.Source || ''
   };
 }
 
@@ -8492,7 +8578,7 @@ async function addUser() {
   if (pass.length < 6)          { toast('Password must be at least 6 characters'); return; }
   if (usersStore.find(u => (u.email||'').toLowerCase() === email)) { toast('A user with that email already exists'); return; }
   const hash = await hashPassword(pass);
-  const user = { id: Date.now(), name, email, role, country, payeeNumber: payee, hash: hash, password: hash, active: true, created: new Date().toLocaleDateString('en-GB') };
+  const user = { id: Date.now(), name, email, role, country, payeeNumber: payee, hash: hash, password: hash, active: true, created: new Date().toLocaleDateString('en-GB'), source: 'Admin' };
   usersStore.push(user);
   persistUsersToStorage();
   ['newUserName','newUserEmail','newUserPass','newUserPass2','newUserPayee'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
@@ -8535,7 +8621,7 @@ async function deleteUser(id) {
   usersStore = usersStore.filter(u => u.id !== id);
   persistUsersToStorage();
   renderUsersTable();
-  await pushUsersToSheets();
+  await pushUsersToSheets(target && target.email ? [String(target.email).toLowerCase()] : []);
   toast('User removed');
 }
 
@@ -8577,7 +8663,7 @@ function renderUsersTable() {
       return '<option value="'+r+'"'+(r===(u.role||'requester')?' selected':'')+'>'+r.charAt(0).toUpperCase()+r.slice(1)+'</option>';
     }).join('');
     return '<tr id="urow-'+u.id+'">'
-      + '<td style="font-weight:500;color:var(--ink)">'+(u.name||'--')+'<div style="font-size:11px;color:var(--muted)">'+(u.email||'')+'</div></td>'
+      + '<td style="font-weight:500;color:var(--ink)">'+(u.name||'--')+(/invite/i.test(u.source||'')?'<span class="inv-src" title="Joined via sign-up link'+(u.created?' on '+u.created:'')+'">LINK</span>':'')+'<div style="font-size:11px;color:var(--muted)">'+(u.email||'')+'</div></td>'
       + '<td><select data-uid="'+u.id+'" data-field="role" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;'+(isSelf?'opacity:.5;pointer-events:none':'')+'">'+roleOpts+'</select></td>'
       + '<td><select data-uid="'+u.id+'" data-field="country" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px">'+countryOpts+'</select></td>'
       + '<td><input type="text" data-uid="'+u.id+'" data-field="payeeNumber" value="'+String(u.payeeNumber||'').replace(/"/g,'&quot;')+'" placeholder="Payee #" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;width:120px;font-family:IBM Plex Mono,monospace"></td>'
@@ -8587,12 +8673,14 @@ function renderUsersTable() {
       + '</td>'
       + '</tr>';
   }).join('');
+  try { if (document.getElementById('inviteLinksList')) renderInviteLinks(); } catch(e) {}
 }
 
-async function pushUsersToSheets() {
+async function pushUsersToSheets(removeEmails) {
   if (!gsWebAppUrl) { console.warn('No Web App URL -- users saved locally only'); return; }
   try {
-    const res = await gasCall({ action:'pushUsers', data:usersStore });
+    // The sheet merges by email, so users who signed up by link are never wiped.
+    const res = await gasCall({ action:'pushUsers', data:usersStore, removeEmails: removeEmails || [] });
     if (res && res.ok) appendSyncLog('OK Users pushed to Sheets (' + usersStore.length + ')');
     else appendSyncLog('! pushUsers: ' + JSON.stringify(res));
   } catch(e) { appendSyncLog('X pushUsers error: ' + e.message); }
@@ -8611,6 +8699,7 @@ function clearUserCache() {
 }
 // Populate country dropdown when opening Users view
 function onUsersViewOpen() {
+  try { loadInviteLinks(); } catch(e) {}
   populateCountryDropdown();
   toggleCountryField();
   checkUsersSheetStatus();
@@ -8658,6 +8747,242 @@ async function pullUsersFromSheets() {
       renderUsersTable();
     }
   } catch(e) { console.error('pullUsers:', e); }
+}
+
+
+// ==============================================================
+// COUNTRY SIGN-UP LINKS
+// Admin shares one link per country → person fills details → added to
+// Users tab as Requester for that country (admin can edit later).
+// ==============================================================
+var _inviteCfg = { appUrl: '', links: {} };
+var _joinToken = '';
+var _joinCountry = '';
+
+function _defaultAppUrl() {
+  if (/^https?:$/.test(location.protocol)) return location.origin + location.pathname;
+  return '';
+}
+function _inviteLinkFor(token) {
+  var base = String(_inviteCfg.appUrl || _defaultAppUrl() || '').trim();
+  if (!base || !token) return '';
+  base = base.replace(/[?#].*$/, '');
+  return base + '?join=' + encodeURIComponent(token);
+}
+function _newInviteToken() {
+  var a = new Uint8Array(12);
+  (window.crypto || window.msCrypto).getRandomValues(a);
+  return Array.from(a).map(function(b){ return ('0' + b.toString(16)).slice(-2); }).join('');
+}
+function _inviteCountries() {
+  var set = {};
+  (budgetLines || []).forEach(function(l){ if (l.country) set[String(l.country).trim()] = 1; });
+  (usersStore || []).forEach(function(u){ if (u.country) set[String(u.country).trim()] = 1; });
+  Object.keys(_inviteCfg.links || {}).forEach(function(c){ set[c] = 1; });
+  return Object.keys(set).filter(Boolean).sort();
+}
+
+async function loadInviteLinks() {
+  var box = document.getElementById('inviteLinksList');
+  if (!box) return;
+  var note = document.getElementById('inviteSyncNote');
+  if (note) note.style.display = 'none';
+  try { _inviteCfg = JSON.parse(localStorage.getItem('mrv_invite_links') || 'null') || _inviteCfg; } catch(e) {}
+  if (gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
+    try {
+      var res = await gasCall({ action: 'getSettings', key: 'inviteLinks' });
+      if (res && res.ok && res.key === 'inviteLinks') {
+        if (res.value) {
+          var cfg = JSON.parse(res.value);
+          if (cfg && typeof cfg === 'object') _inviteCfg = { appUrl: cfg.appUrl || '', links: cfg.links || {} };
+        }
+      } else if (note) {
+        note.style.display = '';
+        note.innerHTML = 'Sign-up links need the latest Apps Script (<code>getSettings</code>, <code>registerUser</code>). Deploy a new version first.';
+      }
+    } catch(e) {}
+  } else if (note) {
+    note.style.display = '';
+    note.textContent = 'Google Sheets is not connected — sign-up links cannot work until it is.';
+  }
+  try { localStorage.setItem('mrv_invite_links', JSON.stringify(_inviteCfg)); } catch(e) {}
+  var urlInp = document.getElementById('inviteAppUrl');
+  if (urlInp) urlInp.value = _inviteCfg.appUrl || _defaultAppUrl();
+  renderInviteLinks();
+}
+
+function renderInviteLinks() {
+  var box = document.getElementById('inviteLinksList');
+  if (!box) return;
+  var countries = _inviteCountries();
+  if (!countries.length) {
+    box.innerHTML = '<div style="font-size:12px;color:var(--muted)">No countries yet — load budgets first.</div>';
+    return;
+  }
+  var esc = function(x){ return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  box.innerHTML = countries.map(function(c) {
+    var l = (_inviteCfg.links || {})[c];
+    var joined = (usersStore || []).filter(function(u){ return /invite/i.test(u.source || '') && String(u.country || '').trim() === c; }).length;
+    var meta = joined ? joined + ' joined via link' : 'No sign-ups yet';
+    if (!l || !l.token) {
+      return '<div class="inv-row"><div><div class="inv-country">' + esc(c) + '</div><div class="inv-meta">No link yet</div></div>'
+        + '<div></div>'
+        + '<div class="inv-actions"><button type="button" class="btn btn-primary btn-sm" data-c="' + esc(c) + '" onclick="createInviteLink(this.dataset.c)">Create link</button></div></div>';
+    }
+    var on = l.active !== false;
+    var link = _inviteLinkFor(l.token);
+    return '<div class="inv-row"><div><div class="inv-country">' + esc(c) + '</div><div class="inv-meta">' + (on ? meta : 'Disabled') + '</div></div>'
+      + '<input type="text" readonly class="inv-link' + (on ? '' : ' is-off') + '" value="' + esc(link || 'Set the app address above') + '" onclick="this.select()">'
+      + '<div class="inv-actions">'
+        + (on ? '<button type="button" class="btn btn-primary btn-sm" data-c="' + esc(c) + '" onclick="copyInviteLink(this.dataset.c)">Copy</button>' : '')
+        + '<button type="button" class="btn btn-ghost btn-sm" data-c="' + esc(c) + '" onclick="toggleInviteLink(this.dataset.c)">' + (on ? 'Disable' : 'Enable') + '</button>'
+        + '<button type="button" class="btn btn-ghost btn-sm" data-c="' + esc(c) + '" onclick="createInviteLink(this.dataset.c, true)" title="Old link stops working">New link</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+async function _saveInviteCfg() {
+  try { localStorage.setItem('mrv_invite_links', JSON.stringify(_inviteCfg)); } catch(e) {}
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') { toast('Not connected to Sheets — link will not work yet'); return false; }
+  try {
+    var res = await gasCall({ action: 'saveSettings', key: 'inviteLinks', value: JSON.stringify(_inviteCfg),
+      updatedBy: currentUser ? (currentUser.email || currentUser.name || '') : '' });
+    if (res && res.ok && res.saved) return true;
+    toast('Could not save link: ' + ((res && res.error) || 'update the Apps Script'));
+  } catch(e) { toast('Could not save link: ' + (e.message || e)); }
+  return false;
+}
+async function createInviteLink(country, regenerate) {
+  if (regenerate && !confirm('Create a new link for ' + country + '? The current link will stop working.')) return;
+  _inviteCfg.links = _inviteCfg.links || {};
+  _inviteCfg.links[country] = { token: _newInviteToken(), active: true, createdAt: new Date().toISOString(),
+    createdBy: currentUser ? (currentUser.email || '') : '' };
+  renderInviteLinks();
+  if (await _saveInviteCfg()) {
+    toast('Link ready for ' + country);
+    copyInviteLink(country, true);
+  }
+}
+async function toggleInviteLink(country) {
+  var l = (_inviteCfg.links || {})[country];
+  if (!l) return;
+  l.active = l.active === false;
+  renderInviteLinks();
+  if (await _saveInviteCfg()) toast(country + ' link ' + (l.active ? 'enabled' : 'disabled'));
+}
+async function saveInviteAppUrl() {
+  var v = String((document.getElementById('inviteAppUrl') || {}).value || '').trim();
+  if (v && !/^https?:\/\//i.test(v)) { toast('Enter a full address starting with https://'); return; }
+  _inviteCfg.appUrl = v;
+  renderInviteLinks();
+  if (await _saveInviteCfg()) toast('App address saved');
+}
+function copyInviteLink(country, quiet) {
+  var l = (_inviteCfg.links || {})[country];
+  var link = l ? _inviteLinkFor(l.token) : '';
+  if (!link) { toast('Set the app address first'); return; }
+  var done = function(){ if (!quiet) toast('Link copied for ' + country); else toast('Link created and copied for ' + country); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(done, function(){ _copyFallback(link); done(); });
+  } else { _copyFallback(link); done(); }
+}
+function _copyFallback(text) {
+  var t = document.createElement('textarea');
+  t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+  document.body.appendChild(t); t.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(t);
+}
+
+// ── Sign-up screen (opened from a country link) ──────────
+function maybeShowJoinScreen() {
+  var token = '';
+  try { token = new URLSearchParams(location.search).get('join') || ''; } catch(e) {}
+  if (!token) return false;
+  _joinToken = token;
+  try { document.getElementById('loginScreen').style.display = 'none'; } catch(e) {}
+  var scr = document.getElementById('joinScreen');
+  scr.classList.add('visible');
+  var show = function(id) {
+    ['joinLoading','joinInvalid','joinForm','joinDone'].forEach(function(x) {
+      var el = document.getElementById(x); if (el) el.style.display = (x === id ? '' : 'none');
+    });
+  };
+  show('joinLoading');
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') {
+    document.getElementById('joinInvalidMsg').textContent = 'The app is not connected to Google Sheets. Contact your administrator.';
+    show('joinInvalid');
+    return true;
+  }
+  gasCall({ action: 'getInviteInfo', token: token }).then(function(res) {
+    if (res && res.ok && res.country) {
+      _joinCountry = res.country;
+      document.getElementById('joinCountry').textContent = res.country;
+      show('joinForm');
+      setTimeout(function(){ try { document.getElementById('joinName').focus(); } catch(e) {} }, 50);
+    } else {
+      document.getElementById('joinInvalidMsg').textContent = (res && res.error) || 'This sign-up link is not valid.';
+      show('joinInvalid');
+    }
+  }).catch(function(e) {
+    document.getElementById('joinInvalidMsg').textContent = 'Could not check the link (' + (e.message || e) + '). Check your connection and reload.';
+    show('joinInvalid');
+  });
+  return true;
+}
+
+async function submitJoin() {
+  var v = function(id){ return String((document.getElementById(id) || {}).value || '').trim(); };
+  var name = v('joinName'), email = v('joinEmail').toLowerCase(), payee = v('joinPayee');
+  var pass = (document.getElementById('joinPass') || {}).value || '';
+  var pass2 = (document.getElementById('joinPass2') || {}).value || '';
+  var err = document.getElementById('joinError');
+  var fail = function(m){ err.textContent = m; err.style.display = 'block'; };
+  err.style.display = 'none';
+  if (!name) return fail('Enter your full name.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail('Enter a valid email address.');
+  if (!payee || payee.replace(/\D/g, '').length < 9) return fail('Enter your M-Pesa / payee number.');
+  if (pass.length < 6) return fail('Password must be at least 6 characters.');
+  if (pass !== pass2) return fail('Passwords do not match.');
+  var btn = document.getElementById('joinBtn');
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  try {
+    var hash = await hashPassword(pass);
+    var res = await gasCall({ action: 'registerUser', token: _joinToken, name: name, email: email, payeeNumber: payee, hash: hash });
+    if (res && res.ok) {
+      document.getElementById('joinDoneEmail').textContent = email;
+      document.getElementById('joinDoneCountry').textContent = (res.country || _joinCountry) + ' (Requester)';
+      ['joinForm','joinLoading','joinInvalid'].forEach(function(x){ document.getElementById(x).style.display = 'none'; });
+      document.getElementById('joinDone').style.display = '';
+      window._joinedEmail = email;
+    } else {
+      fail((res && res.error) || 'Sign-up failed. Try again.');
+    }
+  } catch(e) {
+    fail('Sign-up failed: ' + (e.message || e));
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create account';
+  }
+}
+
+function leaveJoinScreen(prefill) {
+  try {
+    var u = new URL(location.href);
+    u.searchParams.delete('join');
+    history.replaceState(null, '', u.pathname + (u.search || '') + u.hash);
+  } catch(e) {}
+  document.getElementById('joinScreen').classList.remove('visible');
+  try { document.getElementById('loginScreen').style.display = ''; } catch(e) {}
+  _joinToken = '';
+  bootAuth();
+  if (prefill && window._joinedEmail) {
+    setTimeout(function() {
+      var el = document.getElementById('loginEmail');
+      if (el) el.value = window._joinedEmail;
+      var pw = document.getElementById('loginPassword');
+      if (pw) pw.focus();
+    }, 200);
+  }
 }
 
 // ==============================================================
