@@ -1970,9 +1970,10 @@
   tr.rq-excess-row, tr.rq-excess-row > td { background:#E6F0FA !important; }
   tr.rq-excess-row:hover, tr.rq-excess-row:hover > td { background:#D8E8F7 !important; }
   tr.rq-excess-row > td:first-child { box-shadow:inset 3px 0 0 #2B88D8; }
-  .rq-excess-tag { margin-top:4px; display:flex; gap:6px; align-items:baseline; font-size:11.5px; color:var(--ink); max-width:420px; white-space:normal; }
+  .rq-excess-tag { margin-top:4px; display:flex; gap:6px; align-items:baseline; font-size:11.5px; color:var(--ink); max-width:300px; min-width:0; }
   .rq-excess-badge { flex-shrink:0; font-size:9.5px; font-weight:700; letter-spacing:.05em; color:#fff; background:#2B88D8; border-radius:3px; padding:1px 5px; }
-  .rq-excess-why { font-style:italic; }
+  .rq-excess-why { font-style:italic; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; border-bottom:1px dotted #2B88D8; }
+  .rq-excess-why.is-open { white-space:normal; overflow:visible; border-bottom:none; }
   /* Floating new-request button */
   .rq-fab { position:fixed; right:24px; bottom:24px; width:54px; height:54px; border-radius:50%; border:none; background:var(--brand); color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.25); cursor:pointer; z-index:110; display:flex; align-items:center; justify-content:center; transition:transform .12s, box-shadow .12s; }
   .rq-fab:hover { transform:scale(1.06); box-shadow:0 8px 22px rgba(0,0,0,.3); }
@@ -5799,7 +5800,9 @@ function reqClientHtml(r) {
   }
   if (r.isExcess === true || r.isExcess === 'Yes') {
     out += '<div class="rq-excess-tag"><span class="rq-excess-badge">EXCESS</span> '
-      + (r.excessReason ? '<span class="rq-excess-why">' + _rqEsc(r.excessReason) + '</span>' : '<span class="rq-muted">No justification given</span>')
+      + (r.excessReason
+          ? '<span class="rq-excess-why" title="' + _rqEsc(r.excessReason) + '" onclick="event.stopPropagation();this.classList.toggle(\'is-open\')">' + _rqEsc(r.excessReason) + '</span>'
+          : '<span class="rq-muted">No justification given</span>')
       + '</div>';
   }
   if (r._members && r._members.length > 1) {
