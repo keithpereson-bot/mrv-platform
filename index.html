@@ -1990,7 +1990,6 @@
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
         <div>
           <h1>Approved Budgets</h1>
-          <p>SMT-approved budgets — read-only. Expand a row for line detail.</p>
         </div>
         <div class="ws-actions">
           <button class="btn btn-secondary btn-sm" onclick="toggleAllBudgetGroups(true)">Expand All</button>
@@ -2066,7 +2065,6 @@
   <div id="view-requests" class="view">
     <div class="page-header">
       <h1>System Requests</h1>
-      <p>Submit · approve · mark paid — full payment workflow</p>
     </div>
     <div class="req-tabs">
       <button class="req-tab active viewer-hidden" id="tab-drafts" onclick="switchReqTab('drafts')">
@@ -2116,9 +2114,6 @@
             <button class="btn btn-primary btn-sm viewer-hidden" onclick="openNewRequestModal()">+ New Request</button>
       <button class="btn btn-secondary btn-sm admin-only" id="reqFormSettingsBtn" onclick="openReqFormSettings()" title="Request form rules — standard amounts, categories, limits">
         Form Settings
-      </button>
-      <button class="btn btn-ghost btn-sm admin-only" onclick="pullClientsFromSheets().then(function(){ toast((clientsStore&&clientsStore.length?clientsStore.length:0)+' Client SN(s) from Clients sheet'); try{populateClientSNSelect('');}catch(e){} }).catch(function(e){ toast('Clients pull failed'); })" title="Refresh Client SN list from Clients sheet">
-        Pull Clients
       </button>
           </div>
         </div>
@@ -2199,7 +2194,6 @@
   <div id="view-expenses" class="view">
     <div class="page-header">
       <h1>Expense Claim Form</h1>
-      <p>Select project(s), include paid requests, sign, and export PDF</p>
     </div>
     <div class="view-body">
     <div class="card">
@@ -2414,6 +2408,8 @@
         </div>
       </div>
     </div>
+    </div>
+  </div>
 
   <!-- -- USERS (Admin only) -- -->
   <div id="view-users" class="view">
