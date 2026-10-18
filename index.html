@@ -1941,6 +1941,31 @@
   .rq-client-tag-k { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
   .rq-client-tag-sn { font-family:'IBM Plex Mono',monospace; color:#004578; }
   .rq-bundle-tag { margin-top:3px; font-size:10.5px; color:var(--muted); }
+  /* Request form settings */
+  .cfg-row { display:grid; gap:8px; align-items:center; }
+  .cfg-row-std { grid-template-columns:1.1fr 1.5fr 110px 32px; }
+  .cfg-row-lim { grid-template-columns:1fr 110px 32px; }
+  .cfg-row-cat { grid-template-columns:1.2fr 90px 2fr; padding:6px 0; border-bottom:1px solid var(--border); }
+  .cfg-head { font-size:11px; color:var(--muted); margin-bottom:4px; }
+  .cfg-cat-head { display:grid; grid-template-columns:1.2fr 90px 2fr; gap:8px; font-size:11px; color:var(--muted); font-weight:600; }
+  .cfg-roles { display:flex; flex-wrap:wrap; gap:4px 12px; }
+  .cfg-check { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:400; text-transform:none; letter-spacing:0; color:var(--ink); cursor:pointer; margin:0; }
+  .cfg-check input { width:auto; margin:0; }
+  /* Transport route in request tables */
+  .rq-route { margin-top:4px; font-size:11.5px; }
+  .rq-route summary { cursor:pointer; color:var(--brand); font-weight:600; font-size:11px; list-style:revert; }
+  .rq-route-grid { display:grid; grid-template-columns:minmax(120px,auto) auto auto auto; gap:0; margin-top:4px; background:#fff; border:1px solid var(--border); border-radius:4px; width:max-content; max-width:420px; }
+  .rq-route-grid span { padding:3px 8px; font-size:11px; color:var(--ink); border-bottom:1px solid #F3F2F1; white-space:normal; }
+  .rq-route-grid .h { color:var(--muted); font-weight:600; background:#FAF9F8; }
+  .rq-route-grid .n { text-align:right; white-space:nowrap; }
+  .rq-route-grid .f { font-weight:700; border-bottom:none; }
+  .rq-sn-hint { font-size:11px; margin-top:4px; }
+  @media (max-width:768px) {
+    .cfg-row-std { grid-template-columns:1fr 1fr; }
+    .cfg-row-cat, .cfg-cat-head { grid-template-columns:1fr 80px; }
+    .cfg-row-cat .cfg-roles { grid-column:1 / -1; }
+    .cfg-cat-head span:last-child { display:none; }
+  }
   /* Floating new-request button */
   .rq-fab { position:fixed; right:24px; bottom:24px; width:54px; height:54px; border-radius:50%; border:none; background:var(--brand); color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.25); cursor:pointer; z-index:110; display:flex; align-items:center; justify-content:center; transition:transform .12s, box-shadow .12s; }
   .rq-fab:hover { transform:scale(1.06); box-shadow:0 8px 22px rgba(0,0,0,.3); }
@@ -2773,11 +2798,12 @@
       <button class="close-btn" onclick="closeModal('reqSettingsModal')">×</button>
     </div>
     <div class="modal-body" style="display:grid;gap:18px;max-height:70vh;overflow-y:auto">
+      <div id="reqCfgSyncNote" class="alert alert-warn" style="display:none"></div>
 
       <div>
         <div style="font-size:13px;font-weight:600;margin-bottom:8px">Standard amounts by project (Transport / Airtime / Incentives)</div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Set amount per <strong>project + cost line</strong>. Different projects can have different rates. When set, requesters cannot edit the amount.</p>
-        <div style="display:grid;grid-template-columns:1.2fr 1.4fr 100px 32px;gap:8px;font-size:11px;color:var(--muted);margin-bottom:4px">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Set amount per <strong>project + cost line</strong>. A project-specific amount overrides an "All projects" amount. When set, requesters cannot edit the amount (for transport lines the breakdown must add up to it).</p>
+        <div class="cfg-row cfg-row-std cfg-head">
           <span>Project</span><span>Cost line</span><span>Amount</span><span></span>
         </div>
         <div id="reqStdAmountsList" style="display:grid;gap:8px"></div>
@@ -5274,6 +5300,8 @@ function openSignAndApprove(btn, ref, recipient) {
   clearModalSig();
   var _sr = (requestsStore || []).find(function(x){ return x.ref === ref; });
   var _sc = (_sr && _sr.clientSN) ? ` -- Client: ${_sr.clientName || '—'} (SN ${_sr.clientSN})` : '';
+  var _mates = bundleMateRefs(ref);
+  if (_mates.length > 1) _sc += ` -- Transport & Airtime (${_mates.join(' + ')})`;
   document.getElementById('signModalSub').textContent = `Request #${ref} -- Recipient: ${recipient}` + _sc;
   refreshSigGrids();
   openModal('signApproveModal');
@@ -5295,16 +5323,17 @@ function backgroundPush(opts) {
 
 // Step 1: Approve request (Draft/Pending -> Approved, moves to Payment Queue)
 function approveRequest(ref) {
-  // Find and mutate the entry
+  // Find and mutate the entry (Transport & Airtime bundles are approved together)
   var found = false;
+  var _refs = (typeof bundleMateRefs === 'function') ? bundleMateRefs(ref) : [ref];
   for (var i = 0; i < requestsStore.length; i++) {
-    if (requestsStore[i].ref === ref) {
+    if (_refs.indexOf(requestsStore[i].ref) !== -1 && (requestsStore[i].status === 'Draft' || requestsStore[i].status === 'Pending' || requestsStore[i].ref === ref)) {
       requestsStore[i].status     = 'Approved';
       requestsStore[i].approvedBy = currentUser ? currentUser.name : 'Officer';
       requestsStore[i].approvedAt = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
                                   + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
       found = true;
-      break;
+      markLocalWrite(requestsStore[i].ref);
     }
   }
   if (!found) { toast('Request not found: ' + ref); return; }
@@ -5314,7 +5343,7 @@ function approveRequest(ref) {
   persistRequestsToStorage();
   rebuildRequestsTable();
   renderDashboard();
-  toast('Request approved');
+  toast(_refs.length > 1 ? 'Transport & Airtime request approved (' + _refs.join(' + ') + ')' : 'Request approved');
 
   // Fast push — status only, no actuals/signatures
   backgroundPush({ fast: true, skipActuals: true });
@@ -5330,12 +5359,16 @@ function confirmSignAndApprove() {
   var entry = requestsStore.find(function(r){ return r.ref===activeSignRef; });
   if (!entry) { toast('Request not found'); return; }
 
-  // Move to Paid -- THIS is when actuals update
-  entry.status     = 'Paid';
-  entry.sigDataUrl = pendingModalSig;
-  entry.sigLabel   = sigLabel;
-  entry.sigTime    = sigTime;
-  markLocalWrite(entry.ref);
+  // Move to Paid -- THIS is when actuals update (whole Transport & Airtime bundle)
+  bundleMateRefs(activeSignRef).forEach(function(ref) {
+    var e = requestsStore.find(function(r){ return r.ref === ref; });
+    if (!e || (e.status !== 'Approved' && e.ref !== activeSignRef)) return;
+    e.status     = 'Paid';
+    e.sigDataUrl = pendingModalSig;
+    e.sigLabel   = sigLabel;
+    e.sigTime    = sigTime;
+    markLocalWrite(e.ref);
+  });
 
   closeModal('signApproveModal');
   persistRequestsToStorage();
@@ -5674,10 +5707,59 @@ function getProjectRequestLimit(project) {
   return isNaN(n) ? null : n;
 }
 
-/** HTML for client name + SN, shown to approvers (request tables) and in My Submissions. */
+/** All refs that belong to the same Transport & Airtime bundle as `ref` (always includes ref). */
+function bundleMateRefs(ref) {
+  var r = (requestsStore || []).find(function(x){ return x.ref === ref; });
+  var b = reqBundleOf(r);
+  if (!b) return [ref];
+  var out = (requestsStore || []).filter(function(x){ return reqBundleOf(x) === b; }).map(function(x){ return x.ref; });
+  if (out.indexOf(ref) === -1) out.unshift(ref);
+  return out;
+}
+function expandBundleRefs(refs) {
+  var seen = {}, out = [];
+  (refs || []).forEach(function(ref) {
+    bundleMateRefs(ref).forEach(function(x){ if (!seen[x]) { seen[x] = 1; out.push(x); } });
+  });
+  return out;
+}
+/**
+ * Collapse Transport & Airtime bundles into ONE display row (same status only).
+ * The row keeps the first member's ref; actions on it apply to the whole bundle.
+ */
+function groupBundleRows(list) {
+  var byB = {};
+  var keyOf = function(r){ var x = reqBundleOf(r); return x ? x + '\u0001' + (r.status || '') : ''; };
+  (list || []).forEach(function(r){ var b = keyOf(r); if (b) (byB[b] = byB[b] || []).push(r); });
+  var done = {}, out = [];
+  (list || []).forEach(function(r) {
+    var b = keyOf(r);
+    if (!b || !byB[b] || byB[b].length < 2) { out.push(r); return; }
+    if (done[b]) return;
+    done[b] = 1;
+    var mem = byB[b].slice().sort(function(x, y) {
+      var tx = /airtime/i.test(x.costSummary || '') ? 1 : 0, ty = /airtime/i.test(y.costSummary || '') ? 1 : 0;
+      return tx - ty;
+    });
+    var first = mem[0];
+    var base = String(first.costSummary || '').replace(/\s*(transport|airtime)\s*$/i, '').trim();
+    out.push(Object.assign({}, first, {
+      amount: mem.reduce(function(s, m){ return s + (parseFloat(m.amount) || 0); }, 0),
+      costSummary: (base ? base + ' ' : '') + 'Transport & Airtime',
+      transportBreakdown: (mem.find(function(m){ return m.transportBreakdown && m.transportBreakdown.length; }) || {}).transportBreakdown || null,
+      _members: mem,
+      _bundle: reqBundleOf(first)
+    }));
+  });
+  return out;
+}
+
+/** Client, bundle split and transport route — shown to approvers and in My Submissions. */
 function reqClientHtml(r) {
   if (!r) return '';
   var out = '';
+  var ccy = '';
+  try { ccy = getCurrency(r.project, r.type); } catch(e) {}
   if (r.clientSN) {
     out += '<div class="rq-client-tag" title="Client">'
       + '<span class="rq-client-tag-k">Client</span> '
@@ -5685,8 +5767,28 @@ function reqClientHtml(r) {
       + ' <span class="rq-client-tag-sn">SN ' + _rqEsc(r.clientSN) + '</span>'
       + '</div>';
   }
-  var b = reqBundleOf(r);
-  if (b) out += '<div class="rq-bundle-tag">Transport &amp; Airtime · ' + _rqEsc(b) + '</div>';
+  if (r._members && r._members.length > 1) {
+    out += '<div class="rq-bundle-tag">' + r._members.map(function(m) {
+      var kind = /airtime/i.test(m.costSummary || '') ? 'Airtime' : 'Transport';
+      return kind + ' ' + _rqEsc(ccy) + ' ' + fmt(parseFloat(m.amount) || 0) + ' <span class="rq-muted">#' + _rqEsc(m.ref) + '</span>';
+    }).join(' · ') + '</div>';
+  } else {
+    var b = reqBundleOf(r);
+    if (b) out += '<div class="rq-bundle-tag">Transport &amp; Airtime · ' + _rqEsc(b) + '</div>';
+  }
+  var tb = r.transportBreakdown;
+  if (typeof tb === 'string') { try { tb = JSON.parse(tb); } catch(e) { tb = null; } }
+  if (tb && tb.length) {
+    var tot = tb.reduce(function(s, x){ return s + (parseFloat(x.total) || ((parseFloat(x.qty) || 0) * (parseFloat(x.unit) || 0))); }, 0);
+    out += '<details class="rq-route" onclick="event.stopPropagation()"><summary>Route · ' + tb.length + ' leg' + (tb.length === 1 ? '' : 's') + '</summary>'
+      + '<div class="rq-route-grid"><span class="h">Route / description</span><span class="h n">Qty</span><span class="h n">Unit</span><span class="h n">Total</span>'
+      + tb.map(function(x) {
+          var q = parseFloat(x.qty) || 0, u = parseFloat(x.unit) || 0;
+          var t = parseFloat(x.total); if (isNaN(t)) t = q * u;
+          return '<span>' + _rqEsc(x.desc || '—') + '</span><span class="n">' + fmt(q) + '</span><span class="n">' + fmt(u) + '</span><span class="n">' + fmt(t) + '</span>';
+        }).join('')
+      + '<span class="f">Total</span><span class="f"></span><span class="f"></span><span class="f n">' + fmt(tot) + '</span></div></details>';
+  }
   return out;
 }
 
@@ -5735,8 +5837,10 @@ function _comboParts(summary) {
 function getReqLineOptions(project, type, cat) {
   if (!project || !type || !cat) return [];
   var lines = getCostSummaries(project, type, cat);
+  var allowCombo = isClientSNCategory(cat); // Transport & Airtime merge only on the Field form
   var byPrefix = {};
   lines.forEach(function(l) {
+    if (!allowCombo) return;
     var p = _comboParts(l.costSummary);
     if (!p) return;
     byPrefix[p.prefix] = byPrefix[p.prefix] || {};
@@ -5745,8 +5849,8 @@ function getReqLineOptions(project, type, cat) {
   var used = {};
   var out = [];
   lines.forEach(function(l) {
-    var p = _comboParts(l.costSummary);
-    if (p && byPrefix[p.prefix].transport && byPrefix[p.prefix].airtime) {
+    var p = allowCombo ? _comboParts(l.costSummary) : null;
+    if (p && byPrefix[p.prefix] && byPrefix[p.prefix].transport && byPrefix[p.prefix].airtime) {
       if (used[p.prefix]) return;
       used[p.prefix] = true;
       var t = byPrefix[p.prefix].transport, a = byPrefix[p.prefix].airtime;
@@ -5838,7 +5942,7 @@ function _validateReqForm(f, batch) {
 
   if (spec.needClient) {
     if (!f.clientSN) {
-      errs.push('Select a client from the Clients sheet');
+      errs.push('Enter the Client SN');
     } else {
       var c = getClientForProject(f.clientSN, f.project);
       if (!c) {
@@ -5954,6 +6058,7 @@ function openNewRequestModal() {
   openModal('requestModal');
   if (restored) toast('Restored ' + restored + ' saved draft' + (restored === 1 ? '' : 's'));
   _refreshClientsForForms();
+  try { pullReqFormConfig().then(function(changed){ if (changed) _refreshReqStatus(); }); } catch(e) {}
 }
 function addReqForm() {
   _reqForms.forEach(function(f){ if (!_isBlankForm(f)) f.collapsed = true; });
@@ -6090,8 +6195,8 @@ function _reqCardHtml(f, idx, v) {
     h += '<div class="rq-step"><div class="rq-step-label"><span>4</span>Details</div>';
 
     if (spec.needClient) {
-      h += '<div class="rq-block"><div class="rq-block-title">Client <span class="rq-req">*</span> <span class="rq-muted rq-small">from the Clients sheet · ' + _rqEsc(f.project) + '</span></div>'
-        + '<div id="rqcp-' + f.id + '">' + _clientPickerHtml(f) + '</div></div>';
+      h += '<div class="rq-block"><div class="rq-block-title">Client attribution</div>'
+        + _clientInputHtml(f) + '</div>';
     }
 
     spec.parts.forEach(function(p) {
@@ -6140,8 +6245,8 @@ function _reqCardHtml(f, idx, v) {
       h += '</div>';
     });
 
-    if (v.excess) {
-      h += '<div class="rq-excess"><div class="rq-excess-title">Excess request — limit reached for this client on this project (' + _rqEsc(v.excessInfo) + ')</div>'
+    if (spec.needClient) {
+      h += '<div class="rq-excess" id="rqex-' + f.id + '"' + (v.excess ? '' : ' style="display:none"') + '><div class="rq-excess-title">Excess request — limit reached for this client on this project (<span id="rqexi-' + f.id + '">' + _rqEsc(v.excessInfo) + '</span>)</div>'
         + '<label>Reason for excess request <span class="rq-req">*</span></label>'
         + '<textarea rows="2" data-f="' + f.id + '" data-k="excessReason" placeholder="Explain why an additional request is needed...">' + _rqEsc(f.excessReason) + '</textarea></div>';
     }
@@ -6161,22 +6266,39 @@ function _errsHtml(f, v) {
   return '<strong>To submit:</strong> ' + v.errs.map(_rqEsc).join(' · ');
 }
 
-function _clientPickerHtml(f) {
-  if (f.clientSN) {
-    var c = getClientForProject(f.clientSN, f.project);
-    if (c) {
-      return '<div class="rq-client-chip"><div><div class="rq-client-name">' + _rqEsc(c.clientName || '(no name on sheet)') + '</div>'
-        + '<div class="rq-muted rq-small">SN ' + _rqEsc(c.clientSN) + (c.project ? ' · ' + _rqEsc(c.project) : '') + '</div></div>'
-        + '<button type="button" class="btn btn-ghost btn-sm" data-act="clearClient" data-f="' + f.id + '">Change</button></div>';
-    }
-    return '<div class="rq-client-chip is-bad"><div><div class="rq-client-name">SN ' + _rqEsc(f.clientSN) + ' — not valid</div>'
-      + '<div class="rq-small">Not on the Clients sheet for ' + _rqEsc(f.project) + '. Pick a client from the list.</div></div>'
-      + '<button type="button" class="btn btn-ghost btn-sm" data-act="clearClient" data-f="' + f.id + '">Change</button></div>';
+function _snHint(f) {
+  var sn = String(f.clientSN || '').trim();
+  if (!(clientsStore || []).length) {
+    return _clientsLoading
+      ? { t: 'Loading clients from the Clients sheet…', c: 'var(--muted)' }
+      : { t: 'No clients loaded from the Clients sheet yet.', c: 'var(--warn)' };
   }
-  return '<input type="search" data-f="' + f.id + '" data-k="clientQ" value="' + _rqEsc(f.clientQ) + '" placeholder="Search client name or SN" autocomplete="off" spellcheck="false">'
-    + '<div class="rq-client-list" id="rqcl-' + f.id + '">' + _clientResultsHtml(f) + '</div>';
+  if (!sn) return { t: 'Must match a Client SN on the Clients sheet', c: 'var(--muted)' };
+  var any = getClientBySN(sn);
+  if (!any) return { t: 'No match for “' + sn + '” on the Clients sheet' + (getUserCountry() ? ' for your country.' : '.'), c: 'var(--danger)' };
+  var ok = getClientForProject(sn, f.project);
+  if (!ok) return { t: 'SN ' + sn + ' belongs to project “' + (any.project || '—') + '”, not “' + f.project + '”.', c: 'var(--danger)' };
+  return { t: 'Matched: ' + (ok.clientName || sn), c: 'var(--success)' };
 }
-
+function _clientInputHtml(f) {
+  var hint = _snHint(f);
+  var c = f.clientSN ? getClientForProject(f.clientSN, f.project) : null;
+  return '<div class="rq-grid2" style="align-items:start">'
+    + '<div class="form-group" style="margin:0"><label>Client SN <span class="rq-req">*</span></label>'
+    + '<input type="text" data-f="' + f.id + '" data-k="clientSN" value="' + _rqEsc(f.clientSN) + '" placeholder="Type Client SN (from sheet)" autocomplete="off" spellcheck="false">'
+    + '<div class="rq-sn-hint" id="rqsnh-' + f.id + '" style="color:' + hint.c + '">' + _rqEsc(hint.t) + '</div></div>'
+    + '<div class="form-group" style="margin:0"><label>Client Name</label>'
+    + '<input type="text" id="rqcn-' + f.id + '" readonly class="rq-ro" value="' + _rqEsc(c ? c.clientName : '') + '" placeholder="Auto-filled from SN"></div>'
+    + '</div>';
+}
+function _updateSnUi(f) {
+  var h = document.getElementById('rqsnh-' + f.id);
+  if (h) { var x = _snHint(f); h.textContent = x.t; h.style.color = x.c; }
+  var n = document.getElementById('rqcn-' + f.id);
+  var c = f.clientSN ? getClientForProject(f.clientSN, f.project) : null;
+  f.clientName = c ? (c.clientName || '') : '';
+  if (n) n.value = f.clientName;
+}
 function _clientResultsHtml(f) {
   var list = clientsForProject(f.project);
   if (!list.length) {
@@ -6199,15 +6321,7 @@ function _clientResultsHtml(f) {
 }
 
 function _refreshClientPickers() {
-  _reqForms.forEach(function(f) {
-    if (f.collapsed || f.clientSN) {
-      var cp = document.getElementById('rqcp-' + f.id);
-      if (cp && f.clientSN && !f.collapsed) cp.innerHTML = _clientPickerHtml(f);
-      return;
-    }
-    var el = document.getElementById('rqcl-' + f.id);
-    if (el) el.innerHTML = _clientResultsHtml(f);
-  });
+  _reqForms.forEach(function(f){ _updateSnUi(f); });
 }
 
 /** Update status pills, error lines, totals and footer — never re-renders inputs. */
@@ -6221,6 +6335,10 @@ function _refreshReqStatus() {
       : (v.ok ? '<span class="rq-pill rq-pill-ok">✓ Ready</span>' : '<span class="rq-pill rq-pill-warn">Incomplete</span>');
     var er = document.getElementById('rqerr-' + f.id);
     if (er) er.innerHTML = _errsHtml(f, v);
+    var ex = document.getElementById('rqex-' + f.id);
+    if (ex) ex.style.display = v.excess ? '' : 'none';
+    var exi = document.getElementById('rqexi-' + f.id);
+    if (exi) exi.textContent = v.excessInfo || '';
     if (v.spec) {
       var ccy = getCurrency(f.project, f.type);
       var sb = document.getElementById('rqsub-' + f.id);
@@ -6269,7 +6387,7 @@ function _updateReqFooter(vals) {
 // ── Events (delegated — typing never re-renders the field you are in) ──
 function _rqResetLine(f) {
   f.lineKey = ''; f.amount = ''; f.airAmount = ''; f.incT = true; f.incA = true;
-  f.transportRows = []; f.clientSN = ''; f.clientName = ''; f.clientQ = ''; f.excessReason = '';
+  f.transportRows = []; f.excessReason = '';
 }
 function _rqPrepareLine(f) {
   var spec = _formSpec(f);
@@ -6297,6 +6415,9 @@ document.addEventListener('input', function(e) {
     row[fld] = el.value;
     var tt = document.getElementById('rqtt-' + f.id + '-' + i);
     if (tt) tt.textContent = fmt(_rqNum(row.qty) * _rqNum(row.unit));
+  } else if (k === 'clientSN') {
+    f.clientSN = el.value.trim();
+    _updateSnUi(f);
   } else if (k === 'clientQ') {
     f.clientQ = el.value;
     var cl = document.getElementById('rqcl-' + f.id);
@@ -6510,7 +6631,7 @@ async function submitAllRequests() {
     }
   } catch(e) {}
 
-  toast((created.length === 1 ? 'Request ' + created[0] + ' submitted' : created.length + ' requests submitted (' + created[0] + '–' + created[created.length - 1] + ')')
+  toast((activeIdx.length === 1 ? 'Request submitted (' + created.join(' + ') + ')' : activeIdx.length + ' requests submitted (' + created[0] + '–' + created[created.length - 1] + ')')
     + (anyExcess ? ' (excess noted)' : '') + (window._gas404Until ? ' · Sheets offline (local only)' : ''));
   backgroundPush({ fast: true, skipActuals: true });
 }
@@ -6535,178 +6656,311 @@ function updateReqFab() {
 }
 
 // ── Admin: Request Form Settings UI ──────────────────────
-function openReqFormSettings() {
+// Working copies while the settings dialog is open (blank rows are allowed here).
+var _cfgStdRows = [];
+var _cfgLimitRows = [];
+var REQ_ROLES = ['requester', 'approver', 'manager', 'viewer'];
+
+function _cfgEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function _cfgAllProjects() {
+  return [...new Set((budgetLines || []).map(function(l){ return l.project; }).filter(Boolean))].sort();
+}
+function _cfgAllCostLines() {
+  var seen = {}, out = [];
+  (budgetLines || []).forEach(function(l) {
+    var k = _normLine(l.costSummary);
+    if (!k || seen[k]) return;
+    seen[k] = 1;
+    out.push(l.costSummary);
+  });
+  return out.sort(function(a, b){ return String(a).localeCompare(String(b)); });
+}
+function _cfgCostLinesFor(project) {
+  if (!project) return _cfgAllCostLines();
+  var seen = {}, out = [];
+  (budgetLines || []).forEach(function(l) {
+    if (l.project !== project) return;
+    var k = _normLine(l.costSummary);
+    if (!k || seen[k]) return;
+    seen[k] = 1;
+    out.push(l.costSummary);
+  });
+  return out.sort(function(a, b){ return String(a).localeCompare(String(b)); });
+}
+
+async function openReqFormSettings() {
   if (!canManageReqForm()) { toast('Not allowed — admin or form manager only'); return; }
+  // Pull the shared copy first so edits start from the latest settings
+  try { await Promise.race([pullReqFormConfig(), new Promise(function(r){ setTimeout(r, 6000); })]); } catch(e) {}
   reqFormConfig = loadReqFormConfig();
+  _cfgStdRows = normalizeStdAmounts_(reqFormConfig.stdAmounts).map(function(r) {
+    return { project: r.project || '', costLine: r.costLine || '', amount: (r.amount === '' || r.amount == null) ? '' : r.amount };
+  });
+  _cfgLimitRows = Object.keys(reqFormConfig.projectLimits || {}).map(function(k) {
+    return { project: k, max: reqFormConfig.projectLimits[k] };
+  });
   renderStdAmountRows();
   renderCatRuleRows();
   renderProjLimitRows();
   var mgr = document.getElementById('reqFormManagers');
   if (mgr) mgr.value = (reqFormConfig.formManagers || []).join(', ');
+  _renderCfgSyncNote();
   openModal('reqSettingsModal');
 }
 
+function _renderCfgSyncNote() {
+  var el = document.getElementById('reqCfgSyncNote');
+  if (!el) return;
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') {
+    el.style.display = '';
+    el.className = 'alert alert-warn';
+    el.textContent = 'Google Sheets is not connected — settings will only apply on this device.';
+  } else if (window._reqCfgSyncUnsupported) {
+    el.style.display = '';
+    el.className = 'alert alert-warn';
+    el.innerHTML = 'Settings are only saved on this device: the Apps Script does not have the <code>getSettings</code> / <code>saveSettings</code> actions yet. Add them and deploy a new version so every user gets these settings.';
+  } else {
+    el.style.display = 'none';
+  }
+}
 
-
-
-
-
+// Standard amounts
 function renderStdAmountRows() {
   var box = document.getElementById('reqStdAmountsList');
   if (!box) return;
-  var list = normalizeStdAmounts_(reqFormConfig.stdAmounts);
-  if (!list.length) {
-    list = [
-      { project: '', costLine: 'Enumerator Training Transport', amount: '' },
-      { project: '', costLine: 'Enumerator field Transport', amount: '' },
-      { project: '', costLine: 'Enumerator Field Airtime', amount: '' },
-      { project: '', costLine: 'Incentives', amount: '' }
-    ];
-    reqFormConfig.stdAmounts = list;
+  var projects = _cfgAllProjects();
+  if (!_cfgStdRows.length) {
+    box.innerHTML = '<span style="font-size:12px;color:var(--muted)">No standard amounts yet. Add one below.</span>';
+    return;
   }
-  var projects = (typeof getProjects === 'function' ? getProjects() : []) || [];
-  var projOpts = function(selected) {
-    var s = String(selected || '');
-    return '<option value="">— Select project —</option>' +
-      projects.map(function(p){
-        return '<option value="'+String(p).replace(/"/g,'&quot;')+'"'+(p===s?' selected':'')+'>'+String(p).replace(/</g,'&lt;')+'</option>';
-      }).join('');
-  };
-  box.innerHTML = list.map(function(row, i) {
-    return '<div style="display:grid;grid-template-columns:1.2fr 1.4fr 100px 32px;gap:8px;align-items:center">'
-      + '<select data-std-proj="'+i+'">'+projOpts(row.project)+'</select>'
-      + '<input type="text" data-std-line="'+i+'" value="'+String(row.costLine||'').replace(/"/g,'&quot;')+'" placeholder="Cost line name">'
-      + '<input type="number" data-std-val="'+i+'" value="'+(row.amount===''||row.amount==null?'':row.amount)+'" placeholder="Amount" min="0">'
-      + '<button type="button" class="btn btn-ghost btn-sm" onclick="removeStdAmountRow('+i+')">×</button>'
+  box.innerHTML = _cfgStdRows.map(function(row, i) {
+    var projList = projects.slice();
+    if (row.project && projList.indexOf(row.project) === -1) projList.unshift(row.project);
+    var lines = _cfgCostLinesFor(row.project);
+    var hasLine = lines.some(function(l){ return _normLine(l) === _normLine(row.costLine); });
+    if (row.costLine && !hasLine) lines.unshift(row.costLine);
+    return '<div class="cfg-row cfg-row-std">'
+      + '<select data-std-proj="'+i+'" onchange="onStdRowChange('+i+',\'project\',this.value)">'
+        + '<option value="">All projects (default)</option>'
+        + projList.map(function(p){ return '<option value="'+_cfgEsc(p)+'"'+(p===row.project?' selected':'')+'>'+_cfgEsc(p)+'</option>'; }).join('')
+      + '</select>'
+      + '<select data-std-line="'+i+'" onchange="onStdRowChange('+i+',\'costLine\',this.value)">'
+        + '<option value="">— Select cost line —</option>'
+        + lines.map(function(l){
+            var sel = _normLine(l) === _normLine(row.costLine);
+            return '<option value="'+_cfgEsc(l)+'"'+(sel?' selected':'')+'>'+_cfgEsc(l)+(row.costLine && !hasLine && l===row.costLine?' (not in budgets)':'')+'</option>';
+          }).join('')
+      + '</select>'
+      + '<input type="number" data-std-val="'+i+'" value="'+_cfgEsc(row.amount)+'" placeholder="Amount" min="0" oninput="onStdRowChange('+i+',\'amount\',this.value)">'
+      + '<button type="button" class="btn btn-ghost btn-sm" onclick="removeStdAmountRow('+i+')" title="Remove">×</button>'
       + '</div>';
   }).join('');
 }
+function onStdRowChange(i, field, val) {
+  if (!_cfgStdRows[i]) return;
+  _cfgStdRows[i][field] = val;
+  if (field === 'project') renderStdAmountRows(); // refresh cost lines for that project
+}
 function addStdAmountRow() {
-  collectStdAmountRows();
-  var list = normalizeStdAmounts_(reqFormConfig.stdAmounts);
-  list.push({ project: '', costLine: '', amount: '' });
-  reqFormConfig.stdAmounts = list;
+  _cfgStdRows.push({ project: '', costLine: '', amount: '' });
   renderStdAmountRows();
 }
 function removeStdAmountRow(i) {
-  collectStdAmountRows();
-  var list = normalizeStdAmounts_(reqFormConfig.stdAmounts);
-  list.splice(i, 1);
-  reqFormConfig.stdAmounts = list;
+  _cfgStdRows.splice(i, 1);
   renderStdAmountRows();
 }
 function collectStdAmountRows() {
-  var box = document.getElementById('reqStdAmountsList');
-  if (!box) return;
   var list = [];
-  var n = box.querySelectorAll('[data-std-line]').length;
-  for (var i = 0; i < n; i++) {
-    var projEl = box.querySelector('[data-std-proj="'+i+'"]');
-    var lineEl = box.querySelector('[data-std-line="'+i+'"]');
-    var valEl  = box.querySelector('[data-std-val="'+i+'"]');
-    var line = lineEl ? (lineEl.value || '').trim() : '';
-    if (!line) continue;
-    var v = valEl ? valEl.value : '';
-    list.push({
-      project: projEl ? (projEl.value || '').trim() : '',
-      costLine: line,
-      amount: v === '' ? '' : (parseFloat(v) || 0)
-    });
-  }
+  var seen = {};
+  _cfgStdRows.forEach(function(r) {
+    var line = String(r.costLine || '').trim();
+    if (!line) return;
+    var key = String(r.project || '').toLowerCase() + '|' + _normLine(line);
+    if (seen[key]) return;
+    seen[key] = 1;
+    var v = String(r.amount == null ? '' : r.amount).trim();
+    list.push({ project: String(r.project || '').trim(), costLine: line, amount: v === '' ? '' : (parseFloat(v) || 0) });
+  });
   reqFormConfig.stdAmounts = list;
 }
 
+// Category availability
 function renderCatRuleRows() {
   var box = document.getElementById('reqCatRulesList');
   if (!box) return;
   var cats = [...new Set((budgetLines || []).map(function(l){ return l.category; }).filter(Boolean))].sort();
   var rules = reqFormConfig.categoryRules || {};
+  Object.keys(rules).forEach(function(c){ if (cats.indexOf(c) === -1) cats.push(c); });
   if (!cats.length) {
-    box.innerHTML = '<span style="font-size:12px;color:var(--muted)">No categories loaded yet. Pull budgets first.</span>';
+    box.innerHTML = '<span style="font-size:12px;color:var(--muted)">No forms loaded yet. Pull budgets first.</span>';
     return;
   }
-  box.innerHTML = cats.map(function(c) {
-    var r = rules[c] || { available: true, allowedRoles: [] };
-    var avail = r.available !== false;
-    var roles = (r.allowedRoles || []).join(', ');
-    return '<div style="display:grid;grid-template-columns:1.4fr 110px 1fr;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">'
-      + '<div style="font-size:12.5px;font-weight:500">'+c.replace(/</g,'&lt;')+'</div>'
-      + '<label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer">'
-      + '<input type="checkbox" data-cat-avail="'+c.replace(/"/g,'&quot;')+'" '+(avail?'checked':'')+'> Available</label>'
-      + '<input type="text" data-cat-roles="'+c.replace(/"/g,'&quot;')+'" value="'+roles.replace(/"/g,'&quot;')+'" placeholder="Roles e.g. requester, approver (blank=all)">'
-      + '</div>';
-  }).join('');
+  box.innerHTML = '<div class="cfg-cat-head"><span>Form</span><span>Available</span><span>Restrict to roles <span style="font-weight:400">(none ticked = everyone)</span></span></div>'
+    + cats.map(function(c, i) {
+      var r = rules[c] || { available: true, allowedRoles: [] };
+      var avail = r.available !== false;
+      var roles = (r.allowedRoles || []).map(function(x){ return String(x).toLowerCase().trim(); });
+      return '<div class="cfg-row cfg-row-cat" data-cat-idx="'+i+'" data-cat-name="'+_cfgEsc(c)+'">'
+        + '<div style="font-size:12.5px;font-weight:500">'+_cfgEsc(c)+'</div>'
+        + '<label class="cfg-check"><input type="checkbox" data-cat-avail '+(avail?'checked':'')+'> Yes</label>'
+        + '<div class="cfg-roles">' + REQ_ROLES.map(function(role) {
+            return '<label class="cfg-check"><input type="checkbox" data-cat-role="'+role+'" '+(roles.indexOf(role)!==-1?'checked':'')+'> '+role.charAt(0).toUpperCase()+role.slice(1)+'</label>';
+          }).join('') + '</div>'
+        + '</div>';
+    }).join('')
+    + '<p style="font-size:11.5px;color:var(--muted);margin-top:6px">Unticking <strong>Available</strong> hides the form from everyone except admins and the roles ticked. Admins always see every form.</p>';
 }
 function collectCatRules() {
   var box = document.getElementById('reqCatRulesList');
   if (!box) return;
   var rules = {};
-  box.querySelectorAll('[data-cat-avail]').forEach(function(cb) {
-    var c = cb.getAttribute('data-cat-avail');
-    var rolesInp = box.querySelector('[data-cat-roles="'+c.replace(/"/g,'\\"')+'"]');
-    var roles = rolesInp ? (rolesInp.value || '').split(',').map(function(x){ return x.trim(); }).filter(Boolean) : [];
-    rules[c] = { available: !!cb.checked, allowedRoles: roles };
+  box.querySelectorAll('[data-cat-idx]').forEach(function(row) {
+    var c = row.getAttribute('data-cat-name');
+    var availEl = row.querySelector('[data-cat-avail]');
+    var roles = Array.from(row.querySelectorAll('[data-cat-role]:checked')).map(function(x){ return x.getAttribute('data-cat-role'); });
+    var avail = availEl ? !!availEl.checked : true;
+    if (avail && !roles.length) return; // default — no rule needed
+    rules[c] = { available: avail, allowedRoles: roles };
   });
   reqFormConfig.categoryRules = rules;
 }
 
+// Project limits
 function renderProjLimitRows() {
   var box = document.getElementById('reqProjLimitsList');
   if (!box) return;
-  var map = reqFormConfig.projectLimits || {};
-  var keys = Object.keys(map);
-  if (!keys.length) {
+  if (!_cfgLimitRows.length) {
     box.innerHTML = '<span style="font-size:12px;color:var(--muted)">No limits set. Add a project limit below.</span>';
     return;
   }
-  box.innerHTML = keys.map(function(k, i) {
-    return '<div style="display:grid;grid-template-columns:1fr 100px 32px;gap:8px;align-items:center">'
-      + '<input type="text" data-pl-key="'+i+'" value="'+String(k).replace(/"/g,'&quot;')+'" placeholder="Project name">'
-      + '<input type="number" data-pl-val="'+i+'" value="'+map[k]+'" min="1" placeholder="Max">'
-      + '<button type="button" class="btn btn-ghost btn-sm" onclick="removeProjLimitRow('+i+')">×</button>'
+  var projects = _cfgAllProjects();
+  box.innerHTML = _cfgLimitRows.map(function(row, i) {
+    var list = projects.slice();
+    if (row.project && list.indexOf(row.project) === -1) list.unshift(row.project);
+    return '<div class="cfg-row cfg-row-lim">'
+      + '<select data-pl-key="'+i+'" onchange="onLimitRowChange('+i+',\'project\',this.value)">'
+        + '<option value="">— Select project —</option>'
+        + list.map(function(p){ return '<option value="'+_cfgEsc(p)+'"'+(p===row.project?' selected':'')+'>'+_cfgEsc(p)+'</option>'; }).join('')
+      + '</select>'
+      + '<input type="number" data-pl-val="'+i+'" value="'+_cfgEsc(row.max)+'" min="1" step="1" placeholder="Max" oninput="onLimitRowChange('+i+',\'max\',this.value)">'
+      + '<button type="button" class="btn btn-ghost btn-sm" onclick="removeProjLimitRow('+i+')" title="Remove">×</button>'
       + '</div>';
   }).join('');
 }
+function onLimitRowChange(i, field, val) {
+  if (!_cfgLimitRows[i]) return;
+  _cfgLimitRows[i][field] = val;
+}
 function addProjLimitRow() {
-  collectProjLimitRows();
-  var projects = getProjects();
-  var name = projects[0] || ('Project ' + (Object.keys(reqFormConfig.projectLimits||{}).length+1));
-  if (!reqFormConfig.projectLimits) reqFormConfig.projectLimits = {};
-  reqFormConfig.projectLimits[name] = 1;
+  var used = _cfgLimitRows.map(function(r){ return r.project; });
+  var next = _cfgAllProjects().find(function(p){ return used.indexOf(p) === -1; }) || '';
+  _cfgLimitRows.push({ project: next, max: 1 });
   renderProjLimitRows();
 }
 function removeProjLimitRow(i) {
-  collectProjLimitRows();
-  var keys = Object.keys(reqFormConfig.projectLimits || {});
-  if (keys[i]) delete reqFormConfig.projectLimits[keys[i]];
+  _cfgLimitRows.splice(i, 1);
   renderProjLimitRows();
 }
 function collectProjLimitRows() {
-  var box = document.getElementById('reqProjLimitsList');
-  if (!box) return;
   var map = {};
-  var keyInputs = box.querySelectorAll('[data-pl-key]');
-  var valInputs = box.querySelectorAll('[data-pl-val]');
-  keyInputs.forEach(function(inp, idx) {
-    var k = (inp.value || '').trim();
+  _cfgLimitRows.forEach(function(r) {
+    var k = String(r.project || '').trim();
     if (!k) return;
-    map[k] = parseInt(valInputs[idx] ? valInputs[idx].value : '1', 10) || 1;
+    var n = parseInt(r.max, 10);
+    if (!(n > 0)) return;
+    map[k] = n;
   });
   reqFormConfig.projectLimits = map;
 }
 
-function saveReqFormConfig() {
+async function saveReqFormConfig() {
   collectStdAmountRows();
   collectCatRules();
   collectProjLimitRows();
   var mgrEl = document.getElementById('reqFormManagers');
   var mgr = (mgrEl && mgrEl.value || '')
-    .split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+    .split(/[,;\s]+/).map(function(x){ return x.trim().toLowerCase(); }).filter(Boolean);
   reqFormConfig.formManagers = mgr;
+  reqFormConfig.updatedAt = Date.now();
+  reqFormConfig.updatedBy = currentUser ? (currentUser.email || currentUser.name || '') : '';
   saveReqFormConfigToStorage(reqFormConfig);
   closeModal('reqSettingsModal');
-  toast('Request form settings saved');
   updateReqFormSettingsBtn();
+  try { if (document.getElementById('requestModal').classList.contains('open')) _renderReqForms(); } catch(e) {}
+  var shared = await pushReqFormConfig();
+  toast(shared ? 'Request form settings saved for all users'
+               : 'Settings saved on this device only — Sheets settings sync unavailable');
+}
+
+// ── Shared settings sync (Settings tab in Google Sheets) ─
+function _applyRemoteReqFormConfig(cfg) {
+  if (!cfg) return false;
+  if (typeof cfg === 'string') { try { cfg = JSON.parse(cfg); } catch(e) { return false; } }
+  if (!cfg || typeof cfg !== 'object') return false;
+  var local = loadReqFormConfig();
+  // Keep the newer copy if this device saved after the sheet copy
+  if (local && local.updatedAt && cfg.updatedAt && local.updatedAt > cfg.updatedAt && window._reqCfgPendingPush) return false;
+  reqFormConfig = {
+    stdAmounts:    cfg.stdAmounts    || [],
+    categoryRules: cfg.categoryRules || {},
+    projectLimits: cfg.projectLimits || {},
+    formManagers:  cfg.formManagers  || [],
+    updatedAt:     cfg.updatedAt     || 0,
+    updatedBy:     cfg.updatedBy     || ''
+  };
+  saveReqFormConfigToStorage(reqFormConfig);
+  try { updateReqFormSettingsBtn(); } catch(e) {}
+  return true;
+}
+async function pullReqFormConfig() {
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return false;
+  try {
+    var res = await gasCall({ action: 'getSettings', key: 'reqFormConfig' });
+    if (res && res.ok && res.key !== 'reqFormConfig') {
+      // Deployment answered but does not know getSettings (generic response)
+      window._reqCfgSyncUnsupported = true;
+      return false;
+    }
+    if (res && res.ok) {
+      window._reqCfgSyncUnsupported = false;
+      if (window._reqCfgPendingPush) pushReqFormConfig();
+      var val = res.value != null ? res.value : (res.settings && (res.settings.reqFormConfig || res.settings));
+      if (val == null || val === '') return false;
+      return _applyRemoteReqFormConfig(val);
+    }
+    if (res && /unknown|invalid|unsupported|not supported|no action/i.test(String(res.error || ''))) {
+      window._reqCfgSyncUnsupported = true;
+    }
+  } catch(e) {}
+  return false;
+}
+async function pushReqFormConfig() {
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return false;
+  try {
+    var res = await gasCall({
+      action: 'saveSettings', key: 'reqFormConfig',
+      value: JSON.stringify(reqFormConfig),
+      updatedBy: currentUser ? (currentUser.email || currentUser.name || '') : ''
+    });
+    if (res && res.ok && !res.saved) {
+      window._reqCfgSyncUnsupported = true;
+    } else if (res && res.ok) {
+      window._reqCfgPendingPush = false;
+      window._reqCfgSyncUnsupported = false;
+      appendSyncLog('Request form settings saved to Sheets');
+      return true;
+    }
+    if (res && /unknown|invalid|unsupported|not supported|no action/i.test(String(res.error || ''))) {
+      window._reqCfgSyncUnsupported = true;
+    }
+    appendSyncLog('Settings push failed: ' + ((res && res.error) || 'unknown'));
+  } catch(e) {
+    appendSyncLog('Settings push failed: ' + (e.message || e));
+  }
+  window._reqCfgPendingPush = true;
+  return false;
 }
 
 
@@ -7462,9 +7716,9 @@ function _rebuildRequestsTableNow() {
     return projLines.some(function(l){ return l.country === userCtry; });
   };
   var allFiltered = requestsStore.filter(ctryFilter);
-  var drafts   = allFiltered.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; });
-  var queue    = allFiltered.filter(function(r){ return r.status==='Approved'; });
-  var paid     = sortPaid(allFiltered.filter(function(r){ return r.status==='Paid'; }));
+  var drafts   = groupBundleRows(allFiltered.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; }));
+  var queue    = groupBundleRows(allFiltered.filter(function(r){ return r.status==='Approved'; }));
+  var paid     = groupBundleRows(sortPaid(allFiltered.filter(function(r){ return r.status==='Paid'; })));
 
   // Update tab badges
   var bd = document.getElementById('badge-drafts'); if(bd) bd.textContent = drafts.length;
@@ -7647,6 +7901,7 @@ async function checkVersionAndSync() {
     _versionPollCount++;
     if (_versionPollCount % 15 === 0) {
       pullBudgetLinesFromSheets().catch(function(){});
+      pullReqFormConfig().catch(function(){});
     }
   } catch(e) {
     // Silent -- version check failed, will retry next cycle
@@ -8365,11 +8620,11 @@ function renderHistory() {
   var name  = (currentUser.name  || '').trim().toLowerCase();
   var email = (currentUser.email || '').trim().toLowerCase();
 
-  // Match requests by requester name or email
-  var mine = requestsStore.filter(function(r) {
+  // Match requests by requester name or email (Transport & Airtime bundles = one row)
+  var mine = groupBundleRows(requestsStore.filter(function(r) {
     var rname = (r.requester || '').trim().toLowerCase();
     return rname === name || rname === email;
-  });
+  }));
 
   // Stats
   var total    = mine.length;
@@ -8411,10 +8666,10 @@ function filterHistory(filter) {
   var name  = currentUser ? (currentUser.name  || '').trim().toLowerCase() : '';
   var email = currentUser ? (currentUser.email || '').trim().toLowerCase() : '';
 
-  var mine = requestsStore.filter(function(r) {
+  var mine = groupBundleRows(requestsStore.filter(function(r) {
     var rname = (r.requester || '').trim().toLowerCase();
     return rname === name || rname === email;
-  });
+  }));
 
   var filtered = mine.filter(function(r) {
     if (filter === 'draft')    return r.status === 'Draft' || r.status === 'Pending';
@@ -8659,8 +8914,9 @@ function confirmAck() {
         && !r.requesterSig;
     });
   } else {
-    var entry = requestsStore.find(function(r){ return r.ref === _ackTargetRef; });
-    targets = entry ? [entry] : [];
+    targets = bundleMateRefs(_ackTargetRef).map(function(ref){
+      return requestsStore.find(function(r){ return r.ref === ref; });
+    }).filter(function(r){ return r && r.status === 'Paid' && !r.requesterSig; });
   }
 
   targets.forEach(function(r){
@@ -9329,6 +9585,7 @@ function seedDemoDataIfEmpty() {
 
 async function afterLogin() {
   try { updateReqFormSettingsBtn(); } catch(e) {}
+  try { pullReqFormConfig(); } catch(e) {}
 
   // ── STEP 0: Build sidebar for this role ─────────────────────
   buildSidebar();
@@ -9440,6 +9697,7 @@ function deleteSelected(tab) {
   if (!chks.length) return;
   var refs = Array.from(chks).map(function(c){ return c.dataset.ref; });
   var word = refs.length === 1 ? '1 request' : refs.length + ' requests';
+  refs = expandBundleRefs(refs);
   if (!confirm('Delete ' + word + '? This cannot be undone.')) return;
 
   refs.forEach(function(ref) {
@@ -9492,7 +9750,10 @@ function promptDeleteRequest(ref) {
     + '<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Requester</div><div>' + (r.requester||'--') + '</div></div>'
     + '</div>';
 
-  document.getElementById('deleteReqSubtitle').textContent = 'Request will be archived. Actuals and Sheets will update.';
+  var _dm = bundleMateRefs(ref);
+  document.getElementById('deleteReqSubtitle').textContent = (_dm.length > 1
+    ? 'Transport & Airtime request (' + _dm.join(' + ') + ') — both lines will be archived. '
+    : 'Request will be archived. ') + 'Actuals and Sheets will update.';
   document.getElementById('deleteReqReason').value = '';
   openModal('deleteReqModal');
 }
@@ -9502,22 +9763,25 @@ function confirmDeleteRequest() {
   var reason = (document.getElementById('deleteReqReason').value || '').trim();
   if (!reason) { toast('Please enter a reason for deletion'); return; }
 
-  var idx = requestsStore.findIndex(function(r){ return r.ref === _pendingDeleteRef; });
-  if (idx === -1) { closeModal('deleteReqModal'); return; }
-
-  // Archive the request
-  var deleted = requestsStore[idx];
-  deleted.deletedBy     = currentUser ? currentUser.name : 'Unknown';
-  deleted.deletedAt     = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-                        + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  deleted.deleteReason  = reason;
-
-  clearProtectedRef(deleted.ref);
-  deletedStore.push(Object.assign({}, deleted));
+  var _delRefs = bundleMateRefs(_pendingDeleteRef);
+  var _any = false;
+  _delRefs.forEach(function(dref) {
+    var idx = requestsStore.findIndex(function(r){ return r.ref === dref; });
+    if (idx === -1) return;
+    _any = true;
+    // Archive the request
+    var deleted = requestsStore[idx];
+    deleted.deletedBy     = currentUser ? currentUser.name : 'Unknown';
+    deleted.deletedAt     = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+                          + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    deleted.deleteReason  = reason;
+    clearProtectedRef(deleted.ref);
+    deletedStore.push(Object.assign({}, deleted));
+    // Remove from active requests
+    requestsStore.splice(idx, 1);
+  });
+  if (!_any) { closeModal('deleteReqModal'); return; }
   persistDeletedToStorage();
-
-  // Remove from active requests
-  requestsStore.splice(idx, 1);
   persistRequestsToStorage();
   markLocalWrite(null);
 
@@ -9552,7 +9816,7 @@ function showBulkTab(tab) {
 
 function openBulkApprove() {
   pendingBulkSig = null; pendingBulkLabel = '';
-  var approvable = requestsStore.filter(function(r){ return r.status === 'Approved'; });
+  var approvable = groupBundleRows(requestsStore.filter(function(r){ return r.status === 'Approved'; }));
   var list = document.getElementById('bulkRequestList');
   if (!approvable.length) {
     list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No requests in Payment Queue</div>';
@@ -9624,9 +9888,9 @@ function confirmBulkApprove(){
   var checked=Array.from(document.querySelectorAll('.bulk-chk:checked'));
   if(!checked.length){toast('No requests selected');return;}
   var t=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  checked.forEach(function(chk){
-    var e=requestsStore.find(function(r){return r.ref===chk.dataset.ref;});
-    if(!e)return;
+  expandBundleRefs(checked.map(function(c){ return c.dataset.ref; })).forEach(function(ref){
+    var e=requestsStore.find(function(r){return r.ref===ref;});
+    if(!e||e.status!=='Approved')return;
     e.status='Paid'; e.sigDataUrl=pendingBulkSig; e.sigLabel=pendingBulkLabel; e.sigTime=t;
     markLocalWrite(e.ref);
   });
