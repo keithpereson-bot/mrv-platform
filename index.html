@@ -1857,6 +1857,104 @@
   }
 </style>
 
+<style id="rq-styles">
+  /* Multi-form request modal */
+  .rq-modal { width:760px; display:flex; flex-direction:column; overflow:hidden !important; }
+  .rq-modal .modal-header, .rq-modal .modal-footer { flex-shrink:0; }
+  .rq-modal .rq-body { display:grid; gap:12px; align-content:start; background:#FAF9F8; overflow-y:auto; flex:1 1 auto; min-height:0; }
+  .rq-asline { font-size:12px; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:5px; }
+  .rq-asline strong { color:var(--ink); font-weight:600; font-size:12px; }
+  .rq-lock { display:inline-flex; color:var(--muted); }
+  .rq-forms { display:grid; gap:10px; }
+  .rq-card { background:#fff; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .rq-card:not(.is-collapsed) { border-color:#C7E0F4; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .rq-card-head { display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; user-select:none; }
+  .rq-card-head:hover { background:#FAF9F8; }
+  .rq-num { width:24px; height:24px; border-radius:50%; background:var(--brand); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .rq-card.is-collapsed .rq-num { background:#C8C6C4; }
+  .rq-head-txt { flex:1; min-width:0; }
+  .rq-head-title { font-size:13px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rq-head-sub { font-size:11.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rq-chev { color:var(--muted); display:flex; transition:transform .15s; }
+  .rq-card:not(.is-collapsed) .rq-chev { transform:rotate(180deg); }
+  .rq-icon-btn { background:none; border:none; color:var(--muted); cursor:pointer; padding:4px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:16px; line-height:1; font-family:inherit; }
+  .rq-icon-btn:hover { background:#F3F2F1; color:var(--danger); }
+  .rq-pill { font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:10px; white-space:nowrap; }
+  .rq-pill-ok { background:#DFF6DD; color:#107C10; }
+  .rq-pill-warn { background:#FFF4CE; color:#835C00; }
+  .rq-pill-muted { background:#F3F2F1; color:#605E5C; }
+  .rq-card-body { padding:4px 14px 14px; display:grid; gap:14px; border-top:1px solid var(--border); }
+  .rq-step { display:grid; gap:8px; padding-top:10px; }
+  .rq-step-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); display:flex; align-items:center; gap:7px; }
+  .rq-step-label span { width:17px; height:17px; border-radius:50%; border:1.5px solid var(--muted); font-size:10px; display:inline-flex; align-items:center; justify-content:center; letter-spacing:0; }
+  .rq-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:center; }
+  .rq-meta { font-size:12px; color:var(--ink); }
+  .rq-muted { color:var(--muted); }
+  .rq-small { font-size:11px; }
+  .rq-req { color:var(--danger); }
+  .rq-chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .rq-chip { padding:7px 14px; border-radius:16px; border:1.5px solid var(--border); background:#fff; color:var(--ink); font-family:inherit; font-size:12.5px; cursor:pointer; transition:all .12s; }
+  .rq-chip:hover { border-color:var(--brand); }
+  .rq-chip.is-on { background:#DEECF9; border-color:var(--brand); color:#004578; font-weight:600; }
+  .rq-lines { border:1px solid var(--border); border-radius:6px; overflow:hidden; max-height:260px; overflow-y:auto; }
+  .rq-line { padding:9px 12px; display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; border-bottom:1px solid var(--border); }
+  .rq-line:last-child { border-bottom:none; }
+  .rq-line:hover { background:#F3F9FD; }
+  .rq-line-name { font-size:13px; font-weight:600; color:var(--ink); }
+  .rq-line-rem { font-size:11px; white-space:nowrap; }
+  .rq-selected-line { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 12px; border:1.5px solid var(--brand); background:#F3F9FD; border-radius:6px; }
+  .rq-budget { font-size:11.5px; color:var(--muted); display:grid; gap:2px; }
+  .rq-block { padding:12px; background:#FAF9F8; border:1px solid var(--border); border-radius:6px; }
+  .rq-block.is-off { opacity:.7; }
+  .rq-block-title { font-size:12px; font-weight:600; color:var(--ink); margin-bottom:8px; }
+  .rq-block-title .rq-muted, .rq-toggle .rq-muted { font-weight:400; }
+  .rq-toggle { display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; letter-spacing:0; font-weight:400; margin:0; }
+  .rq-toggle input { width:auto; margin:0; }
+  .rq-std { font-size:9.5px; font-weight:700; color:var(--brand); margin-left:4px; letter-spacing:.04em; }
+  .rq-ro { background:#F3F2F1 !important; cursor:default; }
+  .rq-tr-head, .rq-tr-row { display:grid; grid-template-columns:2fr .7fr .9fr .8fr 28px; gap:6px; align-items:center; }
+  .rq-tr-head { font-size:10.5px; color:var(--muted); margin:10px 0 4px; padding:0 2px; }
+  .rq-tr-rows { display:grid; gap:6px; }
+  .rq-tr-tot { font-size:12px; font-weight:600; text-align:right; padding-right:4px; }
+  .rq-tr-foot { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; font-size:12px; flex-wrap:wrap; }
+  .rq-client-chip { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 12px; background:#DFF6DD; border:1px solid #9AD29A; border-radius:6px; }
+  .rq-client-chip.is-bad { background:#FDE7E9; border-color:#F1A9A9; color:#A4262C; }
+  .rq-client-name { font-size:13px; font-weight:600; }
+  .rq-client-list { margin-top:6px; border:1px solid var(--border); border-radius:6px; background:#fff; max-height:190px; overflow-y:auto; }
+  .rq-client-opt { display:flex; gap:10px; align-items:center; padding:8px 12px; cursor:pointer; font-size:12.5px; border-bottom:1px solid #F3F2F1; }
+  .rq-client-opt:last-child { border-bottom:none; }
+  .rq-client-opt:hover { background:#F3F9FD; }
+  .rq-client-opt-sn { font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--brand); min-width:70px; }
+  .rq-empty { padding:10px 12px; font-size:12px; color:var(--muted); }
+  .rq-excess { padding:12px; background:#FFF4CE; border:1px solid #FFE17A; border-radius:6px; display:grid; gap:6px; }
+  .rq-excess-title { font-size:12px; font-weight:600; color:#835C00; }
+  .rq-excess textarea { width:100%; resize:vertical; }
+  .rq-errs { font-size:11.5px; color:#835C00; }
+  .rq-errs:empty { display:none; }
+  .rq-add-form { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:11px; border:1.5px dashed #A6A6A6; border-radius:8px; background:#fff; color:var(--brand); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .rq-add-form:hover { border-color:var(--brand); background:#F3F9FD; }
+  .rq-footer { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+  .rq-footer-left, .rq-footer-right { display:flex; align-items:center; gap:8px; }
+  .rq-footer-sum { font-size:12px; color:var(--muted); }
+  /* Client tags in request tables / My Submissions */
+  .rq-client-tag { margin-top:3px; font-size:11px; color:var(--ink); display:inline-flex; flex-wrap:wrap; gap:3px; align-items:baseline; background:#F3F9FD; border:1px solid #C7E0F4; border-radius:4px; padding:1px 6px; }
+  .rq-client-tag-k { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
+  .rq-client-tag-sn { font-family:'IBM Plex Mono',monospace; color:#004578; }
+  .rq-bundle-tag { margin-top:3px; font-size:10.5px; color:var(--muted); }
+  /* Floating new-request button */
+  .rq-fab { position:fixed; right:24px; bottom:24px; width:54px; height:54px; border-radius:50%; border:none; background:var(--brand); color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.25); cursor:pointer; z-index:110; display:flex; align-items:center; justify-content:center; transition:transform .12s, box-shadow .12s; }
+  .rq-fab:hover { transform:scale(1.06); box-shadow:0 8px 22px rgba(0,0,0,.3); }
+  @media (max-width:768px) {
+    .rq-fab { right:16px; bottom:68px; width:50px; height:50px; }
+    .rq-modal .rq-body { padding:10px; }
+    .rq-grid2 { grid-template-columns:1fr; }
+    .rq-tr-head { display:none; }
+    .rq-tr-row { grid-template-columns:1fr 1fr 1fr 28px; }
+    .rq-tr-row input[data-field="desc"] { grid-column:1 / -1; }
+    .rq-footer-left, .rq-footer-right { width:100%; }
+    .rq-footer-sum { margin-left:auto; }
+  }
+</style>
 </head>
 <body>
 
@@ -2634,111 +2732,31 @@
 
 <!-- Request Modal -->
 <div id="requestModal" class="modal-overlay" onclick="closeModalOutside(event,'requestModal')">
-  <div class="modal modal-wide">
+  <div class="modal modal-wide rq-modal">
     <div class="modal-header">
       <div>
-        <strong>New Payment Request</strong>
+        <strong>New Payment Requests</strong>
+        <div class="rq-asline">Requesting as <strong id="rqRequesterName">—</strong>
+          <span class="rq-lock" title="Taken from your user account — cannot be edited"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+        </div>
       </div>
       <button class="close-btn" onclick="closeModal('requestModal')">×</button>
     </div>
-    <div class="modal-body" style="display:grid;gap:14px">
-
-      <!-- Project (type auto-selected) -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="form-group" style="margin:0">
-          <label>Project</label>
-          <select id="reqProject" onchange="onReqProjectChange()">
-            <option value="">— Select —</option>
-          </select>
-        </div>
-        <div class="form-group" style="margin:0">
-          <label>Type <span style="font-weight:400;color:var(--muted)">(auto)</span></label>
-          <input id="reqTypeDisplay" type="text" readonly placeholder="Select a project first" style="background:var(--surface);cursor:default">
-          <select id="reqType" style="display:none" onchange="onReqTypeChange()" disabled>
-            <option value="">— Select —</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Category buttons -->
-      <div id="reqCatRow" style="display:none">
-        <label style="margin-bottom:8px">Category (Form)</label>
-        <div id="reqCatBtns" style="display:flex;flex-wrap:wrap;gap:8px"></div>
-      </div>
-
-      <!-- Budget line picker -->
-      <div id="reqLineRow" style="display:none">
-        <label style="margin-bottom:8px">Budget Line — select cost summary</label>
-        <div id="reqLineList" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--card)"></div>
-      </div>
-
-      <!-- Details -->
-      <div id="reqDetailsRow" style="display:none;border-top:1px solid var(--border);padding-top:14px">
-
-        <!-- Client SN (certain cost lines) -->
-        <div id="reqClientBlock" style="display:none;margin-bottom:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:6px">
-          <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--ink)">Client attribution</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="form-group" style="margin:0">
-              <label>Client SN <span style="color:var(--danger)">*</span></label>
-              <input id="rClientSN" type="text" placeholder="Type Client SN (from sheet)" oninput="onClientSNInput()" autocomplete="off" spellcheck="false">
-              <div id="rClientSNHint" style="font-size:11px;color:var(--muted);margin-top:4px">Must match a Client SN on the Clients sheet</div>
-            </div>
-            <div class="form-group" style="margin:0">
-              <label>Client Name</label>
-              <input id="rClientName" type="text" readonly placeholder="Auto-filled from SN" style="background:var(--surface);cursor:default">
-            </div>
-          </div>
-        </div>
-
-        <!-- Transport breakdown -->
-        <div id="reqTransportBlock" style="display:none;margin-bottom:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:6px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <div style="font-size:12px;font-weight:600;color:var(--ink)">Transport breakdown <span style="color:var(--danger)">*</span></div>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="addTransportRow()">+ Add row</button>
-          </div>
-          <div style="display:grid;grid-template-columns:2fr 0.7fr 0.9fr 0.9fr 32px;gap:6px;font-size:11px;color:var(--muted);margin-bottom:4px;padding:0 2px">
-            <span>Description / route</span><span>Qty</span><span>Unit cost</span><span>Total</span><span></span>
-          </div>
-          <div id="reqTransportRows" style="display:grid;gap:6px"></div>
-          <div style="display:flex;justify-content:flex-end;margin-top:8px;font-size:12px">
-            <span>Breakdown total: <strong id="reqTransportSum">0</strong></span>
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-          <div class="form-group" style="margin:0">
-            <label>Amount <span id="rAmountStdBadge" style="display:none;font-size:10px;font-weight:600;color:var(--brand);margin-left:6px">STANDARD</span></label>
-            <input id="rAmount" type="number" placeholder="0" oninput="checkReqReady()">
-            <div id="rBudgetHint" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Requester Name</label>
-            <input id="rName" type="text" placeholder="Full name">
-          </div>
-        </div>
-
-        <!-- Excess request reason -->
-        <div id="reqExcessBlock" style="display:none;margin-bottom:12px;padding:12px;background:#FFF4CE;border:1px solid #FFE17A;border-radius:6px">
-          <div style="font-size:12px;font-weight:600;color:#835C00;margin-bottom:6px">Excess request — limit reached for this Client SN on this project</div>
-          <div class="form-group" style="margin:0">
-            <label>Reason for excess request <span style="color:var(--danger)">*</span></label>
-            <textarea id="rExcessReason" rows="2" placeholder="Explain why an additional request is needed..." oninput="checkReqReady()" style="width:100%;resize:vertical"></textarea>
-          </div>
-        </div>
-
-        <div class="form-group" style="margin:0">
-          <label>Notes</label>
-          <input id="rDesc" type="text" placeholder="Additional context">
-        </div>
-      </div>
-
+    <div class="modal-body rq-body">
+      <div id="reqFormsBox" class="rq-forms"></div>
+      <button type="button" class="rq-add-form" onclick="addReqForm()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add another request
+      </button>
     </div>
-    <div class="modal-footer" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
-      <button type="button" class="btn btn-ghost" onclick="clearRequestFormDraft()" title="Clear saved draft and reset form">Clear form</button>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost" onclick="closeModal('requestModal');saveRequestFormDraft()">Save &amp; close</button>
-        <button class="btn btn-primary" id="submitReqBtn" onclick="submitRequest()" disabled style="opacity:.5">Submit Request</button>
+    <div class="modal-footer rq-footer">
+      <div class="rq-footer-left">
+        <button type="button" class="btn btn-ghost" onclick="clearRequestFormDraft()" title="Discard all forms">Clear all</button>
+        <span id="rqFooterSum" class="rq-footer-sum"></span>
+      </div>
+      <div class="rq-footer-right">
+        <button class="btn btn-ghost" onclick="saveRequestFormDraft();closeModal('requestModal')">Save &amp; close</button>
+        <button class="btn btn-primary" id="submitReqBtn" onclick="submitAllRequests()" disabled style="opacity:.5">Submit request</button>
       </div>
     </div>
   </div>
@@ -3302,6 +3320,7 @@ function mergeRequestsFromServer(serverRows) {
       isExcess:         (r['Is Excess'] || r.isExcess || (local && local.isExcess)) ? true : false,
       excessReason:     r['Excess Reason']        || r.excessReason     || (local && local.excessReason)     || '',
       payeeNumber:      r['Payee Number']         || r.payeeNumber      || (local && local.payeeNumber)      || '',
+      bundleRef:        r['Bundle Ref']           || r.bundleRef        || (local && local.bundleRef)        || '',
       transportBreakdown: (function(){
         var raw = r['Transport Breakdown'] || r.transportBreakdown || (local && local.transportBreakdown) || null;
         if (!raw) return null;
@@ -5253,7 +5272,9 @@ function openSignAndApprove(btn, ref, recipient) {
   activeSignRowBtn = btn;
   activeSignRef = ref;
   clearModalSig();
-  document.getElementById('signModalSub').textContent = `Request #${ref} -- Recipient: ${recipient}`;
+  var _sr = (requestsStore || []).find(function(x){ return x.ref === ref; });
+  var _sc = (_sr && _sr.clientSN) ? ` -- Client: ${_sr.clientName || '—'} (SN ${_sr.clientSN})` : '';
+  document.getElementById('signModalSub').textContent = `Request #${ref} -- Recipient: ${recipient}` + _sc;
   refreshSigGrids();
   openModal('signApproveModal');
   setTimeout(() => initCanvas('modalCanvas'), 100);
@@ -5345,14 +5366,13 @@ var TRANSPORT_LINES = [
   'training transport',
   'field transport'
 ];
-// Cost lines that require Client SN
+// Client SN is required ONLY on the "Field" form, for these exact lines
+var CLIENT_SN_CATEGORY = 'field';
 var CLIENT_SN_LINES = [
-  'enumerator field airtime',
-  'enumerator field transport',
-  'field airtime',
-  'field transport',
-  'incentives',
-  'incentive'
+  'Enumerator Field Transport',
+  'Enumerator Field Airtime',
+  'Cooking Fuel for Households',
+  'Client Incentives'
 ];
 // Keywords for standard-amount categories
 var STD_AMOUNT_KEYWORDS = ['transport', 'airtime', 'incentive'];
@@ -5368,11 +5388,24 @@ function _lineMatches(summary, patterns) {
     return n === p || n.indexOf(p) !== -1 || p.indexOf(n) !== -1;
   });
 }
+function _snKey(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+function isClientSNCategory(cat) {
+  var n = _snKey(cat);
+  return n === CLIENT_SN_CATEGORY || (' ' + n + ' ').indexOf(' ' + CLIENT_SN_CATEGORY + ' ') !== -1;
+}
 function needsTransportBreakdown(summary) {
   return _lineMatches(summary, TRANSPORT_LINES);
 }
-function needsClientSN(summary) {
-  return _lineMatches(summary, CLIENT_SN_LINES);
+/** Client SN only for the Field form + the four listed lines (exact match). */
+function needsClientSN(summary, category) {
+  var k = _snKey(summary);
+  if (!k) return false;
+  var lineOk = CLIENT_SN_LINES.some(function(x){ return _snKey(x) === k; });
+  if (!lineOk) return false;
+  if (category === undefined) return true;
+  return isClientSNCategory(category);
 }
 function isStdAmountLine(summary) {
   var n = _normLine(summary);
@@ -5403,10 +5436,9 @@ function canManageReqForm() {
 function updateReqFormSettingsBtn() {
   var btn = document.getElementById('reqFormSettingsBtn');
   if (!btn) return;
-  // Visible for admin (admin-only CSS) and form managers
   if (canManageReqForm()) {
     btn.style.display = '';
-    btn.classList.remove('admin-only'); // form managers who are not admin
+    btn.classList.remove('admin-only');
   } else {
     btn.style.display = 'none';
   }
@@ -5446,12 +5478,10 @@ var clientsStore = (function() {
 
 function normalizeClientSN_(v) {
   if (v == null || v === '') return '';
-  // Sheets may send numbers; avoid "12346.0" and scientific notation
   if (typeof v === 'number' && isFinite(v)) {
     return String(Math.round(v));
   }
   var s = String(v).trim();
-  // pure numeric strings with trailing .0
   if (/^\d+\.0+$/.test(s)) s = s.replace(/\.0+$/, '');
   return s;
 }
@@ -5475,7 +5505,6 @@ async function pullClientsFromSheets() {
   try {
     var res = null;
     var rows = [];
-    // Prefer getClients; fall back to getAll if deployment is older
     try {
       res = await gasCall({ action: 'getClients' });
     } catch (e1) {
@@ -5495,9 +5524,7 @@ async function pullClientsFromSheets() {
       if (!rows.length && all.Clients) rows = all.Clients;
     }
 
-    // Always replace local list with sheet contents (never merge — prevents stale SNs)
     clientsStore = (rows || []).map(mapClientRow_).filter(function(c){ return !!c.clientSN; });
-    // De-dupe by SN (keep first)
     var seen = {};
     clientsStore = clientsStore.filter(function(c) {
       var k = c.clientSN.toLowerCase();
@@ -5517,10 +5544,7 @@ async function pullClientsFromSheets() {
 }
 
 /**
- * Exact Client SN lookup against clientsStore (from Clients sheet only).
- * SN must match exactly (case-insensitive trim). No partial matches.
- * If the user has a country restriction, the client row must match that country
- * when the client row has a country set.
+ * Exact Client SN lookup against clientsStore (Clients sheet only), country-scoped.
  */
 function getClientBySN(sn) {
   sn = normalizeClientSN_(sn);
@@ -5528,99 +5552,55 @@ function getClientBySN(sn) {
   var snKey = sn.toLowerCase();
   var ctry = '';
   try { ctry = String((typeof getUserCountry === 'function' ? getUserCountry() : '') || '').trim().toLowerCase(); } catch(e) {}
-
   var match = null;
   (clientsStore || []).forEach(function(c) {
     if (match) return;
     var csn = normalizeClientSN_(c.clientSN);
     if (!csn || csn.toLowerCase() !== snKey) return;
     var cc = String(c.country || '').trim().toLowerCase();
-    if (ctry && cc && cc !== ctry) return; // wrong country
+    if (ctry && cc && cc !== ctry) return;
     match = c;
   });
   return match;
 }
 
-/** Client SN is typed (not a dropdown). Kept for call-site compatibility. */
-function populateClientSNSelect(selectedSN) {
-  var el = document.getElementById('rClientSN');
-  if (!el) return;
-  if (selectedSN != null && selectedSN !== '') {
-    el.value = String(selectedSN);
-  }
-  var hint = document.getElementById('rClientSNHint');
-  if (hint) {
-    var n = (clientsStore || []).length;
-    if (!n) {
-      hint.textContent = 'No clients loaded from the Clients sheet. Admin: Pull Clients after adding rows.';
-      hint.style.color = 'var(--warn)';
-    } else {
-      hint.textContent = n + ' Client SN(s) available from sheet — type to match.';
-      hint.style.color = 'var(--muted)';
-    }
-  }
+/** Client SN valid for a specific project (rejects SNs that belong to another project). */
+function getClientForProject(sn, project) {
+  var c = getClientBySN(sn);
+  if (!c) return null;
+  var cp = String(c.project || '').trim().toLowerCase();
+  var p  = String(project || '').trim().toLowerCase();
+  if (cp && p && cp !== p) return null;
+  return c;
 }
 
-
-function populateClientSNSelect(selectedSN) {
-  var sel = document.getElementById('rClientSN');
-  if (!sel) return;
-  var ctry = (typeof getUserCountry === 'function' ? getUserCountry() : null) || '';
-  ctry = String(ctry || '').trim().toLowerCase();
-  var proj = (_rProject || (document.getElementById('reqProject') || {}).value || '').trim().toLowerCase();
-
-  var list = (clientsStore || []).filter(function(c) {
+/** All clients on the sheet that may be used for a project (same country, same project). */
+function clientsForProject(project) {
+  var ctry = '';
+  try { ctry = String((typeof getUserCountry === 'function' ? getUserCountry() : '') || '').trim().toLowerCase(); } catch(e) {}
+  var p = String(project || '').trim().toLowerCase();
+  return (clientsStore || []).filter(function(c) {
     if (!c.clientSN) return false;
     var cc = String(c.country || '').trim().toLowerCase();
     if (ctry && cc && cc !== ctry) return false;
+    var cp = String(c.project || '').trim().toLowerCase();
+    if (cp && p && cp !== p) return false;
     return true;
+  }).sort(function(a, b) {
+    return String(a.clientSN).localeCompare(String(b.clientSN), undefined, { numeric: true });
   });
+}
 
-  // Prefer clients for current project, but still list others for same country
-  list.sort(function(a, b) {
-    var ap = String(a.project || '').trim().toLowerCase() === proj ? 0 : 1;
-    var bp = String(b.project || '').trim().toLowerCase() === proj ? 0 : 1;
-    if (ap !== bp) return ap - bp;
-    return String(a.clientSN).localeCompare(String(b.clientSN));
-  });
-
-  var prev = selectedSN != null ? String(selectedSN) : (sel.value || '');
-  sel.innerHTML = '';
-  var opt0 = document.createElement('option');
-  opt0.value = '';
-  opt0.textContent = list.length
-    ? '— Select Client SN (' + list.length + ' from sheet) —'
-    : '— No clients in sheet — pull Clients first —';
-  sel.appendChild(opt0);
-
-  list.forEach(function(c) {
-    var o = document.createElement('option');
-    o.value = c.clientSN;
-    var label = c.clientSN + (c.clientName ? ' — ' + c.clientName : '');
-    if (c.project) label += ' (' + c.project + ')';
-    o.textContent = label;
-    if (String(c.clientSN) === String(prev)) o.selected = true;
-    sel.appendChild(o);
-  });
-
-  var hint = document.getElementById('rClientSNHint');
-  if (hint) {
-    if (!list.length) {
-      hint.textContent = 'No Client SNs available. Admin: add rows on the Clients sheet, deploy Apps Script, then Pull Clients.';
-      hint.style.color = 'var(--warn)';
-    } else {
-      hint.textContent = list.length + ' Client SN(s) from Clients sheet' + (ctry ? ' · country: ' + ctry : '');
-      hint.style.color = 'var(--muted)';
-    }
-  }
+/** Kept for call-site compatibility — refreshes client pickers in open request forms. */
+function populateClientSNSelect() {
+  try { _refreshClientPickers(); } catch(e) {}
 }
 
 // ── Category visibility ──────────────────────────────────
 function isCategoryVisibleForUser(cat) {
   var rules = (reqFormConfig.categoryRules || {})[cat];
-  if (!rules) return true; // default available to all
+  if (!rules) return true;
   if (rules.available === false) {
-    // Only users with matching role (or admin) see it
     if (!currentUser) return false;
     if (currentUser.role === 'admin') return true;
     var allowed = rules.allowedRoles || [];
@@ -5628,7 +5608,6 @@ function isCategoryVisibleForUser(cat) {
     return allowed.indexOf(currentUser.role) !== -1
       || allowed.map(function(x){ return String(x).toLowerCase(); }).indexOf(String(currentUser.role||'').toLowerCase()) !== -1;
   }
-  // available true — optional role restriction
   var allowed2 = rules.allowedRoles || [];
   if (!allowed2.length) return true;
   if (!currentUser) return false;
@@ -5648,32 +5627,44 @@ function getStdAmountForLine(summary, project) {
     if (_normLine(row.costLine) !== nLine) return;
     var rp = String(row.project || '').trim().toLowerCase();
     if (rp && rp === nProj) match = row;
-    else if (!rp && match == null) match = row; // legacy blank project = fallback
+    else if (!rp && match == null) match = row;
   });
   if (!match || match.amount === '' || match.amount == null) return null;
   var n = parseFloat(match.amount);
   return isNaN(n) ? null : n;
 }
 
-/** Normalize legacy map {line: amt} or list into [{project, costLine, amount}] */
 function normalizeStdAmounts_(raw) {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw.filter(function(r){ return r && r.costLine; });
-  // legacy object map costLine -> amount
   return Object.keys(raw).map(function(k) {
     return { project: '', costLine: k, amount: raw[k] };
   });
 }
 
+/** Transport & Airtime bundle id for a request (two rows submitted from one form). */
+function reqBundleOf(r) {
+  if (!r) return '';
+  if (r.bundleRef) return String(r.bundleRef);
+  var m = String(r.description || '').match(/Transport & Airtime bundle (REQ-\d+\/REQ-\d+)/);
+  return m ? m[1] : '';
+}
+
+/** Count requests for project + Client SN. A Transport & Airtime bundle counts once. */
 function countRequestsForClientSN(project, clientSN) {
   var sn = String(clientSN || '').trim().toLowerCase();
   if (!sn || !project) return 0;
-  return (requestsStore || []).filter(function(r) {
-    if ((r.project || '') !== project) return false;
-    if (String(r.clientSN || '').trim().toLowerCase() !== sn) return false;
-    // count non-deleted live requests
-    return true;
-  }).length;
+  var seen = {};
+  var n = 0;
+  (requestsStore || []).forEach(function(r) {
+    if ((r.project || '') !== project) return;
+    if (String(r.clientSN || '').trim().toLowerCase() !== sn) return;
+    var key = reqBundleOf(r) || ('ref:' + r.ref);
+    if (seen[key]) return;
+    seen[key] = true;
+    n++;
+  });
+  return n;
 }
 
 function getProjectRequestLimit(project) {
@@ -5683,563 +5674,814 @@ function getProjectRequestLimit(project) {
   return isNaN(n) ? null : n;
 }
 
-// ── Modal open / cascade ─────────────────────────────────
+/** HTML for client name + SN, shown to approvers (request tables) and in My Submissions. */
+function reqClientHtml(r) {
+  if (!r) return '';
+  var out = '';
+  if (r.clientSN) {
+    out += '<div class="rq-client-tag" title="Client">'
+      + '<span class="rq-client-tag-k">Client</span> '
+      + '<strong>' + _rqEsc(r.clientName || '—') + '</strong>'
+      + ' <span class="rq-client-tag-sn">SN ' + _rqEsc(r.clientSN) + '</span>'
+      + '</div>';
+  }
+  var b = reqBundleOf(r);
+  if (b) out += '<div class="rq-bundle-tag">Transport &amp; Airtime · ' + _rqEsc(b) + '</div>';
+  return out;
+}
+
+// ========================================================
+// MULTI-FORM REQUEST MODAL
+// ========================================================
+var _reqForms = [];
+var _reqFormsOwner = '';
+var _reqFormSeq = 0;
+var _reqSubmitting = false;
+var _clientsLoading = false;
+
+function _rqEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function _rqNum(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function _rqIsRequesterOrViewer() {
+  return !currentUser || currentUser.role === 'requester' || currentUser.role === 'viewer';
+}
+
+function _newReqForm() {
+  _reqFormSeq++;
+  return {
+    id: 'f' + _reqFormSeq + Date.now().toString(36),
+    project: '', type: '', category: '', lineKey: '',
+    amount: '', airAmount: '', incT: true, incA: true,
+    transportRows: [],
+    clientSN: '', clientName: '', clientQ: '',
+    desc: '', excessReason: '',
+    collapsed: false
+  };
+}
+function _getReqForm(id) {
+  for (var i = 0; i < _reqForms.length; i++) if (_reqForms[i].id === id) return _reqForms[i];
+  return null;
+}
+function _isBlankForm(f) { return !f || !f.project; }
+
+/** Budget-line options for a form; Transport + Airtime pairs are merged into one option. */
+function _comboParts(summary) {
+  var m = _normLine(summary).match(/^(.*?)\s*(transport|airtime)$/);
+  return m ? { prefix: m[1].trim(), kind: m[2] } : null;
+}
+function getReqLineOptions(project, type, cat) {
+  if (!project || !type || !cat) return [];
+  var lines = getCostSummaries(project, type, cat);
+  var byPrefix = {};
+  lines.forEach(function(l) {
+    var p = _comboParts(l.costSummary);
+    if (!p) return;
+    byPrefix[p.prefix] = byPrefix[p.prefix] || {};
+    if (!byPrefix[p.prefix][p.kind]) byPrefix[p.prefix][p.kind] = l;
+  });
+  var used = {};
+  var out = [];
+  lines.forEach(function(l) {
+    var p = _comboParts(l.costSummary);
+    if (p && byPrefix[p.prefix].transport && byPrefix[p.prefix].airtime) {
+      if (used[p.prefix]) return;
+      used[p.prefix] = true;
+      var t = byPrefix[p.prefix].transport, a = byPrefix[p.prefix].airtime;
+      var base = String(t.costSummary || '').replace(/\s*transport\s*$/i, '').trim();
+      out.push({ key: 'combo:' + p.prefix, combo: true,
+        label: (base ? base + ' ' : '') + 'Transport & Airtime', t: t, a: a });
+      return;
+    }
+    out.push({ key: 'line:' + (l.costSummary || '') + '|' + (l.costItem || ''), combo: false,
+      label: l.costSummary || '', line: l });
+  });
+  return out;
+}
+
+function _formSpec(f) {
+  if (!f || !f.project || !f.type || !f.category || !f.lineKey) return null;
+  var opts = getReqLineOptions(f.project, f.type, f.category);
+  var opt = null;
+  for (var i = 0; i < opts.length; i++) if (opts[i].key === f.lineKey) { opt = opts[i]; break; }
+  if (!opt) return null;
+  var parts = opt.combo
+    ? [{ role: 'transport', line: opt.t }, { role: 'airtime', line: opt.a }]
+    : [{ role: 'single', line: opt.line }];
+  parts.forEach(function(p) {
+    p.std = getStdAmountForLine(p.line.costSummary, f.project);
+    p.transport = p.role !== 'airtime' && needsTransportBreakdown(p.line.costSummary);
+  });
+  var needClient = parts.some(function(p){ return needsClientSN(p.line.costSummary, f.category); });
+  return { opt: opt, parts: parts, needClient: needClient };
+}
+function _partIncluded(f, p) {
+  if (p.role === 'transport') return f.incT !== false;
+  if (p.role === 'airtime') return f.incA !== false;
+  return true;
+}
+function _trTotal(f) {
+  return (f.transportRows || []).reduce(function(s, r) {
+    return s + _rqNum(r.qty) * _rqNum(r.unit);
+  }, 0);
+}
+function _partAmount(f, p) {
+  if (p.std != null && p.std > 0) return p.std;
+  if (p.transport) return _trTotal(f);
+  if (p.role === 'airtime') return _rqNum(f.airAmount);
+  return _rqNum(f.amount);
+}
+function _formTotal(f, spec) {
+  spec = spec || _formSpec(f);
+  if (!spec) return 0;
+  return spec.parts.filter(function(p){ return _partIncluded(f, p); })
+    .reduce(function(s, p){ return s + _partAmount(f, p); }, 0);
+}
+
+/** Validate every form in order (earlier forms in the batch count toward Client SN limits). */
+function _validateAllReqForms() {
+  var batch = {};
+  return _reqForms.map(function(f) {
+    var v = _validateReqForm(f, batch);
+    if (v.client && v.spec && v.spec.needClient) {
+      var key = f.project + '\u0000' + String(v.client.clientSN).toLowerCase();
+      batch[key] = (batch[key] || 0) + 1;
+    }
+    return v;
+  });
+}
+function _validateReqForm(f, batch) {
+  var errs = [];
+  var out = { ok: false, errs: errs, spec: null, client: null, excess: false, excessInfo: '' };
+  if (!currentUser || !String(currentUser.name || '').trim()) errs.push('Your user profile has no name — ask an admin to set it');
+  if (!f.project) { errs.push('Select a project'); return out; }
+  if (!f.type) { errs.push('No budget type for this project'); return out; }
+  if (!f.category) { errs.push('Select a form'); return out; }
+  var spec = _formSpec(f);
+  out.spec = spec;
+  if (!spec) { errs.push('Select a budget line'); return out; }
+
+  var parts = spec.parts.filter(function(p){ return _partIncluded(f, p); });
+  if (!parts.length) errs.push('Include transport and/or airtime');
+  parts.forEach(function(p) {
+    var amt = _partAmount(f, p);
+    var nm = p.role === 'transport' ? 'Transport amount' : p.role === 'airtime' ? 'Airtime amount' : 'Amount';
+    if (!(amt > 0)) errs.push(nm + ' must be greater than 0');
+    if (p.transport) {
+      var t = _trTotal(f);
+      if (t <= 0) errs.push('Complete the transport breakdown');
+      else if (Math.abs(t - amt) > 0.5) errs.push('Transport breakdown must add up to ' + fmt(amt));
+    }
+  });
+
+  if (spec.needClient) {
+    if (!f.clientSN) {
+      errs.push('Select a client from the Clients sheet');
+    } else {
+      var c = getClientForProject(f.clientSN, f.project);
+      if (!c) {
+        errs.push('Client SN ' + f.clientSN + ' is not valid for ' + f.project);
+      } else {
+        out.client = c;
+        var lim = getProjectRequestLimit(f.project);
+        if (lim != null && lim > 0) {
+          var key = f.project + '\u0000' + String(c.clientSN).toLowerCase();
+          var cnt = countRequestsForClientSN(f.project, c.clientSN) + ((batch && batch[key]) || 0);
+          if (cnt >= lim) {
+            out.excess = true;
+            out.excessInfo = cnt + '/' + lim;
+            if (!String(f.excessReason || '').trim()) errs.push('Give a reason for the excess request');
+          }
+        }
+      }
+    }
+  }
+  out.ok = !errs.length;
+  return out;
+}
+
+// ── Draft persistence (all forms) ────────────────────────
 function reqDraftKey() {
   var email = currentUser && currentUser.email ? currentUser.email.toLowerCase() : 'anon';
   return 'mrv_req_form_draft_' + email;
 }
-
 function saveRequestFormDraft() {
   try {
-    var draft = {
-      project: _rProject || (document.getElementById('reqProject') || {}).value || '',
-      type: _rType || '',
-      category: _rCategory || '',
-      summary: _rSummary || '',
-      costItem: _rCostItem || '',
-      amount: (document.getElementById('rAmount') || {}).value || '',
-      name: (document.getElementById('rName') || {}).value || '',
-      desc: (document.getElementById('rDesc') || {}).value || '',
-      clientSN: (document.getElementById('rClientSN') || {}).value || '',
-      clientName: (document.getElementById('rClientName') || {}).value || '',
-      excessReason: (document.getElementById('rExcessReason') || {}).value || '',
-      transportRows: _transportRows || [],
-      savedAt: Date.now()
-    };
-    // Only persist if user started filling something
-    if (!draft.project && !draft.amount && !draft.desc && !draft.clientSN) {
-      localStorage.removeItem(reqDraftKey());
-      return;
-    }
-    localStorage.setItem(reqDraftKey(), JSON.stringify(draft));
+    var forms = _reqForms.filter(function(f){ return !_isBlankForm(f); }).map(function(f) {
+      var c = {};
+      Object.keys(f).forEach(function(k){ if (k !== 'clientQ' && k !== 'collapsed') c[k] = f[k]; });
+      return c;
+    });
+    if (!forms.length) { localStorage.removeItem(reqDraftKey()); return; }
+    localStorage.setItem(reqDraftKey(), JSON.stringify({ v: 2, forms: forms, savedAt: Date.now() }));
   } catch(e) {}
 }
-
-function loadRequestFormDraft() {
-  try {
-    var s = localStorage.getItem(reqDraftKey());
-    return s ? JSON.parse(s) : null;
-  } catch(e) { return null; }
-}
-
-function clearRequestFormDraft() {
-  try { localStorage.removeItem(reqDraftKey()); } catch(e) {}
-  _rProject=''; _rType=''; _rCategory=''; _rSummary=''; _rCostItem='';
-  _rClientSN=''; _rClientName=''; _rExcess=false;
-  _transportRows = [];
-  resetRequestFormUI_();
-  toast('Form cleared');
-}
-
-function resetRequestFormUI_() {
-  var ps = document.getElementById('reqProject');
-  if (ps) {
-    ps.innerHTML = '<option value="">— Select —</option>' +
-      getProjects().map(function(p){ return '<option>'+p+'</option>'; }).join('');
-    ps.value = '';
-  }
-  var ts = document.getElementById('reqType');
-  if (ts) { ts.innerHTML = '<option value="">— Select —</option>'; ts.disabled = true; }
-  var td = document.getElementById('reqTypeDisplay');
-  if (td) td.value = '';
-  ['reqCatRow','reqLineRow','reqDetailsRow','reqClientBlock','reqTransportBlock','reqExcessBlock'].forEach(function(id){
-    var el = document.getElementById(id); if (el) el.style.display = 'none';
-  });
-  var amt = document.getElementById('rAmount');
-  if (amt) { amt.value = ''; amt.readOnly = false; }
-  var badge = document.getElementById('rAmountStdBadge');
-  if (badge) badge.style.display = 'none';
-  var nm = document.getElementById('rName');
-  if (nm) nm.value = currentUser ? currentUser.name : '';
-  ['rDesc','rClientSN','rClientName','rExcessReason'].forEach(function(id){
-    var el = document.getElementById(id); if (el) el.value = '';
-  });
-  var hint = document.getElementById('rClientSNHint'); if (hint) hint.textContent = '';
-  var bh = document.getElementById('rBudgetHint'); if (bh) bh.textContent = '';
-  var btn = document.getElementById('submitReqBtn');
-  if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
-  var step = document.getElementById('reqStepHint');
-  if (step) step.textContent = '';
-}
-
-function openNewRequestModal() {
-  try { if (!budgetLines || !budgetLines.length) seedDemoDataIfEmpty(); } catch(e) {}
-  _rProject=''; _rType=''; _rCategory=''; _rSummary=''; _rCostItem='';
-  _rClientSN=''; _rClientName=''; _rExcess=false;
-  _transportRows = [];
-  resetRequestFormUI_();
-  updateReqFormSettingsBtn();
-  openModal('requestModal');
-
-  // Restore in-progress draft if any
-  var draft = loadRequestFormDraft();
-  if (!draft || !draft.project) return;
-
-  var ps = document.getElementById('reqProject');
-  if (!ps) return;
-  // Ensure project option exists
-  var hasProj = Array.from(ps.options).some(function(o){ return o.value === draft.project || o.text === draft.project; });
-  if (!hasProj && draft.project) {
-    var opt = document.createElement('option');
-    opt.value = draft.project; opt.textContent = draft.project;
-    ps.appendChild(opt);
-  }
-  ps.value = draft.project;
-  onReqProjectChange();
-
-  // After type auto-selected, restore category/line if possible
-  setTimeout(function() {
-    if (draft.category) {
-      var catBtn = null;
-      document.querySelectorAll('#reqCatBtns button').forEach(function(b){
-        if (b.textContent === draft.category) catBtn = b;
-      });
-      if (catBtn) selectReqCat(draft.category, catBtn);
-    }
-    setTimeout(function() {
-      if (draft.summary) {
-        var lines = getCostSummaries(_rProject, _rType, _rCategory || draft.category);
-        var line = lines.find(function(l){ return l.costSummary === draft.summary; });
-        if (line) selectReqLine(line);
-      }
-      if (draft.amount != null && draft.amount !== '') {
-        var amtEl = document.getElementById('rAmount');
-        if (amtEl && !amtEl.readOnly) amtEl.value = draft.amount;
-      }
-      if (draft.name) document.getElementById('rName').value = draft.name;
-      if (draft.desc) document.getElementById('rDesc').value = draft.desc;
-      if (draft.clientSN) {
-        var snEl = document.getElementById('rClientSN');
-        if (snEl) snEl.value = draft.clientSN;
-        onClientSNInput();
-      }
-      if (draft.excessReason) document.getElementById('rExcessReason').value = draft.excessReason;
-      if (draft.transportRows && draft.transportRows.length) {
-        _transportRows = draft.transportRows;
-        renderTransportRows();
-      }
-      checkReqReady();
-      toast('Restored your saved form draft');
-    }, 50);
-  }, 50);
-}
-
-// Auto-save draft while typing (debounced)
 var _reqDraftTimer = null;
 function scheduleRequestFormDraftSave() {
   if (_reqDraftTimer) clearTimeout(_reqDraftTimer);
   _reqDraftTimer = setTimeout(function(){ saveRequestFormDraft(); }, 400);
 }
+function _loadReqDrafts() {
+  var raw = null;
+  try { raw = JSON.parse(localStorage.getItem(reqDraftKey()) || 'null'); } catch(e) { raw = null; }
+  if (!raw) return [];
+  var list = [];
+  if (raw.v === 2 && Array.isArray(raw.forms)) {
+    list = raw.forms.map(function(d) {
+      var f = _newReqForm();
+      Object.keys(d).forEach(function(k){ if (k !== 'id') f[k] = d[k]; });
+      return f;
+    });
+  } else if (raw.project) {
+    // Legacy single-form draft
+    var f = _newReqForm();
+    f.project = raw.project;
+    f.type = (getTypes(raw.project) || [])[0] || raw.type || '';
+    f.category = raw.category || '';
+    f.amount = raw.amount || '';
+    f.desc = raw.desc || '';
+    f.clientSN = raw.clientSN || '';
+    f.excessReason = raw.excessReason || '';
+    f.transportRows = raw.transportRows || [];
+    if (raw.summary && f.type && f.category) {
+      var opts = getReqLineOptions(f.project, f.type, f.category);
+      var hit = opts.find(function(o) {
+        if (o.combo) return o.t.costSummary === raw.summary || o.a.costSummary === raw.summary;
+        return o.line.costSummary === raw.summary;
+      });
+      if (hit) f.lineKey = hit.key;
+    }
+    list = [f];
+  }
+  list.forEach(function(f) {
+    if (f.project && !f.type) f.type = (getTypes(f.project) || [])[0] || '';
+    f.collapsed = true;
+  });
+  return list;
+}
+function clearRequestFormDraft() {
+  var started = _reqForms.filter(function(f){ return !_isBlankForm(f); }).length;
+  if (started && !confirm('Discard all ' + started + ' request form(s)?')) return;
+  try { localStorage.removeItem(reqDraftKey()); } catch(e) {}
+  _reqForms = [_newReqForm()];
+  _renderReqForms();
+  toast('Forms cleared');
+}
+
+// ── Open / add / remove ──────────────────────────────────
+function openNewRequestModal() {
+  try { if (!budgetLines || !budgetLines.length) seedDemoDataIfEmpty(); } catch(e) {}
+  updateReqFormSettingsBtn();
+  var owner = currentUser && currentUser.email ? currentUser.email.toLowerCase() : 'anon';
+  var restored = 0;
+  if (_reqFormsOwner !== owner || !_reqForms.length) {
+    _reqForms = _loadReqDrafts();
+    _reqFormsOwner = owner;
+    restored = _reqForms.length;
+  }
+  var last = _reqForms[_reqForms.length - 1];
+  if (!last || !_isBlankForm(last)) {
+    _reqForms.forEach(function(f){ f.collapsed = true; });
+    _reqForms.push(_newReqForm());
+  } else {
+    last.collapsed = false;
+  }
+  var nm = document.getElementById('rqRequesterName');
+  if (nm) nm.textContent = (currentUser && currentUser.name) ? currentUser.name : '—';
+  _renderReqForms();
+  openModal('requestModal');
+  if (restored) toast('Restored ' + restored + ' saved draft' + (restored === 1 ? '' : 's'));
+  _refreshClientsForForms();
+}
+function addReqForm() {
+  _reqForms.forEach(function(f){ if (!_isBlankForm(f)) f.collapsed = true; });
+  var blank = _reqForms.find(function(f){ return _isBlankForm(f); });
+  if (blank) { blank.collapsed = false; }
+  else { blank = _newReqForm(); _reqForms.push(blank); }
+  _renderReqForms();
+  setTimeout(function() {
+    var el = document.querySelector('#reqFormsBox [data-card="' + blank.id + '"]');
+    if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    var sel = el && el.querySelector('select[data-k="project"]');
+    if (sel) { try { sel.focus(); } catch(e) {} }
+  }, 30);
+}
+function _removeReqForm(id) {
+  var f = _getReqForm(id);
+  if (!f) return;
+  if (!_isBlankForm(f) && !confirm('Remove this request form?')) return;
+  _reqForms = _reqForms.filter(function(x){ return x.id !== id; });
+  if (!_reqForms.length) _reqForms.push(_newReqForm());
+  _renderReqForms();
+  scheduleRequestFormDraftSave();
+}
+
+/** Pull the Clients sheet in the background; refresh pickers without disturbing typing. */
+function _refreshClientsForForms() {
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') { _refreshClientPickers(); return; }
+  if (_clientsLoading) return;
+  _clientsLoading = true;
+  _refreshClientPickers();
+  pullClientsFromSheets().then(function() {
+    _clientsLoading = false; _refreshClientPickers(); _refreshReqStatus();
+  }, function() {
+    _clientsLoading = false; _refreshClientPickers(); _refreshReqStatus();
+  });
+}
+
+// ── Rendering ────────────────────────────────────────────
+function _renderReqForms() {
+  var box = document.getElementById('reqFormsBox');
+  if (!box) return;
+  var vals = _validateAllReqForms();
+  box.innerHTML = _reqForms.map(function(f, i){ return _reqCardHtml(f, i, vals[i]); }).join('');
+  _updateReqFooter(vals);
+}
+
+function _reqCardHtml(f, idx, v) {
+  var spec = v.spec;
+  var ccy = f.project ? getCurrency(f.project, f.type) : '';
+  var title = spec ? spec.opt.label : (f.category ? f.category + ' form' : 'New request');
+  var total = spec ? _formTotal(f, spec) : 0;
+  var sub = f.project ? (_rqEsc(f.project) + (spec ? ' · ' + _rqEsc(ccy) + ' ' + fmt(total) : '')) : 'Choose a project to start';
+  var status = _isBlankForm(f)
+    ? '<span class="rq-pill rq-pill-muted">Not started</span>'
+    : (v.ok ? '<span class="rq-pill rq-pill-ok">✓ Ready</span>' : '<span class="rq-pill rq-pill-warn">Incomplete</span>');
+
+  var h = '<div class="rq-card' + (f.collapsed ? ' is-collapsed' : '') + '" data-card="' + f.id + '">'
+    + '<div class="rq-card-head" data-act="toggle" data-f="' + f.id + '">'
+      + '<span class="rq-num">' + (idx + 1) + '</span>'
+      + '<div class="rq-head-txt"><div class="rq-head-title">' + _rqEsc(title) + '</div>'
+      + '<div class="rq-head-sub" id="rqsub-' + f.id + '">' + sub + '</div></div>'
+      + '<span id="rqst-' + f.id + '">' + status + '</span>'
+      + '<button type="button" class="rq-icon-btn" data-act="remove" data-f="' + f.id + '" title="Remove this form" aria-label="Remove this form">'
+      + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+      + '<span class="rq-chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>'
+    + '</div>';
+
+  if (f.collapsed) return h + '</div>';
+
+  h += '<div class="rq-card-body">';
+
+  // Step 1 — Project
+  var projects = getProjects();
+  if (f.project && projects.indexOf(f.project) === -1) projects = [f.project].concat(projects);
+  h += '<div class="rq-step"><div class="rq-step-label"><span>1</span>Project</div>'
+    + '<div class="rq-grid2"><select data-f="' + f.id + '" data-k="project">'
+    + '<option value="">— Select project —</option>'
+    + projects.map(function(p){ return '<option value="' + _rqEsc(p) + '"' + (p === f.project ? ' selected' : '') + '>' + _rqEsc(p) + '</option>'; }).join('')
+    + '</select>'
+    + (f.project ? '<div class="rq-meta">Type: <strong>' + _rqEsc(f.type || '—') + '</strong> <span class="rq-muted">(auto)</span></div>' : '<div></div>')
+    + '</div></div>';
+
+  // Step 2 — Form (category)
+  if (f.project && f.type) {
+    var cats = getCategories(f.project, f.type).filter(isCategoryVisibleForUser);
+    h += '<div class="rq-step"><div class="rq-step-label"><span>2</span>Form</div><div class="rq-chips">'
+      + (cats.length ? cats.map(function(c) {
+          return '<button type="button" class="rq-chip' + (c === f.category ? ' is-on' : '') + '" data-act="cat" data-f="' + f.id + '" data-v="' + _rqEsc(c) + '">' + _rqEsc(c) + '</button>';
+        }).join('') : '<span class="rq-muted">No forms available for your role on this project.</span>')
+      + '</div></div>';
+  }
+
+  // Step 3 — Budget line
+  if (f.project && f.type && f.category) {
+    var hideBudget = _rqIsRequesterOrViewer();
+    h += '<div class="rq-step"><div class="rq-step-label"><span>3</span>Budget line</div>';
+    if (spec) {
+      h += '<div class="rq-selected-line"><div><div class="rq-line-name">' + _rqEsc(spec.opt.label) + '</div>'
+        + (!spec.opt.combo && spec.opt.line.costItem ? '<div class="rq-muted rq-small">' + _rqEsc(spec.opt.line.costItem) + '</div>' : '')
+        + (spec.opt.combo ? '<div class="rq-muted rq-small">One form → two requests (transport + airtime)</div>' : '')
+        + '</div><button type="button" class="btn btn-ghost btn-sm" data-act="changeLine" data-f="' + f.id + '">Change</button></div>';
+      if (!hideBudget) {
+        h += '<div class="rq-budget">' + spec.parts.map(function(p) {
+          var bud = parseFloat(p.line.budgetedAmount) || 0;
+          var act = getActualForLine(f.project, f.type, f.category, p.line.costSummary, p.line.costItem);
+          var rem = bud - act;
+          return '<div>' + (spec.opt.combo ? '<strong>' + (p.role === 'transport' ? 'Transport' : 'Airtime') + ':</strong> ' : '')
+            + 'Budgeted ' + _rqEsc(ccy) + ' ' + fmt(bud) + ' · Actual ' + _rqEsc(ccy) + ' ' + fmt(act)
+            + ' · <span style="color:' + (rem < 0 ? 'var(--danger)' : 'var(--success)') + ';font-weight:600">' + (rem < 0 ? 'Overrun ' : 'Remaining ') + _rqEsc(ccy) + ' ' + fmt(Math.abs(rem)) + '</span></div>';
+        }).join('') + '</div>';
+      }
+    } else {
+      var opts = getReqLineOptions(f.project, f.type, f.category);
+      h += '<div class="rq-lines">' + (opts.length ? opts.map(function(o) {
+        var right = '';
+        if (!hideBudget) {
+          var ls = o.combo ? [o.t, o.a] : [o.line];
+          var rem = ls.reduce(function(s, l) {
+            return s + (parseFloat(l.budgetedAmount) || 0) - getActualForLine(f.project, f.type, f.category, l.costSummary, l.costItem);
+          }, 0);
+          right = '<div class="rq-line-rem" style="color:' + (rem < 0 ? 'var(--danger)' : 'var(--success)') + '">Rem ' + _rqEsc(ccy) + ' ' + fmt(rem) + '</div>';
+        }
+        var subTxt = o.combo ? 'Transport + airtime in one form' : (o.line.costItem || '');
+        return '<div class="rq-line" data-act="line" data-f="' + f.id + '" data-v="' + _rqEsc(o.key) + '">'
+          + '<div><div class="rq-line-name">' + _rqEsc(o.label) + '</div>'
+          + (subTxt ? '<div class="rq-muted rq-small">' + _rqEsc(subTxt) + '</div>' : '') + '</div>' + right + '</div>';
+      }).join('') : '<div class="rq-empty">No budget lines for this form.</div>') + '</div>';
+    }
+    h += '</div>';
+  }
+
+  // Step 4 — Details
+  if (spec) {
+    h += '<div class="rq-step"><div class="rq-step-label"><span>4</span>Details</div>';
+
+    if (spec.needClient) {
+      h += '<div class="rq-block"><div class="rq-block-title">Client <span class="rq-req">*</span> <span class="rq-muted rq-small">from the Clients sheet · ' + _rqEsc(f.project) + '</span></div>'
+        + '<div id="rqcp-' + f.id + '">' + _clientPickerHtml(f) + '</div></div>';
+    }
+
+    spec.parts.forEach(function(p) {
+      var inc = _partIncluded(f, p);
+      var isStd = p.std != null && p.std > 0;
+      var stdBadge = isStd ? ' <span class="rq-std">STANDARD</span>' : '';
+      if (p.role === 'single' && !p.transport) {
+        h += '<div class="rq-grid2"><div class="form-group" style="margin:0"><label>Amount (' + _rqEsc(ccy) + ')' + stdBadge + '</label>'
+          + '<input type="number" inputmode="decimal" min="0" data-f="' + f.id + '" data-k="amount" value="' + _rqEsc(isStd ? p.std : f.amount) + '"' + (isStd ? ' readonly class="rq-ro"' : '') + ' placeholder="0"></div><div></div></div>';
+        return;
+      }
+      if (p.role === 'airtime') {
+        h += '<div class="rq-block' + (inc ? '' : ' is-off') + '"><label class="rq-toggle"><input type="checkbox" data-f="' + f.id + '" data-k="incA"' + (inc ? ' checked' : '') + '> <span class="rq-block-title" style="margin:0">Airtime</span> <span class="rq-muted rq-small">' + _rqEsc(p.line.costSummary) + '</span></label>';
+        if (inc) {
+          h += '<div class="rq-grid2" style="margin-top:8px"><div class="form-group" style="margin:0"><label>Airtime amount (' + _rqEsc(ccy) + ')' + stdBadge + '</label>'
+            + '<input type="number" inputmode="decimal" min="0" data-f="' + f.id + '" data-k="airAmount" value="' + _rqEsc(isStd ? p.std : f.airAmount) + '"' + (isStd ? ' readonly class="rq-ro"' : '') + ' placeholder="0"></div><div></div></div>';
+        }
+        h += '</div>';
+        return;
+      }
+      // Transport (single transport line or combo transport part)
+      var isCombo = p.role === 'transport';
+      h += '<div class="rq-block' + (inc ? '' : ' is-off') + '">';
+      if (isCombo) {
+        h += '<label class="rq-toggle"><input type="checkbox" data-f="' + f.id + '" data-k="incT"' + (inc ? ' checked' : '') + '> <span class="rq-block-title" style="margin:0">Transport</span> <span class="rq-muted rq-small">' + _rqEsc(p.line.costSummary) + '</span></label>';
+      } else {
+        h += '<div class="rq-block-title">Transport breakdown <span class="rq-req">*</span></div>';
+      }
+      if (inc) {
+        h += '<div class="rq-tr-head"><span>Route / description</span><span>Qty</span><span>Unit cost</span><span>Total</span><span></span></div>'
+          + '<div class="rq-tr-rows">' + (f.transportRows || []).map(function(r, i) {
+              var tot = _rqNum(r.qty) * _rqNum(r.unit);
+              return '<div class="rq-tr-row">'
+                + '<input type="text" data-f="' + f.id + '" data-k="tr" data-i="' + i + '" data-field="desc" value="' + _rqEsc(r.desc) + '" placeholder="e.g. Office to field site">'
+                + '<input type="number" inputmode="decimal" min="0" data-f="' + f.id + '" data-k="tr" data-i="' + i + '" data-field="qty" value="' + _rqEsc(r.qty) + '">'
+                + '<input type="number" inputmode="decimal" min="0" data-f="' + f.id + '" data-k="tr" data-i="' + i + '" data-field="unit" value="' + _rqEsc(r.unit) + '">'
+                + '<span class="rq-tr-tot" id="rqtt-' + f.id + '-' + i + '">' + fmt(tot) + '</span>'
+                + '<button type="button" class="rq-icon-btn" data-act="trDel" data-f="' + f.id + '" data-i="' + i + '" title="Remove row" aria-label="Remove row">×</button>'
+                + '</div>';
+            }).join('') + '</div>'
+          + '<div class="rq-tr-foot"><button type="button" class="btn btn-ghost btn-sm" data-act="trAdd" data-f="' + f.id + '">+ Add row</button>'
+          + '<div>Transport amount' + stdBadge + ': <strong id="rqta-' + f.id + '">' + _rqEsc(ccy) + ' ' + fmt(_partAmount(f, p)) + '</strong>'
+          + (isStd ? ' <span class="rq-muted rq-small">· breakdown <span id="rqts-' + f.id + '">' + fmt(_trTotal(f)) + '</span></span>' : '')
+          + '</div></div>';
+      }
+      h += '</div>';
+    });
+
+    if (v.excess) {
+      h += '<div class="rq-excess"><div class="rq-excess-title">Excess request — limit reached for this client on this project (' + _rqEsc(v.excessInfo) + ')</div>'
+        + '<label>Reason for excess request <span class="rq-req">*</span></label>'
+        + '<textarea rows="2" data-f="' + f.id + '" data-k="excessReason" placeholder="Explain why an additional request is needed...">' + _rqEsc(f.excessReason) + '</textarea></div>';
+    }
+
+    h += '<div class="form-group" style="margin:0"><label>Notes <span class="rq-muted" style="font-weight:400">(optional)</span></label>'
+      + '<input type="text" data-f="' + f.id + '" data-k="desc" value="' + _rqEsc(f.desc) + '" placeholder="Additional context"></div>';
+    h += '</div>';
+  }
+
+  h += '<div class="rq-errs" id="rqerr-' + f.id + '">' + _errsHtml(f, v) + '</div>';
+  h += '</div></div>';
+  return h;
+}
+
+function _errsHtml(f, v) {
+  if (_isBlankForm(f) || v.ok || !v.errs.length) return '';
+  return '<strong>To submit:</strong> ' + v.errs.map(_rqEsc).join(' · ');
+}
+
+function _clientPickerHtml(f) {
+  if (f.clientSN) {
+    var c = getClientForProject(f.clientSN, f.project);
+    if (c) {
+      return '<div class="rq-client-chip"><div><div class="rq-client-name">' + _rqEsc(c.clientName || '(no name on sheet)') + '</div>'
+        + '<div class="rq-muted rq-small">SN ' + _rqEsc(c.clientSN) + (c.project ? ' · ' + _rqEsc(c.project) : '') + '</div></div>'
+        + '<button type="button" class="btn btn-ghost btn-sm" data-act="clearClient" data-f="' + f.id + '">Change</button></div>';
+    }
+    return '<div class="rq-client-chip is-bad"><div><div class="rq-client-name">SN ' + _rqEsc(f.clientSN) + ' — not valid</div>'
+      + '<div class="rq-small">Not on the Clients sheet for ' + _rqEsc(f.project) + '. Pick a client from the list.</div></div>'
+      + '<button type="button" class="btn btn-ghost btn-sm" data-act="clearClient" data-f="' + f.id + '">Change</button></div>';
+  }
+  return '<input type="search" data-f="' + f.id + '" data-k="clientQ" value="' + _rqEsc(f.clientQ) + '" placeholder="Search client name or SN" autocomplete="off" spellcheck="false">'
+    + '<div class="rq-client-list" id="rqcl-' + f.id + '">' + _clientResultsHtml(f) + '</div>';
+}
+
+function _clientResultsHtml(f) {
+  var list = clientsForProject(f.project);
+  if (!list.length) {
+    if (_clientsLoading) return '<div class="rq-empty">Loading clients from the Clients sheet…</div>';
+    if (!(clientsStore || []).length) return '<div class="rq-empty">No clients loaded from the Clients sheet yet.</div>';
+    return '<div class="rq-empty">No clients for ' + _rqEsc(f.project) + ' on the Clients sheet.</div>';
+  }
+  var q = String(f.clientQ || '').trim().toLowerCase();
+  var hits = q ? list.filter(function(c) {
+    return String(c.clientSN).toLowerCase().indexOf(q) !== -1 || String(c.clientName || '').toLowerCase().indexOf(q) !== -1;
+  }) : list;
+  if (!hits.length) return '<div class="rq-empty">No client matches “' + _rqEsc(f.clientQ) + '”.</div>';
+  var shown = hits.slice(0, 50);
+  return shown.map(function(c) {
+    return '<div class="rq-client-opt" data-act="pickClient" data-f="' + f.id + '" data-v="' + _rqEsc(c.clientSN) + '">'
+      + '<span class="rq-client-opt-sn">' + _rqEsc(c.clientSN) + '</span>'
+      + '<span>' + _rqEsc(c.clientName || '—') + '</span></div>';
+  }).join('')
+    + (hits.length > shown.length ? '<div class="rq-empty">Showing ' + shown.length + ' of ' + hits.length + ' — keep typing to narrow.</div>' : '');
+}
+
+function _refreshClientPickers() {
+  _reqForms.forEach(function(f) {
+    if (f.collapsed || f.clientSN) {
+      var cp = document.getElementById('rqcp-' + f.id);
+      if (cp && f.clientSN && !f.collapsed) cp.innerHTML = _clientPickerHtml(f);
+      return;
+    }
+    var el = document.getElementById('rqcl-' + f.id);
+    if (el) el.innerHTML = _clientResultsHtml(f);
+  });
+}
+
+/** Update status pills, error lines, totals and footer — never re-renders inputs. */
+function _refreshReqStatus() {
+  var vals = _validateAllReqForms();
+  _reqForms.forEach(function(f, i) {
+    var v = vals[i];
+    var st = document.getElementById('rqst-' + f.id);
+    if (st) st.innerHTML = _isBlankForm(f)
+      ? '<span class="rq-pill rq-pill-muted">Not started</span>'
+      : (v.ok ? '<span class="rq-pill rq-pill-ok">✓ Ready</span>' : '<span class="rq-pill rq-pill-warn">Incomplete</span>');
+    var er = document.getElementById('rqerr-' + f.id);
+    if (er) er.innerHTML = _errsHtml(f, v);
+    if (v.spec) {
+      var ccy = getCurrency(f.project, f.type);
+      var sb = document.getElementById('rqsub-' + f.id);
+      if (sb) sb.innerHTML = _rqEsc(f.project) + ' · ' + _rqEsc(ccy) + ' ' + fmt(_formTotal(f, v.spec));
+      var tp = v.spec.parts.find(function(p){ return p.transport; });
+      if (tp) {
+        var ta = document.getElementById('rqta-' + f.id);
+        if (ta) ta.textContent = ccy + ' ' + fmt(_partAmount(f, tp));
+        var ts = document.getElementById('rqts-' + f.id);
+        if (ts) ts.textContent = fmt(_trTotal(f));
+      }
+    }
+  });
+  _updateReqFooter(vals);
+}
+function checkReqReady() { _refreshReqStatus(); }
+
+function _updateReqFooter(vals) {
+  vals = vals || _validateAllReqForms();
+  var active = 0, ready = 0, total = 0, ccys = {};
+  _reqForms.forEach(function(f, i) {
+    if (_isBlankForm(f)) return;
+    active++;
+    if (vals[i].ok) ready++;
+    if (vals[i].spec) {
+      total += _formTotal(f, vals[i].spec);
+      ccys[getCurrency(f.project, f.type)] = 1;
+    }
+  });
+  var btn = document.getElementById('submitReqBtn');
+  if (btn) {
+    var ok = active > 0 && ready === active && !_reqSubmitting;
+    btn.disabled = !ok;
+    btn.style.opacity = ok ? '1' : '.5';
+    if (!_reqSubmitting) btn.textContent = active > 1 ? 'Submit all (' + active + ')' : 'Submit request';
+  }
+  var sum = document.getElementById('rqFooterSum');
+  if (sum) {
+    var ck = Object.keys(ccys);
+    sum.textContent = active
+      ? (ready + ' of ' + active + ' ready' + (total > 0 ? ' · ' + (ck.length === 1 ? ck[0] + ' ' : '') + fmt(total) : ''))
+      : '';
+  }
+}
+
+// ── Events (delegated — typing never re-renders the field you are in) ──
+function _rqResetLine(f) {
+  f.lineKey = ''; f.amount = ''; f.airAmount = ''; f.incT = true; f.incA = true;
+  f.transportRows = []; f.clientSN = ''; f.clientName = ''; f.clientQ = ''; f.excessReason = '';
+}
+function _rqPrepareLine(f) {
+  var spec = _formSpec(f);
+  if (!spec) return;
+  var tp = spec.parts.find(function(p){ return p.transport; });
+  if (tp && !(f.transportRows || []).length) {
+    f.transportRows = [{ desc: '', qty: 1, unit: (tp.std != null ? tp.std : '') }];
+  }
+  if (!spec.needClient) { f.clientSN = ''; f.clientName = ''; f.clientQ = ''; }
+}
+
 document.addEventListener('input', function(e) {
-  if (!e.target) return;
-  var id = e.target.id || '';
-  if (/^(rAmount|rName|rDesc|rClientSN|rExcessReason|reqProject)$/.test(id) ||
-      (e.target.closest && e.target.closest('#reqTransportRows'))) {
+  var el = e.target;
+  if (!el || !el.closest || !el.closest('#reqFormsBox')) return;
+  var fid = el.getAttribute('data-f'), k = el.getAttribute('data-k');
+  if (!fid || !k) return;
+  var f = _getReqForm(fid);
+  if (!f) return;
+  if (k === 'project' || k === 'incT' || k === 'incA') return; // handled on change
+  if (k === 'tr') {
+    var i = parseInt(el.getAttribute('data-i'), 10);
+    var fld = el.getAttribute('data-field');
+    var row = (f.transportRows || [])[i];
+    if (!row) return;
+    row[fld] = el.value;
+    var tt = document.getElementById('rqtt-' + f.id + '-' + i);
+    if (tt) tt.textContent = fmt(_rqNum(row.qty) * _rqNum(row.unit));
+  } else if (k === 'clientQ') {
+    f.clientQ = el.value;
+    var cl = document.getElementById('rqcl-' + f.id);
+    if (cl) cl.innerHTML = _clientResultsHtml(f);
+    return;
+  } else {
+    f[k] = el.value;
+  }
+  _refreshReqStatus();
+  scheduleRequestFormDraftSave();
+});
+
+document.addEventListener('change', function(e) {
+  var el = e.target;
+  if (!el || !el.closest || !el.closest('#reqFormsBox')) return;
+  var fid = el.getAttribute('data-f'), k = el.getAttribute('data-k');
+  var f = fid ? _getReqForm(fid) : null;
+  if (!f) return;
+  if (k === 'project') {
+    f.project = el.value;
+    f.type = f.project ? ((getTypes(f.project) || [])[0] || '') : '';
+    f.category = '';
+    _rqResetLine(f);
+    var cats = (f.project && f.type) ? getCategories(f.project, f.type).filter(isCategoryVisibleForUser) : [];
+    if (cats.length === 1) f.category = cats[0];
+    _renderReqForms();
+    scheduleRequestFormDraftSave();
+  } else if (k === 'incT' || k === 'incA') {
+    f[k] = !!el.checked;
+    _renderReqForms();
     scheduleRequestFormDraftSave();
   }
 });
 
+document.addEventListener('click', function(e) {
+  var box = document.getElementById('reqFormsBox');
+  if (!box || !e.target || !e.target.closest) return;
+  var el = e.target.closest('[data-act]');
+  if (!el || !box.contains(el)) return;
+  var act = el.getAttribute('data-act');
+  var f = _getReqForm(el.getAttribute('data-f'));
+  if (!f) return;
+  var v = el.getAttribute('data-v');
+  if (act === 'toggle') {
+    if (e.target.closest('[data-act="remove"]')) return;
+    var wasCollapsed = f.collapsed;
+    if (wasCollapsed) _reqForms.forEach(function(x){ if (!_isBlankForm(x)) x.collapsed = true; });
+    f.collapsed = !wasCollapsed;
+    _renderReqForms();
+    return;
+  }
+  e.preventDefault();
+  if (act === 'remove') { e.stopPropagation(); _removeReqForm(f.id); return; }
+  if (act === 'cat') {
+    if (f.category !== v) { f.category = v; _rqResetLine(f); }
+  } else if (act === 'line') {
+    _rqResetLine(f);
+    f.lineKey = v;
+    _rqPrepareLine(f);
+  } else if (act === 'changeLine') {
+    _rqResetLine(f);
+  } else if (act === 'trAdd') {
+    f.transportRows = (f.transportRows || []).concat([{ desc: '', qty: 1, unit: '' }]);
+  } else if (act === 'trDel') {
+    var i = parseInt(el.getAttribute('data-i'), 10);
+    f.transportRows.splice(i, 1);
+    if (!f.transportRows.length) f.transportRows.push({ desc: '', qty: 1, unit: '' });
+  } else if (act === 'pickClient') {
+    var c = getClientForProject(v, f.project);
+    if (!c) { toast('That client is not valid for ' + f.project); return; }
+    f.clientSN = String(c.clientSN);
+    f.clientName = c.clientName || '';
+    f.clientQ = '';
+  } else if (act === 'clearClient') {
+    f.clientSN = ''; f.clientName = ''; f.clientQ = ''; f.excessReason = '';
+  } else {
+    return;
+  }
+  _renderReqForms();
+  scheduleRequestFormDraftSave();
+  if (act === 'clearClient') {
+    setTimeout(function() {
+      var q = document.querySelector('#reqFormsBox input[data-f="' + f.id + '"][data-k="clientQ"]');
+      if (q) { try { q.focus(); } catch(err) {} }
+    }, 20);
+  }
+});
 
-function onReqProjectChange() {
-  _rProject = document.getElementById('reqProject').value;
-  _rType=''; _rCategory=''; _rSummary='';
-  // Refresh Client SN list for this project / country (sheet data only)
+// ── Submit all forms at once ─────────────────────────────
+async function submitAllRequests() {
+  if (_reqSubmitting) return;
+  var btn = document.getElementById('submitReqBtn');
+  var activeIdx = [];
+  _reqForms.forEach(function(f, i){ if (!_isBlankForm(f)) activeIdx.push(i); });
+  if (!activeIdx.length) { toast('Fill in at least one request'); return; }
+
+  _reqSubmitting = true;
+  if (btn) { btn.disabled = true; btn.style.opacity = '.5'; btn.textContent = 'Checking…'; }
   try {
-    if (document.getElementById('reqClientBlock') &&
-        document.getElementById('reqClientBlock').style.display !== 'none') {
-      populateClientSNSelect('');
-      onClientSNInput();
+    // Re-check Client SNs against the live Clients sheet before saving
+    var needsClients = activeIdx.some(function(i){ var s = _formSpec(_reqForms[i]); return s && s.needClient; });
+    if (needsClients && gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
+      try {
+        await Promise.race([pullClientsFromSheets(), new Promise(function(r){ setTimeout(r, 8000); })]);
+      } catch(e) {}
     }
-  } catch(e) {}
-
-  var types = _rProject ? getTypes(_rProject) : [];
-  var ts = document.getElementById('reqType');
-  var td = document.getElementById('reqTypeDisplay');
-  ts.innerHTML = '<option value="">— Select —</option>' +
-    types.map(function(t){ return '<option>'+t+'</option>'; }).join('');
-
-  // Auto-pick type (always automatic — no manual choice)
-  if (types.length >= 1) {
-    ts.value = types[0];
-    if (td) td.value = types.length === 1 ? types[0] : (types[0] + (types.length > 1 ? ' (+'+(types.length-1)+' other)' : ''));
-    // If multiple types, still use first; type is derived from project budget lines
-    ts.disabled = true;
-    onReqTypeChange();
-  } else {
-    ts.disabled = true;
-    if (td) td.value = '';
-    document.getElementById('reqCatRow').style.display    = 'none';
-    document.getElementById('reqLineRow').style.display   = 'none';
-    document.getElementById('reqDetailsRow').style.display = 'none';
-  }
-}
-
-function onReqTypeChange() {
-  _rType = document.getElementById('reqType').value;
-  _rCategory = ''; _rSummary = '';
-  if (!_rType) return;
-  var cats = getCategories(_rProject, _rType).filter(isCategoryVisibleForUser);
-  var container = document.getElementById('reqCatBtns');
-  container.innerHTML = '';
-  if (!cats.length) {
-    container.innerHTML = '<span style="font-size:12px;color:var(--muted)">No categories available for your role on this project.</span>';
-  }
-  cats.forEach(function(c) {
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = c;
-    btn.style.cssText = 'padding:7px 16px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink);font-family:inherit;font-size:13px;cursor:pointer;transition:all .15s';
-    btn.addEventListener('click', function(){ selectReqCat(c, btn); });
-    container.appendChild(btn);
-  });
-  document.getElementById('reqCatRow').style.display = '';
-  document.getElementById('reqLineRow').style.display = 'none';
-  document.getElementById('reqDetailsRow').style.display = 'none';
-  var hint=document.getElementById('reqStepHint'); if(hint) hint.textContent='';
-}
-
-function selectReqCat(cat, btn) {
-  _rCategory = cat; _rSummary = '';
-  document.querySelectorAll('#reqCatBtns button').forEach(function(b) {
-    b.style.background = 'var(--surface)';
-    b.style.borderColor = 'var(--border)';
-    b.style.color = 'var(--ink)';
-  });
-  if (btn) {
-    btn.style.background = '#DEECF9';
-    btn.style.borderColor = 'var(--brand)';
-    btn.style.color = '#004578';
-  }
-  var lines = getCostSummaries(_rProject, _rType, cat);
-  var list = document.getElementById('reqLineList');
-  list.innerHTML = '';
-  var hideBudget = !currentUser || currentUser.role === 'requester' || currentUser.role === 'viewer';
-  lines.forEach(function(line, idx) {
-    var row = document.createElement('div');
-    row.style.cssText = 'padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px';
-    row.onmouseenter = function(){ this.style.background='var(--surface)'; };
-    row.onmouseleave = function(){ this.style.background=''; };
-    var left = '<div><div style="font-weight:600;font-size:13px">'+(line.costSummary||'')+'</div>'
-      + (line.costItem ? '<div style="font-size:11px;color:var(--muted)">'+line.costItem+'</div>' : '') + '</div>';
-    // Requesters must not see budgeted / balance
-    var right = '';
-    if (!hideBudget) {
-      var bud = parseFloat(line.budgetedAmount)||0;
-      var act = getActualForLine(_rProject, _rType, cat, line.costSummary, line.costItem);
-      var rem = bud - act;
-      right = '<div style="text-align:right;font-size:11px;color:var(--muted)">Budgeted '+getCurrency(_rProject,_rType)+' '+bud.toLocaleString()
-        +'<br><span style="color:'+(rem<0?'var(--danger)':'var(--success)')+'">Rem '+getCurrency(_rProject,_rType)+' '+rem.toLocaleString()+'</span></div>';
-    }
-    row.innerHTML = left + right;
-    row.addEventListener('click', function(){ selectReqLine(line); });
-    list.appendChild(row);
-  });
-  document.getElementById('reqLineRow').style.display = '';
-  document.getElementById('reqDetailsRow').style.display = 'none';
-  var hint = document.getElementById('reqStepHint'); if (hint) hint.textContent = '';
-}
-
-function selectReqLine(line) {
-  _rSummary = line.costSummary || '';
-  _rCostItem = line.costItem || '';
-  document.querySelectorAll('#reqLineList > div').forEach(function(d){
-    d.style.outline = '';
-  });
-  // highlight is best-effort
-
-  var isRequester = currentUser && currentUser.role === 'requester';
-  var hint = document.getElementById('rBudgetHint');
-  if (hint) {
-    if (isRequester) {
-      hint.textContent = '';
-      hint.style.display = 'none';
-    } else {
-      hint.style.display = '';
-      var bud = parseFloat(line.budgetedAmount)||0;
-      var act = getActualForLine(_rProject, _rType, _rCategory, _rSummary, _rCostItem);
-      var rem = bud - act;
-      hint.innerHTML = 'Budgeted: <span>'+getCurrency(_rProject,_rType)+' '+bud.toLocaleString()+'</span>'
-        +'  |  Actual: <span style="color:var(--success)">'+getCurrency(_rProject,_rType)+' '+act.toLocaleString()+'</span>'
-        +'  |  Remaining: <strong style="color:'+(rem<0?'var(--danger)':'var(--ink)')
-        +'">'+(rem<0?'OVERRUN ':'')+getCurrency(_rProject,_rType)+' '+Math.abs(rem).toLocaleString()+'</strong>';
-    }
+  } finally {
+    _reqSubmitting = false;
   }
 
-  // Standard amount
-  var std = getStdAmountForLine(_rSummary, _rProject);
-  var amtEl = document.getElementById('rAmount');
-  var badge = document.getElementById('rAmountStdBadge');
-  if (amtEl) {
-    if (std != null && std > 0) {
-      amtEl.value = std;
-      amtEl.readOnly = true;
-      if (badge) badge.style.display = '';
-    } else {
-      amtEl.readOnly = false;
-      if (badge) badge.style.display = 'none';
-      if (!amtEl.value) amtEl.value = '';
-    }
-  }
-
-  // Client SN block — dropdown filled only from Clients sheet
-  var needClient = needsClientSN(_rSummary);
-  var clientBlock = document.getElementById('reqClientBlock');
-  if (clientBlock) clientBlock.style.display = needClient ? '' : 'none';
-  if (!needClient) {
-    var snEl = document.getElementById('rClientSN'); if (snEl) snEl.value = '';
-    var nmEl = document.getElementById('rClientName'); if (nmEl) nmEl.value = '';
-    _rClientSN = ''; _rClientName = '';
-    var ex = document.getElementById('reqExcessBlock'); if (ex) ex.style.display = 'none';
-    _rExcess = false;
-  } else {
-    // Refresh Clients from sheet when possible so typed SNs validate against live data
-    var existingSN = (document.getElementById('rClientSN') || {}).value || _rClientSN || '';
-    var after = function() {
-      populateClientSNSelect(existingSN);
-      onClientSNInput();
-    };
-    if (gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
-      pullClientsFromSheets().then(after).catch(after);
-    } else {
-      after();
-    }
-  }
-
-  // Transport breakdown
-  var needT = needsTransportBreakdown(_rSummary);
-  var tBlock = document.getElementById('reqTransportBlock');
-  if (tBlock) tBlock.style.display = needT ? '' : 'none';
-  if (needT) {
-    if (!_transportRows.length) {
-      _transportRows = [{ desc:'', qty:1, unit: (std != null ? std : 0) }];
-    }
-    renderTransportRows();
-  } else {
-    _transportRows = [];
-  }
-
-  document.getElementById('reqDetailsRow').style.display = '';
-  var hint=document.getElementById('reqStepHint'); if(hint) hint.textContent='';
-  if (!amtEl.readOnly) amtEl.focus();
-  checkReqReady();
-}
-
-function onClientSNInput() {
-  var snEl = document.getElementById('rClientSN');
-  var sn = (snEl && snEl.value || '').trim();
-  var hint = document.getElementById('rClientSNHint');
-  var nameEl = document.getElementById('rClientName');
-  var excessEl = document.getElementById('reqExcessBlock');
-  _rClientSN = sn;
-  _rClientName = '';
-  if (nameEl) nameEl.value = '';
-
-  if (!sn) {
-    if (hint) {
-      var n = (clientsStore || []).length;
-      hint.textContent = n
-        ? 'Type a Client SN from the Clients sheet (column “Client SN”).'
-        : 'No clients loaded — admin must Pull Clients from the sheet first.';
-      hint.style.color = n ? 'var(--muted)' : 'var(--warn)';
-    }
-    if (excessEl) excessEl.style.display = 'none';
-    _rExcess = false;
-    checkReqReady();
+  var vals = _validateAllReqForms();
+  var bad = activeIdx.find(function(i){ return !vals[i].ok; });
+  if (bad != null) {
+    _reqForms.forEach(function(f, i){ f.collapsed = (i !== bad) && !_isBlankForm(f); });
+    _renderReqForms();
+    toast('Request ' + (bad + 1) + ': ' + (vals[bad].errs[0] || 'incomplete'));
     return;
   }
 
-  var client = getClientBySN(sn);
-  if (!client) {
-    if (hint) {
-      hint.textContent = 'No match for “' + sn + '” on the Clients sheet' +
-        ((typeof getUserCountry === 'function' && getUserCountry()) ? ' for your country.' : '.');
-      hint.style.color = 'var(--danger)';
-    }
-    if (excessEl) excessEl.style.display = 'none';
-    _rExcess = false;
-    checkReqReady();
-    return;
-  }
-
-  _rClientName = client.clientName || '';
-  if (nameEl) {
-    nameEl.value = _rClientName;
-    nameEl.readOnly = true;
-  }
-  if (hint) {
-    if (client.project && _rProject && client.project !== _rProject) {
-      hint.textContent = 'Matched “' + _rClientName + '” — sheet project is “' + client.project + '” (selected: “' + _rProject + '”).';
-      hint.style.color = 'var(--warn)';
-    } else {
-      hint.textContent = 'Matched: ' + (_rClientName || sn);
-      hint.style.color = 'var(--success)';
-    }
-  }
-
-  var lim = typeof getProjectRequestLimit === 'function' ? getProjectRequestLimit(_rProject) : null;
-  if (lim != null && lim > 0) {
-    var cnt = countRequestsForClientSN(_rProject, sn);
-    if (cnt >= lim) {
-      _rExcess = true;
-      if (excessEl) excessEl.style.display = '';
-      if (hint) {
-        hint.textContent = (hint.textContent || '') + ' · Excess: ' + cnt + '/' + lim + ' requests for this SN.';
-        hint.style.color = 'var(--warn)';
-      }
-    } else {
-      _rExcess = false;
-      if (excessEl) excessEl.style.display = 'none';
-    }
-  } else {
-    _rExcess = false;
-    if (excessEl) excessEl.style.display = 'none';
-  }
-  checkReqReady();
-}
-
-
-function addTransportRow() {
-  _transportRows.push({ desc:'', qty:1, unit:0 });
-  renderTransportRows();
-  checkReqReady();
-}
-function removeTransportRow(i) {
-  _transportRows.splice(i, 1);
-  if (!_transportRows.length) _transportRows.push({ desc:'', qty:1, unit:0 });
-  renderTransportRows();
-  checkReqReady();
-}
-function updateTransportRow(i, field, val) {
-  if (!_transportRows[i]) return;
-  if (field === 'desc') _transportRows[i].desc = val;
-  if (field === 'qty') _transportRows[i].qty = parseFloat(val) || 0;
-  if (field === 'unit') _transportRows[i].unit = parseFloat(val) || 0;
-  renderTransportRows();
-  // Sync amount from breakdown unless standardized
-  var std = getStdAmountForLine(_rSummary, _rProject);
-  if (std == null || !(std > 0)) {
-    document.getElementById('rAmount').value = transportBreakdownTotal();
-  }
-  checkReqReady();
-}
-function transportBreakdownTotal() {
-  return _transportRows.reduce(function(s, r) {
-    return s + (parseFloat(r.qty)||0) * (parseFloat(r.unit)||0);
-  }, 0);
-}
-function renderTransportRows() {
-  var box = document.getElementById('reqTransportRows');
-  if (!box) return;
-  box.innerHTML = _transportRows.map(function(r, i) {
-    var tot = (parseFloat(r.qty)||0) * (parseFloat(r.unit)||0);
-    return '<div style="display:grid;grid-template-columns:2fr 0.7fr 0.9fr 0.9fr 32px;gap:6px;align-items:center">'
-      + '<input type="text" value="'+String(r.desc||'').replace(/"/g,'&quot;')+'" placeholder="e.g. Office to field site" oninput="updateTransportRow('+i+',\'desc\',this.value)">'
-      + '<input type="number" value="'+(r.qty||'')+'" min="0" step="1" oninput="updateTransportRow('+i+',\'qty\',this.value)">'
-      + '<input type="number" value="'+(r.unit||'')+'" min="0" step="1" oninput="updateTransportRow('+i+',\'unit\',this.value)">'
-      + '<input type="text" readonly value="'+tot.toLocaleString()+'" style="background:var(--surface)">'
-      + '<button type="button" class="btn btn-ghost btn-sm" onclick="removeTransportRow('+i+')" title="Remove">×</button>'
-      + '</div>';
-  }).join('');
-  var sumEl = document.getElementById('reqTransportSum');
-  if (sumEl) sumEl.textContent = transportBreakdownTotal().toLocaleString();
-}
-
-function checkReqReady() {
-  var amt  = parseFloat(document.getElementById('rAmount').value||0);
-  var name = (document.getElementById('rName').value||'').trim();
-  var ok   = !!( _rProject && _rType && _rCategory && _rSummary && amt>0 && name );
-
-  if (needsClientSN(_rSummary)) {
-    var client = getClientBySN(document.getElementById('rClientSN').value);
-    if (!client) ok = false;
-  }
-  if (needsTransportBreakdown(_rSummary)) {
-    var tSum = transportBreakdownTotal();
-    if (!_transportRows.length || tSum <= 0) ok = false;
-    // breakdown must match amount (allow 1 unit float slack)
-    if (Math.abs(tSum - amt) > 0.5) ok = false;
-  }
-  if (_rExcess) {
-    var reason = (document.getElementById('rExcessReason').value || '').trim();
-    if (!reason) ok = false;
-  }
-
-  var btn  = document.getElementById('submitReqBtn');
-  if (btn) {
-    btn.disabled     = !ok;
-    btn.style.opacity = ok ? '1' : '.5';
-  }
-}
-
-function submitRequest() {
-  var amount = parseFloat(document.getElementById('rAmount').value||0);
-  var name   = (document.getElementById('rName').value||'').trim();
-  var desc   = (document.getElementById('rDesc').value||'').trim();
-  if (!_rProject||!_rType||!_rCategory||!_rSummary) { toast('Please complete all selections'); return; }
-  if (!amount||amount<=0) { toast('Please enter a valid amount'); return; }
-  if (!name) { toast('Please enter requester name'); return; }
-
-  var clientSN = '', clientName = '';
-  if (needsClientSN(_rSummary)) {
-    var client = getClientBySN(document.getElementById('rClientSN').value);
-    if (!client) { toast('Enter a valid Client SN for your country'); return; }
-    clientSN = String(client.clientSN || document.getElementById('rClientSN').value).trim();
-    clientName = client.clientName || '';
-  }
-
-  var transportBreakdown = null;
-  if (needsTransportBreakdown(_rSummary)) {
-    var tSum = transportBreakdownTotal();
-    if (tSum <= 0) { toast('Complete the transport breakdown'); return; }
-    if (Math.abs(tSum - amount) > 0.5) { toast('Transport breakdown total must equal the request amount'); return; }
-    transportBreakdown = _transportRows.map(function(r){
-      return { desc: r.desc||'', qty: parseFloat(r.qty)||0, unit: parseFloat(r.unit)||0, total: (parseFloat(r.qty)||0)*(parseFloat(r.unit)||0) };
-    });
-  }
-
-  var excessReason = '';
-  if (_rExcess) {
-    excessReason = (document.getElementById('rExcessReason').value || '').trim();
-    if (!excessReason) { toast('Provide a reason for the excess request'); return; }
-  }
-
-  reqCounter++;
-  var num   = 'REQ-'+String(reqCounter).padStart(3,'0');
-  var today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  markLocalWrite(num);
-  deletedStore = (deletedStore || []).filter(function(d){ return String(d.ref) !== String(num); });
-  try { persistDeletedToStorage(); } catch(e) {}
-
+  var name = String(currentUser.name || '').trim();
+  var today = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
   var payee = '';
   if (currentUser && currentUser.payeeNumber) payee = String(currentUser.payeeNumber);
   else {
-    var uMatch = (usersStore || []).find(function(u){
-      var em = (u.email||'').toLowerCase();
-      var nm = (u.name||'').toLowerCase();
+    var uMatch = (usersStore || []).find(function(u) {
+      var em = (u.email || '').toLowerCase();
+      var nm = (u.name || '').toLowerCase();
       return em === name.toLowerCase() || nm === name.toLowerCase() ||
-        (currentUser && em === (currentUser.email||'').toLowerCase());
+        (currentUser && em === (currentUser.email || '').toLowerCase());
     });
     if (uMatch && uMatch.payeeNumber) payee = String(uMatch.payeeNumber);
   }
-  var entry = {
-    ref:num, project:_rProject, type:_rType,
-    category:_rCategory, costSummary:_rSummary, costItem:_rCostItem,
-    description: desc||(_rCategory+' -- '+_rSummary),
-    amount:amount, requester:name,
-    createdBy: (currentUser && currentUser.email) ? String(currentUser.email).toLowerCase() : '',
-    status:'Draft', sigDataUrl:null, sigLabel:null, sigTime:null, date:today,
-    clientSN: clientSN || '',
-    clientName: clientName || '',
-    transportBreakdown: transportBreakdown,
-    isExcess: !!_rExcess,
-    excessReason: excessReason || '',
-    payeeNumber: payee || ''
-  };
-  requestsStore.push(entry);
+
+  var created = [];
+  var anyExcess = false;
+  activeIdx.forEach(function(i) {
+    var f = _reqForms[i], v = vals[i];
+    var parts = v.spec.parts.filter(function(p){ return _partIncluded(f, p); });
+    var refs = parts.map(function() {
+      reqCounter++;
+      return 'REQ-' + String(reqCounter).padStart(3, '0');
+    });
+    var bundle = refs.length > 1 ? refs.join('/') : '';
+    var notes = String(f.desc || '').trim();
+    var excessReason = v.excess ? String(f.excessReason || '').trim() : '';
+    if (v.excess) anyExcess = true;
+    parts.forEach(function(p, j) {
+      var num = refs[j];
+      markLocalWrite(num);
+      deletedStore = (deletedStore || []).filter(function(d){ return String(d.ref) !== String(num); });
+      var description = bundle
+        ? ((notes ? notes + ' · ' : '') + 'Transport & Airtime bundle ' + bundle)
+        : (notes || (f.category + ' -- ' + p.line.costSummary));
+      var breakdown = null;
+      if (p.transport) {
+        breakdown = (f.transportRows || []).map(function(r) {
+          var q = _rqNum(r.qty), u = _rqNum(r.unit);
+          return { desc: r.desc || '', qty: q, unit: u, total: q * u };
+        });
+      }
+      requestsStore.push({
+        ref: num, project: f.project, type: f.type,
+        category: f.category, costSummary: p.line.costSummary || '', costItem: p.line.costItem || '',
+        description: description,
+        amount: _partAmount(f, p), requester: name,
+        createdBy: (currentUser && currentUser.email) ? String(currentUser.email).toLowerCase() : '',
+        status: 'Draft', sigDataUrl: null, sigLabel: null, sigTime: null, date: today,
+        clientSN: v.client ? String(v.client.clientSN) : '',
+        clientName: v.client ? (v.client.clientName || '') : '',
+        transportBreakdown: breakdown,
+        isExcess: !!v.excess,
+        excessReason: excessReason,
+        payeeNumber: payee || '',
+        bundleRef: bundle
+      });
+      created.push(num);
+    });
+  });
+  try { persistDeletedToStorage(); } catch(e) {}
   persistRequestsToStorage();
+
+  _reqForms = [];
+  try { localStorage.removeItem(reqDraftKey()); } catch(e) {}
   closeModal('requestModal');
 
-  // Clear table search/status filters so the new row is not hidden
   try {
     ['bodyDrafts','bodyQueue','bodyPaid'].forEach(function(tid) {
       if (_pageState && _pageState[tid]) {
@@ -6268,9 +6510,28 @@ function submitRequest() {
     }
   } catch(e) {}
 
-  try { localStorage.removeItem(reqDraftKey()); } catch(e) {}
-  toast('Request ' + num + ' saved — open System Requests → Drafts/Pending' + (_rExcess ? ' (excess noted)' : '') + (window._gas404Until ? ' · Sheets offline (local only)' : ''));
+  toast((created.length === 1 ? 'Request ' + created[0] + ' submitted' : created.length + ' requests submitted (' + created[0] + '–' + created[created.length - 1] + ')')
+    + (anyExcess ? ' (excess noted)' : '') + (window._gas404Until ? ' · Sheets offline (local only)' : ''));
   backgroundPush({ fast: true, skipActuals: true });
+}
+function submitRequest() { return submitAllRequests(); }
+
+// ── Floating "+" button (quick new request) ──────────────
+function updateReqFab() {
+  var b = document.getElementById('reqFab');
+  if (!b) {
+    b = document.createElement('button');
+    b.id = 'reqFab';
+    b.type = 'button';
+    b.className = 'rq-fab';
+    b.title = 'New request';
+    b.setAttribute('aria-label', 'New request');
+    b.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    b.addEventListener('click', function(){ openNewRequestModal(); });
+    document.body.appendChild(b);
+  }
+  var role = currentUser ? (currentUser.role || 'requester') : '';
+  b.style.display = (currentUser && role !== 'viewer') ? '' : 'none';
 }
 
 // ── Admin: Request Form Settings UI ──────────────────────
@@ -6795,6 +7056,7 @@ async function pushToSheets(opts) {
         isExcess:         r.isExcess ? 'Yes' : '',
         excessReason:     r.excessReason || '',
         payeeNumber:      r.payeeNumber || '',
+        bundleRef:        r.bundleRef || '',
         transportBreakdown: r.transportBreakdown ? JSON.stringify(r.transportBreakdown) : '',
         // Only include base64 when it exists (avoids shipping empty fields)
         sigDataUrl:       (r.sigDataUrl && r.sigDataUrl.length > 50) ? r.sigDataUrl : '',
@@ -7245,7 +7507,7 @@ function _rebuildRequestsTableNow() {
       +'<td style="font-weight:500">'+r.project+'</td>'
       +'<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
       +'<td style="font-size:12.5px">'+(r.category||'--')+'</td>'
-      +'<td style="color:var(--muted);font-size:12px">'+(r.costSummary||r.description||'--')+'</td>'
+      +'<td style="color:var(--muted);font-size:12px">'+(r.costSummary||r.description||'--')+reqClientHtml(r)+'</td>'
       +'<td class="currency" style="font-weight:600;white-space:nowrap">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
       +'<td style="font-size:12.5px">'+(r.requester||'')+'</td>'
       + payeeCell
@@ -7780,6 +8042,7 @@ function doLogout() {
   try { document.getElementById('loginPassword').value = ''; } catch(e){}
   try { document.getElementById('loginError').style.display = 'none'; } catch(e){}
   closeUserMenu();
+  try { updateReqFab(); closeModal('requestModal'); _reqForms = []; } catch(e){}
   showLoginScreen();
 }
 
@@ -8245,6 +8508,7 @@ function filterHistory(filter) {
       + '<td>'
         + '<div style="font-size:12.5px;color:var(--ink)">'+(r.category||r.description||'--')+'</div>'
         + (r.costSummary ? '<div style="font-size:11px;color:var(--muted)">'+r.costSummary+'</div>' : '')
+        + reqClientHtml(r)
       + '</td>'
       + '<td class="currency" style="font-weight:600;white-space:nowrap">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
       + '<td style="font-size:12px;color:var(--muted);white-space:nowrap">'+fmtDate(r.date)+'</td>'
@@ -9006,6 +9270,7 @@ function buildSidebar() {
   aside.innerHTML =
     '<div class="aside-nav-scroll">' + itemsHtml + '</div>'
     + signOutHtml;
+  try { updateReqFab(); } catch(e) {}
 }
 
 // Called by loginSuccess() after a successful sign-in
