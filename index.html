@@ -1895,6 +1895,7 @@
   .rq-chips { display:flex; flex-wrap:wrap; gap:8px; }
   .rq-chip { padding:7px 14px; border-radius:16px; border:1.5px solid var(--border); background:#fff; color:var(--ink); font-family:inherit; font-size:12.5px; cursor:pointer; transition:all .12s; }
   .rq-chip:hover { border-color:var(--brand); }
+  .rq-lockchip { font-size:10px; margin-left:2px; }
   .rq-chip.is-on { background:#DEECF9; border-color:var(--brand); color:#004578; font-weight:600; }
   .rq-lines { border:1px solid var(--border); border-radius:6px; overflow:hidden; max-height:260px; overflow-y:auto; }
   .rq-line { padding:9px 12px; display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; border-bottom:1px solid var(--border); }
@@ -1937,7 +1938,7 @@
   .rq-footer-left, .rq-footer-right { display:flex; align-items:center; gap:8px; }
   .rq-footer-sum { font-size:12px; color:var(--muted); }
   /* Client tags in request tables / My Submissions */
-  .rq-client-tag { margin-top:3px; font-size:11px; color:var(--ink); display:inline-flex; flex-wrap:wrap; gap:3px; align-items:baseline; background:#F3F9FD; border:1px solid #C7E0F4; border-radius:4px; padding:1px 6px; }
+  .rq-client-tag { margin-top:3px; font-size:11px; color:var(--ink); display:flex; width:max-content; max-width:100%; flex-wrap:wrap; gap:3px; align-items:baseline; background:#F3F9FD; border:1px solid #C7E0F4; border-radius:4px; padding:1px 6px; }
   .rq-client-tag-k { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
   .rq-client-tag-sn { font-family:'IBM Plex Mono',monospace; color:#004578; }
   .rq-bundle-tag { margin-top:3px; font-size:10.5px; color:var(--muted); }
@@ -2242,7 +2243,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table id="tblDrafts"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllDrafts" onchange="toggleAllChecks('drafts',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Date</th><th>Action</th></tr></thead>
+            <table id="tblDrafts"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllDrafts" onchange="toggleAllChecks('drafts',this.checked)" title="Select all"></th><th>Project</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Date</th><th>Action</th></tr></thead>
             <tbody id="bodyDrafts"></tbody></table>
           </div>
         </div>
@@ -2264,7 +2265,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table id="tblQueue"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllQueue" onchange="toggleAllChecks('queue',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Payee #</th><th>Approved</th><th>Action</th></tr></thead>
+            <table id="tblQueue"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllQueue" onchange="toggleAllChecks('queue',this.checked)" title="Select all"></th><th>Project</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Payee #</th><th>Approved</th><th>Action</th></tr></thead>
             <tbody id="bodyQueue"></tbody></table>
           </div>
         </div>
@@ -2302,7 +2303,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table id="tblPaid"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllPaid" onchange="toggleAllChecks('paid',this.checked)" title="Select all"></th><th>Ref #</th><th>Project</th><th>Type</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Payee #</th><th>Finance Signatory</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
+            <table id="tblPaid"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllPaid" onchange="toggleAllChecks('paid',this.checked)" title="Select all"></th><th>Project</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Payee #</th><th>Finance Signatory</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
             <tbody id="bodyPaid"></tbody></table>
           </div>
         </div>
@@ -2804,7 +2805,7 @@
         <div style="font-size:13px;font-weight:600;margin-bottom:8px">Standard amounts by project (Transport / Airtime / Incentives)</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Set amount per <strong>project + cost line</strong>. A project-specific amount overrides an "All projects" amount. When set, requesters cannot edit the amount (for transport lines the breakdown must add up to it).</p>
         <div class="cfg-row cfg-row-std cfg-head">
-          <span>Project</span><span>Cost line</span><span>Amount</span><span></span>
+          <span>Project</span><span>Budget line (Category › Cost summary — Cost item)</span><span>Amount</span><span></span>
         </div>
         <div id="reqStdAmountsList" style="display:grid;gap:8px"></div>
         <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addStdAmountRow()">+ Add standard amount</button>
@@ -5425,20 +5426,39 @@ function _snKey(s) {
   return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 function isClientSNCategory(cat) {
-  var n = _snKey(cat);
-  return n === CLIENT_SN_CATEGORY || (' ' + n + ' ').indexOf(' ' + CLIENT_SN_CATEGORY + ' ') !== -1;
+  return _snKey(cat) === CLIENT_SN_CATEGORY;
 }
 function needsTransportBreakdown(summary) {
   return _lineMatches(summary, TRANSPORT_LINES);
 }
-/** Client SN only for the Field form + the four listed lines (exact match). */
-function needsClientSN(summary, category) {
-  var k = _snKey(summary);
-  if (!k) return false;
-  var lineOk = CLIENT_SN_LINES.some(function(x){ return _snKey(x) === k; });
-  if (!lineOk) return false;
-  if (category === undefined) return true;
-  return isClientSNCategory(category);
+/**
+ * Budget lines are (Cost Summary, Cost Item) pairs, e.g. Field / Transport / "Enumerator Field Transport Usage".
+ * Client SN applies ONLY on the Field form, to:
+ *   Enumerator Field Transport, Enumerator Field Airtime, Cooking Fuel for Households, Client Incentives.
+ */
+function _lineText(summary, item) { return ' ' + _snKey(String(summary || '') + ' ' + String(item || '')) + ' '; }
+function _hasWord(t, w) { return t.indexOf(' ' + w) !== -1; }
+function isEnumFieldTransport(summary, item) {
+  var t = _lineText(summary, item);
+  return _hasWord(t, 'transport') && (_hasWord(t, 'enumerator') || _hasWord(t, 'field transport'))
+    && !_hasWord(t, 'training') && !_hasWord(t, 'refresher') && !_hasWord(t, 'coordinator');
+}
+function isEnumFieldAirtime(summary, item) {
+  var t = _lineText(summary, item);
+  return _hasWord(t, 'airtime') && (_hasWord(t, 'enumerator') || _hasWord(t, 'field airtime'))
+    && !_hasWord(t, 'training') && !_hasWord(t, 'refresher') && !_hasWord(t, 'coordinator');
+}
+function isHouseholdCookingFuel(summary, item) {
+  var t = _lineText(summary, item);
+  return _hasWord(t, 'cooking fuel') || _hasWord(t, 'household fuel');
+}
+function isClientIncentive(summary, item) {
+  return _hasWord(_lineText(summary, item), 'incentive');
+}
+function needsClientSN(summary, category, costItem) {
+  if (category !== undefined && !isClientSNCategory(category)) return false;
+  return isEnumFieldTransport(summary, costItem) || isEnumFieldAirtime(summary, costItem)
+    || isHouseholdCookingFuel(summary, costItem) || isClientIncentive(summary, costItem);
 }
 function isStdAmountLine(summary) {
   var n = _normLine(summary);
@@ -5630,8 +5650,15 @@ function populateClientSNSelect() {
 }
 
 // ── Category visibility ──────────────────────────────────
+function _catRule(cat) {
+  var all = reqFormConfig.categoryRules || {};
+  if (all[cat]) return all[cat];
+  var k = _snKey(cat);
+  var hit = Object.keys(all).find(function(x){ return _snKey(x) === k; });
+  return hit ? all[hit] : null;
+}
 function isCategoryVisibleForUser(cat) {
-  var rules = (reqFormConfig.categoryRules || {})[cat];
+  var rules = _catRule(cat);
   if (!rules) return true;
   if (rules.available === false) {
     if (!currentUser) return false;
@@ -5650,20 +5677,26 @@ function isCategoryVisibleForUser(cat) {
 }
 
 /** Standard amount for a project + cost line (null if not configured). */
-function getStdAmountForLine(summary, project) {
+function getStdAmountForLine(summary, project, costItem) {
   project = project || _rProject || '';
   var list = normalizeStdAmounts_(reqFormConfig.stdAmounts);
   var nLine = _normLine(summary);
+  var nItem = _normLine(costItem);
   var nProj = String(project || '').trim().toLowerCase();
-  var match = null;
+  var best = null, bestScore = -1;
   list.forEach(function(row) {
-    if (_normLine(row.costLine) !== nLine) return;
+    var rl = _normLine(row.costLine), ri = _normLine(row.costItem);
+    var hit;
+    if (ri) hit = (rl === nLine || !rl) && ri === nItem;
+    else hit = rl === nLine || (nItem && (rl === nItem || nItem.indexOf(rl) === 0));
+    if (!hit) return;
     var rp = String(row.project || '').trim().toLowerCase();
-    if (rp && rp === nProj) match = row;
-    else if (!rp && match == null) match = row;
+    if (rp && rp !== nProj) return;
+    var score = (rp ? 2 : 0) + (ri ? 1 : 0);
+    if (score > bestScore) { best = row; bestScore = score; }
   });
-  if (!match || match.amount === '' || match.amount == null) return null;
-  var n = parseFloat(match.amount);
+  if (!best || best.amount === '' || best.amount == null) return null;
+  var n = parseFloat(best.amount);
   return isNaN(n) ? null : n;
 }
 
@@ -5745,7 +5778,7 @@ function groupBundleRows(list) {
     var base = String(first.costSummary || '').replace(/\s*(transport|airtime)\s*$/i, '').trim();
     out.push(Object.assign({}, first, {
       amount: mem.reduce(function(s, m){ return s + (parseFloat(m.amount) || 0); }, 0),
-      costSummary: (base ? base + ' ' : '') + 'Transport & Airtime',
+      costSummary: (isEnumFieldTransport(first.costSummary, first.costItem) ? 'Enumerator Field ' : (base ? base + ' ' : '')) + 'Transport & Airtime',
       transportBreakdown: (mem.find(function(m){ return m.transportBreakdown && m.transportBreakdown.length; }) || {}).transportBreakdown || null,
       _members: mem,
       _bundle: reqBundleOf(first)
@@ -5770,11 +5803,11 @@ function reqClientHtml(r) {
   if (r._members && r._members.length > 1) {
     out += '<div class="rq-bundle-tag">' + r._members.map(function(m) {
       var kind = /airtime/i.test(m.costSummary || '') ? 'Airtime' : 'Transport';
-      return kind + ' ' + _rqEsc(ccy) + ' ' + fmt(parseFloat(m.amount) || 0) + ' <span class="rq-muted">#' + _rqEsc(m.ref) + '</span>';
+      return kind + ' ' + _rqEsc(ccy) + ' ' + fmt(parseFloat(m.amount) || 0);
     }).join(' · ') + '</div>';
   } else {
     var b = reqBundleOf(r);
-    if (b) out += '<div class="rq-bundle-tag">Transport &amp; Airtime · ' + _rqEsc(b) + '</div>';
+    if (b) out += '<div class="rq-bundle-tag">Transport &amp; Airtime</div>';
   }
   var tb = r.transportBreakdown;
   if (typeof tb === 'string') { try { tb = JSON.parse(tb); } catch(e) { tb = null; } }
@@ -5830,37 +5863,25 @@ function _getReqForm(id) {
 function _isBlankForm(f) { return !f || !f.project; }
 
 /** Budget-line options for a form; Transport + Airtime pairs are merged into one option. */
-function _comboParts(summary) {
-  var m = _normLine(summary).match(/^(.*?)\s*(transport|airtime)$/);
-  return m ? { prefix: m[1].trim(), kind: m[2] } : null;
-}
 function getReqLineOptions(project, type, cat) {
   if (!project || !type || !cat) return [];
   var lines = getCostSummaries(project, type, cat);
-  var allowCombo = isClientSNCategory(cat); // Transport & Airtime merge only on the Field form
-  var byPrefix = {};
-  lines.forEach(function(l) {
-    if (!allowCombo) return;
-    var p = _comboParts(l.costSummary);
-    if (!p) return;
-    byPrefix[p.prefix] = byPrefix[p.prefix] || {};
-    if (!byPrefix[p.prefix][p.kind]) byPrefix[p.prefix][p.kind] = l;
-  });
-  var used = {};
+  var t = null, a = null;
+  if (isClientSNCategory(cat)) { // Transport & Airtime merge only on the Field form
+    t = lines.find(function(l){ return isEnumFieldTransport(l.costSummary, l.costItem); }) || null;
+    a = lines.find(function(l){ return isEnumFieldAirtime(l.costSummary, l.costItem); }) || null;
+  }
+  var combo = !!(t && a);
   var out = [];
   lines.forEach(function(l) {
-    var p = allowCombo ? _comboParts(l.costSummary) : null;
-    if (p && byPrefix[p.prefix] && byPrefix[p.prefix].transport && byPrefix[p.prefix].airtime) {
-      if (used[p.prefix]) return;
-      used[p.prefix] = true;
-      var t = byPrefix[p.prefix].transport, a = byPrefix[p.prefix].airtime;
-      var base = String(t.costSummary || '').replace(/\s*transport\s*$/i, '').trim();
-      out.push({ key: 'combo:' + p.prefix, combo: true,
-        label: (base ? base + ' ' : '') + 'Transport & Airtime', t: t, a: a });
+    if (combo && (l === t || l === a)) {
+      if (!out.some(function(o){ return o.combo; })) {
+        out.push({ key: 'combo:enumerator-field', combo: true, label: 'Enumerator Field Transport & Airtime', t: t, a: a });
+      }
       return;
     }
     out.push({ key: 'line:' + (l.costSummary || '') + '|' + (l.costItem || ''), combo: false,
-      label: l.costSummary || '', line: l });
+      label: l.costItem || l.costSummary || '', sub: l.costItem ? (l.costSummary || '') : '', line: l });
   });
   return out;
 }
@@ -5875,16 +5896,16 @@ function _formSpec(f) {
     ? [{ role: 'transport', line: opt.t }, { role: 'airtime', line: opt.a }]
     : [{ role: 'single', line: opt.line }];
   parts.forEach(function(p) {
-    p.std = getStdAmountForLine(p.line.costSummary, f.project);
-    p.transport = p.role !== 'airtime' && needsTransportBreakdown(p.line.costSummary);
+    p.std = getStdAmountForLine(p.line.costSummary, f.project, p.line.costItem);
+    // Standardized transport → no breakdown needed
+    p.transport = p.role !== 'airtime' && !(p.std != null && p.std > 0)
+      && (needsTransportBreakdown(p.line.costSummary) || needsTransportBreakdown(p.line.costItem));
   });
-  var needClient = parts.some(function(p){ return needsClientSN(p.line.costSummary, f.category); });
+  var needClient = parts.some(function(p){ return needsClientSN(p.line.costSummary, f.category, p.line.costItem); });
   return { opt: opt, parts: parts, needClient: needClient };
 }
 function _partIncluded(f, p) {
-  if (p.role === 'transport') return f.incT !== false;
-  if (p.role === 'airtime') return f.incA !== false;
-  return true;
+  return true; // Transport & Airtime are always paired
 }
 function _trTotal(f) {
   return (f.transportRows || []).reduce(function(s, r) {
@@ -6058,7 +6079,14 @@ function openNewRequestModal() {
   openModal('requestModal');
   if (restored) toast('Restored ' + restored + ' saved draft' + (restored === 1 ? '' : 's'));
   _refreshClientsForForms();
-  try { pullReqFormConfig().then(function(changed){ if (changed) _refreshReqStatus(); }); } catch(e) {}
+  try {
+    pullReqFormConfig().then(function(changed) {
+      if (!changed) return;
+      var ae = document.activeElement;
+      if (ae && ae.closest && ae.closest('#reqFormsBox') && /INPUT|TEXTAREA/.test(ae.tagName)) _refreshReqStatus();
+      else _renderReqForms();
+    });
+  } catch(e) {}
 }
 function addReqForm() {
   _reqForms.forEach(function(f){ if (!_isBlankForm(f)) f.collapsed = true; });
@@ -6146,7 +6174,11 @@ function _reqCardHtml(f, idx, v) {
     var cats = getCategories(f.project, f.type).filter(isCategoryVisibleForUser);
     h += '<div class="rq-step"><div class="rq-step-label"><span>2</span>Form</div><div class="rq-chips">'
       + (cats.length ? cats.map(function(c) {
-          return '<button type="button" class="rq-chip' + (c === f.category ? ' is-on' : '') + '" data-act="cat" data-f="' + f.id + '" data-v="' + _rqEsc(c) + '">' + _rqEsc(c) + '</button>';
+          var rl = _catRule(c);
+          var restricted = rl && (rl.available === false || (rl.allowedRoles || []).length);
+          return '<button type="button" class="rq-chip' + (c === f.category ? ' is-on' : '') + '" data-act="cat" data-f="' + f.id + '" data-v="' + _rqEsc(c) + '"'
+            + (restricted ? ' title="Restricted in Form Settings — only admins and allowed roles see this form"' : '') + '>'
+            + _rqEsc(c) + (restricted ? ' <span class="rq-lockchip">🔒</span>' : '') + '</button>';
         }).join('') : '<span class="rq-muted">No forms available for your role on this project.</span>')
       + '</div></div>';
   }
@@ -6157,8 +6189,8 @@ function _reqCardHtml(f, idx, v) {
     h += '<div class="rq-step"><div class="rq-step-label"><span>3</span>Budget line</div>';
     if (spec) {
       h += '<div class="rq-selected-line"><div><div class="rq-line-name">' + _rqEsc(spec.opt.label) + '</div>'
-        + (!spec.opt.combo && spec.opt.line.costItem ? '<div class="rq-muted rq-small">' + _rqEsc(spec.opt.line.costItem) + '</div>' : '')
-        + (spec.opt.combo ? '<div class="rq-muted rq-small">One form → two requests (transport + airtime)</div>' : '')
+        + (!spec.opt.combo && spec.opt.sub ? '<div class="rq-muted rq-small">' + _rqEsc(spec.opt.sub) + '</div>' : '')
+        + (spec.opt.combo ? '<div class="rq-muted rq-small">Transport + airtime · approved together</div>' : '')
         + '</div><button type="button" class="btn btn-ghost btn-sm" data-act="changeLine" data-f="' + f.id + '">Change</button></div>';
       if (!hideBudget) {
         h += '<div class="rq-budget">' + spec.parts.map(function(p) {
@@ -6181,7 +6213,7 @@ function _reqCardHtml(f, idx, v) {
           }, 0);
           right = '<div class="rq-line-rem" style="color:' + (rem < 0 ? 'var(--danger)' : 'var(--success)') + '">Rem ' + _rqEsc(ccy) + ' ' + fmt(rem) + '</div>';
         }
-        var subTxt = o.combo ? 'Transport + airtime in one form' : (o.line.costItem || '');
+        var subTxt = o.combo ? 'Transport + airtime in one request' : (o.sub || '');
         return '<div class="rq-line" data-act="line" data-f="' + f.id + '" data-v="' + _rqEsc(o.key) + '">'
           + '<div><div class="rq-line-name">' + _rqEsc(o.label) + '</div>'
           + (subTxt ? '<div class="rq-muted rq-small">' + _rqEsc(subTxt) + '</div>' : '') + '</div>' + right + '</div>';
@@ -6199,51 +6231,43 @@ function _reqCardHtml(f, idx, v) {
         + _clientInputHtml(f) + '</div>';
     }
 
+    // Amount fields (standard amounts are fixed). Transport needs a breakdown only when not standardized.
+    var simple = [];
+    var breakdownPart = null;
     spec.parts.forEach(function(p) {
-      var inc = _partIncluded(f, p);
       var isStd = p.std != null && p.std > 0;
       var stdBadge = isStd ? ' <span class="rq-std">STANDARD</span>' : '';
-      if (p.role === 'single' && !p.transport) {
-        h += '<div class="rq-grid2"><div class="form-group" style="margin:0"><label>Amount (' + _rqEsc(ccy) + ')' + stdBadge + '</label>'
-          + '<input type="number" inputmode="decimal" min="0" data-f="' + f.id + '" data-k="amount" value="' + _rqEsc(isStd ? p.std : f.amount) + '"' + (isStd ? ' readonly class="rq-ro"' : '') + ' placeholder="0"></div><div></div></div>';
-        return;
-      }
-      if (p.role === 'airtime') {
-        h += '<div class="rq-block' + (inc ? '' : ' is-off') + '"><label class="rq-toggle"><input type="checkbox" data-f="' + f.id + '" data-k="incA"' + (inc ? ' checked' : '') + '> <span class="rq-block-title" style="margin:0">Airtime</span> <span class="rq-muted rq-small">' + _rqEsc(p.line.costSummary) + '</span></label>';
-        if (inc) {
-          h += '<div class="rq-grid2" style="margin-top:8px"><div class="form-group" style="margin:0"><label>Airtime amount (' + _rqEsc(ccy) + ')' + stdBadge + '</label>'
-            + '<input type="number" inputmode="decimal" min="0" data-f="' + f.id + '" data-k="airAmount" value="' + _rqEsc(isStd ? p.std : f.airAmount) + '"' + (isStd ? ' readonly class="rq-ro"' : '') + ' placeholder="0"></div><div></div></div>';
-        }
-        h += '</div>';
-        return;
-      }
-      // Transport (single transport line or combo transport part)
-      var isCombo = p.role === 'transport';
-      h += '<div class="rq-block' + (inc ? '' : ' is-off') + '">';
-      if (isCombo) {
-        h += '<label class="rq-toggle"><input type="checkbox" data-f="' + f.id + '" data-k="incT"' + (inc ? ' checked' : '') + '> <span class="rq-block-title" style="margin:0">Transport</span> <span class="rq-muted rq-small">' + _rqEsc(p.line.costSummary) + '</span></label>';
-      } else {
-        h += '<div class="rq-block-title">Transport breakdown <span class="rq-req">*</span></div>';
-      }
-      if (inc) {
-        h += '<div class="rq-tr-head"><span>Route / description</span><span>Qty</span><span>Unit cost</span><span>Total</span><span></span></div>'
-          + '<div class="rq-tr-rows">' + (f.transportRows || []).map(function(r, i) {
-              var tot = _rqNum(r.qty) * _rqNum(r.unit);
-              return '<div class="rq-tr-row">'
-                + '<input type="text" data-f="' + f.id + '" data-k="tr" data-i="' + i + '" data-field="desc" value="' + _rqEsc(r.desc) + '" placeholder="e.g. Office to field site">'
-                + '<input type="number" inputmode="decimal" min="0" data-f="' + f.id + '" data-k="tr" data-i="' + i + '" data-field="qty" value="' + _rqEsc(r.qty) + '">'
-                + '<input type="number" inputmode="decimal" min="0" data-f="' + f.id + '" data-k="tr" data-i="' + i + '" data-field="unit" value="' + _rqEsc(r.unit) + '">'
-                + '<span class="rq-tr-tot" id="rqtt-' + f.id + '-' + i + '">' + fmt(tot) + '</span>'
-                + '<button type="button" class="rq-icon-btn" data-act="trDel" data-f="' + f.id + '" data-i="' + i + '" title="Remove row" aria-label="Remove row">×</button>'
-                + '</div>';
-            }).join('') + '</div>'
-          + '<div class="rq-tr-foot"><button type="button" class="btn btn-ghost btn-sm" data-act="trAdd" data-f="' + f.id + '">+ Add row</button>'
-          + '<div>Transport amount' + stdBadge + ': <strong id="rqta-' + f.id + '">' + _rqEsc(ccy) + ' ' + fmt(_partAmount(f, p)) + '</strong>'
-          + (isStd ? ' <span class="rq-muted rq-small">· breakdown <span id="rqts-' + f.id + '">' + fmt(_trTotal(f)) + '</span></span>' : '')
-          + '</div></div>';
-      }
-      h += '</div>';
+      if (p.transport) { breakdownPart = p; return; }
+      var key = p.role === 'airtime' ? 'airAmount' : 'amount';
+      var label = p.role === 'transport' ? 'Transport amount' : p.role === 'airtime' ? 'Airtime amount' : 'Amount';
+      var val = isStd ? p.std : f[key];
+      simple.push('<div class="form-group" style="margin:0"><label>' + label + ' (' + _rqEsc(ccy) + ')' + stdBadge + '</label>'
+        + '<input type="number" inputmode="decimal" min="0" data-f="' + f.id + '" data-k="' + key + '" value="' + _rqEsc(val) + '"'
+        + (isStd ? ' readonly class="rq-ro"' : '') + ' placeholder="0"></div>');
     });
+
+    if (breakdownPart) {
+      var bp = breakdownPart;
+      h += '<div class="rq-block"><div class="rq-block-title">' + (spec.opt.combo ? 'Transport — route breakdown' : 'Transport breakdown') + ' <span class="rq-req">*</span></div>'
+        + '<div class="rq-tr-head"><span>Route / description</span><span>Qty</span><span>Unit cost</span><span>Total</span><span></span></div>'
+        + '<div class="rq-tr-rows">' + (f.transportRows || []).map(function(r, i) {
+            var tot = _rqNum(r.qty) * _rqNum(r.unit);
+            return '<div class="rq-tr-row">'
+              + '<input type="text" data-f="' + f.id + '" data-k="tr" data-i="' + i + '" data-field="desc" value="' + _rqEsc(r.desc) + '" placeholder="e.g. Office to field site">'
+              + '<input type="number" inputmode="decimal" min="0" data-f="' + f.id + '" data-k="tr" data-i="' + i + '" data-field="qty" value="' + _rqEsc(r.qty) + '">'
+              + '<input type="number" inputmode="decimal" min="0" data-f="' + f.id + '" data-k="tr" data-i="' + i + '" data-field="unit" value="' + _rqEsc(r.unit) + '">'
+              + '<span class="rq-tr-tot" id="rqtt-' + f.id + '-' + i + '">' + fmt(tot) + '</span>'
+              + '<button type="button" class="rq-icon-btn" data-act="trDel" data-f="' + f.id + '" data-i="' + i + '" title="Remove row" aria-label="Remove row">×</button>'
+              + '</div>';
+          }).join('') + '</div>'
+        + '<div class="rq-tr-foot"><button type="button" class="btn btn-ghost btn-sm" data-act="trAdd" data-f="' + f.id + '">+ Add row</button>'
+        + '<div>Transport amount: <strong id="rqta-' + f.id + '">' + _rqEsc(ccy) + ' ' + fmt(_partAmount(f, bp)) + '</strong></div></div>'
+        + '</div>';
+    }
+    if (simple.length) {
+      if (simple.length === 1) simple.push('<div></div>');
+      h += '<div class="rq-grid2">' + simple.join('') + '</div>';
+    }
 
     if (spec.needClient) {
       h += '<div class="rq-excess" id="rqex-' + f.id + '"' + (v.excess ? '' : ' style="display:none"') + '><div class="rq-excess-title">Excess request — limit reached for this client on this project (<span id="rqexi-' + f.id + '">' + _rqEsc(v.excessInfo) + '</span>)</div>'
@@ -6667,27 +6691,23 @@ function _cfgEsc(s) {
 function _cfgAllProjects() {
   return [...new Set((budgetLines || []).map(function(l){ return l.project; }).filter(Boolean))].sort();
 }
-function _cfgAllCostLines() {
-  var seen = {}, out = [];
-  (budgetLines || []).forEach(function(l) {
-    var k = _normLine(l.costSummary);
-    if (!k || seen[k]) return;
-    seen[k] = 1;
-    out.push(l.costSummary);
-  });
-  return out.sort(function(a, b){ return String(a).localeCompare(String(b)); });
-}
+/** Budget lines as (cost summary, cost item) pairs — what the request form actually uses. */
 function _cfgCostLinesFor(project) {
-  if (!project) return _cfgAllCostLines();
   var seen = {}, out = [];
   (budgetLines || []).forEach(function(l) {
-    if (l.project !== project) return;
-    var k = _normLine(l.costSummary);
-    if (!k || seen[k]) return;
+    if (project && l.project !== project) return;
+    var k = _normLine(l.costSummary) + '\u001f' + _normLine(l.costItem);
+    if (!_normLine(l.costSummary) || seen[k]) return;
     seen[k] = 1;
-    out.push(l.costSummary);
+    out.push({ summary: l.costSummary || '', item: l.costItem || '', category: l.category || '' });
   });
-  return out.sort(function(a, b){ return String(a).localeCompare(String(b)); });
+  return out.sort(function(a, b) {
+    return (a.category + a.summary + a.item).localeCompare(b.category + b.summary + b.item);
+  });
+}
+function _cfgLineKey(summary, item) { return String(summary || '') + '\u001f' + String(item || ''); }
+function _cfgLineLabel(l) {
+  return (l.category ? l.category + ' › ' : '') + l.summary + (l.item ? ' — ' + l.item : '');
 }
 
 async function openReqFormSettings() {
@@ -6696,7 +6716,7 @@ async function openReqFormSettings() {
   try { await Promise.race([pullReqFormConfig(), new Promise(function(r){ setTimeout(r, 6000); })]); } catch(e) {}
   reqFormConfig = loadReqFormConfig();
   _cfgStdRows = normalizeStdAmounts_(reqFormConfig.stdAmounts).map(function(r) {
-    return { project: r.project || '', costLine: r.costLine || '', amount: (r.amount === '' || r.amount == null) ? '' : r.amount };
+    return { project: r.project || '', costLine: r.costLine || '', costItem: r.costItem || '', amount: (r.amount === '' || r.amount == null) ? '' : r.amount };
   });
   _cfgLimitRows = Object.keys(reqFormConfig.projectLimits || {}).map(function(k) {
     return { project: k, max: reqFormConfig.projectLimits[k] };
@@ -6739,18 +6759,29 @@ function renderStdAmountRows() {
     var projList = projects.slice();
     if (row.project && projList.indexOf(row.project) === -1) projList.unshift(row.project);
     var lines = _cfgCostLinesFor(row.project);
-    var hasLine = lines.some(function(l){ return _normLine(l) === _normLine(row.costLine); });
-    if (row.costLine && !hasLine) lines.unshift(row.costLine);
+    var curKey = null;
+    if (row.costLine || row.costItem) {
+      var hit = lines.find(function(l) {
+        if (row.costItem) return _normLine(l.summary) === _normLine(row.costLine) && _normLine(l.item) === _normLine(row.costItem);
+        return false;
+      });
+      if (hit) curKey = _cfgLineKey(hit.summary, hit.item);
+      else {
+        // Legacy row (cost line only) — keep it selectable as-is
+        lines.unshift({ summary: row.costLine, item: row.costItem || '', category: '', legacy: true });
+        curKey = _cfgLineKey(row.costLine, row.costItem || '');
+      }
+    }
     return '<div class="cfg-row cfg-row-std">'
       + '<select data-std-proj="'+i+'" onchange="onStdRowChange('+i+',\'project\',this.value)">'
         + '<option value="">All projects (default)</option>'
         + projList.map(function(p){ return '<option value="'+_cfgEsc(p)+'"'+(p===row.project?' selected':'')+'>'+_cfgEsc(p)+'</option>'; }).join('')
       + '</select>'
-      + '<select data-std-line="'+i+'" onchange="onStdRowChange('+i+',\'costLine\',this.value)">'
-        + '<option value="">— Select cost line —</option>'
+      + '<select data-std-line="'+i+'" onchange="onStdRowChange('+i+',\'line\',this.value)">'
+        + '<option value="">— Select budget line —</option>'
         + lines.map(function(l){
-            var sel = _normLine(l) === _normLine(row.costLine);
-            return '<option value="'+_cfgEsc(l)+'"'+(sel?' selected':'')+'>'+_cfgEsc(l)+(row.costLine && !hasLine && l===row.costLine?' (not in budgets)':'')+'</option>';
+            var k = _cfgLineKey(l.summary, l.item);
+            return '<option value="'+_cfgEsc(k)+'"'+(k===curKey?' selected':'')+'>'+_cfgEsc(_cfgLineLabel(l))+(l.legacy?' (applies to all matching lines)':'')+'</option>';
           }).join('')
       + '</select>'
       + '<input type="number" data-std-val="'+i+'" value="'+_cfgEsc(row.amount)+'" placeholder="Amount" min="0" oninput="onStdRowChange('+i+',\'amount\',this.value)">'
@@ -6760,11 +6791,17 @@ function renderStdAmountRows() {
 }
 function onStdRowChange(i, field, val) {
   if (!_cfgStdRows[i]) return;
+  if (field === 'line') {
+    var parts = String(val || '').split('\u001f');
+    _cfgStdRows[i].costLine = parts[0] || '';
+    _cfgStdRows[i].costItem = parts[1] || '';
+    return;
+  }
   _cfgStdRows[i][field] = val;
-  if (field === 'project') renderStdAmountRows(); // refresh cost lines for that project
+  if (field === 'project') renderStdAmountRows(); // refresh budget lines for that project
 }
 function addStdAmountRow() {
-  _cfgStdRows.push({ project: '', costLine: '', amount: '' });
+  _cfgStdRows.push({ project: '', costLine: '', costItem: '', amount: '' });
   renderStdAmountRows();
 }
 function removeStdAmountRow(i) {
@@ -6777,11 +6814,13 @@ function collectStdAmountRows() {
   _cfgStdRows.forEach(function(r) {
     var line = String(r.costLine || '').trim();
     if (!line) return;
-    var key = String(r.project || '').toLowerCase() + '|' + _normLine(line);
+    var item = String(r.costItem || '').trim();
+    var key = String(r.project || '').toLowerCase() + '|' + _normLine(line) + '|' + _normLine(item);
     if (seen[key]) return;
     seen[key] = 1;
     var v = String(r.amount == null ? '' : r.amount).trim();
-    list.push({ project: String(r.project || '').trim(), costLine: line, amount: v === '' ? '' : (parseFloat(v) || 0) });
+    if (v === '') return;
+    list.push({ project: String(r.project || '').trim(), costLine: line, costItem: item, amount: parseFloat(v) || 0 });
   });
   reqFormConfig.stdAmounts = list;
 }
@@ -7757,9 +7796,8 @@ function _rebuildRequestsTableNow() {
     var payeeCell = withPayee
       ? '<td style="font-family:IBM Plex Mono,monospace;font-size:12px;white-space:nowrap">'+(lookupPayee(r)||'<span style="color:var(--muted)">—</span>')+'</td>'
       : '';
-    return chkCell + '<td style="font-family:IBM Plex Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
+    return chkCell
       +'<td style="font-weight:500">'+r.project+'</td>'
-      +'<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
       +'<td style="font-size:12.5px">'+(r.category||'--')+'</td>'
       +'<td style="color:var(--muted);font-size:12px">'+(r.costSummary||r.description||'--')+reqClientHtml(r)+'</td>'
       +'<td class="currency" style="font-weight:600;white-space:nowrap">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
@@ -7771,7 +7809,7 @@ function _rebuildRequestsTableNow() {
   // ── Tab 1: Drafts/Pending ──
   var bd_el = document.getElementById('bodyDrafts');
   if (bd_el) bd_el.innerHTML = drafts.length===0
-    ? '<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">'
+    ? '<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">'
       + ((requestsStore && requestsStore.length)
           ? ('No pending requests visible (' + requestsStore.length + ' total in store — check tab filters or country).')
           : 'No pending requests')
@@ -7803,7 +7841,7 @@ function _rebuildRequestsTableNow() {
   // ── Tab 3: Paid ──
   var bp_el = document.getElementById('bodyPaid');
   if (bp_el) bp_el.innerHTML = paid.length===0
-    ? '<tr><td colspan="10" style="padding:24px;text-align:center;color:var(--muted)">No paid requests yet</td></tr>'
+    ? '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--muted)">No paid requests yet</td></tr>'
     : paid.map(function(r) {
         var ackCell = r.requesterSigName
           ? '<td><div style="display:flex;align-items:center;gap:6px">'
@@ -9695,49 +9733,40 @@ function deleteSelected(tab) {
   if (!tbody) return;
   var chks = tbody.querySelectorAll('.req-chk:checked');
   if (!chks.length) return;
-  var refs = Array.from(chks).map(function(c){ return c.dataset.ref; });
-  var word = refs.length === 1 ? '1 request' : refs.length + ' requests';
-  refs = expandBundleRefs(refs);
-  if (!confirm('Delete ' + word + '? This cannot be undone.')) return;
+  var rowRefs = Array.from(chks).map(function(c){ return c.dataset.ref; });
+  var refs = expandBundleRefs(rowRefs);
+  var rows = groupBundleRows(refs.map(function(ref){ return requestsStore.find(function(r){ return r.ref === ref; }); }).filter(Boolean));
+  if (!rows.length) return;
 
-  refs.forEach(function(ref) {
-    var idx = requestsStore.findIndex(function(r){ return r.ref === ref; });
-    if (idx < 0) return;
-    var entry = requestsStore[idx];
-    // Explicit user delete — archive and clear write-protection
-    clearProtectedRef(ref);
-    deletedStore.push(Object.assign({}, entry, { deletedAt: new Date().toISOString(), deletedBy: currentUser ? currentUser.name : 'Admin' }));
-    requestsStore.splice(idx, 1);
-  });
-  markLocalWrite(null); // grace period so pull doesn't race the delete push
+  _pendingDeleteRef = rowRefs[0];
+  _pendingDeleteList = refs;
+  _pendingDeleteCount = rows.length;
 
-  persistRequestsToStorage();
-  rebuildRequestsTable();
-  renderDashboard();
-  renderHistory();
-
-  // Reset select-all checkboxes
-  ['Drafts','Queue','Paid'].forEach(function(t){
-    var ca = document.getElementById('chkAll' + t);
-    if (ca) { ca.checked = false; ca.indeterminate = false; }
-    var btn = document.getElementById('delSel' + t);
-    if (btn) btn.style.display = 'none';
-  });
-
-  // Push to Sheets
-  clearInterval(gsAutoSyncTimer);
-  if (gsWebAppUrl) {
-    pushToSheets().then(function(){ startAutoSync(); }).catch(function(){ startAutoSync(); });
-  }
-  toast('Deleted ' + word);
+  var shown = rows.slice(0, 8);
+  document.getElementById('deleteReqDetail').innerHTML =
+    '<div style="font-size:12px;font-weight:600;margin-bottom:6px">' + rows.length + ' request' + (rows.length === 1 ? '' : 's') + ' selected</div>'
+    + shown.map(function(r) {
+        return '<div style="display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-top:1px solid var(--border);font-size:12px">'
+          + '<span>' + (r.project || '') + ' · ' + (r.costSummary || '--') + (r.requester ? ' · ' + r.requester : '') + '</span>'
+          + '<span style="white-space:nowrap;font-weight:600;color:var(--danger)">' + getCurrency(r.project, r.type) + ' ' + (parseFloat(r.amount) || 0).toLocaleString() + '</span></div>';
+      }).join('')
+    + (rows.length > shown.length ? '<div style="font-size:11px;color:var(--muted);padding-top:4px">…and ' + (rows.length - shown.length) + ' more</div>' : '');
+  document.getElementById('deleteReqSubtitle').textContent = 'Selected requests will be archived. Actuals and Sheets will update.';
+  document.getElementById('deleteReqReason').value = '';
+  openModal('deleteReqModal');
+  setTimeout(function(){ try { document.getElementById('deleteReqReason').focus(); } catch(e) {} }, 60);
 }
 
 var _pendingDeleteRef = null;
+var _pendingDeleteList = null;
+var _pendingDeleteCount = 0;
 
 function promptDeleteRequest(ref) {
   var r = requestsStore.find(function(x){ return x.ref === ref; });
   if (!r) return;
   _pendingDeleteRef = ref;
+  _pendingDeleteList = null;
+  _pendingDeleteCount = 1;
 
   var detail = document.getElementById('deleteReqDetail');
   detail.innerHTML =
@@ -9761,9 +9790,13 @@ function promptDeleteRequest(ref) {
 function confirmDeleteRequest() {
   if (!_pendingDeleteRef) return;
   var reason = (document.getElementById('deleteReqReason').value || '').trim();
-  if (!reason) { toast('Please enter a reason for deletion'); return; }
+  if (!reason) {
+    toast('A justification is required to delete');
+    try { document.getElementById('deleteReqReason').focus(); } catch(e) {}
+    return;
+  }
 
-  var _delRefs = bundleMateRefs(_pendingDeleteRef);
+  var _delRefs = _pendingDeleteList || bundleMateRefs(_pendingDeleteRef);
   var _any = false;
   _delRefs.forEach(function(dref) {
     var idx = requestsStore.findIndex(function(r){ return r.ref === dref; });
@@ -9785,12 +9818,23 @@ function confirmDeleteRequest() {
   persistRequestsToStorage();
   markLocalWrite(null);
 
+  var _cnt = _pendingDeleteCount || 1;
   _pendingDeleteRef = null;
+  _pendingDeleteList = null;
+  _pendingDeleteCount = 0;
   closeModal('deleteReqModal');
+
+  // Reset select-all checkboxes / bulk delete buttons
+  ['Drafts','Queue','Paid'].forEach(function(t){
+    var ca = document.getElementById('chkAll' + t);
+    if (ca) { ca.checked = false; ca.indeterminate = false; }
+    var btn = document.getElementById('delSel' + t);
+    if (btn) btn.style.display = 'none';
+  });
 
   // Refresh everything + push to Sheets
   syncAfterChange();
-  toast('Request archived');
+  toast(_cnt > 1 ? _cnt + ' requests archived' : 'Request archived');
 }
 // ============================================================
 // END REQUEST DELETION
@@ -11137,8 +11181,8 @@ function ecfInit() {
     <div class="modal-body">
       <div id="deleteReqDetail" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px"></div>
       <div class="form-group" style="margin:0">
-        <label>Reason for deletion</label>
-        <input id="deleteReqReason" type="text" placeholder="e.g. Duplicate entry, incorrect amount...">
+        <label>Justification for deletion <span style="color:var(--danger)">*</span></label>
+        <input id="deleteReqReason" type="text" placeholder="e.g. Duplicate entry, incorrect amount..." onkeydown="if(event.key==='Enter')confirmDeleteRequest()">
       </div>
     </div>
     <div class="modal-footer">
