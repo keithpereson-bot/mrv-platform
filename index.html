@@ -1953,6 +1953,9 @@
   .cfg-check { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:400; text-transform:none; letter-spacing:0; color:var(--ink); cursor:pointer; margin:0; }
   .cfg-check input { width:auto; margin:0; }
   /* Transport route in request tables */
+  .rq-cs { font-size:12.5px; font-weight:500; color:var(--ink); }
+  .rq-ci { font-size:11px; color:var(--muted); margin-top:1px; }
+  .rq-det-cell > div:first-child, .rq-det-cell > details:first-child { margin-top:0; }
   .rq-route { margin-top:4px; font-size:11.5px; }
   .rq-route summary { cursor:pointer; color:var(--brand); font-weight:600; font-size:11px; list-style:revert; }
   .rq-route-grid { display:grid; grid-template-columns:minmax(120px,auto) auto auto auto; gap:0; margin-top:4px; background:#fff; border:1px solid var(--border); border-radius:4px; width:max-content; max-width:420px; }
@@ -2010,6 +2013,52 @@
   @media (max-width:768px) {
     .inv-row { grid-template-columns:1fr; gap:6px; }
     .inv-actions { justify-content:flex-start; }
+  }
+  /* My Signature */
+  .msig-tabs { display:flex; gap:6px; }
+  .msig-tab { padding:6px 14px; border-radius:16px; border:1.5px solid var(--border); background:#fff; font-family:inherit; font-size:12.5px; cursor:pointer; color:var(--ink); }
+  .msig-tab.is-on { background:#DEECF9; border-color:var(--brand); color:#004578; font-weight:600; }
+  .msig-canvas { width:100%; height:150px; border:2px dashed #C8C6C4; border-radius:10px; background:#fff; display:block; touch-action:none; cursor:crosshair; }
+  .msig-drop { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:150px; border:2px dashed #C8C6C4; border-radius:10px; background:#FAF9F8; cursor:pointer; text-align:center; font-size:13px; color:var(--ink); padding:12px; text-transform:none; letter-spacing:0; font-weight:400; }
+  .msig-drop img { max-height:110px; max-width:100%; background:#fff; border-radius:6px; }
+  .msig-current { display:flex; align-items:center; gap:14px; padding:10px 14px; border:1px solid #C7E0F4; background:#F3F9FD; border-radius:8px; }
+  .msig-current img { height:48px; max-width:180px; object-fit:contain; background:#fff; border:1px solid var(--border); border-radius:6px; padding:4px; }
+  .msig-need { padding:14px; background:#FFF4CE; border:1px solid #FFE17A; border-radius:8px; }
+  .usr-sig-yes { color:#107C10; font-size:12px; font-weight:600; }
+  /* Manage Users */
+  .usr-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+  .usr-head-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .usr-head-actions .btn.is-on { background:#DEECF9; border-color:var(--brand); color:#004578; }
+  .usr-stats { display:flex; gap:8px; flex-wrap:wrap; }
+  .usr-stat { display:flex; align-items:baseline; gap:6px; padding:8px 14px; background:#fff; border:1px solid var(--border); border-radius:8px; cursor:pointer; font-family:inherit; color:var(--ink); }
+  .usr-stat:hover { border-color:var(--brand); }
+  .usr-stat.is-on { border-color:var(--brand); background:#F3F9FD; box-shadow:inset 0 0 0 1px var(--brand); }
+  .usr-stat-n { font-size:16px; font-weight:700; }
+  .usr-stat-l { font-size:12px; color:var(--muted); }
+  .usr-stat-warn .usr-stat-n { color:#835C00; }
+  .usr-table-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .usr-filters select { font-size:12px; padding:4px 8px; width:auto; }
+  .usr-table td { vertical-align:middle; }
+  .usr-name { display:flex; align-items:center; gap:10px; min-width:180px; }
+  .usr-avatar { width:30px; height:30px; border-radius:50%; background:#DEECF9; color:#004578; font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .usr-n { font-size:13px; font-weight:600; color:var(--ink); }
+  .usr-e { font-size:11.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px; }
+  .usr-you { font-size:9.5px; font-weight:700; color:#605E5C; background:#F3F2F1; border-radius:3px; padding:1px 5px; margin-left:4px; vertical-align:middle; }
+  .usr-sel { font-size:12px !important; padding:4px 6px !important; border:1px solid var(--border); border-radius:5px; width:auto !important; min-width:0; }
+  .usr-payee { width:130px !important; font-family:'IBM Plex Mono',monospace; }
+  .usr-date { font-size:11.5px; color:var(--muted); }
+  .usr-src-admin { font-size:9.5px; font-weight:700; color:#605E5C; background:#F3F2F1; border-radius:3px; padding:1px 5px; }
+  .usr-actions { white-space:nowrap; text-align:right; }
+  .usr-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:6px; border:1px solid var(--border); background:#fff; color:#605E5C; cursor:pointer; margin-left:4px; vertical-align:middle; }
+  .usr-icon-btn:hover { border-color:var(--brand); color:var(--brand); }
+  .usr-del:hover { border-color:var(--danger) !important; color:var(--danger) !important; background:#FDE7E9; }
+  .usr-table td, .usr-n, .usr-e { font-family:inherit !important; }
+  tr.usr-inactive td { opacity:.55; }
+  .usr-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+  .usr-form-grid .form-group:nth-child(3), .usr-form-grid .form-group:nth-child(4), .usr-form-grid .form-group:nth-child(5) { grid-column:1 / -1; }
+  @media (max-width:768px) {
+    .usr-form-grid { grid-template-columns:1fr; }
+    .usr-e { max-width:160px; }
   }
   /* Floating new-request button */
   .rq-fab { position:fixed; right:24px; bottom:24px; width:54px; height:54px; border-radius:50%; border:none; background:var(--brand); color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.25); cursor:pointer; z-index:110; display:flex; align-items:center; justify-content:center; transition:transform .12s, box-shadow .12s; }
@@ -2103,6 +2152,7 @@
   </div>
   <div class="aside-item admin-only" onclick="showView('users',this);closeUserMenu()" style="padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer"><span class="aside-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Manage Users</div>
 
+  <div class="aside-item" onclick="closeUserMenu();openMySignature()" style="padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer"><span class="aside-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c3-3 5-9 7-9s-1 9 2 9 3-4 5-4 2 3 4 3"/><line x1="3" y1="21" x2="21" y2="21"/></svg></span> My Signature</div>
   <div style="border-top:1px solid var(--border);margin:4px 0"></div>
   <div onclick="doLogout()" style="padding:8px 12px;border-radius:8px;font-size:13px;color:var(--danger);cursor:pointer;display:flex;align-items:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sign Out</div>
 </div>
@@ -2321,7 +2371,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table id="tblDrafts"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllDrafts" onchange="toggleAllChecks('drafts',this.checked)" title="Select all"></th><th>Project</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Date</th><th>Action</th></tr></thead>
+            <table id="tblDrafts"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllDrafts" onchange="toggleAllChecks('drafts',this.checked)" title="Select all"></th><th>Project</th><th>Cost Summary</th><th>Details</th><th>Amount</th><th>Requester</th><th>Date</th><th>Action</th></tr></thead>
             <tbody id="bodyDrafts"></tbody></table>
           </div>
         </div>
@@ -2343,7 +2393,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table id="tblQueue"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllQueue" onchange="toggleAllChecks('queue',this.checked)" title="Select all"></th><th>Project</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Payee #</th><th>Approved</th><th>Action</th></tr></thead>
+            <table id="tblQueue"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllQueue" onchange="toggleAllChecks('queue',this.checked)" title="Select all"></th><th>Project</th><th>Cost Summary</th><th>Details</th><th>Amount</th><th>Requester</th><th>Payee #</th><th>Approved</th><th>Action</th></tr></thead>
             <tbody id="bodyQueue"></tbody></table>
           </div>
         </div>
@@ -2381,7 +2431,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table id="tblPaid"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllPaid" onchange="toggleAllChecks('paid',this.checked)" title="Select all"></th><th>Project</th><th>Category</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Payee #</th><th>Finance Signatory</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
+            <table id="tblPaid"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllPaid" onchange="toggleAllChecks('paid',this.checked)" title="Select all"></th><th>Project</th><th>Cost Summary</th><th>Details</th><th>Amount</th><th>Requester</th><th>Payee #</th><th>Finance Signatory</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
             <tbody id="bodyPaid"></tbody></table>
           </div>
         </div>
@@ -2616,26 +2666,38 @@
   <!-- -- USERS (Admin only) -- -->
   <div id="view-users" class="view">
     <div class="page-header">
-      <h1>Manage Users</h1>
+      <div class="usr-head">
+        <div>
+          <h1>Manage Users</h1>
+          <p>People, roles and country access</p>
+        </div>
+        <div class="usr-head-actions">
+          <button class="btn btn-ghost btn-sm" onclick="clearUserCache()" title="Reload users from Google Sheets">↻ Refresh</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleInvitePanel()" id="invToggleBtn">Sign-up links</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddUserModal()">+ Add user</button>
+        </div>
+      </div>
     </div>
     <div class="view-body">
     <div class="alert alert-warn" id="usersSheetWarning" style="display:none">
-      !️ <strong>Google Sheets not connected.</strong> Users added here will only work on this device. Connect Google Sheets (Integration -> Google Sheets) so all devices can log in.
+      <strong>Google Sheets not connected.</strong> Users added here only work on this device. Connect Google Sheets (Integration → Google Sheets) so all devices can sign in.
     </div>
     <div class="alert alert-warn" id="usersNoTabWarning" style="display:none">
-      !️ <strong>Users sheet tab not found.</strong> Go to your Apps Script editor, select <code>setupSheets</code> and click Run, then redeploy. This creates the Users tab.
+      <strong>Users sheet tab not found.</strong> In the Apps Script editor run <code>setupSheets</code>, then redeploy.
     </div>
-    <div class="alert alert-info" id="usersSheetOk" style="display:none;justify-content:space-between;align-items:center">
-      <span>OK Connected to Google Sheets -- users sync across all devices.</span>
-      <button class="btn btn-ghost btn-sm" onclick="clearUserCache()" style="white-space:nowrap;margin-left:12px">↺ Refresh list</button>
-    </div>
+    <div id="usersSheetOk" style="display:none"></div>
 
-    <div class="card" id="inviteLinksCard" style="margin-bottom:16px">
+    <!-- Summary / quick filters -->
+    <div class="usr-stats" id="usrStats"></div>
+
+    <!-- Sign-up links (collapsible) -->
+    <div class="card" id="inviteLinksCard" style="display:none">
       <div class="card-header">
         <div>
           <div class="card-title">Sign-up links by country</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">Share a country's link. People who open it fill in their details and are added as <strong>Requesters</strong> for that country. You can change their role or country below at any time.</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Share a country's link. People who open it are added as <strong>Requesters</strong> for that country — change their role or country in the table below at any time.</div>
         </div>
+        <button class="close-btn" onclick="toggleInvitePanel(false)" title="Hide">×</button>
       </div>
       <div class="card-body">
         <div class="form-group" style="margin-bottom:10px">
@@ -2644,19 +2706,44 @@
             <input id="inviteAppUrl" type="url" placeholder="https://your-site.github.io/mrv/" style="flex:1">
             <button type="button" class="btn btn-ghost btn-sm" onclick="saveInviteAppUrl()">Save</button>
           </div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">The web address people open to use the app (e.g. your GitHub Pages link).</div>
         </div>
         <div id="inviteSyncNote" class="alert alert-warn" style="display:none;margin-bottom:10px"></div>
         <div id="inviteLinksList"><div style="font-size:12px;color:var(--muted)">Loading…</div></div>
       </div>
     </div>
 
-    <div class="two-col" style="align-items:start">
-      <!-- Add user form -->
-      <div class="card">
-        <div class="card-header"><div class="card-title">Add / Edit User</div></div>
-        <div class="card-body">
-          <form id="addUserForm" onsubmit="event.preventDefault();addUser();return false;" autocomplete="off">
+    <!-- Users table (full width) -->
+    <div class="card">
+      <div class="card-header usr-table-head">
+        <div class="card-title">Users <span id="userCount" class="badge badge-gray" style="margin-left:6px">0</span></div>
+        <div class="usr-filters">
+          <select id="usrCountryFilter" onchange="setUsersFilter('country', this.value)"><option value="">All countries</option></select>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="usr-table">
+          <thead><tr><th>Name / Email</th><th>Role</th><th>Country</th><th>Payee #</th><th>Signature</th><th>Joined</th><th></th></tr></thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="7" class="text-muted text-sm" style="padding:20px;text-align:center">No users yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- Add user modal -->
+  <div id="addUserModal" class="modal-overlay" onclick="closeModalOutside(event,'addUserModal')">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <strong>Add user</strong>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Or share a country sign-up link so people add themselves.</div>
+        </div>
+        <button class="close-btn" onclick="closeModal('addUserModal')">×</button>
+      </div>
+      <div class="modal-body">
+          <form id="addUserForm" class="usr-form-grid" onsubmit="event.preventDefault();addUser();return false;" autocomplete="off">
           <div class="form-group"><label>Full Name</label><input id="newUserName" name="name" type="text" placeholder="e.g. Alice Omondi" autocomplete="name"></div>
           <div class="form-group"><label>Email</label><input id="newUserEmail" name="username" type="email" placeholder="alice@example.com" autocomplete="username"></div>
           <div class="form-group">
@@ -2683,35 +2770,26 @@
           </div>
           <div class="form-group"><label>Password</label><input id="newUserPass" name="new-password" type="password" placeholder="Min 6 characters" autocomplete="new-password"></div>
           <div class="form-group"><label>Confirm Password</label><input id="newUserPass2" name="confirm-password" type="password" placeholder="Repeat password" autocomplete="new-password"></div>
-          <button type="submit" class="btn btn-primary" style="width:100%">Add User</button>
+          
           </form>
-        </div>
       </div>
-
-      <!-- User list -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Current Users</div>
-          <span id="userCount" class="badge badge-gray">0 users</span>
-        </div>
-        <div class="card-body" style="padding:0">
-          <table>
-            <thead><tr><th>Name / Email</th><th>Role</th><th>Country</th><th>Payee #</th><th></th></tr></thead>
-            <tbody id="usersTableBody">
-              <tr><td colspan="5" class="text-muted text-sm" style="padding:20px;text-align:center">No users yet -- add one to get started</td></tr>
-            </tbody>
-          </table>
-        </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('addUserModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="addUser()">Add user</button>
       </div>
-    </div>
     </div>
   </div>
 
   <!-- -- MY SUBMISSIONS (Requesters only) -- -->
   <div id="view-history" class="view">
     <div class="page-header">
-      <h1>My Submissions</h1>
-      <p>Track approval and payment status for your requests</p>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div>
+          <h1>My Submissions</h1>
+          <p>Track approval and payment status for your requests</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openMySignature()" id="histSigBtn">My signature</button>
+      </div>
     </div>
     <div class="view-body">
     <div id="historyStats" class="stats" style="grid-template-columns:repeat(4,1fr)"></div>
@@ -2818,39 +2896,63 @@
           <div class="sig-applied-time">Your saved signature</div>
         </div>
         <span class="sig-stamp">Ready</span>
-        <button class="btn btn-ghost btn-sm" onclick="clearAckSig()" style="margin-left:8px">Change</button>
+        <button class="btn btn-ghost btn-sm" onclick="openMySignature({ forAck: true })" style="margin-left:8px">Change</button>
       </div>
 
       <div id="ackSigWidget">
-        <div class="alert alert-info" style="margin-bottom:14px;font-size:12.5px">
-          Your signature is saved <strong>only on this device</strong> and is never shared with other users. You can only have one signature at a time.
+        <div class="msig-need">
+          <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">Set up your signature first</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">To acknowledge payments you need your own signature on your account. Draw it or upload a photo — it takes a minute and you only do it once.</div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="openMySignature({ forAck: true })">Set up my signature</button>
         </div>
-
-        <div class="sig-tabs">
-          <button class="sig-tab active" onclick="switchSigTab(this,'ack-saved')">💾 My Saved Signature</button>
-          <button class="sig-tab" onclick="switchSigTab(this,'ack-draw')">✏️ Draw</button>
-        </div>
-
-        <div id="ack-saved" class="sig-panel active">
-          <div id="ackSavedPreview" style="margin-bottom:10px"></div>
-          <p class="text-sm text-muted" style="margin-top:4px">
-            No saved signature yet. Draw one using the canvas below and it will be saved automatically.
-          </p>
-        </div>
-
-        <div id="ack-draw" class="sig-panel">
-          <canvas id="ackCanvas" width="900" height="160" style="width:100%;height:160px;border:2px solid var(--border);border-radius:10px;cursor:crosshair;background:#fff;display:block;touch-action:none;"></canvas>
-          <div class="flex gap-2" style="margin-top:8px">
-            <button class="btn btn-ghost btn-sm" onclick="clearCanvas('ackCanvas')">Clear</button>
-            <button class="btn btn-secondary btn-sm" onclick="saveAndApplyAckSig('draw')">Save & Use This Signature</button>
-          </div>
-        </div>
-
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('ackModal')">Cancel</button>
       <button class="btn btn-primary" id="confirmAckBtn" onclick="confirmAck()" disabled style="opacity:.5">Confirm & Sign</button>
+    </div>
+  </div>
+</div>
+
+<!-- My Signature (personal, synced to account) -->
+<div id="mySigModal" class="modal-overlay" onclick="closeModalOutside(event,'mySigModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <strong>My Signature</strong>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Your own signature — used when you sign or acknowledge payments. Only you can set it.</div>
+      </div>
+      <button class="close-btn" onclick="closeModal('mySigModal')">×</button>
+    </div>
+    <div class="modal-body" style="display:grid;gap:14px">
+      <div id="mySigCurrent"></div>
+      <div class="msig-tabs">
+        <button type="button" class="msig-tab is-on" data-msig="draw" onclick="switchMySigTab('draw')">Draw</button>
+        <button type="button" class="msig-tab" data-msig="upload" onclick="switchMySigTab('upload')">Upload photo</button>
+      </div>
+      <div id="msig-draw">
+        <canvas id="mySigCanvas" width="900" height="240" class="msig-canvas"></canvas>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <span style="font-size:11px;color:var(--muted)">Sign with your finger or mouse</span>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="clearCanvas('mySigCanvas')">Clear</button>
+        </div>
+      </div>
+      <div id="msig-upload" style="display:none">
+        <label class="msig-drop">
+          <input type="file" id="mySigFile" accept="image/png,image/jpeg" onchange="onMySigFile(event)" style="display:none">
+          <span id="mySigDropTxt">Tap to choose a photo of your signature<br><span style="font-size:11px;color:var(--muted)">Sign on plain white paper — the background is removed automatically</span></span>
+          <img id="mySigUploadPrev" alt="" style="display:none">
+        </label>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Confirm with your password</label>
+        <input type="password" id="mySigPass" autocomplete="current-password" placeholder="Your sign-in password">
+      </div>
+      <div id="mySigErr" style="display:none;color:#A4262C;font-size:12.5px;padding:8px 10px;background:#FDE7E9;border-radius:4px;border:1px solid #F1A9A9"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('mySigModal')">Cancel</button>
+      <button class="btn btn-primary" id="mySigSaveBtn" onclick="saveMySignature()">Save signature</button>
     </div>
   </div>
 </div>
@@ -3259,17 +3361,9 @@ function sigStorageKey() {
 function loadSigsFromStorage() {
   try {
     // Try user-scoped key first, then legacy shared key
-    var key = sigStorageKey();
-    var s = localStorage.getItem(key);
-    if (!s && key !== 'mrv_saved_signatures') {
-      // Check for demo sig in old shared key; ignore it (id===1 was seeded)
-      var legacy = localStorage.getItem('mrv_saved_signatures');
-      if (legacy) {
-        var parsed = JSON.parse(legacy);
-        var valid  = parsed.filter(function(x){ return x.id !== 1 && x.label !== 'Finance Officer'; });
-        return valid;
-      }
-    }
+    // Strictly per-user: never fall back to a shared/legacy key (that could expose another person's signature)
+    if (!currentUser || !currentUser.email) return [];
+    var s = localStorage.getItem(sigStorageKey());
     return s ? JSON.parse(s) : [];
   } catch(e) { return []; }
 }
@@ -7946,8 +8040,9 @@ function _rebuildRequestsTableNow() {
       : '';
     return chkCell
       +'<td style="font-weight:500">'+r.project+'</td>'
-      +'<td style="font-size:12.5px">'+(r.category||'--')+'</td>'
-      +'<td style="color:var(--muted);font-size:12px">'+(r.costSummary||r.description||'--')+reqClientHtml(r)+'</td>'
+      +'<td class="rq-cs-cell"><div class="rq-cs">'+_rqEsc(r.costSummary||r.description||'--')+'</div>'
+        +(!r._members && r.costItem ? '<div class="rq-ci">'+_rqEsc(r.costItem)+'</div>' : '')+'</td>'
+      +'<td class="rq-det-cell">'+(reqClientHtml(r) || '<span class="rq-muted">—</span>')+'</td>'
       +'<td class="currency" style="font-weight:600;white-space:nowrap">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
       +'<td style="font-size:12.5px">'+(r.requester||'')+'</td>'
       + payeeCell
@@ -8268,7 +8363,8 @@ function normalizeUserFromSheet_(u) {
     password: storedPass,
     active: String(u.active != null ? u.active : (u.Active != null ? u.Active : 'true')).toLowerCase() !== 'false',
     created: u.created || u.Created || '',
-    source: u.source || u.Source || ''
+    source: u.source || u.Source || '',
+    hasSignature: !!u.hasSignature
   };
 }
 
@@ -8640,6 +8736,7 @@ async function addUser() {
   persistUsersToStorage();
   ['newUserName','newUserEmail','newUserPass','newUserPass2','newUserPayee'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   renderUsersTable();
+  try { closeModal('addUserModal'); } catch(e) {}
   await pushUsersToSheets();
   toast('User added -- ' + (country ? 'restricted to ' + country : 'all countries'));
 }
@@ -8682,6 +8779,30 @@ async function deleteUser(id) {
   toast('User removed');
 }
 
+var _usersFilter = { role: '', country: '', special: '' };
+
+function setUsersFilter(key, val) {
+  if (key === 'role') { _usersFilter.special = ''; _usersFilter.role = (_usersFilter.role === val ? '' : val); }
+  else if (key === 'special') { _usersFilter.role = ''; _usersFilter.special = (_usersFilter.special === val ? '' : val); }
+  else _usersFilter[key] = val;
+  renderUsersTable();
+}
+function openAddUserModal() {
+  populateCountryDropdown();
+  toggleCountryField();
+  openModal('addUserModal');
+  setTimeout(function(){ try { document.getElementById('newUserName').focus(); } catch(e) {} }, 60);
+}
+function toggleInvitePanel(force) {
+  var c = document.getElementById('inviteLinksCard');
+  if (!c) return;
+  var show = force === undefined ? c.style.display === 'none' : !!force;
+  c.style.display = show ? '' : 'none';
+  var b = document.getElementById('invToggleBtn');
+  if (b) b.classList.toggle('is-on', show);
+  if (show) { try { loadInviteLinks(); } catch(e) {} }
+}
+
 function renderUsersTable() {
   const tbody = document.getElementById('usersTableBody');
   const count = document.getElementById('userCount');
@@ -8689,47 +8810,91 @@ function renderUsersTable() {
 
   // Deduplicate by email in case localStorage had stale duplicates
   const seen = new Set();
-  const unique = usersStore.filter(u => {
+  usersStore = usersStore.filter(u => {
     const key = (u.email||'').toLowerCase();
     if (seen.has(key)) return false;
     seen.add(key); return true;
   });
-  usersStore = unique;
 
-  if (count) count.textContent = usersStore.length + ' user' + (usersStore.length===1?'':'s');
+  var esc = function(x){ return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var ROLES = ['requester','approver','manager','viewer','admin'];
+  var RLABEL = { requester:'Requesters', approver:'Approvers', manager:'Managers', viewer:'Viewers', admin:'Admins' };
+  var countries = [...new Set(budgetLines.map(function(l){ return l.country; }).concat(usersStore.map(function(u){ return u.country; })).filter(Boolean))].sort();
 
-  const badge = r => ({
-    admin:     '<span class="login-role-badge role-admin">Admin</span>',
-    approver:  '<span class="login-role-badge role-approver">Approver</span>',
-    requester: '<span class="login-role-badge role-requester">Requester</span>',
-    viewer:    '<span class="login-role-badge role-viewer">👁 Viewer</span>',
-    manager:   '<span class="login-role-badge role-admin">⬡ Manager</span>'
-  }[r] || r);
+  // Stats / quick filters
+  var stats = document.getElementById('usrStats');
+  if (stats) {
+    var byRole = {}; ROLES.forEach(function(r){ byRole[r] = 0; });
+    var viaLink = 0, noSig = 0;
+    usersStore.forEach(function(u) {
+      var r = (u.role || 'requester'); byRole[r] = (byRole[r] || 0) + 1;
+      if (/invite/i.test(u.source || '')) viaLink++;
+      if (!u.hasSignature && r === 'requester') noSig++;
+    });
+    var chip = function(key, val, label, n, extra) {
+      var on = (key === 'role' ? _usersFilter.role === val : _usersFilter.special === val);
+      return '<button type="button" class="usr-stat' + (on ? ' is-on' : '') + (extra || '') + '" onclick="setUsersFilter(\'' + key + '\',\'' + val + '\')">'
+        + '<span class="usr-stat-n">' + n + '</span><span class="usr-stat-l">' + label + '</span></button>';
+    };
+    stats.innerHTML =
+      '<button type="button" class="usr-stat' + (!_usersFilter.role && !_usersFilter.special ? ' is-on' : '') + '" onclick="_usersFilter.role=\'\';_usersFilter.special=\'\';renderUsersTable()"><span class="usr-stat-n">' + usersStore.length + '</span><span class="usr-stat-l">All users</span></button>'
+      + ROLES.filter(function(r){ return byRole[r]; }).map(function(r){ return chip('role', r, RLABEL[r], byRole[r]); }).join('')
+      + (viaLink ? chip('special', 'link', 'Joined via link', viaLink) : '')
+      + (noSig ? chip('special', 'nosig', 'Requesters without signature', noSig, ' usr-stat-warn') : '');
+  }
+  var cf = document.getElementById('usrCountryFilter');
+  if (cf) {
+    cf.innerHTML = '<option value="">All countries</option>' + countries.map(function(c){ return '<option value="' + esc(c) + '"' + (c === _usersFilter.country ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('')
+      + '<option value="__none"' + (_usersFilter.country === '__none' ? ' selected' : '') + '>No country (all access)</option>';
+  }
 
-  if (usersStore.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No users yet -- add one using the form</td></tr>';
+  var list = usersStore.filter(function(u) {
+    if (_usersFilter.role && (u.role || 'requester') !== _usersFilter.role) return false;
+    if (_usersFilter.special === 'link' && !/invite/i.test(u.source || '')) return false;
+    if (_usersFilter.special === 'nosig' && (u.hasSignature || (u.role || 'requester') !== 'requester')) return false;
+    if (_usersFilter.country === '__none' && u.country) return false;
+    if (_usersFilter.country && _usersFilter.country !== '__none' && u.country !== _usersFilter.country) return false;
+    return true;
+  }).sort(function(a, b) {
+    var ra = ROLES.indexOf(a.role || 'requester'), rb = ROLES.indexOf(b.role || 'requester');
+    return String(a.name || '').localeCompare(String(b.name || ''));
+  });
+
+  if (count) count.textContent = list.length === usersStore.length ? usersStore.length : (list.length + ' of ' + usersStore.length);
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">'
+      + (usersStore.length ? 'No users match this filter' : 'No users yet — click “+ Add user” or share a sign-up link') + '</td></tr>';
+    try { if (document.getElementById('inviteLinksList')) renderInviteLinks(); } catch(e) {}
     return;
   }
 
-  tbody.innerHTML = usersStore.map(function(u) {
+  tbody.innerHTML = list.map(function(u) {
     var isSelf = currentUser && currentUser.email === (u.email||'').toLowerCase();
-    var countries = [...new Set(budgetLines.map(function(l){ return l.country; }).filter(Boolean))].sort();
-    var countryOpts = '<option value=""'+(u.country===''||!u.country?' selected':'')+'">All</option>'
-      + countries.map(function(c){ return '<option value="'+c+'"'+(c===u.country?' selected':'')+'>'+c+'</option>'; }).join('');
-    var roleOpts = ['requester','viewer','approver','manager','admin'].map(function(r){
+    var initials = String(u.name || u.email || '?').trim().split(/\s+/).map(function(w){ return w.charAt(0); }).slice(0, 2).join('').toUpperCase();
+    var countryOpts = '<option value=""'+(!u.country?' selected':'')+'>All</option>'
+      + countries.map(function(c){ return '<option value="'+esc(c)+'"'+(c===u.country?' selected':'')+'>'+esc(c)+'</option>'; }).join('');
+    var roleOpts = ROLES.map(function(r){
       return '<option value="'+r+'"'+(r===(u.role||'requester')?' selected':'')+'>'+r.charAt(0).toUpperCase()+r.slice(1)+'</option>';
     }).join('');
-    return '<tr id="urow-'+u.id+'">'
-      + '<td style="font-weight:500;color:var(--ink)">'+(u.name||'--')+(/invite/i.test(u.source||'')?'<span class="inv-src" title="Joined via sign-up link'+(u.created?' on '+u.created:'')+'">LINK</span>':'')+'<div style="font-size:11px;color:var(--muted)">'+(u.email||'')+'</div></td>'
-      + '<td><select data-uid="'+u.id+'" data-field="role" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;'+(isSelf?'opacity:.5;pointer-events:none':'')+'">'+roleOpts+'</select></td>'
-      + '<td><select data-uid="'+u.id+'" data-field="country" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px">'+countryOpts+'</select></td>'
-      + '<td><input type="text" data-uid="'+u.id+'" data-field="payeeNumber" value="'+String(u.payeeNumber||'').replace(/"/g,'&quot;')+'" placeholder="Payee #" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;width:120px;font-family:IBM Plex Mono,monospace"></td>'
-      + '<td style="white-space:nowrap">'
-        + '<button type="button" class="btn btn-ghost btn-sm" onclick="resetUserPassword('+u.id+')" title="Set a new password">Set pwd</button>'
-        + (isSelf ? '' : '<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteUser('+u.id+')">Remove</button>')
+    var viaLink = /invite/i.test(u.source || '');
+    var joined = (viaLink ? '<span class="inv-src">LINK</span> ' : (u.source ? '<span class="usr-src-admin">Admin</span> ' : ''))
+      + '<span class="usr-date">' + esc(u.created || '—') + '</span>';
+    var sig = u.hasSignature ? '<span class="usr-sig-yes">✓ Set</span>' : '<span class="rq-muted" style="font-size:12px">—</span>';
+    return '<tr id="urow-'+u.id+'"' + (u.active === false ? ' class="usr-inactive"' : '') + '>'
+      + '<td><div class="usr-name"><span class="usr-avatar">' + esc(initials) + '</span><div style="min-width:0"><div class="usr-n">' + esc(u.name || '--') + (isSelf ? ' <span class="usr-you">you</span>' : '') + '</div><div class="usr-e">' + esc(u.email || '') + '</div></div></div></td>'
+      + '<td><select class="usr-sel" data-uid="'+u.id+'" data-field="role" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)"'+(isSelf?' disabled title="You cannot change your own role"':'')+'>'+roleOpts+'</select></td>'
+      + '<td><select class="usr-sel" data-uid="'+u.id+'" data-field="country" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)">'+countryOpts+'</select></td>'
+      + '<td><input type="text" class="usr-sel usr-payee" data-uid="'+u.id+'" data-field="payeeNumber" value="'+esc(u.payeeNumber||'')+'" placeholder="Payee #" onchange="updateUserField(+this.dataset.uid,this.dataset.field,this.value)"></td>'
+      + '<td>' + sig + '</td>'
+      + '<td style="white-space:nowrap">' + joined + '</td>'
+      + '<td class="usr-actions">'
+        + '<button type="button" class="usr-icon-btn" onclick="resetUserPassword('+u.id+')" title="Set a new password" aria-label="Set password"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button>'
+        + (isSelf ? '<span class="usr-icon-btn" style="visibility:hidden"></span>' : '<button type="button" class="usr-icon-btn usr-del" onclick="deleteUser('+u.id+')" title="Remove user" aria-label="Remove user"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>')
       + '</td>'
       + '</tr>';
   }).join('');
+  try { enableSmartTable('usersTableBody', { placeholder:'Search name, email or payee #…', pageSize:20 }); } catch(e) {}
   try { if (document.getElementById('inviteLinksList')) renderInviteLinks(); } catch(e) {}
 }
 
@@ -8756,7 +8921,7 @@ function clearUserCache() {
 }
 // Populate country dropdown when opening Users view
 function onUsersViewOpen() {
-  try { loadInviteLinks(); } catch(e) {}
+  try { var ic = document.getElementById('inviteLinksCard'); if (ic && ic.style.display !== 'none') loadInviteLinks(); } catch(e) {}
   populateCountryDropdown();
   toggleCountryField();
   checkUsersSheetStatus();
@@ -8806,6 +8971,188 @@ async function pullUsersFromSheets() {
   } catch(e) { console.error('pullUsers:', e); }
 }
 
+
+
+// ==============================================================
+// MY SIGNATURE — one personal signature per user, stored on the account
+// (UserSignatures tab), password-confirmed, never shared between users.
+// ==============================================================
+var _mySigOpts = {};
+var _mySigUpload = null;
+
+function hasOwnSignature() {
+  var s = savedSigs && savedSigs[0];
+  return !!(s && s.dataUrl && s.synced && currentUser && String(s.owner || '').toLowerCase() === String(currentUser.email || '').toLowerCase());
+}
+function _mySigLabel() {
+  var roleLabel = { admin:'Admin', manager:'Manager', approver:'Approver', requester:'Requester', viewer:'Viewer' };
+  return currentUser ? (currentUser.name + ' \u2014 ' + (roleLabel[currentUser.role] || currentUser.role)) : 'My Signature';
+}
+function _setOwnSignature(dataUrl, when) {
+  savedSigs = dataUrl ? [{
+    label: _mySigLabel(), dataUrl: dataUrl,
+    date: when || new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }),
+    id: Date.now(), synced: true, owner: currentUser ? String(currentUser.email || '').toLowerCase() : ''
+  }] : [];
+  persistSigsToStorage();
+  try { refreshSigGrids(); } catch(e) {}
+}
+
+/** Load this user's signature from their account (called after login). */
+async function pullMySignature() {
+  if (!currentUser || !currentUser.email) return;
+  savedSigs = loadSigsFromStorage();
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
+  try {
+    var res = await gasCall({ action: 'getMySignature', email: String(currentUser.email).toLowerCase() });
+    if (res && res.ok) {
+      if (res.signature) {
+        var d = res.updatedAt ? new Date(res.updatedAt) : null;
+        _setOwnSignature(res.signature, d && !isNaN(d) ? d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '');
+      } else if (hasOwnSignature()) {
+        // Removed on the account → remove here too
+        _setOwnSignature(null);
+      }
+    }
+  } catch(e) {}
+}
+
+function openMySignature(opts) {
+  if (!currentUser) return;
+  _mySigOpts = opts || {};
+  _mySigUpload = null;
+  var cur = document.getElementById('mySigCurrent');
+  if (hasOwnSignature()) {
+    var sg = savedSigs[0];
+    cur.innerHTML = '<div class="msig-current"><img src="' + sg.dataUrl + '" alt="Your signature"><div>'
+      + '<div style="font-size:13px;font-weight:600">' + _rqEsc(currentUser.name || '') + '</div>'
+      + '<div style="font-size:11px;color:var(--muted)">Current signature' + (sg.date ? ' · saved ' + _rqEsc(sg.date) : '') + '</div>'
+      + '<div style="font-size:11px;color:var(--brand);margin-top:2px">Draw or upload below to replace it</div></div></div>';
+  } else {
+    cur.innerHTML = '<div style="font-size:12.5px;color:var(--muted)">You have no signature on your account yet.</div>';
+  }
+  document.getElementById('mySigPass').value = '';
+  document.getElementById('mySigErr').style.display = 'none';
+  var prev = document.getElementById('mySigUploadPrev');
+  prev.style.display = 'none'; prev.src = '';
+  document.getElementById('mySigDropTxt').style.display = '';
+  document.getElementById('mySigFile').value = '';
+  switchMySigTab('draw');
+  openModal('mySigModal');
+  setTimeout(function(){ initCanvas('mySigCanvas'); clearCanvas('mySigCanvas'); }, 60);
+}
+function switchMySigTab(t) {
+  document.querySelectorAll('.msig-tab').forEach(function(b){ b.classList.toggle('is-on', b.getAttribute('data-msig') === t); });
+  document.getElementById('msig-draw').style.display = t === 'draw' ? '' : 'none';
+  document.getElementById('msig-upload').style.display = t === 'upload' ? '' : 'none';
+  if (t === 'draw') setTimeout(function(){ initCanvas('mySigCanvas'); }, 30);
+}
+
+/** Make background transparent, crop to the ink, scale down → compact PNG data URL. */
+function _cleanSignature(src, isPhoto) {
+  var w = src.width, h = src.height;
+  var c = document.createElement('canvas'); c.width = w; c.height = h;
+  var x = c.getContext('2d');
+  x.drawImage(src, 0, 0);
+  var img = x.getImageData(0, 0, w, h), d = img.data;
+  var minX = w, minY = h, maxX = -1, maxY = -1;
+  for (var y = 0; y < h; y++) {
+    for (var i = 0; i < w; i++) {
+      var k = (y * w + i) * 4;
+      var a = d[k + 3];
+      var lum = 0.299 * d[k] + 0.587 * d[k + 1] + 0.114 * d[k + 2];
+      var ink = a > 20 && lum < (isPhoto ? 150 : 235);
+      if (!ink) { d[k + 3] = 0; continue; }
+      d[k] = 13; d[k + 1] = 43; d[k + 2] = 30; d[k + 3] = isPhoto ? Math.min(255, Math.round((150 - lum) * 2.2 + 90)) : a;
+      if (i < minX) minX = i; if (i > maxX) maxX = i; if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < 0) return null;
+  x.putImageData(img, 0, 0);
+  var pad = 8;
+  minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+  maxX = Math.min(w - 1, maxX + pad); maxY = Math.min(h - 1, maxY + pad);
+  var cw = maxX - minX + 1, ch = maxY - minY + 1;
+  var maxW = 520, maxH = 170, out = null;
+  for (var attempt = 0; attempt < 5; attempt++) {
+    var sc = Math.min(1, maxW / cw, maxH / ch);
+    var o = document.createElement('canvas');
+    o.width = Math.max(1, Math.round(cw * sc)); o.height = Math.max(1, Math.round(ch * sc));
+    o.getContext('2d').drawImage(c, minX, minY, cw, ch, 0, 0, o.width, o.height);
+    out = o.toDataURL('image/png');
+    if (out.length < 45000) break;
+    maxW = Math.round(maxW * 0.75); maxH = Math.round(maxH * 0.75);
+  }
+  return out.length < 48000 ? out : null;
+}
+function onMySigFile(e) {
+  var file = e.target.files && e.target.files[0];
+  if (!file) return;
+  var err = document.getElementById('mySigErr');
+  err.style.display = 'none';
+  var r = new FileReader();
+  r.onload = function(ev) {
+    var im = new Image();
+    im.onload = function() {
+      // Downscale very large photos first
+      var sc = Math.min(1, 1400 / Math.max(im.width, im.height));
+      var c = document.createElement('canvas');
+      c.width = Math.round(im.width * sc); c.height = Math.round(im.height * sc);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      var out = _cleanSignature(c, true);
+      if (!out) { err.textContent = 'No signature found in that image — use a clear photo of your signature on white paper.'; err.style.display = 'block'; return; }
+      _mySigUpload = out;
+      var prev = document.getElementById('mySigUploadPrev');
+      prev.src = out; prev.style.display = '';
+      document.getElementById('mySigDropTxt').style.display = 'none';
+    };
+    im.src = ev.target.result;
+  };
+  r.readAsDataURL(file);
+}
+
+async function saveMySignature() {
+  var err = document.getElementById('mySigErr');
+  var fail = function(m){ err.textContent = m; err.style.display = 'block'; };
+  err.style.display = 'none';
+  var drawMode = document.getElementById('msig-draw').style.display !== 'none';
+  var dataUrl = null;
+  if (drawMode) {
+    if (isCanvasBlank('mySigCanvas')) return fail('Draw your signature first.');
+    dataUrl = _cleanSignature(document.getElementById('mySigCanvas'), false);
+  } else {
+    dataUrl = _mySigUpload;
+  }
+  if (!dataUrl) return fail(drawMode ? 'Could not read the signature — please draw again.' : 'Choose a photo of your signature first.');
+  var pass = document.getElementById('mySigPass').value || '';
+  if (!pass) return fail('Enter your password to confirm it is you.');
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return fail('You need to be connected to save your signature to your account.');
+  var btn = document.getElementById('mySigSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    var passHash = await hashPassword(pass);
+    var res = await gasCall({ action: 'saveMySignature', email: String(currentUser.email || '').toLowerCase(), passHash: passHash, signature: dataUrl });
+    if (res && res.ok && res.saved) {
+      _setOwnSignature(dataUrl);
+      closeModal('mySigModal');
+      toast('Signature saved to your account');
+      if (_mySigOpts.forAck) { try { useExistingAckSig(); } catch(e) {} }
+      try {
+        var me = (usersStore || []).find(function(u){ return String(u.email || '').toLowerCase() === String(currentUser.email || '').toLowerCase(); });
+        if (me) { me.hasSignature = true; persistUsersToStorage(); }
+        renderUsersTable();
+      } catch(e) {}
+    } else if (res && /unknown action/i.test(String(res.error || ''))) {
+      fail('The server needs the latest Apps Script to save signatures. Ask your administrator.');
+    } else {
+      fail((res && res.error) || 'Could not save your signature.');
+    }
+  } catch(e) {
+    fail('Could not save: ' + (e.message || e));
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save signature';
+  }
+}
 
 // ==============================================================
 // COUNTRY SIGN-UP LINKS
@@ -9249,27 +9596,13 @@ function openAckModal(ref) {
   var btn = document.getElementById('confirmAckBtn');
   btn.disabled = true; btn.style.opacity = '.5';
 
-  // Load saved signature into ack-saved panel
-  var preview = document.getElementById('ackSavedPreview');
-  if (savedSigs.length > 0) {
-    var sig = savedSigs[0];
-    preview.innerHTML = '<div style="border:1.5px solid var(--amber);border-radius:8px;padding:12px 16px;background:var(--amber-lt);display:flex;align-items:center;gap:14px;cursor:pointer" onclick="useExistingAckSig()">'
-      + '<img src="'+sig.dataUrl+'" style="height:44px;object-fit:contain;max-width:140px;background:#fff;border-radius:4px;padding:4px;border:1px solid var(--border)">'
-      + '<div>'
-        + '<div style="font-size:13px;font-weight:600;color:var(--ink)">'+sig.label+'</div>'
-        + '<div style="font-size:11px;color:var(--muted)">Saved '+sig.date+' &mdash; click to use</div>'
-      + '</div>'
-    + '</div>';
-  } else {
-    preview.innerHTML = '<div style="padding:12px;background:var(--surface);border-radius:8px;font-size:12.5px;color:var(--muted)">No saved signature yet. Draw or upload one below.</div>';
-  }
-
+  // Use the requester's own (account) signature
+  if (hasOwnSignature()) useExistingAckSig();
   openModal('ackModal');
-  setTimeout(function(){ initCanvas('ackCanvas'); }, 100);
 }
 
 function useExistingAckSig() {
-  if (!savedSigs.length) return;
+  if (!hasOwnSignature()) return;
   _pendingAckSig = savedSigs[0].dataUrl;
   document.getElementById('ackSigImg').src = _pendingAckSig;
   document.getElementById('ackSigName').textContent = savedSigs[0].label;
@@ -10045,6 +10378,7 @@ async function afterLogin() {
 
   // ── STEP 2: Load signatures ───────────────────────────────────
   savedSigs = loadSigsFromStorage();
+  try { pullMySignature(); } catch(e) {}
 
   // ── STEP 3: Render from localStorage cache ──────────────────
   var safeRender = function(fn, name) {
