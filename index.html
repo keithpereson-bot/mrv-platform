@@ -2060,6 +2060,59 @@
     .usr-form-grid { grid-template-columns:1fr; }
     .usr-e { max-width:160px; }
   }
+  /* Expense Claim layout */
+  .ecf-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+  .ecf-head-actions { display:flex; gap:8px; }
+  .ecf-layout { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:16px; align-items:start; min-width:0; }
+  .ecf-side { min-width:0; }
+  .ecf-main { display:flex; flex-direction:column; gap:14px; min-width:0; }
+  .ecf-side { position:sticky; top:72px; display:flex; flex-direction:column; gap:14px; }
+  .ecf-step { display:inline-flex; width:20px; height:20px; border-radius:50%; background:var(--brand); color:#fff; font-size:11px; font-weight:700; align-items:center; justify-content:center; margin-right:8px; vertical-align:middle; }
+  .ecf-proj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:8px; max-height:180px; overflow-y:auto; }
+  .ecf-proj { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1.5px solid var(--border); border-radius:8px; cursor:pointer; background:#fff; text-transform:none; letter-spacing:0; font-weight:400; margin:0; }
+  .ecf-proj:hover { border-color:var(--brand); }
+  .ecf-proj.is-on { border-color:var(--brand); background:#F3F9FD; }
+  .ecf-req-list { max-height:340px; overflow-y:auto; border-top:1px solid var(--border); }
+  .ecf-req { display:flex; align-items:center; gap:12px; padding:9px 16px; border-bottom:1px solid var(--border); cursor:pointer; text-transform:none; letter-spacing:0; font-weight:400; margin:0; }
+  .ecf-req:hover { background:#FAF9F8; }
+  .ecf-header-body { display:flex; flex-direction:column; gap:14px; }
+  .ecf-group-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:8px; }
+  .ecf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px 14px; }
+  .ecf-grid .form-group { margin:0; }
+  .ecf-codes { border:1px solid var(--border); border-radius:8px; padding:10px 12px; background:#FAF9F8; }
+  .ecf-codes summary { cursor:pointer; display:flex; align-items:center; gap:10px; list-style:none; }
+  .ecf-codes summary::-webkit-details-marker { display:none; }
+  .ecf-codes summary::before { content:'▸'; color:var(--muted); font-size:11px; transition:transform .15s; }
+  .ecf-codes[open] summary::before { transform:rotate(90deg); }
+  .ecf-codes-state { font-size:11.5px; margin-left:auto; }
+  .ecf-sum { display:flex; flex-direction:column; gap:8px; }
+  .ecf-sum-total { display:flex; flex-direction:column; gap:2px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .ecf-sum-total span { font-size:11.5px; color:var(--muted); }
+  .ecf-sum-total strong { font-size:22px; font-weight:700; color:var(--ink); letter-spacing:-.01em; }
+  .ecf-sum-row { display:flex; justify-content:space-between; gap:10px; font-size:12.5px; }
+  .ecf-sum-bal { font-weight:700; }
+  .ecf-sum-note { font-size:11.5px; color:#004578; background:#DEECF9; border-radius:6px; padding:6px 8px; }
+  .ecf-checks { list-style:none; margin:6px 0 0; padding:8px 0 0; border-top:1px solid var(--border); display:grid; gap:4px; }
+  .ecf-checks li { font-size:12px; padding-left:20px; position:relative; }
+  .ecf-checks li::before { position:absolute; left:0; top:0; font-weight:700; }
+  .ecf-checks li.ok { color:var(--ink); }
+  .ecf-checks li.ok::before { content:'✓'; color:#107C10; }
+  .ecf-checks li.todo { color:#835C00; }
+  .ecf-checks li.todo::before { content:'○'; color:#C19C00; }
+  .ecf-sig-canvas { width:100%; height:110px; border:1.5px dashed #C8C6C4; border-radius:8px; cursor:crosshair; background:#fff; display:block; touch-action:none; }
+  .ecf-sig-saved { display:flex; align-items:center; gap:12px; }
+  .ecf-sig-saved img { height:46px; max-width:150px; object-fit:contain; border:1px solid var(--border); border-radius:6px; padding:4px; background:#fff; }
+  .ecf-actions { display:flex; flex-direction:column-reverse; gap:8px; }
+  .ecf-actions .btn { width:100%; min-width:0; flex:none !important; justify-content:center; }
+  .ecf-sum-row span:last-child { white-space:nowrap; }
+  @media (max-width:1100px) {
+    .ecf-layout { grid-template-columns:1fr; }
+    .ecf-side { position:static; }
+  }
+  @media (max-width:768px) {
+    .ecf-head-actions { display:none; }
+    .ecf-actions { position:sticky; bottom:8px; background:#fff; padding:8px; border:1px solid var(--border); border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,.12); z-index:5; }
+  }
   /* Floating new-request button */
   .rq-fab { position:fixed; right:24px; bottom:24px; width:54px; height:54px; border-radius:50%; border:none; background:var(--brand); color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.25); cursor:pointer; z-index:110; display:flex; align-items:center; justify-content:center; transition:transform .12s, box-shadow .12s; }
   .rq-fab:hover { transform:scale(1.06); box-shadow:0 8px 22px rgba(0,0,0,.3); }
@@ -2445,100 +2498,145 @@
   <!-- -- STEP 5: WEEKLY EXPENSING -- -->
   <div id="view-expenses" class="view">
     <div class="page-header">
-      <h1>Expense Claim Form</h1>
+      <div class="ecf-head">
+        <div>
+          <h1>Expense Claim Form</h1>
+          <p>Pick projects and paid requests, check the header, sign and export</p>
+        </div>
+        <div class="ecf-head-actions">
+          <button class="btn btn-ghost btn-sm" onclick="ecfOpenPreview()">Preview</button>
+          <button class="btn btn-primary btn-sm" onclick="ecfExportPDF()">Export PDF</button>
+        </div>
+      </div>
     </div>
     <div class="view-body">
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Select Project(s)</div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(true)">All</button>
-          <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(false)">None</button>
-        </div>
-      </div>
-      <div class="card-body" style="padding-top:12px;padding-bottom:12px">
-        <div id="ecfProjectList" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto">
-          <div style="padding:12px;text-align:center;color:var(--muted);font-size:13px">Loading projects…</div>
+    <div class="ecf-layout">
+
+      <!-- ===== Main column ===== -->
+      <div class="ecf-main">
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="ecf-step">1</span>Projects</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(true)">All</button>
+              <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(false)">None</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:12px 16px">
+            <div id="ecfProjectList" class="ecf-proj-grid">
+              <div style="padding:12px;text-align:center;color:var(--muted);font-size:13px">Loading projects…</div>
+            </div>
+          </div>
         </div>
 
-      </div>
-    </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="ecf-step">2</span>Paid requests <span class="badge badge-gray" id="ecfReqCount" style="margin-left:6px">0</span></div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(true);ecfUpdateSummary()">All</button>
+              <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(false);ecfUpdateSummary()">None</button>
+            </div>
+          </div>
+          <div id="ecfRequestList" class="ecf-req-list">
+            <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">Select a project above to load its paid requests.</div>
+          </div>
+        </div>
 
-    <!-- Step 2: Select paid requests for that project -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Paid Requests</div>
-        <div style="display:flex;gap:6px;align-items:center">
-          <span class="badge badge-gray" id="ecfReqCount" style="margin-right:4px">0</span>
-          <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(true)">All</button>
-          <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(false)">None</button>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="ecf-step">3</span>Form header</div>
+            <button class="btn btn-ghost btn-sm" onclick="ecfAutoHeader(true);ecfUpdateSummary()" title="Refill from your profile and the project budget">&#8635; Auto-fill</button>
+          </div>
+          <div class="card-body ecf-header-body">
+            <div class="ecf-group">
+              <div class="ecf-group-title">Claimant</div>
+              <div class="ecf-grid">
+                <div class="form-group"><label>Name of claimant</label><input id="ecfClaimant" type="text" placeholder="Full name"></div>
+                <div class="form-group"><label>Job title</label><input id="ecfJobTitle" type="text" placeholder="e.g. Finance Manager"></div>
+                <div class="form-group"><label>Bank / M-Pesa No.</label><input id="ecfBank" type="text" placeholder="Account or M-Pesa number"></div>
+                <div class="form-group"><label>Date</label><input id="ecfDate" type="date" placeholder=""></div>
+              </div>
+            </div>
+            <div class="ecf-group">
+              <div class="ecf-group-title">Amounts</div>
+              <div class="ecf-grid">
+                <div class="form-group"><label>Currency</label><select id="ecfCurrency" onchange="ecfUpdateSummary()"><option value="TZS">TZS</option><option value="KES">KES</option><option value="USD">USD</option><option value="UGX">UGX</option></select></div>
+                <div class="form-group"><label>Amount advanced</label><input id="ecfAdvanced" type="number" placeholder="0" value="0" min="0" oninput="ecfUpdateSummary()"></div>
+              </div>
+            </div>
+            <details class="ecf-group ecf-codes" id="ecfCodes">
+              <summary><span class="ecf-group-title" style="margin:0">Entity &amp; accounting codes</span> <span class="ecf-codes-state" id="ecfCodesState"></span></summary>
+              <div class="ecf-grid" style="margin-top:10px">
+                <div class="form-group"><label>Burn entity</label><input id="ecfEntity" type="text" placeholder="e.g. BMTZ (Tanzania)"></div>
+                <div class="form-group"><label>Country code</label><input id="ecfCountry" type="text" placeholder="e.g. TZ"></div>
+                <div class="form-group"><label>Business unit</label><input id="ecfBizUnit" type="text" placeholder="e.g. Biomass"></div>
+                <div class="form-group"><label>Profit centre</label><input id="ecfProfitCentre" type="text" placeholder="e.g. 24 Carbon"></div>
+                <div class="form-group"><label>Cost centre</label><input id="ecfCostCentre" type="text" placeholder="e.g. 7CN (Carbon)"></div>
+                <div class="form-group"><label>Product code</label><input id="ecfProductCode" type="text" placeholder="e.g. 52 Wood"></div>
+                <div class="form-group"><label>Carbon / project code</label><input id="ecfCarbonCode" type="text" placeholder="e.g. 005 (5642-VPA-001)"></div>
+                <div class="form-group"><label>Dimension code</label><input id="ecfDimCode" type="text" placeholder="e.g. 75CN-01 (Monitoring)"></div>
+                <div class="form-group"><label>R&amp;D project code</label><input id="ecfRdCode" type="text" placeholder="Optional"></div>
+              </div>
+            </details>
+          </div>
         </div>
       </div>
-      <div id="ecfRequestList" style="max-height:260px;overflow-y:auto;border-top:1px solid var(--border)">
-        <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">Select a project above to load its paid requests.</div>
-      </div>
-    </div>
 
-    <!-- Step 3: Header fields -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Form Header</div>
-        <button class="btn btn-ghost btn-sm" onclick="ecfAutoHeader()">&#8635; Auto-fill from data</button>
-      </div>
-      <div class="card-body">
-        <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px 16px">
-          <div class="form-group" style="margin:0"><label>Burn Entity</label><input id="ecfEntity" type="text" placeholder="e.g. BMTZ (Tanzania)"></div>
-          <div class="form-group" style="margin:0"><label>Date</label><input id="ecfDate" type="date"></div>
-          <div class="form-group" style="margin:0"><label>Profit Centre</label><input id="ecfProfitCentre" type="text" placeholder="e.g. 24 Carbon"></div>
-          <div class="form-group" style="margin:0"><label>Country Code</label><input id="ecfCountry" type="text" placeholder="e.g. TZ"></div>
-          <div class="form-group" style="margin:0"><label>Name of Claimant</label><input id="ecfClaimant" type="text" placeholder="Full name"></div>
-          <div class="form-group" style="margin:0"><label>Product Code</label><input id="ecfProductCode" type="text" placeholder="e.g. 52 Wood"></div>
-          <div class="form-group" style="margin:0"><label>Cost Centre</label><input id="ecfCostCentre" type="text" placeholder="e.g. 7CN (Carbon)"></div>
-          <div class="form-group" style="margin:0"><label>Job Title</label><input id="ecfJobTitle" type="text" placeholder="e.g. Finance Manager"></div>
-          <div class="form-group" style="margin:0"><label>R&amp;D Project Code</label><input id="ecfRdCode" type="text" placeholder="Optional"></div>
-          <div class="form-group" style="margin:0"><label>Dimension Code</label><input id="ecfDimCode" type="text" placeholder="e.g. 75CN-01 (Monitoring)"></div>
-          <div class="form-group" style="margin:0"><label>Bank / M-Pesa No.</label><input id="ecfBank" type="text" placeholder="Account or M-Pesa number"></div>
-          <div class="form-group" style="margin:0"><label>Carbon / Project Code</label><input id="ecfCarbonCode" type="text" placeholder="e.g. 005 (5642-VPA-001)"></div>
-          <div class="form-group" style="margin:0"><label>Currency</label><select id="ecfCurrency"><option value="TZS">TZS</option><option value="KES">KES</option><option value="USD">USD</option><option value="UGX">UGX</option></select></div>
-          <div class="form-group" style="margin:0"><label>Amount Advanced</label><input id="ecfAdvanced" type="number" value="0" min="0"></div>
-          <div class="form-group" style="margin:0"><label>Business Unit</label><input id="ecfBizUnit" type="text" placeholder="e.g. Biomass"></div>
+      <!-- ===== Summary / sign / export (sticky) ===== -->
+      <aside class="ecf-side">
+        <div class="card ecf-summary">
+          <div class="card-header"><div class="card-title">Claim summary</div></div>
+          <div class="card-body">
+            <div id="ecfSummary" class="ecf-sum"></div>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Step 4: Preview -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Form Preview</div>
-        <button class="btn btn-secondary btn-sm" onclick="ecfRefreshPreview()">&#8635; Refresh Preview</button>
-      </div>
-      <div style="padding:16px;overflow-x:auto;background:#FAF9F8">
-        <div id="ecfPreview" style="min-width:800px;font-family:Arial,sans-serif;font-size:11px;background:#fff;padding:12px">
-          <div style="text-align:center;color:var(--muted);padding:24px">Click Refresh Preview to see the filled form.</div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="ecf-step">4</span>Signature</div>
+          </div>
+          <div class="card-body">
+            <div id="ecfSigSaved" class="ecf-sig-saved" style="display:none"></div>
+            <div id="ecfSigDraw">
+              <canvas id="ecfSigCanvas" width="500" height="130" class="ecf-sig-canvas"></canvas>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:8px">
+                <button class="btn btn-ghost btn-sm" onclick="ecfClearSig()">Clear</button>
+                <a href="#" onclick="event.preventDefault();openMySignature()" style="font-size:11.5px;color:var(--brand)">Save a signature to your account</a>
+              </div>
+            </div>
+            <div id="ecfSigNote" style="font-size:11.5px;color:var(--muted);margin-top:6px"></div>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Step 5: Signature + Export -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Admin Signature &amp; Export PDF</div>
-      </div>
-      <div class="card-body">
-<canvas id="ecfSigCanvas" width="500" height="130"
-          style="border:1.5px solid var(--border);border-radius:var(--radius);cursor:crosshair;background:#FAFAFA;display:block;touch-action:none;max-width:100%;margin-bottom:10px"></canvas>
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px">
-          <button class="btn btn-ghost btn-sm" onclick="ecfClearSig()">Clear</button>
-          <span id="ecfSigNote" style="font-size:11.5px;color:var(--muted)">Draw your signature above</span>
+        <div class="ecf-actions">
+          <button class="btn btn-ghost" onclick="ecfOpenPreview()" style="flex:1;justify-content:center">Preview form</button>
+          <button class="btn btn-primary" id="ecfExportBtn" onclick="ecfExportPDF()" style="flex:1.4;justify-content:center;gap:8px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export PDF
+          </button>
         </div>
-        <button class="btn btn-primary" id="ecfExportBtn" onclick="ecfExportPDF()" style="gap:8px;font-size:13.5px;padding:10px 24px">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export to PDF
-        </button>
+      </aside>
+    </div>
+    </div>
+  </div>
+
+  <!-- Expense claim preview -->
+  <div id="ecfPreviewModal" class="modal-overlay" onclick="closeModalOutside(event,'ecfPreviewModal')">
+    <div class="modal modal-wide" style="width:980px">
+      <div class="modal-header">
+        <strong>Expense claim preview</strong>
+        <button class="close-btn" onclick="closeModal('ecfPreviewModal')">×</button>
+      </div>
+      <div class="modal-body" style="background:#FAF9F8;overflow-x:auto">
+        <div id="ecfPreview" style="min-width:800px;font-family:Arial,sans-serif;font-size:11px;background:#fff;padding:12px"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('ecfPreviewModal')">Close</button>
+        <button class="btn btn-primary" onclick="closeModal('ecfPreviewModal');ecfExportPDF()">Export PDF</button>
       </div>
     </div>
-    </div>
-    </div>
+  </div>
 
   <!-- -- STEP 6: RECONCILIATION -- -->
   <div id="view-reconciliation" class="view">
@@ -9134,6 +9232,7 @@ async function saveMySignature() {
     var res = await gasCall({ action: 'saveMySignature', email: String(currentUser.email || '').toLowerCase(), passHash: passHash, signature: dataUrl });
     if (res && res.ok && res.saved) {
       _setOwnSignature(dataUrl);
+      try { ecfRenderSigPanel(); ecfUpdateSummary(); } catch(e) {}
       closeModal('mySigModal');
       toast('Signature saved to your account');
       if (_mySigOpts.forAck) { try { useExistingAckSig(); } catch(e) {} }
@@ -10743,7 +10842,7 @@ function ecfInitSig() {
   }
   function down(e){e.preventDefault();drawing=true;var p=pos(e);lx=p.x;ly=p.y;}
   function move(e){if(!drawing)return;e.preventDefault();var p=pos(e);ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(p.x,p.y);ctx.strokeStyle='#111';ctx.lineWidth=1.8;ctx.lineCap='round';ctx.stroke();lx=p.x;ly=p.y;}
-  function up(){drawing=false;}
+  function up(){ if (drawing) { drawing=false; try { ecfUpdateSummary(); } catch(e) {} } }
   cv.addEventListener('mousedown',down); cv.addEventListener('mousemove',move);
   cv.addEventListener('mouseup',up);     cv.addEventListener('mouseleave',up);
   cv.addEventListener('touchstart',down,{passive:false});
@@ -10754,6 +10853,7 @@ function ecfInitSig() {
 function ecfClearSig() {
   var cv = document.getElementById('ecfSigCanvas');
   if (cv) cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+  try { ecfUpdateSummary(); } catch(e) {}
 }
 
 function ecfHasSig() {
@@ -10814,8 +10914,8 @@ function ecfPopulateProjects() {
     var info = projects[p];
     var checked = prevChecked[p] ? ' checked' : '';
     var safe = p.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-    return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--card)" onmouseover="this.style.borderColor=\'var(--brand)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
-      +'<input type="checkbox" class="ecf-proj-chk" value="'+safe+'"'+checked+' onchange="ecfOnProjectChange()" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0">'
+    return '<label class="ecf-proj' + (checked ? ' is-on' : '') + '">'
+      +'<input type="checkbox" class="ecf-proj-chk" value="'+safe+'"'+checked+' onchange="this.closest(\'.ecf-proj\').classList.toggle(\'is-on\',this.checked);ecfOnProjectChange()" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0">'
       +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:13px;font-weight:600;color:var(--ink)">'+p.replace(/</g,'&lt;')+'</div>'
         +'<div style="font-size:11px;color:var(--muted)">'+info.count+' paid request'+(info.count===1?'':'s')+' · '+info.total.toLocaleString()+'</div>'
@@ -10828,8 +10928,7 @@ function ecfOnProjectChange() {
   ecfLoadRequests();
   // Force-fill header from the first selected project's budget metadata
   ecfAutoHeader(true);
-  var area = document.getElementById('ecfPreview');
-  if (area) area.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px">Click Refresh Preview to see the filled form.</div>';
+  ecfUpdateSummary();
 }
 
 function ecfLoadRequests() {
@@ -10842,6 +10941,7 @@ function ecfLoadRequests() {
     _ecfFilteredPaid = [];
     list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">Select one or more projects above to load their paid requests.</div>';
     if (countEl) countEl.textContent = '0';
+    ecfUpdateSummary();
     return;
   }
 
@@ -10861,6 +10961,7 @@ function ecfLoadRequests() {
   if (!paid.length) {
     list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">No paid requests for the selected project(s).</div>';
     if (countEl) countEl.textContent = '0';
+    ecfUpdateSummary();
     return;
   }
 
@@ -10875,19 +10976,20 @@ function ecfLoadRequests() {
     var amt = parseFloat(r.amount) || 0;
     var cur = (typeof getCurrency === 'function') ? getCurrency(r.project, r.type) || 'KES' : 'KES';
     var desc = (r.costSummary || r.description || r.costItem || 'No description').replace(/</g, '&lt;');
-    var cat  = (r.category || '').replace(/</g, '&lt;');
-    html += '<label style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background=\'var(--gray-50)\'" onmouseout="this.style.background=\'\'">'
-      +'<input type="checkbox" class="ecf-chk" data-ref="'+(r.ref||'').replace(/"/g,'&quot;')+'" data-project="'+(r.project||'').replace(/"/g,'&quot;')+'" data-i="'+i+'" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0" checked>'
+    var cat  = (r.costItem || r.category || '').replace(/</g, '&lt;');
+    html += '<label class="ecf-req">'
+      +'<input type="checkbox" class="ecf-chk" onchange="ecfUpdateSummary()" data-ref=""'+(r.ref||'').replace(/"/g,'&quot;')+'" data-project="'+(r.project||'').replace(/"/g,'&quot;')+'" data-i="'+i+'" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0" checked>'
       +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:12.5px;font-weight:600;color:var(--ink)">'+desc+'</div>'
-        +'<div style="font-size:11px;color:var(--gray-500);margin-top:2px">'+(r.ref||'')+(cat?' &bull; '+cat:'')+(r.type?' &bull; '+r.type:'')+(r.date?' &bull; '+(typeof fmtDate==='function'?fmtDate(r.date):r.date):'')+'</div>'
+        +'<div style="font-size:11px;color:var(--gray-500);margin-top:2px">'+(cat?cat+' &bull; ':'')+(r.requester?String(r.requester).replace(/</g,'&lt;')+' &bull; ':'')+(r.date?(typeof fmtDate==='function'?fmtDate(r.date):r.date):'')+(r.clientSN?' &bull; SN '+String(r.clientSN).replace(/</g,'&lt;'):'')+'</div>'
       +'</div>'
       +'<div style="font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap">'+cur+' '+amt.toLocaleString()+'</div>'
       +'</label>';
   });
   list.innerHTML = html;
 
-  if (countEl) countEl.textContent = paid.length + ' request' + (paid.length === 1 ? '' : 's');
+  if (countEl) countEl.textContent = paid.length;
+  ecfUpdateSummary();
 }
 
 function ecfSelAll(v) { document.querySelectorAll('.ecf-chk').forEach(function(c){ c.checked = v; }); }
@@ -11775,16 +11877,75 @@ function ecfInit() {
     var cEl = document.getElementById('ecfClaimant');
     if (cEl && !cEl.value) cEl.value = currentUser.name || '';
   }
-  var note = document.getElementById('ecfSigNote');
-  if (note) {
-    if (savedSigs && savedSigs.length > 0) {
-      note.textContent = 'Saved signature found: '+savedSigs[0].label+' — will be used as Claimant';
-      note.style.color = 'var(--success,#16a34a)';
-    } else {
-      note.textContent = 'No saved signature — draw one above, or save one in My Signatures first';
-      note.style.color = 'var(--muted)';
-    }
+  ecfRenderSigPanel();
+  ecfUpdateSummary();
+  var hb = document.querySelector('#view-expenses .ecf-header-body');
+  if (hb && !hb._ecfBound) {
+    hb._ecfBound = true;
+    hb.addEventListener('input', function(){ clearTimeout(hb._t); hb._t = setTimeout(ecfUpdateSummary, 250); });
   }
+}
+
+function ecfRenderSigPanel() {
+  var saved = document.getElementById('ecfSigSaved');
+  var draw = document.getElementById('ecfSigDraw');
+  var note = document.getElementById('ecfSigNote');
+  if (!saved || !draw) return;
+  if (savedSigs && savedSigs.length > 0) {
+    saved.style.display = '';
+    draw.style.display = 'none';
+    saved.innerHTML = '<img src="' + savedSigs[0].dataUrl + '" alt="Your signature">'
+      + '<div style="min-width:0"><div style="font-size:12.5px;font-weight:600">' + _rqEsc(savedSigs[0].label || '') + '</div>'
+      + '<div style="font-size:11px;color:var(--success,#107C10)">✓ Used as claimant signature</div>'
+      + '<a href="#" onclick="event.preventDefault();openMySignature()" style="font-size:11px;color:var(--brand)">Change</a></div>';
+    if (note) note.textContent = '';
+  } else {
+    saved.style.display = 'none';
+    draw.style.display = '';
+    if (note) note.textContent = 'No saved signature — draw one here for this export.';
+  }
+}
+
+function ecfOpenPreview() {
+  ecfRefreshPreview();
+  openModal('ecfPreviewModal');
+}
+
+/** Live summary: projects, requests, totals, balance, readiness. */
+function ecfUpdateSummary() {
+  var box = document.getElementById('ecfSummary');
+  if (!box) return;
+  var projects = ecfGetSelectedProjects();
+  var sel = ecfGetSelected ? ecfGetSelected() : [];
+  if (!projects.length) sel = [];
+  var cur = (document.getElementById('ecfCurrency') || {}).value || '';
+  var total = sel.reduce(function(s, r){ return s + (parseFloat(r.amount) || 0); }, 0);
+  var adv = parseFloat((document.getElementById('ecfAdvanced') || {}).value) || 0;
+  var bal = total - adv;
+  var avail = (_ecfFilteredPaid || []).length;
+  var codeIds = ['ecfEntity','ecfCountry','ecfBizUnit','ecfProfitCentre','ecfCostCentre','ecfProductCode','ecfCarbonCode','ecfDimCode'];
+  var filled = codeIds.filter(function(id){ var el = document.getElementById(id); return el && String(el.value || '').trim(); }).length;
+  var cs = document.getElementById('ecfCodesState');
+  if (cs) cs.innerHTML = filled === codeIds.length
+    ? '<span style="color:var(--success,#107C10)">✓ all ' + codeIds.length + ' filled</span>'
+    : '<span style="color:#835C00">' + filled + ' of ' + codeIds.length + ' filled</span>';
+  var hasSig = !!(savedSigs && savedSigs.length) || (typeof ecfHasSig === 'function' && ecfHasSig());
+  var claimant = String((document.getElementById('ecfClaimant') || {}).value || '').trim();
+  var checks = [
+    [projects.length > 0, projects.length ? projects.length + ' project' + (projects.length === 1 ? '' : 's') : 'Select a project'],
+    [sel.length > 0, sel.length ? sel.length + ' of ' + avail + ' requests' : 'Select paid requests'],
+    [!!claimant, claimant ? 'Claimant: ' + claimant : 'Enter claimant name'],
+    [hasSig, hasSig ? 'Signature ready' : 'Add a signature']
+  ];
+  box.innerHTML =
+    '<div class="ecf-sum-total"><span>Total claimed</span><strong>' + _rqEsc(cur) + ' ' + total.toLocaleString() + '</strong></div>'
+    + '<div class="ecf-sum-row"><span>Amount advanced</span><span>' + _rqEsc(cur) + ' ' + adv.toLocaleString() + '</span></div>'
+    + '<div class="ecf-sum-row ecf-sum-bal"><span>Balance claimed / returned</span><span style="color:' + (bal < 0 ? 'var(--danger)' : 'var(--success,#107C10)') + '">' + _rqEsc(cur) + ' ' + bal.toLocaleString() + '</span></div>'
+    + (projects.length > 1 ? '<div class="ecf-sum-note">One claim form per project will be generated.</div>' : '')
+    + '<ul class="ecf-checks">' + checks.map(function(c){ return '<li class="' + (c[0] ? 'ok' : 'todo') + '">' + _rqEsc(c[1]) + '</li>'; }).join('') + '</ul>';
+  var ready = checks.every(function(c){ return c[0]; });
+  var btn = document.getElementById('ecfExportBtn');
+  if (btn) btn.style.opacity = ready ? '1' : '.6';
 }
 
 // wrapTables called from main DOMContentLoaded below
