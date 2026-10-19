@@ -8,12 +8,13 @@
 
 <!-- BUILD: v5-erp-ui-workspace -->
 <title>MRV Finance Platform</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230078D4'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='14' font-family='system-ui,sans-serif' font-weight='700' fill='white'%3EM%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -4822,13 +4823,8 @@ async function pullBudgetLinesFromSheets() {
   } catch(e) {
     appendSyncLog('Budgets pull error: ' + e.message);
     console.error('pullBudgetLinesFromSheets:', e);
-    if (String(e.message || '').indexOf('404') !== -1) {
-      gsConnected = false;
-      try {
-        var b = document.getElementById('connStatusBadge');
-        if (b) { b.className = 'badge badge-red'; b.textContent = 'URL 404 — redeploy'; }
-      } catch(e2) {}
-    }
+    // Do not flip global connected state here — _gasCallRaw already
+    // handles soft backoff. A single budget pull failure is not a disconnect.
   }
 }
 
@@ -5601,18 +5597,31 @@ function openSignAndApprove(btn, ref, recipient) {
 }
 
 // Background Sheets sync — keeps UI instant, optimises payload
+// Retries once after the soft circuit-breaker pause so new requests still land.
 function backgroundPush(opts) {
   opts = opts || {};
   _syncLoopToken++;            // pause polling while pushing (restarted by startAutoSync)
   clearTimeout(gsAutoSyncTimer);
   clearInterval(gsAutoSyncTimer);
   if (!gsWebAppUrl) return;
-  pushToSheets(opts).then(function() {
-    if (opts.withSigs) {
-      return pushSigImages().then(function(){ startAutoSync(); }, function(){ startAutoSync(); });
-    }
-    startAutoSync();
-  }).catch(function(){ startAutoSync(); });
+  var attempt = function(isRetry) {
+    pushToSheets(opts).then(function() {
+      if (opts.withSigs) {
+        return pushSigImages().then(function(){ startAutoSync(); }, function(){ startAutoSync(); });
+      }
+      startAutoSync();
+    }).catch(function(err) {
+      if (!isRetry && window._gas404Until && Date.now() < window._gas404Until) {
+        var wait = Math.min(25000, Math.max(3000, window._gas404Until - Date.now() + 500));
+        appendSyncLog('Push deferred ' + Math.round(wait/1000) + 's (Apps Script busy)…');
+        setTimeout(function(){ attempt(true); }, wait);
+        return;
+      }
+      appendSyncLog('Background push failed: ' + ((err && err.message) || err));
+      startAutoSync();
+    });
+  };
+  attempt(false);
 }
 
 // Step 1: Approve request (Draft/Pending -> Approved, moves to Payment Queue)
@@ -7538,19 +7547,18 @@ function gapiLoaded() {}
 
 // -- Connect / Disconnect ------------------------------------
 async function connectWebApp() {
-  const url = document.getElementById('webAppUrl').value.trim();
-  if (!url || !url.includes('script.google.com')) {
-    toast('Please paste a valid Apps Script Web App URL'); return;
+  var rawUrl = (document.getElementById('webAppUrl').value || '').trim();
+  var url = normalizeWebAppUrl_(rawUrl);
+  if (!url || !/script\.google\.com/i.test(url)) {
+    toast('Please paste a valid Apps Script Web App URL (…/exec)'); return;
   }
-  appendSyncLog('Testing connection...');
+  gsWebAppUrl = url;
+  window._gas404Until = 0;
+  window._gas404Count = 0;
+  appendSyncLog('Testing connection…');
   try {
-    const res = await gasCall({ action: 'ping' });
-    if (!res.ok) throw new Error(res.error || 'Unknown error');
-    url = normalizeWebAppUrl_(url);
-    if (!url) { appendSyncLog('Invalid Web App URL'); throw new Error('Invalid Web App URL — use the /exec link from Deploy'); }
-    gsWebAppUrl = url;
-    window._gas404Until = 0;
-    window._gas404Count = 0;
+    var res = await gasCall({ action: 'ping' });
+    if (!res || !res.ok) throw new Error((res && res.error) || 'Unknown error');
     localStorage.setItem('mrv_webapp_url', btoa(unescape(encodeURIComponent(url))));
     gsConnected = true;
     document.getElementById('connStatusBadge').className = 'badge badge-teal';
@@ -7563,11 +7571,12 @@ async function connectWebApp() {
     updateSheetStatusPill(true);
     appendSyncLog('OK ' + (res.message || 'Connected'));
     toast('Connected to Apps Script OK');
-    // Push current data on first connect
     await pushToSheets();
   } catch(e) {
+    gsConnected = false;
+    updateSheetStatusPill(false);
     appendSyncLog('X Connection failed: ' + e.message);
-    toast('Connection failed -- check the URL and try again');
+    toast('Connection failed — ' + (e.message || 'check URL / redeploy'));
   }
 }
 
@@ -7591,10 +7600,10 @@ function disconnectWebApp() {
 // ── Request limiter ──────────────────────────────────────
 // Apps Script throttles a deployment that gets many overlapping requests:
 // it starts answering with 404s or bounces POSTs to doGet ("Web App is live").
-// Keep at most 2 requests in flight and queue the rest.
+// Keep at most 1 request in flight and queue the rest (strict serialisation).
 var _gasInFlight = 0;
 var _gasQueue = [];
-var GAS_MAX_CONCURRENT = 2;
+var GAS_MAX_CONCURRENT = 1;
 function gasBusy() { return _gasInFlight + _gasQueue.length; }
 function gasCall(payload) {
   return new Promise(function(resolve, reject) {
@@ -7608,8 +7617,45 @@ function _gasPump() {
     _gasInFlight++;
     _gasCallRaw(job.payload).then(job.resolve, job.reject).finally(function() {
       _gasInFlight--;
-      _gasPump();
+      // Small gap between requests so Apps Script is less likely to throttle
+      setTimeout(_gasPump, 180);
     });
+  }
+}
+
+/** Soft circuit breaker: transient 404/network blips are common under load.
+ *  Only mark the UI "disconnected" after several consecutive failures.
+ *  Recover immediately on the next successful response. */
+function _gasNoteSuccess() {
+  window._gas404Count = 0;
+  window._gas404Until = 0;
+  if (gsWebAppUrl && !gsConnected) {
+    gsConnected = true;
+    try {
+      var b = document.getElementById('connStatusBadge');
+      if (b) { b.className = 'badge badge-teal'; b.textContent = 'OK Connected'; }
+      updateSheetStatusPill && updateSheetStatusPill(true);
+    } catch (e2) {}
+  }
+}
+function _gasNoteFailure(kind) {
+  window._gas404Count = (window._gas404Count || 0) + 1;
+  var n = window._gas404Count;
+  // Back off polling, but only flip the UI after 3 consecutive failures
+  var pauseMs = n <= 1 ? 8000 : (n <= 3 ? 20000 : 60000);
+  window._gas404Until = Date.now() + pauseMs;
+  if (n >= 3) {
+    gsConnected = false;
+    try {
+      var b = document.getElementById('connStatusBadge');
+      if (b) {
+        b.className = 'badge badge-red';
+        b.textContent = kind === '404'
+          ? 'Sync paused (404) — will retry'
+          : 'Sync paused — will retry';
+      }
+      updateSheetStatusPill && updateSheetStatusPill(false);
+    } catch (e2) {}
   }
 }
 
@@ -7618,13 +7664,14 @@ async function _gasCallRaw(payload) {
   var url = normalizeWebAppUrl_(raw);
   if (!url) throw new Error('No Web App URL set');
 
-  // Circuit breaker: after repeated 404s, stop hammering a dead deployment
+  // Soft pause after failures — don't hammer a struggling deployment
   if (window._gas404Until && Date.now() < window._gas404Until) {
-    throw new Error('HTTP 404 — Web App URL not found (sync paused). Redeploy Apps Script and paste the new /exec URL.');
+    var waitLeft = Math.ceil((window._gas404Until - Date.now()) / 1000);
+    throw new Error('Sync paused for ' + waitLeft + 's after recent errors — retrying automatically.');
   }
 
   var controller = new AbortController();
-  var timer = setTimeout(function() { controller.abort(); }, 120000);
+  var timer = setTimeout(function() { controller.abort(); }, 90000);
 
   try {
     var resp;
@@ -7647,31 +7694,21 @@ async function _gasCallRaw(payload) {
     }
     if (!resp.ok) {
       if (resp.status === 404) {
-        window._gas404Count = (window._gas404Count || 0) + 1;
-        // Pause auto-sync for 2 minutes after first 404, longer if repeated
-        window._gas404Until = Date.now() + (window._gas404Count > 3 ? 10 * 60 * 1000 : 2 * 60 * 1000);
-        gsConnected = false;
-        try {
-          var b = document.getElementById('connStatusBadge');
-          if (b) { b.className = 'badge badge-red'; b.textContent = 'URL 404 — redeploy'; }
-          updateSheetStatusPill && updateSheetStatusPill();
-        } catch (e2) {}
-        throw new Error('HTTP 404 — Web App URL not found. Open the /exec link in a browser: you must see JSON, not an error page. Then Deploy → New version and paste the NEW URL.');
+        _gasNoteFailure('404');
+        throw new Error('HTTP 404 from Apps Script (often transient under load). Will retry shortly.');
       }
+      _gasNoteFailure('http');
       throw new Error('HTTP ' + resp.status);
     }
-    window._gas404Count = 0;
-    window._gas404Until = 0;
+    _gasNoteSuccess();
     var data = await resp.json();
     return data;
   } catch (e) {
     if (e.name === 'AbortError' || /timed out|TIMEOUT|Failed to fetch|NetworkError|ERR_CONNECTION/i.test(String(e.message||e))) {
-      window._gas404Count = (window._gas404Count || 0) + 1;
-      window._gas404Until = Date.now() + 3 * 60 * 1000;
-      gsConnected = false;
+      _gasNoteFailure('network');
       throw new Error(e.name === 'AbortError'
-        ? 'Request timed out — Apps Script unreachable. Working offline with local data.'
-        : ('Sheets unreachable (' + (e.message || e) + '). Working offline.'));
+        ? 'Request timed out — Apps Script busy. Will retry.'
+        : ('Sheets unreachable (' + (e.message || e) + '). Will retry.'));
     }
     throw e;
   } finally {
@@ -7706,8 +7743,8 @@ async function pushToSheets(opts) {
     return;
   }
   window._pushInProgress = true;
-  // Safety: force-clear the flag after 20s in case of silent failure
-  var _pushSafetyTimer = setTimeout(function(){ window._pushInProgress = false; }, 12000);
+  // Safety: force-clear the flag if a push hangs (must outlive GAS timeout)
+  var _pushSafetyTimer = setTimeout(function(){ window._pushInProgress = false; }, 100000);
   appendSyncLog(opts.fast ? 'Quick-push to Sheets...' : 'Pushing to Sheets...');
   try {
     // Requests — always preserve existing signature images so a full sheet
@@ -8292,8 +8329,8 @@ function gsPushIfConnected() { syncAfterChange(); }
 // Auto-sync: one request at a time, never overlapping.
 // (An overlapping 2s setInterval flooded Apps Script, which then throttled the
 //  deployment — the "works after refresh, disconnects shortly after" symptom.)
-var AUTO_SYNC_INTERVAL = 5000;          // version check every 5s while the tab is visible
-var AUTO_SYNC_MAX_BACKOFF = 60000;      // up to 60s after repeated failures
+var AUTO_SYNC_INTERVAL = 12000;         // version check every 12s while the tab is visible
+var AUTO_SYNC_MAX_BACKOFF = 90000;      // up to 90s after repeated failures
 var FULL_REFRESH_EVERY_MS = 5 * 60000;  // budgets + form settings every 5 min
 var CLIENTS_REFRESH_EVERY_MS = 10 * 60000; // Clients sheet every 10 min (also on opening the request form)
 
@@ -8704,13 +8741,30 @@ async function doLogin() {
 
 
 function saveQuickUrl() {
-  var url = (document.getElementById('quickUrlInput').value || '').trim();
-  if (!url) return;
+  var url = normalizeWebAppUrl_((document.getElementById('quickUrlInput').value || '').trim());
+  if (!url || !/script\.google\.com/i.test(url)) {
+    toast('Enter a valid Web App URL ending in /exec');
+    return;
+  }
   gsWebAppUrl = url;
-  gsConnected = true;
-  localStorage.setItem('mrv_webapp_url', url);
-  toast('URL saved -- signing in...');
-  doLogin();
+  gsConnected = false;
+  window._gas404Until = 0;
+  window._gas404Count = 0;
+  localStorage.setItem('mrv_webapp_url', btoa(unescape(encodeURIComponent(url))));
+  toast('URL saved — testing connection…');
+  gasCall({ action: 'ping' }).then(function(res) {
+    if (res && res.ok) {
+      gsConnected = true;
+      updateSheetStatusPill(true);
+      toast('Connected to Sheets');
+    } else {
+      toast('URL saved but ping failed');
+    }
+    doLogin();
+  }).catch(function(e) {
+    toast((e && e.message) || 'Connection failed — check deployment');
+    doLogin();
+  });
 }
 
 function clearLoginCache() {
@@ -10573,22 +10627,19 @@ async function afterLogin() {
     // Intentionally ignore getDeletedRefs for store mutation.
     // Server delete lists were polluting local state and hiding live requests.
     // User deletes are tracked locally and pushed via deletedStore.
-    Promise.resolve().then(function() {
-      // Then pull budgets + requests
-      Promise.all([
-        pullBudgetLinesFromSheets().catch(function(e){ appendSyncLog('Budget pull failed: ' + e.message); }),
-        pullClientsFromSheets().catch(function(e){ appendSyncLog('Clients pull failed: ' + (e.message||e)); })
-      ]).finally(function() {
-          // If Sheets returned nothing, seed demo so form features are usable
-          try { seedDemoDataIfEmpty(); } catch(e) {}
-          try { populateAllDropdowns(); renderDashboard(); rebuildRequestsTable(); } catch(e) {}
-          pullRequestsOnly()
-            .catch(function(e){ appendSyncLog('Pull failed: ' + e.message); })
-            .finally(function() {
-              startAutoSync();
-            });
-        });
-    });
+    // Serialise initial pulls — parallel Promise.all flooded Apps Script
+    // and triggered the "syncs then disconnects seconds later" symptom.
+    (async function _bootPull() {
+      try {
+        await pullBudgetLinesFromSheets().catch(function(e){ appendSyncLog('Budget pull failed: ' + (e.message||e)); });
+        await pullClientsFromSheets().catch(function(e){ appendSyncLog('Clients pull failed: ' + (e.message||e)); });
+        try { seedDemoDataIfEmpty(); } catch(e) {}
+        try { populateAllDropdowns(); renderDashboard(); rebuildRequestsTable(); } catch(e) {}
+        await pullRequestsOnly().catch(function(e){ appendSyncLog('Pull failed: ' + (e.message||e)); });
+      } finally {
+        startAutoSync();
+      }
+    })();
   } else {
     // Offline / no Web App URL
     try { seedDemoDataIfEmpty(); } catch(e) {}
