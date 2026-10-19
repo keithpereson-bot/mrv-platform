@@ -7625,9 +7625,8 @@ function _gasPump() {
   }
 }
 
-/** Soft circuit breaker: transient 404/network blips are common under load.
- *  Only mark the UI "disconnected" after several consecutive failures.
- *  Recover immediately on the next successful response. */
+/** Failure tracking for auto-sync backoff only.
+ *  NEVER blocks real API calls — a failed budget pull must not stop getUsers/login. */
 function _gasNoteSuccess() {
   window._gas404Count = 0;
   window._gas404Until = 0;
@@ -7643,18 +7642,16 @@ function _gasNoteSuccess() {
 function _gasNoteFailure(kind) {
   window._gas404Count = (window._gas404Count || 0) + 1;
   var n = window._gas404Count;
-  // Back off polling, but only flip the UI after 3 consecutive failures
-  var pauseMs = n <= 1 ? 3000 : (n <= 3 ? 8000 : 20000);
+  // Only used by checkVersionAndSync to space out polling — does NOT reject fetches
+  var pauseMs = n <= 1 ? 4000 : (n <= 3 ? 10000 : 20000);
   window._gas404Until = Date.now() + pauseMs;
-  if (n >= 3) {
+  if (n >= 5) {
     gsConnected = false;
     try {
       var b = document.getElementById('connStatusBadge');
       if (b) {
         b.className = 'badge badge-red';
-        b.textContent = kind === '404'
-          ? 'Sync paused (404) — will retry'
-          : 'Sync paused — will retry';
+        b.textContent = 'Sheets unreachable — retrying';
       }
       updateSheetStatusPill && updateSheetStatusPill(false);
     } catch (e2) {}
@@ -7666,19 +7663,15 @@ async function _gasCallRaw(payload) {
   var url = normalizeWebAppUrl_(raw);
   if (!url) throw new Error('No Web App URL set');
 
-  // Soft pause after failures — don't hammer a struggling deployment
-  if (window._gas404Until && Date.now() < window._gas404Until) {
-    var waitLeft = Math.ceil((window._gas404Until - Date.now()) / 1000);
-    throw new Error('Sync paused for ' + waitLeft + 's after recent errors — retrying automatically.');
-  }
+  // Always attempt the request. Circuit breaker only slows auto-sync polling,
+  // it must never invent "paused" errors that cascade and block login/users.
 
   var controller = new AbortController();
-  var timer = setTimeout(function() { controller.abort(); }, 90000);
+  var timer = setTimeout(function() { controller.abort(); }, 60000);
 
   try {
     var resp;
     var action = (payload && payload.action) || '';
-    // GET for read-only probes — easier to verify in the browser address bar
     if (action === 'ping' || action === 'getVersion') {
       resp = await fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + 'action=' + encodeURIComponent(action), {
         method: 'GET',
@@ -7697,7 +7690,7 @@ async function _gasCallRaw(payload) {
     if (!resp.ok) {
       if (resp.status === 404) {
         _gasNoteFailure('404');
-        throw new Error('HTTP 404 from Apps Script (often transient under load). Will retry shortly.');
+        throw new Error('HTTP 404 from Apps Script. Open the /exec URL in a browser — you must see JSON. If not, redeploy.');
       }
       _gasNoteFailure('http');
       throw new Error('HTTP ' + resp.status);
@@ -7706,11 +7699,12 @@ async function _gasCallRaw(payload) {
     var data = await resp.json();
     return data;
   } catch (e) {
+    if (/Sync paused/i.test(String(e.message || ''))) throw e;
     if (e.name === 'AbortError' || /timed out|TIMEOUT|Failed to fetch|NetworkError|ERR_CONNECTION/i.test(String(e.message||e))) {
       _gasNoteFailure('network');
       throw new Error(e.name === 'AbortError'
-        ? 'Request timed out — Apps Script busy. Will retry.'
-        : ('Sheets unreachable (' + (e.message || e) + '). Will retry.'));
+        ? 'Request timed out — Apps Script busy.'
+        : ('Sheets unreachable (' + (e.message || e) + ').'));
     }
     throw e;
   } finally {
@@ -8676,10 +8670,13 @@ async function doLogin() {
     var pullErr = '';
     if (!match.user && gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
       try {
+        // Clear any auto-sync backoff so login is never blocked by a prior failed budget pull
+        window._gas404Until = 0;
+        window._gas404Count = 0;
         var fresh = await Promise.race([
           gasCall({ action: 'getUsers' }),
           new Promise(function(_, rej) {
-            setTimeout(function() { rej(new Error('Sheets timed out')); }, 8000);
+            setTimeout(function() { rej(new Error('Sheets timed out')); }, 15000);
           })
         ]);
         if (fresh && fresh.ok && Array.isArray(fresh.data) && fresh.data.length) {
@@ -10632,10 +10629,11 @@ async function afterLogin() {
     // Intentionally ignore getDeletedRefs for store mutation.
     // Server delete lists were polluting local state and hiding live requests.
     // User deletes are tracked locally and pushed via deletedStore.
-    // Serialise initial pulls — parallel Promise.all flooded Apps Script
-    // and triggered the "syncs then disconnects seconds later" symptom.
+    // Serialise initial pulls. Clear backoff first so a prior blip cannot block boot.
     (async function _bootPull() {
       try {
+        window._gas404Until = 0;
+        window._gas404Count = 0;
         await pullBudgetLinesFromSheets().catch(function(e){ appendSyncLog('Budget pull failed: ' + (e.message||e)); });
         await pullClientsFromSheets().catch(function(e){ appendSyncLog('Clients pull failed: ' + (e.message||e)); });
         try { seedDemoDataIfEmpty(); } catch(e) {}
