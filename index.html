@@ -5603,6 +5603,8 @@ function openSignAndApprove(btn, ref, recipient) {
 // Background Sheets sync — keeps UI instant, optimises payload
 function backgroundPush(opts) {
   opts = opts || {};
+  _syncLoopToken++;            // pause polling while pushing (restarted by startAutoSync)
+  clearTimeout(gsAutoSyncTimer);
   clearInterval(gsAutoSyncTimer);
   if (!gsWebAppUrl) return;
   pushToSheets(opts).then(function() {
@@ -5879,6 +5881,10 @@ async function pullClientsFromSheets() {
       if (res.note) appendSyncLog('Clients: ' + res.note);
     } else {
       var errMsg = _desc(res);
+      if (!/unknown action/i.test(errMsg)) {
+        appendSyncLog('Clients pull failed: ' + errMsg + ' — keeping the ' + (clientsStore || []).length + ' SN(s) already loaded; will retry later');
+        return { ok: false, error: errMsg };
+      }
       appendSyncLog('getClients unavailable (' + errMsg + ') — trying getAll…');
       var all = await gasCall({ action: 'getAll' });
       if (!all || !all.ok || !Array.isArray(all.clients)) {
@@ -6433,6 +6439,8 @@ function _removeReqForm(id) {
 function _refreshClientsForForms() {
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') { _refreshClientPickers(); return; }
   if (_clientsLoading) return;
+  if (window._clientsPulledAt && Date.now() - window._clientsPulledAt < 60000 && !window._forceClientsPull) { _refreshClientPickers(); return; }
+  window._forceClientsPull = false;
   _clientsLoading = true;
   window._clientsTriedAt = Date.now();
   _refreshClientPickers();
@@ -6623,7 +6631,7 @@ function _snHint(f) {
     if (_clientsLoading) return { t: 'Checking the Clients sheet for “' + sn + '”…', c: 'var(--muted)' };
     if (!window._clientsTriedAt || Date.now() - window._clientsTriedAt > 20000) {
       clearTimeout(window._snRecheckT);
-      window._snRecheckT = setTimeout(_refreshClientsForForms, 900); // after typing pauses
+      window._snRecheckT = setTimeout(function(){ window._forceClientsPull = true; _refreshClientsForForms(); }, 900); // after typing pauses
       return { t: 'Checking the Clients sheet for “' + sn + '”…', c: 'var(--muted)' };
     }
     return { t: 'No match for “' + sn + '” on the Clients sheet' + (getUserCountry() ? ' for your country.' : '.'), c: 'var(--danger)' };
@@ -6859,6 +6867,7 @@ document.addEventListener('click', function(e) {
     f.clientQ = '';
   } else if (act === 'refreshClients') {
     window._clientsTriedAt = 0;
+    window._forceClientsPull = true;
     _refreshClientsForForms();
     return;
   } else if (act === 'clearClient') {
@@ -7579,7 +7588,32 @@ function disconnectWebApp() {
 }
 
 // -- Core fetch wrapper --------------------------------------
-async function gasCall(payload) {
+// ── Request limiter ──────────────────────────────────────
+// Apps Script throttles a deployment that gets many overlapping requests:
+// it starts answering with 404s or bounces POSTs to doGet ("Web App is live").
+// Keep at most 2 requests in flight and queue the rest.
+var _gasInFlight = 0;
+var _gasQueue = [];
+var GAS_MAX_CONCURRENT = 2;
+function gasBusy() { return _gasInFlight + _gasQueue.length; }
+function gasCall(payload) {
+  return new Promise(function(resolve, reject) {
+    _gasQueue.push({ payload: payload, resolve: resolve, reject: reject });
+    _gasPump();
+  });
+}
+function _gasPump() {
+  while (_gasInFlight < GAS_MAX_CONCURRENT && _gasQueue.length) {
+    var job = _gasQueue.shift();
+    _gasInFlight++;
+    _gasCallRaw(job.payload).then(job.resolve, job.reject).finally(function() {
+      _gasInFlight--;
+      _gasPump();
+    });
+  }
+}
+
+async function _gasCallRaw(payload) {
   var raw = gsWebAppUrl || (document.getElementById('webAppUrl') && document.getElementById('webAppUrl').value.trim()) || '';
   var url = normalizeWebAppUrl_(raw);
   if (!url) throw new Error('No Web App URL set');
@@ -8255,71 +8289,88 @@ function syncAfterChange() {
 function gsPushIfConnected() { syncAfterChange(); }
 
 // -- Auto-sync timer -----------------------------------------
-// Auto-sync: always on, 3s interval for near-instant cross-device reflection
-var AUTO_SYNC_INTERVAL = 2000; // 2 seconds -- version check is near-instant
+// Auto-sync: one request at a time, never overlapping.
+// (An overlapping 2s setInterval flooded Apps Script, which then throttled the
+//  deployment — the "works after refresh, disconnects shortly after" symptom.)
+var AUTO_SYNC_INTERVAL = 5000;          // version check every 5s while the tab is visible
+var AUTO_SYNC_MAX_BACKOFF = 60000;      // up to 60s after repeated failures
+var FULL_REFRESH_EVERY_MS = 5 * 60000;  // budgets + form settings every 5 min
+var CLIENTS_REFRESH_EVERY_MS = 10 * 60000; // Clients sheet every 10 min (also on opening the request form)
 
 var _lastKnownVersion = -1;
 var _versionPollCount = 0;
+var _syncDelay = AUTO_SYNC_INTERVAL;
+var _lastFullRefresh = Date.now();
+var _lastClientsRefresh = Date.now();
+var _syncLoopToken = 0;
 
 async function checkVersionAndSync() {
-  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
-  if (shouldSkipPull()) return;
-  if (window._gas404Until && Date.now() < window._gas404Until) return;
-  // Note: _pushInProgress is local-only; other devices won't have it set
+  if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return true;
+  if (shouldSkipPull()) return true;
+  if (window._gas404Until && Date.now() < window._gas404Until) return false;
+  if (gasBusy() > 1) return true; // other requests running — don't pile up
 
   try {
-    // Ultra-lightweight: just fetch the version number from CacheService
     var res = await gasCall({ action: 'getVersion' });
-    if (!res || !res.ok) return;
-
+    if (!res || !res.ok) return false;
     var serverVersion = res.version;
 
     if (_lastKnownVersion === -1) {
-      // First poll only — record version; initial data already loaded in afterLogin
       _lastKnownVersion = serverVersion;
-      return;
+      return true;
     }
-
     if (serverVersion !== _lastKnownVersion) {
-      // External change — pull, unless we just wrote (grace / push flag)
-      if (shouldSkipPull()) {
-        // Adopt version so we do not stampede-pull once grace ends
-        _lastKnownVersion = serverVersion;
-        return;
-      }
+      if (shouldSkipPull()) { _lastKnownVersion = serverVersion; return true; }
       _lastKnownVersion = serverVersion;
       await pullRequestsOnly();
     }
 
-    // Every 30s do a full pull to catch anything missed
     _versionPollCount++;
-    if (_versionPollCount % 15 === 0) {
-      pullBudgetLinesFromSheets().catch(function(){});
-      pullReqFormConfig().catch(function(){});
+    var now = Date.now();
+    if (now - _lastFullRefresh > FULL_REFRESH_EVERY_MS) {
+      _lastFullRefresh = now;
+      await pullBudgetLinesFromSheets().catch(function(){});
+      await pullReqFormConfig().catch(function(){});
+    }
+    if (now - _lastClientsRefresh > CLIENTS_REFRESH_EVERY_MS) {
+      _lastClientsRefresh = now;
       pullClientsFromSheets().then(function(){ try { _refreshClientPickers(); } catch(e) {} }).catch(function(){});
     }
+    return true;
   } catch(e) {
-    // Silent -- version check failed, will retry next cycle
+    return false;
   }
 }
 
 function startAutoSync() {
   clearInterval(gsAutoSyncTimer);
+  clearTimeout(gsAutoSyncTimer);
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
-  // Do NOT reset _lastKnownVersion here — that forced a full pull after every
-  // push and made requester rows vanish for several seconds.
   _versionPollCount = 0;
-  gsAutoSyncTimer = setInterval(function() {
-    checkVersionAndSync();
-  }, AUTO_SYNC_INTERVAL);
-  appendSyncLog('Auto-sync active (version poll every ' + (AUTO_SYNC_INTERVAL/1000) + 's)');
+  _syncDelay = AUTO_SYNC_INTERVAL;
+  var token = ++_syncLoopToken;
+  var tick = async function() {
+    if (token !== _syncLoopToken) return; // a newer loop replaced this one
+    var ok = true;
+    if (!document.hidden) ok = await checkVersionAndSync();
+    _syncDelay = ok ? AUTO_SYNC_INTERVAL : Math.min(AUTO_SYNC_MAX_BACKOFF, _syncDelay * 2);
+    if (token === _syncLoopToken) gsAutoSyncTimer = setTimeout(tick, document.hidden ? 15000 : _syncDelay);
+  };
+  gsAutoSyncTimer = setTimeout(tick, AUTO_SYNC_INTERVAL);
+  appendSyncLog('Auto-sync active (checks every ' + (AUTO_SYNC_INTERVAL/1000) + 's, one request at a time)');
 }
+// Check right away when the user comes back to the tab
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden && gsWebAppUrl && typeof checkVersionAndSync === 'function') checkVersionAndSync();
+});
 
 function toggleAutoSync(on) {
   // Kept for UI compatibility but auto-sync is always on when connected
   if (on) startAutoSync();
   else {
+    _syncLoopToken++;
     clearInterval(gsAutoSyncTimer);
+    clearTimeout(gsAutoSyncTimer);
     appendSyncLog('Auto-sync paused');
   }
 }
@@ -8693,6 +8744,8 @@ function loginSuccess(user) {
 
 // -- Logout -----------------------------------------------------
 function doLogout() {
+  _syncLoopToken++;
+  clearTimeout(gsAutoSyncTimer);
   clearInterval(gsAutoSyncTimer);
   gsAutoSyncTimer = null;
   localStorage.removeItem(SESSION_KEY);
