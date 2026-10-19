@@ -5868,18 +5868,32 @@ async function pullClientsFromSheets() {
     } catch (e1) {
       res = { ok: false, error: e1.message || String(e1) };
     }
-    if (res && res.ok && (res.clients || res.data)) {
+    var _desc = function(x) {
+      if (!x) return 'empty response';
+      if (x.error) return String(x.error);
+      if (x.message && !x.clients) return 'server replied "' + x.message + '" — the request did not reach doPost (check deployment access is "Anyone" and the URL is the /exec of the current deployment)';
+      try { return 'unexpected reply ' + JSON.stringify(x).slice(0, 160); } catch(e) { return 'unexpected reply'; }
+    };
+    if (res && res.ok && Array.isArray(res.clients || res.data)) {
       rows = res.clients || res.data || [];
+      if (res.note) appendSyncLog('Clients: ' + res.note);
     } else {
-      var errMsg = (res && res.error) ? String(res.error) : 'getClients failed';
+      var errMsg = _desc(res);
       appendSyncLog('getClients unavailable (' + errMsg + ') — trying getAll…');
       var all = await gasCall({ action: 'getAll' });
-      if (!all || !all.ok) {
-        appendSyncLog('Clients pull failed: ' + errMsg);
+      if (!all || !all.ok || !Array.isArray(all.clients)) {
+        appendSyncLog('Clients pull failed: ' + (all && all.clientsError ? all.clientsError : _desc(all)) + ' — keeping the ' + (clientsStore || []).length + ' SN(s) already loaded');
         return { ok: false, error: errMsg };
       }
+      if (all.clientsError) appendSyncLog('Clients sheet problem: ' + all.clientsError);
       rows = all.clients || [];
-      if (!rows.length && all.Clients) rows = all.Clients;
+    }
+
+    // Never wipe a good list because the sheet answered with nothing (temporary error / wrong deployment)
+    var _fresh = (rows || []).map(mapClientRow_).filter(function(c){ return !!c.clientSN; });
+    if (!_fresh.length && (clientsStore || []).length) {
+      appendSyncLog('Clients: sheet returned 0 SNs — keeping the ' + clientsStore.length + ' SN(s) already loaded. Check the Clients tab has a "Client SN" header.');
+      return { ok: false, error: 'empty' };
     }
 
     clientsStore = (rows || []).map(mapClientRow_).filter(function(c){ return !!c.clientSN; });
@@ -7910,7 +7924,8 @@ async function pullFromSheets(silent) {
     }
 
     // -- Clients sheet (source of truth for Client SN) --
-    if (res.clients) {
+    if (res.clientsError) appendSyncLog('Clients sheet problem: ' + res.clientsError);
+    if (Array.isArray(res.clients) && (res.clients.length || !(clientsStore || []).length)) {
       clientsStore = (res.clients || []).map(mapClientRow_).filter(function(c){ return !!c.clientSN; });
       var seenC = {};
       clientsStore = clientsStore.filter(function(c) {
