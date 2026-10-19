@@ -5606,13 +5606,15 @@ function backgroundPush(opts) {
   if (!gsWebAppUrl) return;
   var attempt = function(isRetry) {
     pushToSheets(opts).then(function() {
+      // Restart polling quickly so other tabs pick up the new version soon
+      _syncDelay = 2000;
       if (opts.withSigs) {
         return pushSigImages().then(function(){ startAutoSync(); }, function(){ startAutoSync(); });
       }
       startAutoSync();
     }).catch(function(err) {
       if (!isRetry && window._gas404Until && Date.now() < window._gas404Until) {
-        var wait = Math.min(25000, Math.max(3000, window._gas404Until - Date.now() + 500));
+        var wait = Math.min(10000, Math.max(1500, window._gas404Until - Date.now() + 200));
         appendSyncLog('Push deferred ' + Math.round(wait/1000) + 's (Apps Script busy)…');
         setTimeout(function(){ attempt(true); }, wait);
         return;
@@ -6909,7 +6911,7 @@ async function submitAllRequests() {
     var needsClients = activeIdx.some(function(i){ var s = _formSpec(_reqForms[i]); return s && s.needClient; });
     if (needsClients && gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
       try {
-        await Promise.race([pullClientsFromSheets(), new Promise(function(r){ setTimeout(r, 8000); })]);
+        await Promise.race([pullClientsFromSheets(), new Promise(function(r){ setTimeout(r, 3000); })]);
       } catch(e) {}
     }
   } finally {
@@ -6923,7 +6925,7 @@ async function submitAllRequests() {
       && gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
     // A Client SN wasn't found — make sure we have the complete, latest Clients sheet before rejecting
     if (btn) btn.textContent = 'Checking Client SNs…';
-    try { await Promise.race([pullClientsFromSheets(), new Promise(function(r){ setTimeout(r, 45000); })]); } catch(e) {}
+    try { await Promise.race([pullClientsFromSheets(), new Promise(function(r){ setTimeout(r, 8000); })]); } catch(e) {}
     vals = _validateAllReqForms();
     bad = activeIdx.find(function(i){ return !vals[i].ok; });
     _refreshClientPickers();
@@ -7617,8 +7619,8 @@ function _gasPump() {
     _gasInFlight++;
     _gasCallRaw(job.payload).then(job.resolve, job.reject).finally(function() {
       _gasInFlight--;
-      // Small gap between requests so Apps Script is less likely to throttle
-      setTimeout(_gasPump, 180);
+      // Tiny gap between requests — enough to avoid GAS throttle, low latency
+      setTimeout(_gasPump, 40);
     });
   }
 }
@@ -7642,7 +7644,7 @@ function _gasNoteFailure(kind) {
   window._gas404Count = (window._gas404Count || 0) + 1;
   var n = window._gas404Count;
   // Back off polling, but only flip the UI after 3 consecutive failures
-  var pauseMs = n <= 1 ? 8000 : (n <= 3 ? 20000 : 60000);
+  var pauseMs = n <= 1 ? 3000 : (n <= 3 ? 8000 : 20000);
   window._gas404Until = Date.now() + pauseMs;
   if (n >= 3) {
     gsConnected = false;
@@ -7775,9 +7777,11 @@ async function pushToSheets(opts) {
         payeeNumber:      r.payeeNumber || '',
         bundleRef:        r.bundleRef || '',
         transportBreakdown: r.transportBreakdown ? JSON.stringify(r.transportBreakdown) : '',
-        // Only include base64 when it exists (avoids shipping empty fields)
-        sigDataUrl:       (r.sigDataUrl && r.sigDataUrl.length > 50) ? r.sigDataUrl : '',
-        requesterSig:     (r.requesterSig && r.requesterSig.length > 50) ? r.requesterSig : '',
+        // Fast push omits heavy base64 so draft/status updates land in ~2–5s.
+        // Full push / withSigs still sends images. Apps Script keeps existing
+        // Sig Data / Requester Sig when the incoming value is empty.
+        sigDataUrl:       (!opts.fast && r.sigDataUrl && r.sigDataUrl.length > 50) ? r.sigDataUrl : '',
+        requesterSig:     (!opts.fast && r.requesterSig && r.requesterSig.length > 50) ? r.requesterSig : '',
       };
     });
 
@@ -8329,8 +8333,8 @@ function gsPushIfConnected() { syncAfterChange(); }
 // Auto-sync: one request at a time, never overlapping.
 // (An overlapping 2s setInterval flooded Apps Script, which then throttled the
 //  deployment — the "works after refresh, disconnects shortly after" symptom.)
-var AUTO_SYNC_INTERVAL = 12000;         // version check every 12s while the tab is visible
-var AUTO_SYNC_MAX_BACKOFF = 90000;      // up to 90s after repeated failures
+var AUTO_SYNC_INTERVAL = 6000;          // version check every 6s while the tab is visible
+var AUTO_SYNC_MAX_BACKOFF = 45000;      // up to 45s after repeated failures
 var FULL_REFRESH_EVERY_MS = 5 * 60000;  // budgets + form settings every 5 min
 var CLIENTS_REFRESH_EVERY_MS = 10 * 60000; // Clients sheet every 10 min (also on opening the request form)
 
@@ -8393,7 +8397,8 @@ function startAutoSync() {
     _syncDelay = ok ? AUTO_SYNC_INTERVAL : Math.min(AUTO_SYNC_MAX_BACKOFF, _syncDelay * 2);
     if (token === _syncLoopToken) gsAutoSyncTimer = setTimeout(tick, document.hidden ? 15000 : _syncDelay);
   };
-  gsAutoSyncTimer = setTimeout(tick, AUTO_SYNC_INTERVAL);
+  var firstDelay = Math.min(_syncDelay || AUTO_SYNC_INTERVAL, AUTO_SYNC_INTERVAL);
+  gsAutoSyncTimer = setTimeout(tick, firstDelay);
   appendSyncLog('Auto-sync active (checks every ' + (AUTO_SYNC_INTERVAL/1000) + 's, one request at a time)');
 }
 // Check right away when the user comes back to the tab
