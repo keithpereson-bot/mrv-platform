@@ -2061,58 +2061,126 @@
     .usr-form-grid { grid-template-columns:1fr; }
     .usr-e { max-width:160px; }
   }
-  /* Expense Claim layout */
+  /* Expense Claim layout — optimised for many projects */
   .ecf-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
-  .ecf-head-actions { display:flex; gap:8px; }
-  .ecf-layout { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:16px; align-items:start; min-width:0; }
-  .ecf-side { min-width:0; }
-  .ecf-main { display:flex; flex-direction:column; gap:14px; min-width:0; }
-  .ecf-side { position:sticky; top:72px; display:flex; flex-direction:column; gap:14px; }
-  .ecf-step { display:inline-flex; width:20px; height:20px; border-radius:50%; background:var(--brand); color:#fff; font-size:11px; font-weight:700; align-items:center; justify-content:center; margin-right:8px; vertical-align:middle; }
-  .ecf-proj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:8px; max-height:180px; overflow-y:auto; }
-  .ecf-proj { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1.5px solid var(--border); border-radius:8px; cursor:pointer; background:#fff; text-transform:none; letter-spacing:0; font-weight:400; margin:0; }
-  .ecf-proj:hover { border-color:var(--brand); }
-  .ecf-proj.is-on { border-color:var(--brand); background:#F3F9FD; }
-  .ecf-req-list { max-height:340px; overflow-y:auto; border-top:1px solid var(--border); }
-  .ecf-req { display:flex; align-items:center; gap:12px; padding:9px 16px; border-bottom:1px solid var(--border); cursor:pointer; text-transform:none; letter-spacing:0; font-weight:400; margin:0; }
+  .ecf-head-actions { display:flex; gap:8px; flex-shrink:0; }
+  .ecf-layout {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(260px,300px);
+    gap:14px;
+    align-items:start;
+    min-width:0;
+  }
+  .ecf-main { display:flex; flex-direction:column; gap:12px; min-width:0; }
+  .ecf-side { position:sticky; top:56px; display:flex; flex-direction:column; gap:12px; min-width:0; max-height:calc(100vh - 72px); overflow-y:auto; }
+  .ecf-step {
+    display:inline-flex; width:18px; height:18px; border-radius:50%;
+    background:var(--brand); color:#fff; font-size:10px; font-weight:700;
+    align-items:center; justify-content:center; margin-right:6px; vertical-align:middle; flex-shrink:0;
+  }
+
+  /* Project picker toolbar */
+  .ecf-toolbar {
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    padding:8px 12px; border-bottom:1px solid var(--border); background:#FAF9F8;
+  }
+  .ecf-search-wrap { position:relative; flex:1; min-width:140px; max-width:280px; }
+  .ecf-search-wrap svg { position:absolute; left:8px; top:50%; transform:translateY(-50%); color:#8A8886; pointer-events:none; }
+  .ecf-search {
+    width:100%; padding:6px 8px 6px 28px; border:1px solid #C8C6C4; border-radius:4px;
+    font-size:12.5px; font-family:inherit; background:#fff;
+  }
+  .ecf-search:focus { border-color:var(--brand); outline:none; box-shadow:0 0 0 1px var(--brand); }
+  .ecf-meta { font-size:11.5px; color:var(--muted); white-space:nowrap; }
+
+  /* Dense project list (scales to dozens of projects) */
+  .ecf-proj-grid {
+    display:flex; flex-direction:column; gap:0;
+    max-height:min(240px, 32vh); overflow-y:auto;
+    border-top:1px solid var(--border);
+  }
+  .ecf-proj {
+    display:flex; align-items:center; gap:8px;
+    padding:7px 12px; margin:0; border:none; border-bottom:1px solid #EDEBE9;
+    cursor:pointer; background:#fff; text-transform:none; letter-spacing:0; font-weight:400;
+  }
+  .ecf-proj:hover { background:#F3F2F1; }
+  .ecf-proj.is-on { background:#DEECF9; }
+  .ecf-proj.is-on:hover { background:#C7E0F4; }
+  .ecf-proj-name { font-size:12.5px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ecf-proj-meta { font-size:11px; color:var(--muted); white-space:nowrap; }
+  .ecf-proj-amt { margin-left:auto; font-size:12px; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; flex-shrink:0; }
+  .ecf-proj.ecf-hidden { display:none; }
+
+  /* Request list */
+  .ecf-req-toolbar {
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    padding:8px 12px; background:#FAF9F8; border-bottom:1px solid var(--border);
+  }
+  .ecf-req-list { max-height:min(380px, 42vh); overflow-y:auto; }
+  .ecf-req-group {
+    position:sticky; top:0; z-index:2;
+    padding:5px 12px; font-size:10.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.04em; color:#004578; background:#DEECF9; border-bottom:1px solid #C7E0F4;
+  }
+  .ecf-req {
+    display:grid; grid-template-columns:18px minmax(0,1fr) auto;
+    align-items:center; gap:8px 10px;
+    padding:7px 12px; border-bottom:1px solid #EDEBE9;
+    cursor:pointer; text-transform:none; letter-spacing:0; font-weight:400; margin:0;
+  }
   .ecf-req:hover { background:#FAF9F8; }
-  .ecf-header-body { display:flex; flex-direction:column; gap:14px; }
-  .ecf-group-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:8px; }
-  .ecf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px 14px; }
+  .ecf-req-title { font-size:12.5px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ecf-req-sub { font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ecf-req-amt { font-size:12.5px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+  /* Form header */
+  .ecf-header-body { display:flex; flex-direction:column; gap:12px; }
+  .ecf-group-title { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:6px; }
+  .ecf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px 12px; }
   .ecf-grid .form-group { margin:0; }
-  .ecf-codes { border:1px solid var(--border); border-radius:8px; padding:10px 12px; background:#FAF9F8; }
-  .ecf-codes summary { cursor:pointer; display:flex; align-items:center; gap:10px; list-style:none; }
+  .ecf-codes { border:1px solid var(--border); border-radius:6px; padding:8px 10px; background:#FAF9F8; }
+  .ecf-codes summary { cursor:pointer; display:flex; align-items:center; gap:8px; list-style:none; }
   .ecf-codes summary::-webkit-details-marker { display:none; }
   .ecf-codes summary::before { content:'▸'; color:var(--muted); font-size:11px; transition:transform .15s; }
   .ecf-codes[open] summary::before { transform:rotate(90deg); }
-  .ecf-codes-state { font-size:11.5px; margin-left:auto; }
-  .ecf-sum { display:flex; flex-direction:column; gap:8px; }
+  .ecf-codes-state { font-size:11px; margin-left:auto; }
+
+  /* Summary panel */
+  .ecf-sum { display:flex; flex-direction:column; gap:6px; }
   .ecf-sum-total { display:flex; flex-direction:column; gap:2px; padding-bottom:8px; border-bottom:1px solid var(--border); }
-  .ecf-sum-total span { font-size:11.5px; color:var(--muted); }
-  .ecf-sum-total strong { font-size:22px; font-weight:700; color:var(--ink); letter-spacing:-.01em; }
-  .ecf-sum-row { display:flex; justify-content:space-between; gap:10px; font-size:12.5px; }
+  .ecf-sum-total span { font-size:11px; color:var(--muted); }
+  .ecf-sum-total strong { font-size:20px; font-weight:700; color:var(--ink); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .ecf-sum-row { display:flex; justify-content:space-between; gap:8px; font-size:12px; }
+  .ecf-sum-row span:last-child { white-space:nowrap; font-variant-numeric:tabular-nums; }
   .ecf-sum-bal { font-weight:700; }
-  .ecf-sum-note { font-size:11.5px; color:#004578; background:#DEECF9; border-radius:6px; padding:6px 8px; }
-  .ecf-checks { list-style:none; margin:6px 0 0; padding:8px 0 0; border-top:1px solid var(--border); display:grid; gap:4px; }
-  .ecf-checks li { font-size:12px; padding-left:20px; position:relative; }
+  .ecf-sum-note { font-size:11px; color:#004578; background:#DEECF9; border-radius:4px; padding:5px 7px; line-height:1.35; }
+  .ecf-checks { list-style:none; margin:4px 0 0; padding:6px 0 0; border-top:1px solid var(--border); display:grid; gap:3px; }
+  .ecf-checks li { font-size:11.5px; padding-left:18px; position:relative; }
   .ecf-checks li::before { position:absolute; left:0; top:0; font-weight:700; }
   .ecf-checks li.ok { color:var(--ink); }
   .ecf-checks li.ok::before { content:'✓'; color:#107C10; }
   .ecf-checks li.todo { color:#835C00; }
   .ecf-checks li.todo::before { content:'○'; color:#C19C00; }
-  .ecf-sig-canvas { width:100%; height:110px; border:1.5px dashed #C8C6C4; border-radius:8px; cursor:crosshair; background:#fff; display:block; touch-action:none; }
-  .ecf-sig-saved { display:flex; align-items:center; gap:12px; }
-  .ecf-sig-saved img { height:46px; max-width:150px; object-fit:contain; border:1px solid var(--border); border-radius:6px; padding:4px; background:#fff; }
-  .ecf-actions { display:flex; flex-direction:column-reverse; gap:8px; }
+  .ecf-sig-canvas { width:100%; height:100px; border:1.5px dashed #C8C6C4; border-radius:6px; cursor:crosshair; background:#fff; display:block; touch-action:none; }
+  .ecf-sig-saved { display:flex; align-items:center; gap:10px; }
+  .ecf-sig-saved img { height:42px; max-width:130px; object-fit:contain; border:1px solid var(--border); border-radius:4px; padding:3px; background:#fff; }
+  .ecf-actions { display:flex; flex-direction:column; gap:6px; }
   .ecf-actions .btn { width:100%; min-width:0; flex:none !important; justify-content:center; }
-  .ecf-sum-row span:last-child { white-space:nowrap; }
+
   @media (max-width:1100px) {
     .ecf-layout { grid-template-columns:1fr; }
-    .ecf-side { position:static; }
+    .ecf-side { position:static; max-height:none; overflow:visible; }
+    .ecf-proj-grid { max-height:200px; }
+    .ecf-req-list { max-height:280px; }
   }
   @media (max-width:768px) {
     .ecf-head-actions { display:none; }
-    .ecf-actions { position:sticky; bottom:8px; background:#fff; padding:8px; border:1px solid var(--border); border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,.12); z-index:5; }
+    .ecf-actions {
+      position:sticky; bottom:8px; background:#fff; padding:8px;
+      border:1px solid var(--border); border-radius:8px;
+      box-shadow:0 4px 14px rgba(0,0,0,.12); z-index:5;
+    }
   }
   /* Floating new-request button */
   .rq-fab { position:fixed; right:24px; bottom:24px; width:54px; height:54px; border-radius:50%; border:none; background:var(--brand); color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.25); cursor:pointer; z-index:110; display:flex; align-items:center; justify-content:center; transition:transform .12s, box-shadow .12s; }
@@ -2502,7 +2570,7 @@
       <div class="ecf-head">
         <div>
           <h1>Expense Claim Form</h1>
-          <p>Pick projects and paid requests, check the header, sign and export</p>
+          <p>Select projects → tick paid lines → header &amp; sign → export (one PDF per project when multi-selected)</p>
         </div>
         <div class="ecf-head-actions">
           <button class="btn btn-ghost btn-sm" onclick="ecfOpenPreview()">Preview</button>
@@ -2516,22 +2584,27 @@
       <!-- ===== Main column ===== -->
       <div class="ecf-main">
 
-        <div class="card">
+        <div class="card" style="overflow:hidden">
           <div class="card-header">
-            <div class="card-title"><span class="ecf-step">1</span>Projects</div>
+            <div class="card-title"><span class="ecf-step">1</span>Projects <span class="badge badge-gray" id="ecfProjCount" style="margin-left:6px">0</span></div>
             <div style="display:flex;gap:6px">
               <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(true)">All</button>
               <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(false)">None</button>
             </div>
           </div>
-          <div class="card-body" style="padding:12px 16px">
-            <div id="ecfProjectList" class="ecf-proj-grid">
-              <div style="padding:12px;text-align:center;color:var(--muted);font-size:13px">Loading projects…</div>
+          <div class="ecf-toolbar">
+            <div class="ecf-search-wrap">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <input id="ecfProjSearch" class="ecf-search" type="search" placeholder="Filter projects…" oninput="ecfFilterProjects(this.value)" autocomplete="off">
             </div>
+            <span class="ecf-meta" id="ecfProjSelectedMeta">0 selected</span>
+          </div>
+          <div id="ecfProjectList" class="ecf-proj-grid">
+            <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">Loading projects…</div>
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" style="overflow:hidden">
           <div class="card-header">
             <div class="card-title"><span class="ecf-step">2</span>Paid requests <span class="badge badge-gray" id="ecfReqCount" style="margin-left:6px">0</span></div>
             <div style="display:flex;gap:6px;align-items:center">
@@ -2539,8 +2612,15 @@
               <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(false);ecfUpdateSummary()">None</button>
             </div>
           </div>
+          <div class="ecf-req-toolbar">
+            <div class="ecf-search-wrap">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <input id="ecfReqSearch" class="ecf-search" type="search" placeholder="Filter requests…" oninput="ecfFilterRequests(this.value)" autocomplete="off">
+            </div>
+            <span class="ecf-meta" id="ecfReqSelectedMeta">0 selected</span>
+          </div>
           <div id="ecfRequestList" class="ecf-req-list">
-            <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">Select a project above to load its paid requests.</div>
+            <div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">Select one or more projects to load paid requests.</div>
           </div>
         </div>
 
@@ -11088,15 +11168,73 @@ function ecfGetSelectedProjects() {
 }
 
 function ecfSelAllProjects(v) {
-  document.querySelectorAll('.ecf-proj-chk').forEach(function(c){ c.checked = !!v; });
+  document.querySelectorAll('.ecf-proj-chk').forEach(function(c){
+    var row = c.closest('.ecf-proj');
+    if (row && row.classList.contains('ecf-hidden')) return;
+    c.checked = !!v;
+    if (row) row.classList.toggle('is-on', !!v);
+  });
   ecfOnProjectChange();
+}
+
+function ecfFilterProjects(q) {
+  q = String(q || '').toLowerCase().trim();
+  var rows = document.querySelectorAll('#ecfProjectList .ecf-proj');
+  var shown = 0;
+  rows.forEach(function(row) {
+    var name = (row.getAttribute('data-name') || '').toLowerCase();
+    var hit = !q || name.indexOf(q) !== -1;
+    row.classList.toggle('ecf-hidden', !hit);
+    if (hit) shown++;
+  });
+  var empty = document.getElementById('ecfProjFilterEmpty');
+  if (empty) empty.style.display = shown ? 'none' : '';
+}
+
+function ecfFilterRequests(q) {
+  q = String(q || '').toLowerCase().trim();
+  var rows = document.querySelectorAll('#ecfRequestList .ecf-req');
+  var groups = document.querySelectorAll('#ecfRequestList .ecf-req-group');
+  var shown = 0;
+  rows.forEach(function(row) {
+    var hay = (row.getAttribute('data-search') || '').toLowerCase();
+    var hit = !q || hay.indexOf(q) !== -1;
+    row.style.display = hit ? '' : 'none';
+    if (hit) shown++;
+  });
+  // Hide group headers with no visible rows
+  groups.forEach(function(g) {
+    var next = g.nextElementSibling;
+    var any = false;
+    while (next && !next.classList.contains('ecf-req-group')) {
+      if (next.classList.contains('ecf-req') && next.style.display !== 'none') any = true;
+      next = next.nextElementSibling;
+    }
+    g.style.display = any ? '' : 'none';
+  });
+  var empty = document.getElementById('ecfReqFilterEmpty');
+  if (empty) empty.style.display = (rows.length && !shown) ? '' : 'none';
+}
+
+function ecfUpdateProjMeta() {
+  var n = document.querySelectorAll('.ecf-proj-chk:checked').length;
+  var el = document.getElementById('ecfProjSelectedMeta');
+  if (el) el.textContent = n + ' selected';
+  var total = document.querySelectorAll('.ecf-proj-chk').length;
+  var c = document.getElementById('ecfProjCount');
+  if (c) c.textContent = String(total);
+}
+
+function ecfUpdateReqMeta() {
+  var n = document.querySelectorAll('.ecf-chk:checked').length;
+  var el = document.getElementById('ecfReqSelectedMeta');
+  if (el) el.textContent = n + ' selected';
 }
 
 function ecfPopulateProjects() {
   var list = document.getElementById('ecfProjectList');
   if (!list) return;
 
-  // Remember currently checked projects
   var prevChecked = {};
   document.querySelectorAll('.ecf-proj-chk:checked').forEach(function(c){ prevChecked[c.value] = true; });
 
@@ -11112,7 +11250,8 @@ function ecfPopulateProjects() {
   var names = Object.keys(projects).sort(function(a,b){ return a.localeCompare(b); });
 
   if (!names.length) {
-    list.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px">No projects with paid requests. Mark requests as Paid first.</div>';
+    list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">No projects with paid requests. Mark requests as Paid first.</div>';
+    ecfUpdateProjMeta();
     return;
   }
 
@@ -11120,17 +11259,26 @@ function ecfPopulateProjects() {
     var info = projects[p];
     var checked = prevChecked[p] ? ' checked' : '';
     var safe = p.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-    return '<label class="ecf-proj' + (checked ? ' is-on' : '') + '">'
-      +'<input type="checkbox" class="ecf-proj-chk" value="'+safe+'"'+checked+' onchange="this.closest(\'.ecf-proj\').classList.toggle(\'is-on\',this.checked);ecfOnProjectChange()" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0">'
+    var disp = p.replace(/</g,'&lt;');
+    return '<label class="ecf-proj' + (checked ? ' is-on' : '') + '" data-name="'+safe+'">'
+      +'<input type="checkbox" class="ecf-proj-chk" value="'+safe+'"'+checked
+      +' onchange="this.closest(\'.ecf-proj\').classList.toggle(\'is-on\',this.checked);ecfOnProjectChange()" style="width:14px;height:14px;accent-color:var(--brand);flex-shrink:0">'
       +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:13px;font-weight:600;color:var(--ink)">'+p.replace(/</g,'&lt;')+'</div>'
-        +'<div style="font-size:11px;color:var(--muted)">'+info.count+' paid request'+(info.count===1?'':'s')+' · '+info.total.toLocaleString()+'</div>'
+        +'<div class="ecf-proj-name" title="'+safe+'">'+disp+'</div>'
+        +'<div class="ecf-proj-meta">'+info.count+' paid</div>'
       +'</div>'
+      +'<div class="ecf-proj-amt">'+info.total.toLocaleString()+'</div>'
       +'</label>';
-  }).join('');
+  }).join('')
+  + '<div id="ecfProjFilterEmpty" style="display:none;padding:14px;text-align:center;color:var(--muted);font-size:12.5px">No projects match your filter.</div>';
+
+  var search = document.getElementById('ecfProjSearch');
+  if (search && search.value) ecfFilterProjects(search.value);
+  ecfUpdateProjMeta();
 }
 
 function ecfOnProjectChange() {
+  ecfUpdateProjMeta();
   ecfLoadRequests();
   // Force-fill header from the first selected project's budget metadata
   ecfAutoHeader(true);
@@ -11145,8 +11293,9 @@ function ecfLoadRequests() {
   var selectedProjects = ecfGetSelectedProjects();
   if (!selectedProjects.length) {
     _ecfFilteredPaid = [];
-    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">Select one or more projects above to load their paid requests.</div>';
+    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">Select one or more projects above to load paid requests.</div>';
     if (countEl) countEl.textContent = '0';
+    ecfUpdateReqMeta();
     ecfUpdateSummary();
     return;
   }
@@ -11156,7 +11305,6 @@ function ecfLoadRequests() {
   var paid = (requestsStore || []).filter(function(r){
     return r.status === 'Paid' && projSet[r.project];
   });
-  // Sort by project then date
   paid.sort(function(a,b){
     var c = (a.project||'').localeCompare(b.project||'');
     if (c) return c;
@@ -11167,6 +11315,7 @@ function ecfLoadRequests() {
   if (!paid.length) {
     list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">No paid requests for the selected project(s).</div>';
     if (countEl) countEl.textContent = '0';
+    ecfUpdateReqMeta();
     ecfUpdateSummary();
     return;
   }
@@ -11176,29 +11325,41 @@ function ecfLoadRequests() {
   paid.forEach(function(r, i){
     if (r.project !== lastProj) {
       lastProj = r.project;
-      html += '<div style="padding:6px 18px;font-size:11px;font-weight:700;color:var(--brand);background:var(--gray-50);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.03em">'
-        +(r.project||'').replace(/</g,'&lt;')+'</div>';
+      html += '<div class="ecf-req-group">'+(r.project||'').replace(/</g,'&lt;')+'</div>';
     }
     var amt = parseFloat(r.amount) || 0;
     var cur = (typeof getCurrency === 'function') ? getCurrency(r.project, r.type) || 'KES' : 'KES';
     var desc = (r.costSummary || r.description || r.costItem || 'No description').replace(/</g, '&lt;');
     var cat  = (r.costItem || r.category || '').replace(/</g, '&lt;');
-    html += '<label class="ecf-req">'
-      +'<input type="checkbox" class="ecf-chk" onchange="ecfUpdateSummary()" data-ref=""'+(r.ref||'').replace(/"/g,'&quot;')+'" data-project="'+(r.project||'').replace(/"/g,'&quot;')+'" data-i="'+i+'" style="width:15px;height:15px;accent-color:var(--brand);flex-shrink:0" checked>'
-      +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:12.5px;font-weight:600;color:var(--ink)">'+desc+'</div>'
-        +'<div style="font-size:11px;color:var(--gray-500);margin-top:2px">'+(cat?cat+' &bull; ':'')+(r.requester?String(r.requester).replace(/</g,'&lt;')+' &bull; ':'')+(r.date?(typeof fmtDate==='function'?fmtDate(r.date):r.date):'')+(r.clientSN?' &bull; SN '+String(r.clientSN).replace(/</g,'&lt;'):'')+'</div>'
+    var ref = String(r.ref || '').replace(/"/g,'&quot;');
+    var proj = String(r.project || '').replace(/"/g,'&quot;');
+    var searchBits = [r.project, r.costSummary, r.description, r.costItem, r.category, r.requester, r.ref, r.clientSN].join(' ').replace(/"/g,'&quot;');
+    var sub = [];
+    if (cat) sub.push(cat);
+    if (r.requester) sub.push(String(r.requester).replace(/</g,'&lt;'));
+    if (r.date) sub.push(typeof fmtDate==='function'?fmtDate(r.date):r.date);
+    if (r.clientSN) sub.push('SN '+String(r.clientSN).replace(/</g,'&lt;'));
+    if (r.ref) sub.push('#'+String(r.ref).replace(/</g,'&lt;'));
+    html += '<label class="ecf-req" data-search="'+searchBits+'">'
+      +'<input type="checkbox" class="ecf-chk" onchange="ecfUpdateReqMeta();ecfUpdateSummary()" data-ref="'+ref+'" data-project="'+proj+'" data-i="'+i+'" style="width:14px;height:14px;accent-color:var(--brand);flex-shrink:0" checked>'
+      +'<div style="min-width:0">'
+        +'<div class="ecf-req-title" title="'+desc+'">'+desc+'</div>'
+        +'<div class="ecf-req-sub">'+sub.join(' · ')+'</div>'
       +'</div>'
-      +'<div style="font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap">'+cur+' '+amt.toLocaleString()+'</div>'
+      +'<div class="ecf-req-amt">'+cur+' '+amt.toLocaleString()+'</div>'
       +'</label>';
   });
+  html += '<div id="ecfReqFilterEmpty" style="display:none;padding:16px;text-align:center;color:var(--muted);font-size:12.5px">No requests match your filter.</div>';
   list.innerHTML = html;
 
   if (countEl) countEl.textContent = paid.length;
+  var reqSearch = document.getElementById('ecfReqSearch');
+  if (reqSearch && reqSearch.value) ecfFilterRequests(reqSearch.value);
+  ecfUpdateReqMeta();
   ecfUpdateSummary();
 }
 
-function ecfSelAll(v) { document.querySelectorAll('.ecf-chk').forEach(function(c){ c.checked = v; }); }
+function ecfSelAll(v) { document.querySelectorAll('.ecf-chk').forEach(function(c){ if (c.closest('.ecf-req') && c.closest('.ecf-req').style.display==='none') return; c.checked = v; }); ecfUpdateReqMeta(); }
 
 function ecfAutoHeader(force) {
   // force=true overwrites existing field values (used when project selection changes)
