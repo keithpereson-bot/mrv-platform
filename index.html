@@ -7672,8 +7672,20 @@ async function _gasCallRaw(payload) {
   try {
     var resp;
     var action = (payload && payload.action) || '';
-    if (action === 'ping' || action === 'getVersion') {
-      resp = await fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + 'action=' + encodeURIComponent(action), {
+    // Reads via GET (many deployments accept GET but reject POST with 405).
+    // Writes must use POST — if POST returns 405, the Web App must be redeployed
+    // (Execute as: Me, Who has access: Anyone, New version).
+    var readActions = {
+      ping:1, getVersion:1, getUsers:1, getClients:1, getRequests:1,
+      getAll:1, getBudgets:1, getSettings:1, getInviteInfo:1, getDeletedRefs:1,
+      getMySignature:1
+    };
+    if (readActions[action]) {
+      var q = 'action=' + encodeURIComponent(action);
+      if (payload.key) q += '&key=' + encodeURIComponent(payload.key);
+      if (payload.token) q += '&token=' + encodeURIComponent(payload.token);
+      if (payload.email) q += '&email=' + encodeURIComponent(payload.email);
+      resp = await fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + q, {
         method: 'GET',
         redirect: 'follow',
         signal: controller.signal
@@ -7688,6 +7700,10 @@ async function _gasCallRaw(payload) {
       });
     }
     if (!resp.ok) {
+      if (resp.status === 405) {
+        _gasNoteFailure('http');
+        throw new Error('HTTP 405 — Web App rejects POST. In Apps Script: Deploy → Manage deployments → Edit → Execute as: Me, Anyone → New version. Then paste the new /exec URL.');
+      }
       if (resp.status === 404) {
         _gasNoteFailure('404');
         throw new Error('HTTP 404 from Apps Script. Open the /exec URL in a browser — you must see JSON. If not, redeploy.');
@@ -7695,11 +7711,21 @@ async function _gasCallRaw(payload) {
       _gasNoteFailure('http');
       throw new Error('HTTP ' + resp.status);
     }
+    // Detect HTML error pages returned as 200 after redirect
+    var ct = (resp.headers && resp.headers.get && resp.headers.get('content-type')) || '';
+    var textBody = await resp.text();
+    if (/^\s*</.test(textBody) || /unable to open the file/i.test(textBody) || /Page Not Found/i.test(textBody)) {
+      _gasNoteFailure('http');
+      throw new Error('Apps Script returned an error page (not JSON). Redeploy Web App: Execute as Me, access Anyone.');
+    }
+    var data;
+    try { data = JSON.parse(textBody); } catch (pe) {
+      _gasNoteFailure('http');
+      throw new Error('Apps Script returned non-JSON. Redeploy the Web App.');
+    }
     _gasNoteSuccess();
-    var data = await resp.json();
     return data;
   } catch (e) {
-    if (/Sync paused/i.test(String(e.message || ''))) throw e;
     if (e.name === 'AbortError' || /timed out|TIMEOUT|Failed to fetch|NetworkError|ERR_CONNECTION/i.test(String(e.message||e))) {
       _gasNoteFailure('network');
       throw new Error(e.name === 'AbortError'
@@ -8543,25 +8569,75 @@ function applyLoginUrl() {
 /** Normalize user row from Sheets / local into app shape (hash from Password column). */
 function normalizeUserFromSheet_(u) {
   if (!u) return u;
-  var email = String(u.email || u.Email || '').toLowerCase().trim();
-  var storedPass = String(u.hash || u.Hash || u.password || u.Password || '').trim();
+  // Prefer real email-shaped fields. Some older scripts shifted columns so
+  // "name" held the email and "email" held the password hash.
+  var candidates = [
+    u.email, u.Email,
+    u.name, u.Name,
+    u.id
+  ];
+  var email = '';
+  for (var ci = 0; ci < candidates.length; ci++) {
+    var c = String(candidates[ci] || '').trim();
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) { email = c.toLowerCase(); break; }
+  }
+  if (!email) email = String(u.email || u.Email || '').toLowerCase().trim();
+
+  // Password: prefer 64-char hex hash
+  var passCandidates = [u.hash, u.Hash, u.password, u.Password, u.email, u.Email];
+  var storedPass = '';
+  for (var pi = 0; pi < passCandidates.length; pi++) {
+    var p = String(passCandidates[pi] || '').trim();
+    if (/^[0-9a-f]{64}$/i.test(p)) { storedPass = p; break; }
+  }
+  if (!storedPass) storedPass = String(u.hash || u.password || u.Password || '').trim();
+
+  var name = String(u.name || u.Name || '').trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(name) && email) {
+    // name field was actually the email — use a readable fallback
+    name = email.split('@')[0];
+  }
+  // Legacy shifted row: id held the real name
+  if ((!name || name === email.split('@')[0]) && u.id && !/^\d+$/.test(String(u.id)) && !/^[0-9a-f]{32,}$/i.test(String(u.id))) {
+    var maybeName = String(u.id).trim();
+    if (maybeName && maybeName.indexOf('@') < 0) name = maybeName;
+  }
+
+  var country = String(u.country || u.Country || '').trim();
+  if (country === 'true' || country === 'false') {
+    // shifted: country was Active; real country often in hash field on legacy rows
+    var maybeC = String(u.hash || '').trim();
+    if (maybeC && !/^[0-9a-f]{64}$/i.test(maybeC) && maybeC.length < 40) country = maybeC;
+    else country = '';
+  }
+
+  var payee = String(u.payeeNumber || u['Payee Number'] || '').trim();
+  if (!payee) {
+    var maybeP = String(u.created || u.Created || '').trim();
+    if (/^\+?\d[\d\s-]{6,}$/.test(maybeP)) payee = maybeP;
+  }
+
   var _nid = u.id;
   if (typeof _nid !== 'number' && !/^\d+$/.test(String(_nid || ''))) {
-    // Stable numeric id from email (table buttons need a number)
     var h = 5381, src = email || String(Date.now());
     for (var i = 0; i < src.length; i++) h = ((h * 33) ^ src.charCodeAt(i)) >>> 0;
     _nid = h;
   } else { _nid = +_nid; }
+
+  var activeRaw = u.active != null ? u.active : (u.Active != null ? u.Active : 'true');
+  // legacy: active may have been stuffed into country
+  if (String(u.country || '') === 'false') activeRaw = 'false';
+
   return {
     id: _nid,
-    name: String(u.name || u.Name || '').trim(),
+    name: name,
     email: email,
     role: String(u.role || u.Role || 'requester').toLowerCase().trim(),
-    country: String(u.country || u.Country || '').trim(),
-    payeeNumber: String(u.payeeNumber || u['Payee Number'] || '').trim(),
+    country: country,
+    payeeNumber: payee,
     hash: storedPass,
     password: storedPass,
-    active: String(u.active != null ? u.active : (u.Active != null ? u.Active : 'true')).toLowerCase() !== 'false',
+    active: String(activeRaw).toLowerCase() !== 'false',
     created: u.created || u.Created || '',
     source: u.source || u.Source || '',
     hasSignature: !!u.hasSignature
