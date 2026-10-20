@@ -2146,27 +2146,68 @@
   .ecf-codes[open] summary::before { transform:rotate(90deg); }
   .ecf-codes-state { font-size:11px; margin-left:auto; }
 
-  /* Summary panel */
-  .ecf-sum { display:flex; flex-direction:column; gap:6px; }
-  .ecf-sum-total { display:flex; flex-direction:column; gap:2px; padding-bottom:8px; border-bottom:1px solid var(--border); }
-  .ecf-sum-total span { font-size:11px; color:var(--muted); }
-  .ecf-sum-total strong { font-size:20px; font-weight:700; color:var(--ink); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
-  .ecf-sum-row { display:flex; justify-content:space-between; gap:8px; font-size:12px; }
-  .ecf-sum-row span:last-child { white-space:nowrap; font-variant-numeric:tabular-nums; }
-  .ecf-sum-bal { font-weight:700; }
-  .ecf-sum-note { font-size:11px; color:#004578; background:#DEECF9; border-radius:4px; padding:5px 7px; line-height:1.35; }
-  .ecf-checks { list-style:none; margin:4px 0 0; padding:6px 0 0; border-top:1px solid var(--border); display:grid; gap:3px; }
-  .ecf-checks li { font-size:11.5px; padding-left:18px; position:relative; }
+  /* Unified sticky panel: totals → checklist → signature → export */
+  .ecf-panel { overflow:hidden; }
+  .ecf-panel-body { display:flex; flex-direction:column; gap:14px; padding:14px !important; }
+  .ecf-panel-section { padding-top:12px; border-top:1px solid var(--border); }
+  .ecf-panel-label {
+    font-size:12px; font-weight:600; color:var(--ink);
+    margin-bottom:8px; display:flex; align-items:center;
+  }
+  .ecf-sum { display:flex; flex-direction:column; gap:0; }
+  .ecf-sum-total {
+    display:flex; flex-direction:column; gap:2px;
+    padding:0 0 10px; margin-bottom:8px; border-bottom:1px solid var(--border);
+  }
+  .ecf-sum-total span { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-weight:600; }
+  .ecf-sum-total strong { font-size:22px; font-weight:700; color:var(--ink); letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1.15; }
+  .ecf-sum-rows { display:flex; flex-direction:column; gap:5px; }
+  .ecf-sum-row { display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:12.5px; color:var(--ink); }
+  .ecf-sum-row > span:first-child { color:var(--muted); flex:1; min-width:0; }
+  .ecf-sum-row > span:last-child { white-space:nowrap; font-variant-numeric:tabular-nums; font-weight:600; }
+  .ecf-sum-row.ecf-sum-bal > span:last-child { font-weight:700; }
+  .ecf-sum-note {
+    margin-top:8px; font-size:11px; color:#004578; background:#DEECF9;
+    border-radius:4px; padding:6px 8px; line-height:1.4;
+  }
+  .ecf-checks {
+    list-style:none; margin:10px 0 0; padding:10px 0 0;
+    border-top:1px solid var(--border); display:grid; gap:5px;
+  }
+  .ecf-checks li { font-size:12px; padding-left:18px; position:relative; line-height:1.35; }
   .ecf-checks li::before { position:absolute; left:0; top:0; font-weight:700; }
   .ecf-checks li.ok { color:var(--ink); }
   .ecf-checks li.ok::before { content:'✓'; color:#107C10; }
   .ecf-checks li.todo { color:#835C00; }
   .ecf-checks li.todo::before { content:'○'; color:#C19C00; }
-  .ecf-sig-canvas { width:100%; height:100px; border:1.5px dashed #C8C6C4; border-radius:6px; cursor:crosshair; background:#fff; display:block; touch-action:none; }
-  .ecf-sig-saved { display:flex; align-items:center; gap:10px; }
-  .ecf-sig-saved img { height:42px; max-width:130px; object-fit:contain; border:1px solid var(--border); border-radius:4px; padding:3px; background:#fff; }
-  .ecf-actions { display:flex; flex-direction:column; gap:6px; }
-  .ecf-actions .btn { width:100%; min-width:0; flex:none !important; justify-content:center; }
+  .ecf-sig-canvas {
+    width:100%; height:88px; border:1.5px dashed #C8C6C4; border-radius:6px;
+    cursor:crosshair; background:#fff; display:block; touch-action:none;
+  }
+  .ecf-sig-tools {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:6px; gap:8px; font-size:11.5px;
+  }
+  .ecf-sig-tools a { color:var(--brand); }
+  .ecf-sig-note { font-size:11px; color:var(--muted); margin-top:4px; }
+  .ecf-sig-saved {
+    display:grid; grid-template-columns:64px minmax(0,1fr);
+    gap:10px; align-items:center;
+    padding:8px; border:1px solid var(--border); border-radius:6px; background:#FAF9F8;
+  }
+  .ecf-sig-saved img {
+    width:64px; height:40px; object-fit:contain;
+    border:1px solid var(--border); border-radius:4px; padding:2px; background:#fff;
+  }
+  .ecf-sig-saved .ecf-sig-info { min-width:0; }
+  .ecf-sig-saved .ecf-sig-info strong { display:block; font-size:12.5px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ecf-sig-saved .ecf-sig-info span { display:block; font-size:11px; color:#107C10; margin-top:2px; }
+  .ecf-sig-saved .ecf-sig-info a { font-size:11px; color:var(--brand); }
+  .ecf-actions {
+    display:flex; flex-direction:column; gap:6px;
+    padding-top:12px; border-top:1px solid var(--border); margin-top:2px;
+  }
+  .ecf-actions .btn { width:100%; min-width:0; flex:none !important; justify-content:center; gap:8px; }
 
   @media (max-width:1100px) {
     .ecf-layout { grid-template-columns:1fr; }
@@ -2572,10 +2613,7 @@
           <h1>Expense Claim Form</h1>
           <p>Select projects → tick paid lines → header &amp; sign → export (one PDF per project when multi-selected)</p>
         </div>
-        <div class="ecf-head-actions">
-          <button class="btn btn-ghost btn-sm" onclick="ecfOpenPreview()">Preview</button>
-          <button class="btn btn-primary btn-sm" onclick="ecfExportPDF()">Export PDF</button>
-        </div>
+        <!-- Export actions live in the sticky summary panel only -->
       </div>
     </div>
     <div class="view-body">
@@ -2664,38 +2702,36 @@
         </div>
       </div>
 
-      <!-- ===== Summary / sign / export (sticky) ===== -->
+      <!-- ===== Sticky panel: summary + signature + single export ===== -->
       <aside class="ecf-side">
-        <div class="card ecf-summary">
-          <div class="card-header"><div class="card-title">Claim summary</div></div>
-          <div class="card-body">
-            <div id="ecfSummary" class="ecf-sum"></div>
-          </div>
-        </div>
-
-        <div class="card">
+        <div class="card ecf-panel">
           <div class="card-header">
-            <div class="card-title"><span class="ecf-step">4</span>Signature</div>
+            <div class="card-title">Claim summary</div>
           </div>
-          <div class="card-body">
-            <div id="ecfSigSaved" class="ecf-sig-saved" style="display:none"></div>
-            <div id="ecfSigDraw">
-              <canvas id="ecfSigCanvas" width="500" height="130" class="ecf-sig-canvas"></canvas>
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:8px">
-                <button class="btn btn-ghost btn-sm" onclick="ecfClearSig()">Clear</button>
-                <a href="#" onclick="event.preventDefault();openMySignature()" style="font-size:11.5px;color:var(--brand)">Save a signature to your account</a>
-              </div>
-            </div>
-            <div id="ecfSigNote" style="font-size:11.5px;color:var(--muted);margin-top:6px"></div>
-          </div>
-        </div>
+          <div class="card-body ecf-panel-body">
+            <div id="ecfSummary" class="ecf-sum"></div>
 
-        <div class="ecf-actions">
-          <button class="btn btn-ghost" onclick="ecfOpenPreview()" style="flex:1;justify-content:center">Preview form</button>
-          <button class="btn btn-primary" id="ecfExportBtn" onclick="ecfExportPDF()" style="flex:1.4;justify-content:center;gap:8px">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export PDF
-          </button>
+            <div class="ecf-panel-section">
+              <div class="ecf-panel-label"><span class="ecf-step">4</span> Signature</div>
+              <div id="ecfSigSaved" class="ecf-sig-saved" style="display:none"></div>
+              <div id="ecfSigDraw">
+                <canvas id="ecfSigCanvas" width="500" height="130" class="ecf-sig-canvas"></canvas>
+                <div class="ecf-sig-tools">
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="ecfClearSig()">Clear</button>
+                  <a href="#" onclick="event.preventDefault();openMySignature()">Save to account</a>
+                </div>
+              </div>
+              <div id="ecfSigNote" class="ecf-sig-note"></div>
+            </div>
+
+            <div class="ecf-actions">
+              <button type="button" class="btn btn-primary" id="ecfExportBtn" onclick="ecfExportPDF()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export PDF
+              </button>
+              <button type="button" class="btn btn-ghost" onclick="ecfOpenPreview()">Preview</button>
+            </div>
+          </div>
         </div>
       </aside>
     </div>
@@ -12261,10 +12297,12 @@ function ecfRenderSigPanel() {
   if (savedSigs && savedSigs.length > 0) {
     saved.style.display = '';
     draw.style.display = 'none';
-    saved.innerHTML = '<img src="' + savedSigs[0].dataUrl + '" alt="Your signature">'
-      + '<div style="min-width:0"><div style="font-size:12.5px;font-weight:600">' + _rqEsc(savedSigs[0].label || '') + '</div>'
-      + '<div style="font-size:11px;color:var(--success,#107C10)">✓ Used as claimant signature</div>'
-      + '<a href="#" onclick="event.preventDefault();openMySignature()" style="font-size:11px;color:var(--brand)">Change</a></div>';
+    saved.innerHTML = '<img src="' + savedSigs[0].dataUrl + '" alt="Signature">'
+      + '<div class="ecf-sig-info">'
+      +   '<strong>' + _rqEsc(savedSigs[0].label || currentUser && currentUser.name || 'Saved') + '</strong>'
+      +   '<span>✓ Claimant signature</span>'
+      +   '<a href="#" onclick="event.preventDefault();openMySignature()">Change</a>'
+      + '</div>';
     if (note) note.textContent = '';
   } else {
     saved.style.display = 'none';
@@ -12304,15 +12342,22 @@ function ecfUpdateSummary() {
     [!!claimant, claimant ? 'Claimant: ' + claimant : 'Enter claimant name'],
     [hasSig, hasSig ? 'Signature ready' : 'Add a signature']
   ];
+  var balColor = bal < 0 ? 'var(--danger,#A4262C)' : (bal > 0 ? 'var(--success,#107C10)' : 'var(--ink)');
   box.innerHTML =
     '<div class="ecf-sum-total"><span>Total claimed</span><strong>' + _rqEsc(cur) + ' ' + total.toLocaleString() + '</strong></div>'
-    + '<div class="ecf-sum-row"><span>Amount advanced</span><span>' + _rqEsc(cur) + ' ' + adv.toLocaleString() + '</span></div>'
-    + '<div class="ecf-sum-row ecf-sum-bal"><span>Balance claimed / returned</span><span style="color:' + (bal < 0 ? 'var(--danger)' : 'var(--success,#107C10)') + '">' + _rqEsc(cur) + ' ' + bal.toLocaleString() + '</span></div>'
-    + (projects.length > 1 ? '<div class="ecf-sum-note">One claim form per project will be generated.</div>' : '')
+    + '<div class="ecf-sum-rows">'
+    +   '<div class="ecf-sum-row"><span>Advanced</span><span>' + _rqEsc(cur) + ' ' + adv.toLocaleString() + '</span></div>'
+    +   '<div class="ecf-sum-row ecf-sum-bal"><span>Balance</span><span style="color:' + balColor + '">' + _rqEsc(cur) + ' ' + bal.toLocaleString() + '</span></div>'
+    + '</div>'
+    + (projects.length > 1 ? '<div class="ecf-sum-note">Export will produce <strong>one PDF per project</strong> (' + projects.length + ').</div>' : '')
     + '<ul class="ecf-checks">' + checks.map(function(c){ return '<li class="' + (c[0] ? 'ok' : 'todo') + '">' + _rqEsc(c[1]) + '</li>'; }).join('') + '</ul>';
   var ready = checks.every(function(c){ return c[0]; });
   var btn = document.getElementById('ecfExportBtn');
-  if (btn) btn.style.opacity = ready ? '1' : '.6';
+  if (btn) {
+    btn.disabled = !ready;
+    btn.style.opacity = ready ? '1' : '.55';
+    btn.title = ready ? 'Export claim PDF' : 'Complete the checklist first';
+  }
 }
 
 // wrapTables called from main DOMContentLoaded below
