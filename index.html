@@ -3519,7 +3519,7 @@ let deletedStore = loadDeletedFromStorage();
 var _pendingLocalRefs = {};          // ref -> timestamp (ms)
 var _localWriteGraceUntil = 0;     // epoch ms — skip pulls until then
 var LOCAL_REF_PROTECT_MS = 120000; // keep local-only refs safe for 2 min
-var LOCAL_WRITE_GRACE_MS = 2500;   // brief skip so pull does not race a just-finished push
+var LOCAL_WRITE_GRACE_MS = 800;    // brief skip so pull does not race a just-finished push
 
 function markLocalWrite(ref) {
   var now = Date.now();
@@ -5596,34 +5596,50 @@ function openSignAndApprove(btn, ref, recipient) {
   setTimeout(() => initCanvas('modalCanvas'), 100);
 }
 
-// Background Sheets sync — keeps UI instant, optimises payload
-// Retries once after the soft circuit-breaker pause so new requests still land.
+// Background Sheets sync — debounced so rapid approve/pay (50/min) coalesce
+// into one upsert of all dirty refs instead of 50 sequential full pushes.
+var _bgPushTimer = null;
+var _bgPushPending = null;
+
 function backgroundPush(opts) {
   opts = opts || {};
-  _syncLoopToken++;            // pause polling while pushing (restarted by startAutoSync)
+  if (!gsWebAppUrl) return;
+  // Merge flags: any withSigs / need-actuals wins for the coalesced batch
+  if (!_bgPushPending) _bgPushPending = { fast: true, skipActuals: true, withSigs: false, dirtyOnly: true };
+  _bgPushPending.fast = true;
+  _bgPushPending.dirtyOnly = true;
+  if (opts.withSigs) _bgPushPending.withSigs = true;
+  if (opts.skipActuals === false) _bgPushPending.skipActuals = false;
+  if (opts.dirtyOnly === false) _bgPushPending.dirtyOnly = false;
+
+  _syncLoopToken++;
   clearTimeout(gsAutoSyncTimer);
   clearInterval(gsAutoSyncTimer);
-  if (!gsWebAppUrl) return;
-  var attempt = function(isRetry) {
-    pushToSheets(opts).then(function() {
-      // Restart polling quickly so other tabs pick up the new version soon
-      _syncDelay = 2000;
-      if (opts.withSigs) {
-        return pushSigImages().then(function(){ startAutoSync(); }, function(){ startAutoSync(); });
-      }
-      startAutoSync();
-    }).catch(function(err) {
-      if (!isRetry && window._gas404Until && Date.now() < window._gas404Until) {
-        var wait = Math.min(10000, Math.max(1500, window._gas404Until - Date.now() + 200));
-        appendSyncLog('Push deferred ' + Math.round(wait/1000) + 's (Apps Script busy)…');
-        setTimeout(function(){ attempt(true); }, wait);
-        return;
-      }
-      appendSyncLog('Background push failed: ' + ((err && err.message) || err));
-      startAutoSync();
-    });
-  };
-  attempt(false);
+  clearTimeout(_bgPushTimer);
+
+  // 280ms debounce — burst of approvals becomes one network round-trip
+  _bgPushTimer = setTimeout(function() {
+    var o = _bgPushPending || { fast: true, skipActuals: true, dirtyOnly: true };
+    _bgPushPending = null;
+    var attempt = function(isRetry) {
+      pushToSheets(o).then(function() {
+        _syncDelay = 1500;
+        if (o.withSigs) {
+          return pushSigImages().then(function(){ startAutoSync(); }, function(){ startAutoSync(); });
+        }
+        startAutoSync();
+      }).catch(function(err) {
+        if (!isRetry) {
+          appendSyncLog('Push retry in 2s…');
+          setTimeout(function(){ attempt(true); }, 2000);
+          return;
+        }
+        appendSyncLog('Background push failed: ' + ((err && err.message) || err));
+        startAutoSync();
+      });
+    };
+    attempt(false);
+  }, 280);
 }
 
 // Step 1: Approve request (Draft/Pending -> Approved, moves to Payment Queue)
@@ -7769,9 +7785,7 @@ async function pushToSheets(opts) {
   var _pushSafetyTimer = setTimeout(function(){ window._pushInProgress = false; }, 100000);
   appendSyncLog(opts.fast ? 'Quick-push to Sheets...' : 'Pushing to Sheets...');
   try {
-    // Requests — always preserve existing signature images so a full sheet
-    // rewrite never wipes them. Empty strings stay empty (saves bandwidth).
-    const reqRows = requestsStore.map(function(r) {
+    function mapReqRow_(r) {
       return {
         ref:              r.ref              || '',
         project:          r.project          || '',
@@ -7797,78 +7811,72 @@ async function pushToSheets(opts) {
         payeeNumber:      r.payeeNumber || '',
         bundleRef:        r.bundleRef || '',
         transportBreakdown: r.transportBreakdown ? JSON.stringify(r.transportBreakdown) : '',
-        // Fast push omits heavy base64 so draft/status updates land in ~2–5s.
-        // Full push / withSigs still sends images. Apps Script keeps existing
-        // Sig Data / Requester Sig when the incoming value is empty.
         sigDataUrl:       (!opts.fast && r.sigDataUrl && r.sigDataUrl.length > 50) ? r.sigDataUrl : '',
         requesterSig:     (!opts.fast && r.requesterSig && r.requesterSig.length > 50) ? r.requesterSig : '',
       };
-    });
+    }
 
-    // Actuals — skip on fast draft submit (no Paid totals changed)
+    // Fast path: only dirty (recently written) refs → upsertRequests (tiny payload)
+    var dirtyRefs = Object.keys(_pendingLocalRefs || {});
+    var useDirty = opts.dirtyOnly !== false && opts.fast && dirtyRefs.length > 0 && dirtyRefs.length < requestsStore.length;
+    var srcList = useDirty
+      ? requestsStore.filter(function(r){ return _pendingLocalRefs[String(r.ref)]; })
+      : requestsStore;
+    if (!srcList.length) srcList = requestsStore;
+    var reqRows = srcList.map(mapReqRow_);
+
+    // Actuals — only when paid totals changed
     var actualsData = [];
     if (!opts.skipActuals) {
       actualsData = budgetLines.map(function(l) {
         return {
-          project:     l.project,
-          type:        l.type,
-          category:    l.category,
-          costSummary: l.costSummary,
-          costItem:    l.costItem,
-          actual:      getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem),
-          delta:       null,
+          project: l.project, type: l.type, category: l.category,
+          costSummary: l.costSummary, costItem: l.costItem,
+          actual: getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem),
+          delta: null
         };
       });
     }
 
-    // Funds from DOM
-    const fundRows = [];
-    document.querySelectorAll('#fundsLedger tr').forEach(function(tr) {
-      const cells = [...tr.querySelectorAll('td')].map(function(td){ return td.textContent.trim().replace(/,/g,''); });
-      if (cells.length >= 3) fundRows.push({ project:cells[0], amount:cells[1], date:cells[2], status:cells[3]||'Posted' });
-    });
-
-    // Expenses from DOM
-    const expRows = [];
-    document.querySelectorAll('#expenseLog tr').forEach(function(tr) {
-      const cells = [...tr.querySelectorAll('td')].map(function(td){ return td.textContent.trim().replace(/,/g,''); });
-      if (cells.length >= 3) expRows.push({ date:cells[0], project:cells[1], amount:cells[2], signed:cells[3]||'' });
-    });
-
-    // Signatures are private per-user (local only) -- never sent to Sheets
-    const sigRows = [];
-
-    // Deleted requests (archived)
-    const deletedRows = deletedStore.map(function(r) {
-      return {
-        ref:          r.ref         || '',
-        project:      r.project     || '',
-        type:         r.type        || '',
-        category:     r.category    || '',
-        costSummary:  r.costSummary || '',
-        costItem:     r.costItem    || '',
-        description:  r.description || '',
-        amount:       r.amount      || 0,
-        requester:    r.requester   || '',
-        status:       r.status      || '',
-        date:         r.date        || '',
-        deletedBy:    r.deletedBy   || '',
-        deletedAt:    r.deletedAt   || '',
-        deleteReason: r.deleteReason|| '',
-      };
-    });
-
-    const res = await gasCall({
-      action:     'pushAll',
-      requests:   reqRows,
-      actuals:    actualsData,
-      funds:      fundRows,
-      expenses:   expRows,
-      signatures: sigRows,
-      deleted:    deletedRows,
-    });
+    var res;
+    if (opts.fast && opts.skipActuals !== false && !actualsData.length) {
+      // Status/approve/new-request only — dedicated upsert (no funds/deleted rewrite)
+      res = await gasCall({ action: 'upsertRequests', requests: reqRows });
+    } else {
+      var fundRows = [];
+      document.querySelectorAll('#fundsLedger tr').forEach(function(tr) {
+        var cells = [...tr.querySelectorAll('td')].map(function(td){ return td.textContent.trim().replace(/,/g,''); });
+        if (cells.length >= 3) fundRows.push({ project:cells[0], amount:cells[1], date:cells[2], status:cells[3]||'Posted' });
+      });
+      var expRows = [];
+      document.querySelectorAll('#expenseLog tr').forEach(function(tr) {
+        var cells = [...tr.querySelectorAll('td')].map(function(td){ return td.textContent.trim().replace(/,/g,''); });
+        if (cells.length >= 3) expRows.push({ date:cells[0], project:cells[1], amount:cells[2], signed:cells[3]||'' });
+      });
+      var deletedRows = (deletedStore || []).map(function(r) {
+        return {
+          ref: r.ref || '', project: r.project || '', type: r.type || '', category: r.category || '',
+          costSummary: r.costSummary || '', costItem: r.costItem || '', description: r.description || '',
+          amount: r.amount || 0, requester: r.requester || '', status: r.status || '', date: r.date || '',
+          deletedBy: r.deletedBy || '', deletedAt: r.deletedAt || '', deleteReason: r.deleteReason || ''
+        };
+      });
+      res = await gasCall({
+        action: 'pushAll',
+        requests: useDirty ? requestsStore.map(mapReqRow_) : reqRows,
+        actuals: actualsData,
+        funds: fundRows,
+        expenses: expRows,
+        signatures: [],
+        deleted: deletedRows
+      });
+    }
 
     if (!res.ok) throw new Error(res.error || 'Push failed');
+    // Clear dirty flags for refs we just pushed
+    if (useDirty) {
+      dirtyRefs.forEach(function(ref){ try { clearProtectedRef(ref); } catch(e) {} });
+    }
 
     // Update local version so we don't re-pull our own write
     if (res.version) _lastKnownVersion = res.version;
@@ -8353,7 +8361,7 @@ function gsPushIfConnected() { syncAfterChange(); }
 // Auto-sync: one request at a time, never overlapping.
 // (An overlapping 2s setInterval flooded Apps Script, which then throttled the
 //  deployment — the "works after refresh, disconnects shortly after" symptom.)
-var AUTO_SYNC_INTERVAL = 6000;          // version check every 6s while the tab is visible
+var AUTO_SYNC_INTERVAL = 4000;          // version check every 4s while the tab is visible
 var AUTO_SYNC_MAX_BACKOFF = 45000;      // up to 45s after repeated failures
 var FULL_REFRESH_EVERY_MS = 5 * 60000;  // budgets + form settings every 5 min
 var CLIENTS_REFRESH_EVERY_MS = 10 * 60000; // Clients sheet every 10 min (also on opening the request form)
