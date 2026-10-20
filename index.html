@@ -2863,7 +2863,7 @@
             <div style="margin-top:12px">
               <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);cursor:pointer">
                 <input type="checkbox" id="autoSyncToggle" onchange="toggleAutoSync(this.checked)" style="width:auto">
-                Auto-sync every 60 seconds
+                Auto-sync (every ~2.5s; turbo ~1.2s after changes)
               </label>
             </div>
           </div>
@@ -5741,9 +5741,12 @@ function backgroundPush(opts) {
     _bgPushPending = null;
     var attempt = function(n) {
       pushToSheets(o).then(function() {
-        // Turbo window: poll every 1.5s for 20s so other users see new rows fast
-        window._turboSyncUntil = Date.now() + 20000;
-        _syncDelay = 1500;
+        // Writer-side turbo: tight polls so we confirm server version quickly
+        if (typeof enterTurboSync === 'function') enterTurboSync('local write');
+        else {
+          window._turboSyncUntil = Date.now() + 25000;
+          _syncDelay = 1200;
+        }
         if (o.withSigs) {
           return pushSigImages().then(function(){ startAutoSync(); }, function(){ startAutoSync(); });
         }
@@ -8523,10 +8526,16 @@ function gsPushIfConnected() { syncAfterChange(); }
 // Auto-sync: one request at a time, never overlapping.
 // (An overlapping 2s setInterval flooded Apps Script, which then throttled the
 //  deployment — the "works after refresh, disconnects shortly after" symptom.)
-var AUTO_SYNC_INTERVAL = 5000;          // version check every 8s while the tab is visible
+// Cross-browser lag: same browser updates localStorage instantly; other browsers
+// only learn via getVersion polling. Keep focused polls tight, and enter turbo
+// on BOTH the writer and any peer that sees a version change.
+var AUTO_SYNC_INTERVAL = 2500;          // version check every 2.5s while tab is visible
+var AUTO_SYNC_TURBO_MS = 1200;          // while turbo window is open
+var AUTO_SYNC_HIDDEN_MS = 10000;        // slower when tab is in background
 var AUTO_SYNC_MAX_BACKOFF = 120000;     // up to 2 min after repeated failures (avoid 404 storms)
 var FULL_REFRESH_EVERY_MS = 5 * 60000;  // budgets + form settings every 5 min
 var CLIENTS_REFRESH_EVERY_MS = 10 * 60000; // Clients sheet every 10 min (also on opening the request form)
+var TURBO_WINDOW_MS = 25000;            // stay fast for 25s after local write OR remote change
 
 var _lastKnownVersion = -1;
 var _versionPollCount = 0;
@@ -8535,8 +8544,18 @@ var _lastFullRefresh = Date.now();
 var _lastClientsRefresh = Date.now();
 var _syncLoopToken = 0;
 
+function enterTurboSync(reason) {
+  window._turboSyncUntil = Date.now() + TURBO_WINDOW_MS;
+  _syncDelay = AUTO_SYNC_TURBO_MS;
+  try {
+    if (reason) appendSyncLog('Turbo sync (' + reason + ') — checks every ' + (AUTO_SYNC_TURBO_MS/1000) + 's for ' + (TURBO_WINDOW_MS/1000) + 's');
+  } catch (e) {}
+}
+
 async function checkVersionAndSync() {
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return true;
+  // Local grace / push-in-flight: skip work but do NOT mark the server version as seen
+  // (otherwise a concurrent remote change could be permanently skipped until next bump).
   if (shouldSkipPull()) return true;
   if (window._gas404Until && Date.now() < window._gas404Until) return false;
   if (gasBusy() > 1) return true; // other requests running — don't pile up
@@ -8551,9 +8570,15 @@ async function checkVersionAndSync() {
       return true;
     }
     if (serverVersion !== _lastKnownVersion) {
-      if (shouldSkipPull()) { _lastKnownVersion = serverVersion; return true; }
+      if (shouldSkipPull()) {
+        // Defer — leave _lastKnownVersion alone so we retry the pull next tick
+        return true;
+      }
+      var prev = _lastKnownVersion;
       _lastKnownVersion = serverVersion;
       await pullRequestsOnly();
+      // Peer browsers: speed up so follow-on status changes land quickly
+      enterTurboSync('remote v' + prev + '→' + serverVersion);
     }
 
     _versionPollCount++;
@@ -8578,7 +8603,8 @@ function startAutoSync() {
   clearTimeout(gsAutoSyncTimer);
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
   _versionPollCount = 0;
-  _syncDelay = AUTO_SYNC_INTERVAL;
+  var turboNow = window._turboSyncUntil && Date.now() < window._turboSyncUntil;
+  _syncDelay = turboNow ? AUTO_SYNC_TURBO_MS : AUTO_SYNC_INTERVAL;
   var token = ++_syncLoopToken;
   var tick = async function() {
     if (token !== _syncLoopToken) return; // a newer loop replaced this one
@@ -8586,23 +8612,27 @@ function startAutoSync() {
     if (!document.hidden) ok = await checkVersionAndSync();
     var turbo = window._turboSyncUntil && Date.now() < window._turboSyncUntil;
     if (ok) {
-      _syncDelay = turbo ? 1500 : AUTO_SYNC_INTERVAL;
+      _syncDelay = turbo ? AUTO_SYNC_TURBO_MS : AUTO_SYNC_INTERVAL;
     } else {
-      _syncDelay = Math.min(AUTO_SYNC_MAX_BACKOFF, Math.max(_syncDelay, 5000) * 2);
+      _syncDelay = Math.min(AUTO_SYNC_MAX_BACKOFF, Math.max(_syncDelay, AUTO_SYNC_INTERVAL) * 2);
     }
-    if (token === _syncLoopToken) gsAutoSyncTimer = setTimeout(tick, document.hidden ? 15000 : _syncDelay);
+    if (token === _syncLoopToken) {
+      gsAutoSyncTimer = setTimeout(tick, document.hidden ? AUTO_SYNC_HIDDEN_MS : _syncDelay);
+    }
   };
-  var firstDelay = (window._turboSyncUntil && Date.now() < window._turboSyncUntil)
-    ? 800
-    : Math.min(_syncDelay || AUTO_SYNC_INTERVAL, AUTO_SYNC_INTERVAL);
+  var firstDelay = turboNow ? 400 : Math.min(800, AUTO_SYNC_INTERVAL);
   gsAutoSyncTimer = setTimeout(tick, firstDelay);
   appendSyncLog('Auto-sync active (checks every ' + (AUTO_SYNC_INTERVAL/1000) + 's' +
-    ((window._turboSyncUntil && Date.now() < window._turboSyncUntil) ? ', turbo 1.5s after writes' : '') + ')');
+    (turboNow ? ', turbo ' + (AUTO_SYNC_TURBO_MS/1000) + 's after writes/changes' : '') + ')');
   if (typeof scheduleDirtyFlush_ === 'function') scheduleDirtyFlush_();
 }
 // Check right away when the user comes back to the tab
 document.addEventListener('visibilitychange', function() {
-  if (!document.hidden && gsWebAppUrl && typeof checkVersionAndSync === 'function') checkVersionAndSync();
+  if (!document.hidden && gsWebAppUrl && typeof checkVersionAndSync === 'function') {
+    checkVersionAndSync();
+    // Resume tight polling after returning to the tab
+    if (typeof startAutoSync === 'function') startAutoSync();
+  }
 });
 
 function toggleAutoSync(on) {
