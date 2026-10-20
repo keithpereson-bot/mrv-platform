@@ -2841,7 +2841,8 @@
         <div class="card-title">Sync Data</div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-secondary btn-sm" onclick="pullFromSheets()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/></svg> Pull from Sheets</button>
-          <button class="btn btn-primary btn-sm" onclick="pushToSheets()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg> Push to Sheets</button>
+          <button class="btn btn-primary btn-sm" onclick="pushToSheets()" title="Push current data"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg> Push to Sheets</button>
+          <button class="btn btn-ghost btn-sm" onclick="recoverMissingRequestsToSheets()" title="Re-send all local requests to Sheets (fixes missing rows)">Repair missing</button>
         </div>
       </div>
       <div class="card-body">
@@ -3159,10 +3160,10 @@
           <img id="mySigUploadPrev" alt="" style="display:none">
         </label>
       </div>
-      <div class="form-group" style="margin:0">
-        <label>Confirm with your password</label>
-        <input type="password" id="mySigPass" autocomplete="current-password" placeholder="Your sign-in password">
-      </div>
+      <form class="form-group" style="margin:0" onsubmit="event.preventDefault();saveMySignature();return false;">
+        <label for="mySigPass">Confirm with your password</label>
+        <input type="password" id="mySigPass" name="password" autocomplete="current-password" placeholder="Your sign-in password">
+      </form>
       <div id="mySigErr" style="display:none;color:#A4262C;font-size:12.5px;padding:8px 10px;background:#FDE7E9;border-radius:4px;border:1px solid #F1A9A9"></div>
     </div>
     <div class="modal-footer">
@@ -3634,8 +3635,8 @@ let deletedStore = loadDeletedFromStorage();
 // just created or edited on this device before Sheets has them.
 var _pendingLocalRefs = {};          // ref -> timestamp (ms)
 var _localWriteGraceUntil = 0;     // epoch ms — skip pulls until then
-var LOCAL_REF_PROTECT_MS = 120000; // keep local-only refs safe for 2 min
-var LOCAL_WRITE_GRACE_MS = 800;    // brief skip so pull does not race a just-finished push
+var LOCAL_REF_PROTECT_MS = 900000; // keep local-only refs safe for 15 min (failed pushes must not drop them)
+var LOCAL_WRITE_GRACE_MS = 2500;   // skip pulls briefly after a local write/push
 
 function markLocalWrite(ref) {
   var now = Date.now();
@@ -5720,42 +5721,66 @@ var _bgPushPending = null;
 function backgroundPush(opts) {
   opts = opts || {};
   if (!gsWebAppUrl) return;
-  // Merge flags: any withSigs / need-actuals wins for the coalesced batch
   if (!_bgPushPending) _bgPushPending = { fast: true, skipActuals: true, withSigs: false, dirtyOnly: true };
   _bgPushPending.fast = true;
   _bgPushPending.dirtyOnly = true;
   if (opts.withSigs) _bgPushPending.withSigs = true;
   if (opts.skipActuals === false) _bgPushPending.skipActuals = false;
   if (opts.dirtyOnly === false) _bgPushPending.dirtyOnly = false;
+  if (opts.recover) _bgPushPending.recover = true;
 
   _syncLoopToken++;
   clearTimeout(gsAutoSyncTimer);
   clearInterval(gsAutoSyncTimer);
   clearTimeout(_bgPushTimer);
 
-  // 280ms debounce — burst of approvals becomes one network round-trip
+  // 300ms debounce — burst of approvals → one upsert
   _bgPushTimer = setTimeout(function() {
     var o = _bgPushPending || { fast: true, skipActuals: true, dirtyOnly: true };
     _bgPushPending = null;
-    var attempt = function(isRetry) {
+    var attempt = function(n) {
       pushToSheets(o).then(function() {
         _syncDelay = 1500;
         if (o.withSigs) {
           return pushSigImages().then(function(){ startAutoSync(); }, function(){ startAutoSync(); });
         }
         startAutoSync();
+        scheduleDirtyFlush_();
       }).catch(function(err) {
-        if (!isRetry) {
-          appendSyncLog('Push retry in 2s…');
-          setTimeout(function(){ attempt(true); }, 2000);
+        if (n < 3) {
+          var wait = n === 0 ? 2000 : (n === 1 ? 5000 : 12000);
+          appendSyncLog('Push retry in ' + (wait/1000) + 's… (' + ((err && err.message) || err) + ')');
+          setTimeout(function(){ attempt(n + 1); }, wait);
           return;
         }
-        appendSyncLog('Background push failed: ' + ((err && err.message) || err));
+        appendSyncLog('Background push failed after retries: ' + ((err && err.message) || err));
         startAutoSync();
+        scheduleDirtyFlush_();
       });
     };
-    attempt(false);
-  }, 280);
+    attempt(0);
+  }, 300);
+}
+
+/** If dirty refs remain (failed or partial sync), retry every 20s until clear. */
+var _dirtyFlushTimer = null;
+function scheduleDirtyFlush_() {
+  clearTimeout(_dirtyFlushTimer);
+  _dirtyFlushTimer = setTimeout(function() {
+    var n = Object.keys(_pendingLocalRefs || {}).length;
+    if (!n || !gsWebAppUrl) return;
+    appendSyncLog('Re-pushing ' + n + ' pending request(s)…');
+    backgroundPush({ fast: true, skipActuals: true, dirtyOnly: true });
+  }, 20000);
+}
+
+/** One-shot recovery: upsert ALL local requests so missing rows land on Sheets. */
+function recoverMissingRequestsToSheets() {
+  if (!gsWebAppUrl) { toast('Connect Google Sheets first'); return; }
+  appendSyncLog('Full recovery push of all local requests…');
+  // Mark everything dirty so protection holds during the round-trip
+  (requestsStore || []).forEach(function(r){ if (r && r.ref) markLocalWrite(r.ref); });
+  backgroundPush({ fast: true, skipActuals: true, dirtyOnly: false, recover: true });
 }
 
 // Step 1: Approve request (Draft/Pending -> Approved, moves to Payment Queue)
@@ -7665,7 +7690,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // App configuration
 // Configuration
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxwoZvVVgeHP5BfjTP4QrFvFOl82WeohomkDB08unaopepnkpgxJ_F3IDIZuWgMhjY/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxSkj_CtSGDJBBgFGeuaO0Gyol57tGtO9LySG4i9YEfS-yYXtcWQCpzFt5H0xIVVj0/exec';
 // ════════════════════════════════════════════════════════════
 
 // State -- use hardcoded URL if set, otherwise fall back to localStorage
@@ -7932,16 +7957,17 @@ async function pushToSheets(opts) {
       };
     }
 
-    // Fast path: only dirty (recently written) refs → upsertRequests (tiny payload)
+    // Prefer dirty refs when any exist (even if that is the whole store).
+    // opts.recover=true forces a full upsert of every local request (heals gaps).
     var dirtyRefs = Object.keys(_pendingLocalRefs || {});
-    var useDirty = opts.dirtyOnly !== false && opts.fast && dirtyRefs.length > 0 && dirtyRefs.length < requestsStore.length;
+    var useDirty = !opts.recover && opts.dirtyOnly !== false && opts.fast && dirtyRefs.length > 0;
     var srcList = useDirty
       ? requestsStore.filter(function(r){ return _pendingLocalRefs[String(r.ref)]; })
       : requestsStore;
     if (!srcList.length) srcList = requestsStore;
     var reqRows = srcList.map(mapReqRow_);
+    var pushedRefList = reqRows.map(function(r){ return String(r.ref || ''); }).filter(Boolean);
 
-    // Actuals — only when paid totals changed
     var actualsData = [];
     if (!opts.skipActuals) {
       actualsData = budgetLines.map(function(l) {
@@ -7956,7 +7982,6 @@ async function pushToSheets(opts) {
 
     var res;
     if (opts.fast && opts.skipActuals !== false && !actualsData.length) {
-      // Status/approve/new-request only — dedicated upsert (no funds/deleted rewrite)
       res = await gasCall({ action: 'upsertRequests', requests: reqRows });
     } else {
       var fundRows = [];
@@ -7979,7 +8004,7 @@ async function pushToSheets(opts) {
       });
       res = await gasCall({
         action: 'pushAll',
-        requests: useDirty ? requestsStore.map(mapReqRow_) : reqRows,
+        requests: reqRows,
         actuals: actualsData,
         funds: fundRows,
         expenses: expRows,
@@ -7988,15 +8013,12 @@ async function pushToSheets(opts) {
       });
     }
 
-    if (!res.ok) throw new Error(res.error || 'Push failed');
-    // Clear dirty flags for refs we just pushed
-    if (useDirty) {
-      dirtyRefs.forEach(function(ref){ try { clearProtectedRef(ref); } catch(e) {} });
-    }
+    if (!res || res.ok === false) throw new Error((res && res.error) || 'Push failed');
 
-    // Update local version so we don't re-pull our own write
+    // Only clear dirty for refs we actually sent — keep any that arrived mid-push
+    pushedRefList.forEach(function(ref){ try { clearProtectedRef(ref); } catch(e) {} });
+
     if (res.version) _lastKnownVersion = res.version;
-    // Brief grace so the next version poll does not pull our own write back
     _localWriteGraceUntil = Date.now() + LOCAL_WRITE_GRACE_MS;
 
     const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
@@ -8005,10 +8027,13 @@ async function pushToSheets(opts) {
       if (el) el.textContent = now;
     });
     updateSheetStatusPill(true);
-    appendSyncLog('Pushed: ' + reqRows.length + ' requests, ' + actualsData.filter(function(a){return a.actual>0;}).length + ' actuals');
+    appendSyncLog('Pushed ' + reqRows.length + ' request(s)' + (useDirty ? ' (changed only)' : ' (full upsert)') +
+      (res.inserted != null ? ' · +' + res.inserted + ' new' : '') +
+      (res.updated != null ? ' · ~' + res.updated + ' updated' : ''));
   } catch(e) {
     appendSyncLog('Push failed: ' + e.message);
     if (currentUser && currentUser.role === 'admin') toast('Push failed -- see sync log');
+    throw e; // let backgroundPush retry — do NOT drop dirty refs
   } finally {
     clearTimeout(_pushSafetyTimer);
     window._pushInProgress = false;
@@ -8544,6 +8569,7 @@ function startAutoSync() {
   var firstDelay = Math.min(_syncDelay || AUTO_SYNC_INTERVAL, AUTO_SYNC_INTERVAL);
   gsAutoSyncTimer = setTimeout(tick, firstDelay);
   appendSyncLog('Auto-sync active (checks every ' + (AUTO_SYNC_INTERVAL/1000) + 's, one request at a time)');
+  if (typeof scheduleDirtyFlush_ === 'function') scheduleDirtyFlush_();
 }
 // Check right away when the user comes back to the tab
 document.addEventListener('visibilitychange', function() {
