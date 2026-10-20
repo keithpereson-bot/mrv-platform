@@ -5734,12 +5734,15 @@ function backgroundPush(opts) {
   clearInterval(gsAutoSyncTimer);
   clearTimeout(_bgPushTimer);
 
-  // 300ms debounce — burst of approvals → one upsert
+  // Debounce approvals; submit uses immediate:true for zero wait
+  var delay = opts.immediate ? 0 : 200;
   _bgPushTimer = setTimeout(function() {
     var o = _bgPushPending || { fast: true, skipActuals: true, dirtyOnly: true };
     _bgPushPending = null;
     var attempt = function(n) {
       pushToSheets(o).then(function() {
+        // Turbo window: poll every 1.5s for 20s so other users see new rows fast
+        window._turboSyncUntil = Date.now() + 20000;
         _syncDelay = 1500;
         if (o.withSigs) {
           return pushSigImages().then(function(){ startAutoSync(); }, function(){ startAutoSync(); });
@@ -5748,7 +5751,7 @@ function backgroundPush(opts) {
         scheduleDirtyFlush_();
       }).catch(function(err) {
         if (n < 3) {
-          var wait = n === 0 ? 2000 : (n === 1 ? 5000 : 12000);
+          var wait = n === 0 ? 1500 : (n === 1 ? 4000 : 10000);
           appendSyncLog('Push retry in ' + (wait/1000) + 's… (' + ((err && err.message) || err) + ')');
           setTimeout(function(){ attempt(n + 1); }, wait);
           return;
@@ -5759,7 +5762,7 @@ function backgroundPush(opts) {
       });
     };
     attempt(0);
-  }, 300);
+  }, delay);
 }
 
 /** If dirty refs remain (failed or partial sync), retry every 20s until clear. */
@@ -7066,10 +7069,15 @@ async function submitAllRequests() {
   try {
     // Re-check Client SNs against the live Clients sheet before saving
     var needsClients = activeIdx.some(function(i){ var s = _formSpec(_reqForms[i]); return s && s.needClient; });
+    // Only refresh clients if we have none cached (avoids 3s wait on every submit)
     if (needsClients && gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
-      try {
-        await Promise.race([pullClientsFromSheets(), new Promise(function(r){ setTimeout(r, 3000); })]);
-      } catch(e) {}
+      var hasClients = (typeof clientsStore !== 'undefined' && clientsStore && clientsStore.length) ||
+        (window._clientsCache && window._clientsCache.length);
+      if (!hasClients) {
+        try {
+          await Promise.race([pullClientsFromSheets(), new Promise(function(r){ setTimeout(r, 2500); })]);
+        } catch(e) {}
+      }
     }
   } finally {
     _reqSubmitting = false;
@@ -7190,7 +7198,8 @@ async function submitAllRequests() {
 
   toast((activeIdx.length === 1 ? 'Request submitted (' + created.join(' + ') + ')' : activeIdx.length + ' requests submitted (' + created[0] + '–' + created[created.length - 1] + ')')
     + (anyExcess ? ' (excess noted)' : '') + (window._gas404Until ? ' · Sheets offline (local only)' : ''));
-  backgroundPush({ fast: true, skipActuals: true });
+  // Immediate push — no debounce; request should hit Sheets in ~1–3s
+  backgroundPush({ fast: true, skipActuals: true, dirtyOnly: true, immediate: true });
 }
 function submitRequest() { return submitAllRequests(); }
 
@@ -7799,19 +7808,31 @@ function _gasNoteSuccess() {
 function _gasNoteFailure(kind) {
   window._gas404Count = (window._gas404Count || 0) + 1;
   var n = window._gas404Count;
-  // Only used by checkVersionAndSync to space out polling — does NOT reject fetches
-  var pauseMs = n <= 1 ? 4000 : (n <= 3 ? 10000 : 20000);
+  // Back off hard on 404 so we do not flood a broken / throttled deployment
+  var pauseMs = kind === '404'
+    ? (n <= 1 ? 15000 : (n <= 3 ? 45000 : 120000))
+    : (n <= 1 ? 5000 : (n <= 3 ? 15000 : 60000));
   window._gas404Until = Date.now() + pauseMs;
-  if (n >= 5) {
+  if (n >= 3) {
     gsConnected = false;
     try {
       var b = document.getElementById('connStatusBadge');
       if (b) {
         b.className = 'badge badge-red';
-        b.textContent = 'Sheets unreachable — retrying';
+        b.textContent = kind === '404'
+          ? 'Sheets 404 — admin must redeploy Web App'
+          : 'Sheets unreachable — retrying';
       }
       updateSheetStatusPill && updateSheetStatusPill(false);
     } catch (e2) {}
+  }
+  // Log once per backoff window (avoid console spam for requesters)
+  if (n === 1 || n === 3 || n === 5) {
+    try {
+      appendSyncLog(kind === '404'
+        ? 'Apps Script 404 (attempt ' + n + '). Admin: redeploy Web App as Execute as Me + Anyone.'
+        : 'Sheets error (attempt ' + n + '): ' + kind);
+    } catch (e3) {}
   }
 }
 
@@ -8095,7 +8116,7 @@ async function pullRequestsOnly() {
     renderHistory();
     renderDashboard();
   } catch(e) {
-    console.warn('pullRequestsOnly:', e);
+    if ((window._gas404Count || 0) < 2) console.warn('pullRequestsOnly:', e);
   }
 }
 
@@ -8502,8 +8523,8 @@ function gsPushIfConnected() { syncAfterChange(); }
 // Auto-sync: one request at a time, never overlapping.
 // (An overlapping 2s setInterval flooded Apps Script, which then throttled the
 //  deployment — the "works after refresh, disconnects shortly after" symptom.)
-var AUTO_SYNC_INTERVAL = 4000;          // version check every 4s while the tab is visible
-var AUTO_SYNC_MAX_BACKOFF = 45000;      // up to 45s after repeated failures
+var AUTO_SYNC_INTERVAL = 5000;          // version check every 8s while the tab is visible
+var AUTO_SYNC_MAX_BACKOFF = 120000;     // up to 2 min after repeated failures (avoid 404 storms)
 var FULL_REFRESH_EVERY_MS = 5 * 60000;  // budgets + form settings every 5 min
 var CLIENTS_REFRESH_EVERY_MS = 10 * 60000; // Clients sheet every 10 min (also on opening the request form)
 
@@ -8563,12 +8584,20 @@ function startAutoSync() {
     if (token !== _syncLoopToken) return; // a newer loop replaced this one
     var ok = true;
     if (!document.hidden) ok = await checkVersionAndSync();
-    _syncDelay = ok ? AUTO_SYNC_INTERVAL : Math.min(AUTO_SYNC_MAX_BACKOFF, _syncDelay * 2);
+    var turbo = window._turboSyncUntil && Date.now() < window._turboSyncUntil;
+    if (ok) {
+      _syncDelay = turbo ? 1500 : AUTO_SYNC_INTERVAL;
+    } else {
+      _syncDelay = Math.min(AUTO_SYNC_MAX_BACKOFF, Math.max(_syncDelay, 5000) * 2);
+    }
     if (token === _syncLoopToken) gsAutoSyncTimer = setTimeout(tick, document.hidden ? 15000 : _syncDelay);
   };
-  var firstDelay = Math.min(_syncDelay || AUTO_SYNC_INTERVAL, AUTO_SYNC_INTERVAL);
+  var firstDelay = (window._turboSyncUntil && Date.now() < window._turboSyncUntil)
+    ? 800
+    : Math.min(_syncDelay || AUTO_SYNC_INTERVAL, AUTO_SYNC_INTERVAL);
   gsAutoSyncTimer = setTimeout(tick, firstDelay);
-  appendSyncLog('Auto-sync active (checks every ' + (AUTO_SYNC_INTERVAL/1000) + 's, one request at a time)');
+  appendSyncLog('Auto-sync active (checks every ' + (AUTO_SYNC_INTERVAL/1000) + 's' +
+    ((window._turboSyncUntil && Date.now() < window._turboSyncUntil) ? ', turbo 1.5s after writes' : '') + ')');
   if (typeof scheduleDirtyFlush_ === 'function') scheduleDirtyFlush_();
 }
 // Check right away when the user comes back to the tab
