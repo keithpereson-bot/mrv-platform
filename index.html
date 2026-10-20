@@ -1263,28 +1263,211 @@
     display: block;
   }
 
-  /* Google Sheets setup guide: responsive columns */
+  /* ── Google Sheets workspace ─────────────────────────────── */
+  .sheets-workspace {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .sheets-conn-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .sheets-conn-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-bottom: 1px;
+  }
+  .sheets-setup-panel {
+    border-top: 1px solid #EDEBE9;
+    padding-top: 14px;
+  }
   .sheets-setup-grid {
     display: grid !important;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
     gap: 12px !important;
   }
-  /* Sheets sync table */
-  #view-sheets .table-scroll,
-  #view-sheets .card-body {
-    overflow-x: auto;
+  .sheets-setup-step {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 12px;
+    background: #FAF9F8;
+    border: 1px solid #EDEBE9;
+    border-radius: 2px;
   }
-  #view-sheets table {
-    min-width: 420px;
+  .sheets-setup-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
-  /* Sync control card must not stay blocked after connect
-     (JS clears style; ensure base styles allow interaction) */
+  .sheets-setup-step strong {
+    display: block;
+    font-size: 13px;
+    color: #201F1E;
+    margin-bottom: 4px;
+  }
+  .sheets-setup-step p {
+    margin: 0;
+    font-size: 12px;
+    color: #605E5C;
+    line-height: 1.45;
+  }
+  .sheets-setup-step code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: #EDEBE9;
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .sheets-sync-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .sheets-sync-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .sheets-auto-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 4px;
+    padding: 5px 10px;
+    border: 1px solid #EDEBE9;
+    border-radius: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #323130;
+    cursor: pointer;
+    background: #FAF9F8;
+    user-select: none;
+  }
+  .sheets-auto-label input {
+    width: auto;
+    margin: 0;
+  }
+  .sheets-sync-body {
+    padding: 0 !important;
+  }
+  .sheets-sync-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    min-height: 280px;
+  }
+  .sheets-panel {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #EDEBE9;
+  }
+  .sheets-panel:last-child {
+    border-right: none;
+  }
+  .sheets-panel-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #605E5C;
+    padding: 10px 14px 6px;
+  }
+  .sheets-tabs-scroll {
+    flex: 1;
+    max-height: none !important;
+    overflow: auto;
+  }
+  .sheets-tabs-table {
+    min-width: 360px;
+    width: 100%;
+  }
+  .sheets-tabs-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .sheets-tab-name {
+    font-weight: 600;
+    color: #201F1E;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+  .sheets-hint {
+    margin: 0;
+    padding: 8px 14px 12px;
+    font-size: 11.5px;
+    color: #8A8886;
+    border-top: 1px solid #F3F2F1;
+  }
+  .sheets-log-panel {
+    background: #FAF9F8;
+  }
+  .sheets-sync-log {
+    flex: 1;
+    font-size: 11.5px;
+    color: #605E5C;
+    line-height: 1.85;
+    max-height: 320px;
+    min-height: 200px;
+    overflow-y: auto;
+    padding: 4px 14px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* Sync control card must not stay blocked after connect */
   #syncControlCard {
     transition: opacity .2s;
   }
   #syncControlCard[style*="opacity:.5"],
   #syncControlCard[style*="opacity: .5"] {
-    /* keep intentional disabled state when not connected */
+    /* intentional disabled state when not connected */
+  }
+
+  #view-sheets .table-scroll,
+  #view-sheets .card-body {
+    overflow-x: auto;
+  }
+
+  @media (max-width: 900px) {
+    .sheets-sync-grid {
+      grid-template-columns: 1fr;
+    }
+    .sheets-panel {
+      border-right: none;
+      border-bottom: 1px solid #EDEBE9;
+    }
+    .sheets-panel:last-child {
+      border-bottom: none;
+    }
+    .sheets-sync-log {
+      max-height: 220px;
+      min-height: 140px;
+    }
+    .sheets-conn-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .sheets-conn-actions {
+      width: 100%;
+    }
+    .sheets-conn-actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
   }
 
   /* Prevent view-body from clipping children */
@@ -1320,7 +1503,6 @@
     background: #FAF9F8;
   }
 
-
   #view-dashboard .view-body,
   #view-sheets .view-body,
   #view-expenses .view-body {
@@ -1334,15 +1516,6 @@
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-  }
-  /* Sheet tabs content readable */
-  #view-sheets .two-col {
-    grid-template-columns: 1.2fr 1fr;
-  }
-  @media (max-width: 900px) {
-    #view-sheets .two-col {
-      grid-template-columns: 1fr;
-    }
   }
 
 
@@ -2807,75 +2980,153 @@
   <!-- -- GOOGLE SHEETS / APPS SCRIPT INTEGRATION -- -->
   <div id="view-sheets" class="view">
     <div class="page-header">
-      <h1>Google Sheets Integration</h1>
-    </div>
-    <div class="view-body">
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Web App URL</div>
-        <span id="connStatusBadge" class="badge badge-gray">Not connected</span>
-      </div>
-      <div class="card-body">
-        <div class="form-group">
-          <label>Apps Script Web App URL</label>
-          <input id="webAppUrl" type="text" placeholder="https://script.google.com/macros/s/…/exec" value="">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <h1>Google Sheets</h1>
+          <p>Connect the Apps Script Web App, sync data, and monitor activity</p>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="connectWebApp()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Connect & Test</button>
-          <button class="btn btn-ghost" onclick="disconnectWebApp()" id="disconnectBtn" style="display:none">Disconnect</button>
-        </div>
-        <div id="connSuccessBox" style="display:none;margin-top:14px" class="sig-applied">
-          <span style="color:var(--success);display:flex"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><rect x='3' y='3' width='18' height='18' rx='2'/><line x1='3' y1='9' x2='21' y2='9'/><line x1='3' y1='15' x2='21' y2='15'/><line x1='9' y1='3' x2='9' y2='21'/></svg></span>
-          <div class="sig-applied-info">
-            <div class="sig-applied-name" id="connSuccessMsg">Connected</div>
-            <div class="sig-applied-time" id="connSuccessUrl" style="word-break:break-all;font-size:11px"></div>
-          </div>
-          <span class="sig-stamp">OK Live</span>
+        <div class="ws-actions">
+          <span id="connStatusBadge" class="badge badge-gray">Not connected</span>
         </div>
       </div>
     </div>
 
-    <!-- Step 2: Sync -->
-    <div class="card" id="syncControlCard" style="opacity:.5;pointer-events:none">
-      <div class="card-header">
-        <div class="card-title">Sync Data</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-secondary btn-sm" onclick="pullFromSheets()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/></svg> Pull from Sheets</button>
-          <button class="btn btn-primary btn-sm" onclick="pushToSheets()" title="Push current data"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg> Push to Sheets</button>
-          <button class="btn btn-ghost btn-sm" onclick="recoverMissingRequestsToSheets()" title="Re-send all local requests to Sheets (fixes missing rows)">Repair missing</button>
+    <div class="view-body sheets-workspace">
+
+      <!-- 1. Connection -->
+      <div class="card sheets-conn-card">
+        <div class="card-header">
+          <div class="card-title">Connection</div>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="var el=document.getElementById('sheetsSetupPanel');if(el){el.style.display=el.style.display==='none'?'':'none';}">Setup guide</button>
         </div>
-      </div>
-      <div class="card-body">
-        <div class="two-col" style="gap:12px">
-          <div>
-            <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Sheet Tabs</div>
-            <div class="table-scroll">
-            <table style="min-width:400px"><thead><tr><th>Tab</th><th>Contents</th><th>Last Sync</th></tr></thead>
-            <tbody>
-              <tr><td>Requests</td><td>Payment requests &amp; approvals</td><td id="syncTimeRequests" class="text-muted text-sm">--</td></tr>
-              <tr><td>Budgets</td><td>SMT project budgets &amp; loaded funds</td><td id="syncTimeBudgets" class="text-muted text-sm">--</td></tr>
-              <tr><td>FundsLedger</td><td>Money-In fund posts</td><td id="syncTimeFunds" class="text-muted text-sm">--</td></tr>
-              <tr><td>Expenses</td><td>Weekly expense log</td><td id="syncTimeExpenses" class="text-muted text-sm">--</td></tr>
-              <tr><td>Signatures</td><td>Saved signature images (base64)</td><td id="syncTimeSigs" class="text-muted text-sm">--</td></tr>
-            </tbody>
-            </table>
+        <div class="card-body">
+          <div class="sheets-conn-row">
+            <div class="form-group" style="margin:0;flex:1;min-width:220px">
+              <label for="webAppUrl">Apps Script Web App URL</label>
+              <input id="webAppUrl" type="text" placeholder="https://script.google.com/macros/s/…/exec" value="" autocomplete="off" spellcheck="false">
             </div>
-            <div style="margin-top:12px">
-              <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);cursor:pointer">
-                <input type="checkbox" id="autoSyncToggle" onchange="toggleAutoSync(this.checked)" style="width:auto">
-                Auto-sync (every ~2.5s; turbo ~1.2s after changes)
-              </label>
+            <div class="sheets-conn-actions">
+              <button class="btn btn-primary" onclick="connectWebApp()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                Connect &amp; Test
+              </button>
+              <button class="btn btn-ghost" onclick="disconnectWebApp()" id="disconnectBtn" style="display:none">Disconnect</button>
             </div>
           </div>
-          <div>
-            <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Sync Log</div>
-            <div id="syncLog" style="font-size:11.5px;color:var(--muted);line-height:1.9;max-height:200px;overflow-y:auto;padding:10px;background:var(--teal-pale);border-radius:8px;font-family:monospace">
-              Waiting for connection…
+          <div id="connSuccessBox" style="display:none;margin-top:12px" class="sig-applied">
+            <span style="color:var(--success);display:flex" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </span>
+            <div class="sig-applied-info">
+              <div class="sig-applied-name" id="connSuccessMsg">Connected</div>
+              <div class="sig-applied-time" id="connSuccessUrl" style="word-break:break-all;font-size:11px"></div>
+            </div>
+            <span class="sig-stamp">Live</span>
+          </div>
+
+          <!-- Collapsible first-time setup -->
+          <div id="sheetsSetupPanel" style="display:none;margin-top:14px" class="sheets-setup-panel">
+            <div class="sheets-setup-grid">
+              <div class="sheets-setup-step">
+                <div class="sheets-setup-num">1</div>
+                <div>
+                  <strong>Open Apps Script</strong>
+                  <p>In your spreadsheet: <em>Extensions → Apps Script</em>. Paste the backend code as <code>Code.gs</code>.</p>
+                </div>
+              </div>
+              <div class="sheets-setup-step">
+                <div class="sheets-setup-num">2</div>
+                <div>
+                  <strong>Add Index.html &amp; run setup</strong>
+                  <p>File → New → HTML → name it <code>Index</code>. Run <code>setupSheets</code> once to create tabs.</p>
+                </div>
+              </div>
+              <div class="sheets-setup-step">
+                <div class="sheets-setup-num">3</div>
+                <div>
+                  <strong>Deploy Web App</strong>
+                  <p>Deploy → New deployment → Web app. Execute as: <strong>Me</strong>, Who has access: <strong>Anyone</strong>. Paste the <code>/exec</code> URL above.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- 2. Sync workspace (disabled until connected) -->
+      <div class="card" id="syncControlCard" style="opacity:.5;pointer-events:none">
+        <div class="card-header sheets-sync-header">
+          <div class="card-title">Sync</div>
+          <div class="sheets-sync-actions">
+            <button class="btn btn-secondary btn-sm" onclick="pullFromSheets()" title="Download latest data from Sheets">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+              Pull
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="pushToSheets()" title="Upload current data to Sheets">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 7 12 3 8 7"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+              Push
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="recoverMissingRequestsToSheets()" title="Re-send all local requests (fixes missing rows)">Repair</button>
+            <label class="sheets-auto-label" title="Background version checks while this tab is open">
+              <input type="checkbox" id="autoSyncToggle" onchange="toggleAutoSync(this.checked)">
+              Auto-sync
+            </label>
+          </div>
+        </div>
+        <div class="card-body sheets-sync-body">
+          <div class="sheets-sync-grid">
+            <!-- Tab status -->
+            <div class="sheets-panel">
+              <div class="sheets-panel-label">Sheet tabs</div>
+              <div class="table-scroll sheets-tabs-scroll">
+                <table class="sheets-tabs-table">
+                  <thead>
+                    <tr>
+                      <th>Tab</th>
+                      <th>Contents</th>
+                      <th>Last sync</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><span class="sheets-tab-name">Requests</span></td>
+                      <td>Payment requests &amp; approvals</td>
+                      <td id="syncTimeRequests" class="text-muted text-sm">--</td>
+                    </tr>
+                    <tr>
+                      <td><span class="sheets-tab-name">Budgets</span></td>
+                      <td>Project budgets &amp; lines</td>
+                      <td id="syncTimeBudgets" class="text-muted text-sm">--</td>
+                    </tr>
+                    <tr>
+                      <td><span class="sheets-tab-name">Funds</span></td>
+                      <td>Money-in fund posts</td>
+                      <td id="syncTimeFunds" class="text-muted text-sm">--</td>
+                    </tr>
+                    <tr>
+                      <td><span class="sheets-tab-name">Expenses</span></td>
+                      <td>Expense / claim log</td>
+                      <td id="syncTimeExpenses" class="text-muted text-sm">--</td>
+                    </tr>
+                    <tr>
+                      <td><span class="sheets-tab-name">Signatures</span></td>
+                      <td>Signature images (base64)</td>
+                      <td id="syncTimeSigs" class="text-muted text-sm">--</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="sheets-hint">Also synced in the background: Users, Clients, Deleted, Settings.</p>
+            </div>
+            <!-- Activity log -->
+            <div class="sheets-panel sheets-log-panel">
+              <div class="sheets-panel-label">Activity log</div>
+              <div id="syncLog" class="sheets-sync-log">Waiting for connection…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -5741,12 +5992,9 @@ function backgroundPush(opts) {
     _bgPushPending = null;
     var attempt = function(n) {
       pushToSheets(o).then(function() {
-        // Writer-side turbo: tight polls so we confirm server version quickly
-        if (typeof enterTurboSync === 'function') enterTurboSync('local write');
-        else {
-          window._turboSyncUntil = Date.now() + 25000;
-          _syncDelay = 1200;
-        }
+        // Turbo window: poll every 1.5s for 20s so other users see new rows fast
+        window._turboSyncUntil = Date.now() + 20000;
+        _syncDelay = 1500;
         if (o.withSigs) {
           return pushSigImages().then(function(){ startAutoSync(); }, function(){ startAutoSync(); });
         }
@@ -8526,16 +8774,10 @@ function gsPushIfConnected() { syncAfterChange(); }
 // Auto-sync: one request at a time, never overlapping.
 // (An overlapping 2s setInterval flooded Apps Script, which then throttled the
 //  deployment — the "works after refresh, disconnects shortly after" symptom.)
-// Cross-browser lag: same browser updates localStorage instantly; other browsers
-// only learn via getVersion polling. Keep focused polls tight, and enter turbo
-// on BOTH the writer and any peer that sees a version change.
-var AUTO_SYNC_INTERVAL = 2500;          // version check every 2.5s while tab is visible
-var AUTO_SYNC_TURBO_MS = 1200;          // while turbo window is open
-var AUTO_SYNC_HIDDEN_MS = 10000;        // slower when tab is in background
+var AUTO_SYNC_INTERVAL = 5000;          // version check every 8s while the tab is visible
 var AUTO_SYNC_MAX_BACKOFF = 120000;     // up to 2 min after repeated failures (avoid 404 storms)
 var FULL_REFRESH_EVERY_MS = 5 * 60000;  // budgets + form settings every 5 min
 var CLIENTS_REFRESH_EVERY_MS = 10 * 60000; // Clients sheet every 10 min (also on opening the request form)
-var TURBO_WINDOW_MS = 25000;            // stay fast for 25s after local write OR remote change
 
 var _lastKnownVersion = -1;
 var _versionPollCount = 0;
@@ -8544,18 +8786,8 @@ var _lastFullRefresh = Date.now();
 var _lastClientsRefresh = Date.now();
 var _syncLoopToken = 0;
 
-function enterTurboSync(reason) {
-  window._turboSyncUntil = Date.now() + TURBO_WINDOW_MS;
-  _syncDelay = AUTO_SYNC_TURBO_MS;
-  try {
-    if (reason) appendSyncLog('Turbo sync (' + reason + ') — checks every ' + (AUTO_SYNC_TURBO_MS/1000) + 's for ' + (TURBO_WINDOW_MS/1000) + 's');
-  } catch (e) {}
-}
-
 async function checkVersionAndSync() {
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return true;
-  // Local grace / push-in-flight: skip work but do NOT mark the server version as seen
-  // (otherwise a concurrent remote change could be permanently skipped until next bump).
   if (shouldSkipPull()) return true;
   if (window._gas404Until && Date.now() < window._gas404Until) return false;
   if (gasBusy() > 1) return true; // other requests running — don't pile up
@@ -8570,15 +8802,9 @@ async function checkVersionAndSync() {
       return true;
     }
     if (serverVersion !== _lastKnownVersion) {
-      if (shouldSkipPull()) {
-        // Defer — leave _lastKnownVersion alone so we retry the pull next tick
-        return true;
-      }
-      var prev = _lastKnownVersion;
+      if (shouldSkipPull()) { _lastKnownVersion = serverVersion; return true; }
       _lastKnownVersion = serverVersion;
       await pullRequestsOnly();
-      // Peer browsers: speed up so follow-on status changes land quickly
-      enterTurboSync('remote v' + prev + '→' + serverVersion);
     }
 
     _versionPollCount++;
@@ -8603,8 +8829,7 @@ function startAutoSync() {
   clearTimeout(gsAutoSyncTimer);
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
   _versionPollCount = 0;
-  var turboNow = window._turboSyncUntil && Date.now() < window._turboSyncUntil;
-  _syncDelay = turboNow ? AUTO_SYNC_TURBO_MS : AUTO_SYNC_INTERVAL;
+  _syncDelay = AUTO_SYNC_INTERVAL;
   var token = ++_syncLoopToken;
   var tick = async function() {
     if (token !== _syncLoopToken) return; // a newer loop replaced this one
@@ -8612,27 +8837,23 @@ function startAutoSync() {
     if (!document.hidden) ok = await checkVersionAndSync();
     var turbo = window._turboSyncUntil && Date.now() < window._turboSyncUntil;
     if (ok) {
-      _syncDelay = turbo ? AUTO_SYNC_TURBO_MS : AUTO_SYNC_INTERVAL;
+      _syncDelay = turbo ? 1500 : AUTO_SYNC_INTERVAL;
     } else {
-      _syncDelay = Math.min(AUTO_SYNC_MAX_BACKOFF, Math.max(_syncDelay, AUTO_SYNC_INTERVAL) * 2);
+      _syncDelay = Math.min(AUTO_SYNC_MAX_BACKOFF, Math.max(_syncDelay, 5000) * 2);
     }
-    if (token === _syncLoopToken) {
-      gsAutoSyncTimer = setTimeout(tick, document.hidden ? AUTO_SYNC_HIDDEN_MS : _syncDelay);
-    }
+    if (token === _syncLoopToken) gsAutoSyncTimer = setTimeout(tick, document.hidden ? 15000 : _syncDelay);
   };
-  var firstDelay = turboNow ? 400 : Math.min(800, AUTO_SYNC_INTERVAL);
+  var firstDelay = (window._turboSyncUntil && Date.now() < window._turboSyncUntil)
+    ? 800
+    : Math.min(_syncDelay || AUTO_SYNC_INTERVAL, AUTO_SYNC_INTERVAL);
   gsAutoSyncTimer = setTimeout(tick, firstDelay);
   appendSyncLog('Auto-sync active (checks every ' + (AUTO_SYNC_INTERVAL/1000) + 's' +
-    (turboNow ? ', turbo ' + (AUTO_SYNC_TURBO_MS/1000) + 's after writes/changes' : '') + ')');
+    ((window._turboSyncUntil && Date.now() < window._turboSyncUntil) ? ', turbo 1.5s after writes' : '') + ')');
   if (typeof scheduleDirtyFlush_ === 'function') scheduleDirtyFlush_();
 }
 // Check right away when the user comes back to the tab
 document.addEventListener('visibilitychange', function() {
-  if (!document.hidden && gsWebAppUrl && typeof checkVersionAndSync === 'function') {
-    checkVersionAndSync();
-    // Resume tight polling after returning to the tab
-    if (typeof startAutoSync === 'function') startAutoSync();
-  }
+  if (!document.hidden && gsWebAppUrl && typeof checkVersionAndSync === 'function') checkVersionAndSync();
 });
 
 function toggleAutoSync(on) {
