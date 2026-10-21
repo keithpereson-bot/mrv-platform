@@ -8216,7 +8216,8 @@ async function pushToSheets(opts) {
         funds: fundRows,
         expenses: expRows,
         signatures: [],
-        deleted: deletedRows
+        deleted: deletedRows,
+        prfs: (typeof prfStore !== 'undefined' && prfStore) ? prfStore : []
       });
     }
 
@@ -8322,6 +8323,39 @@ async function pullFromSheets(silent) {
     const res = await gasCall({ action: 'getAll' });
     if (!res.ok) throw new Error(res.error || 'Pull failed');
     if (!silent) appendSyncLog('Pull OK, requests=' + (res.requests ? res.requests.length : 0));
+
+    // -- PRFs (Payment Request Forms) --
+    if (res.prfs && res.prfs.length && typeof prfStore !== 'undefined') {
+      try {
+        var byRef = {};
+        (prfStore || []).forEach(function(p){ if (p && p.ref) byRef[p.ref] = p; });
+        res.prfs.forEach(function(raw) {
+          var p = raw;
+          // Support sheet-shaped rows
+          if (raw['Ref #'] && !raw.ref) {
+            var lines = [];
+            try { lines = JSON.parse(raw['Lines JSON'] || '[]'); } catch(e) {}
+            p = {
+              ref: raw['Ref #'], project: raw['Project']||'', company: raw['Company']||'',
+              country: raw['Country']||'', businessUnit: raw['Business Unit']||'',
+              costCentre: raw['Cost Centre']||'', dimensionCode: raw['Dimension Code']||'',
+              profitCentre: raw['Profit Centre']||'', productCode: raw['Product Code']||'',
+              rdCode: raw['R&D Code']||'', carbonCode: raw['Carbon Code']||'',
+              requestor: raw['Requestor']||'', date: String(raw['Date']||''),
+              modeOfPayment: raw['Mode of Payment']||'', payeeNo: raw['Payee No']||'',
+              cashAdvance: raw['Cash Advance']||'NO', currency: raw['Currency']||'',
+              estPaymentDate: String(raw['Est Payment Date']||''), purpose: raw['Purpose']||'',
+              amount: raw['Amount']||0, vat: raw['VAT']||0, status: raw['Status']||'Pending',
+              lines: lines, createdAt: String(raw['Created At']||''), createdBy: raw['Created By']||''
+            };
+          }
+          if (p && p.ref) byRef[p.ref] = p;
+        });
+        prfStore = Object.keys(byRef).map(function(k){ return byRef[k]; });
+        persistPrfStore();
+        appendSyncLog('PRFs: merged ' + res.prfs.length + ' from Sheets');
+      } catch(e) { appendSyncLog('PRFs merge error: ' + e.message); }
+    }
 
     // -- Requests -- STATUS_RANK protection prevents status downgrade
     if (res.requests && res.requests.length > 0) {
@@ -10904,6 +10938,7 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'section', label:'Forms' },
       { type:'item', label:'Payment Request',  view:'prf',            icon:'prf' },
       { type:'item', label:'Expense Claim',    view:'expenses',       icon:'expenses' },
       { type:'section', label:'Reports' },
@@ -10916,6 +10951,7 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'section', label:'Forms' },
       { type:'item', label:'Payment Request',  view:'prf',            icon:'prf' },
       { type:'item', label:'Expense Claim',    view:'expenses',       icon:'expenses' },
       { type:'section', label:'Reports' },
@@ -10928,6 +10964,7 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'section', label:'Forms' },
       { type:'item', label:'Payment Request',  view:'prf',            icon:'prf' },
       { type:'item', label:'Expense Claim',    view:'expenses',       icon:'expenses' },
       { type:'section', label:'Reports' },
@@ -12710,6 +12747,7 @@ function prfOnCostCentreChange() {
 }
 function prfInit() {
   prfPopulateMapping();
+  if (gsWebAppUrl && typeof prfPullFromSheets === 'function') prfPullFromSheets();
   var projEl = document.getElementById('prfProject');
   if (projEl) {
     var projects = (typeof getProjects === 'function') ? getProjects() : [];
@@ -12785,7 +12823,9 @@ function prfOnProjectChange() {
   }
   var curEl = document.getElementById('prfCurrency');
   if (curEl && lines[0].currency) curEl.value = lines[0].currency;
-  prfRecalc();
+  // Auto-fill company / dimension codes from budget meta (like Expense Claim)
+  if (typeof prfAutoHeader === 'function') prfAutoHeader(true);
+  else prfRecalc();
 }
 function prfGatherLines() {
   var rows = document.querySelectorAll('#prfLinesBody tr[data-key]');
@@ -12846,15 +12886,67 @@ function prfRecalc() {
     btn.style.opacity = ready ? '1' : '.55';
   }
 }
-function prfAutoHeader() {
-  if (currentUser) {
-    var r = document.getElementById('prfRequestor');
-    if (r) r.value = currentUser.name || '';
+function prfSetField(id, val, force) {
+  if (val == null || val === '') return;
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (!force && el.value) return;
+  val = String(val);
+  if (el.tagName === 'SELECT') {
+    var has = Array.prototype.some.call(el.options, function(o){ return o.value === val; });
+    if (!has) {
+      var opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = val;
+      el.appendChild(opt);
+    }
+    el.value = val;
+  } else {
+    el.value = val;
   }
+}
+
+/** Auto-fill PRF header from profile + project budget meta (same source as Expense Claim). */
+function prfAutoHeader(force) {
+  force = force !== false;
   var d = document.getElementById('prfDate');
-  if (d) d.value = new Date().toISOString().slice(0,10);
+  if (d && (!d.value || force)) d.value = new Date().toISOString().slice(0,10);
+  if (currentUser) {
+    prfSetField('prfRequestor', currentUser.name || '', force);
+    if (currentUser.country) {
+      var cc = String(currentUser.country);
+      // Prefer ISO-style code when present
+      var code = cc.length <= 3 ? cc.toUpperCase() : cc;
+      prfSetField('prfCountry', code, force);
+    }
+    if (currentUser.payeeNumber) prfSetField('prfPayee', currentUser.payeeNumber, force);
+  }
+  var proj = (document.getElementById('prfProject') || {}).value || '';
+  if (!proj) {
+    prfRecalc();
+    if (force) toast('Select a project to load dimension codes');
+    return;
+  }
+  var meta = (typeof getProjectBudgetMeta === 'function') ? getProjectBudgetMeta(proj) : null;
+  if (!meta) {
+    prfRecalc();
+    if (force) toast('No budget meta for this project — codes left blank');
+    return;
+  }
+  // Mirror Expense Claim field mapping
+  prfSetField('prfCompany', meta.burnEntity, force);
+  prfSetField('prfCountry', meta.countryCode || meta.country, force);
+  prfSetField('prfBizUnit', meta.businessUnit || meta.type, force);
+  prfSetField('prfCostCentre', meta.costCentre, force);
+  prfSetField('prfDimCode', meta.dimensionCode, force);
+  prfSetField('prfProfitCentre', meta.profitCentre, force);
+  prfSetField('prfProductCode', meta.productCode, force);
+  prfSetField('prfRdCode', meta.rdCode || meta.rdProjectCode, force);
+  prfSetField('prfCarbonCode', meta.carbonCode, force);
+  if (meta.currency) prfSetField('prfCurrency', meta.currency, force);
+  if (typeof prfOnCostCentreChange === 'function') prfOnCostCentreChange();
   prfRecalc();
-  toast('Header filled from profile');
+  if (force) toast('Header filled from project budget');
 }
 function prfSubmit() {
   var lines = prfGatherLines();
@@ -12897,6 +12989,13 @@ function prfSubmit() {
   toast('PRF submitted · ' + ref);
   prfOnProjectChange();
   prfRenderList();
+  // Sync to Google Sheets when connected (same pattern as requests)
+  if (gsWebAppUrl && typeof backgroundPush === 'function') {
+    try { backgroundPush({ fast: true, skipActuals: true }); } catch(e) {}
+  }
+  if (gsWebAppUrl && typeof prfPushToSheets === 'function') {
+    prfPushToSheets().catch(function(err){ appendSyncLog('PRF push: ' + ((err && err.message) || err)); });
+  }
 }
 function prfResetForm() {
   ['prfPurpose','prfPayee'].forEach(function(id) {
@@ -13074,6 +13173,48 @@ function prfBuildPdf(p) {
   doc.text('2nd Approval', ML+140, y);
   doc.save('PRF_'+(p.ref||'draft')+'_'+(p.date||'')+'.pdf');
   toast('PDF downloaded');
+}
+
+
+
+/** Push PRF store to Sheets (PRFs tab). Falls back gracefully if action missing. */
+async function prfPushToSheets() {
+  if (!gsWebAppUrl) return;
+  try {
+    var res = await gasCall({ action: 'pushPrfs', prfs: prfStore || [] });
+    if (res && res.ok) {
+      appendSyncLog('PRFs: pushed ' + (prfStore || []).length + ' form(s) to Sheets');
+    } else if (res && res.error && /Unknown action/i.test(res.error)) {
+      appendSyncLog('PRFs: Sheets backend needs pushPrfs — stored locally until redeploy');
+    } else if (res && res.error) {
+      appendSyncLog('PRFs push failed: ' + res.error);
+    }
+  } catch (e) {
+    appendSyncLog('PRFs push error: ' + (e.message || e));
+  }
+}
+
+async function prfPullFromSheets() {
+  if (!gsWebAppUrl) return;
+  try {
+    var res = await gasCall({ action: 'getPrfs' });
+    if (!res || !res.ok) {
+      if (res && res.error && /Unknown action/i.test(res.error)) return;
+      return;
+    }
+    var remote = res.prfs || res.data || [];
+    if (!Array.isArray(remote) || !remote.length) return;
+    // Merge by ref — remote wins on same ref
+    var byRef = {};
+    (prfStore || []).forEach(function(p){ if (p && p.ref) byRef[p.ref] = p; });
+    remote.forEach(function(p){ if (p && p.ref) byRef[p.ref] = p; });
+    prfStore = Object.keys(byRef).map(function(k){ return byRef[k]; })
+      .sort(function(a,b){ return String(b.createdAt||'').localeCompare(String(a.createdAt||'')); });
+    persistPrfStore();
+    appendSyncLog('PRFs: pulled ' + remote.length + ' from Sheets');
+    if (typeof prfRenderList === 'function') prfRenderList();
+    if (typeof prfRenderBalance === 'function') prfRenderBalance();
+  } catch (e) {}
 }
 
 
