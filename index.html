@@ -2061,354 +2061,203 @@
     .usr-form-grid { grid-template-columns:1fr; }
     .usr-e { max-width:160px; }
   }
-  /* ═══════════════════════════════════════════════════════════
-     Expense Claim — sleek workspace
-     ═══════════════════════════════════════════════════════════ */
-  #view-expenses .page-header {
-    background: linear-gradient(180deg, #FFFFFF 0%, #FAF9F8 100%);
-  }
+  /* Expense Claim layout — optimised for many projects */
   .ecf-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
   .ecf-head-actions { display:flex; gap:8px; flex-shrink:0; }
   .ecf-layout {
     display:grid;
-    grid-template-columns:minmax(0,1fr) minmax(268px,312px);
-    gap:16px;
+    grid-template-columns:minmax(0,1fr) minmax(260px,300px);
+    gap:14px;
     align-items:start;
     min-width:0;
   }
   .ecf-main { display:flex; flex-direction:column; gap:12px; min-width:0; }
-  .ecf-side {
-    position:sticky; top:56px;
-    display:flex; flex-direction:column; gap:12px;
-    min-width:0; max-height:calc(100vh - 72px); overflow-y:auto;
-  }
-  .ecf-side::-webkit-scrollbar { width:4px; }
-  .ecf-side::-webkit-scrollbar-thumb { background:#C8C6C4; border-radius:4px; }
-
-  /* Step pills */
+  .ecf-side { position:sticky; top:56px; display:flex; flex-direction:column; gap:12px; min-width:0; max-height:calc(100vh - 72px); overflow-y:auto; }
   .ecf-step {
-    display:inline-flex; width:20px; height:20px; border-radius:50%;
-    background:var(--brand); color:#fff; font-size:10.5px; font-weight:700;
-    align-items:center; justify-content:center; margin-right:8px;
-    vertical-align:middle; flex-shrink:0;
-    box-shadow:0 0 0 3px rgba(0,120,212,.12);
-  }
-  #view-expenses .card {
-    border-radius:4px;
-    border-color:#E1DFDD;
-    overflow:hidden;
-  }
-  #view-expenses .card-header {
-    min-height:44px;
-    padding:10px 14px;
-    background:#FFFFFF;
-    border-bottom:1px solid #EDEBE9;
-  }
-  #view-expenses .card-title {
-    display:flex; align-items:center;
-    font-size:13.5px; font-weight:600;
-  }
-  #view-expenses .card-title .badge {
-    font-weight:600; font-size:10.5px;
-    min-width:20px; height:18px; border-radius:9px;
-    padding:0 6px; display:inline-flex; align-items:center; justify-content:center;
+    display:inline-flex; width:18px; height:18px; border-radius:50%;
+    background:var(--brand); color:#fff; font-size:10px; font-weight:700;
+    align-items:center; justify-content:center; margin-right:6px; vertical-align:middle; flex-shrink:0;
   }
 
-  /* Toolbars */
-  .ecf-toolbar,
-  .ecf-req-toolbar {
-    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-    padding:8px 12px;
-    border-bottom:1px solid #EDEBE9;
-    background:linear-gradient(180deg, #FAF9F8 0%, #F3F2F1 100%);
+  /* Project picker toolbar */
+  .ecf-toolbar {
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    padding:8px 12px; border-bottom:1px solid var(--border); background:#FAF9F8;
   }
   .ecf-search-wrap { position:relative; flex:1; min-width:140px; max-width:280px; }
-  .ecf-search-wrap svg {
-    position:absolute; left:10px; top:50%; transform:translateY(-50%);
-    color:#8A8886; pointer-events:none;
-  }
+  .ecf-search-wrap svg { position:absolute; left:8px; top:50%; transform:translateY(-50%); color:#8A8886; pointer-events:none; }
   .ecf-search {
-    width:100%;
-    padding:7px 10px 7px 32px;
-    border:1px solid #C8C6C4; border-radius:3px;
+    width:100%; padding:6px 8px 6px 28px; border:1px solid #C8C6C4; border-radius:4px;
     font-size:12.5px; font-family:inherit; background:#fff;
-    transition:border-color .12s, box-shadow .12s;
   }
-  .ecf-search:focus {
-    border-color:var(--brand); outline:none;
-    box-shadow:0 0 0 1px var(--brand);
-  }
-  .ecf-meta {
-    font-size:11.5px; color:#605E5C; white-space:nowrap;
-    font-weight:500; font-variant-numeric:tabular-nums;
-  }
+  .ecf-search:focus { border-color:var(--brand); outline:none; box-shadow:0 0 0 1px var(--brand); }
+  .ecf-meta { font-size:11.5px; color:var(--muted); white-space:nowrap; }
 
-  /* Project list */
+  /* Dense project list (scales to dozens of projects) */
   .ecf-proj-grid {
     display:flex; flex-direction:column; gap:0;
-    max-height:min(220px, 28vh); overflow-y:auto;
+    max-height:min(240px, 32vh); overflow-y:auto;
+    border-top:1px solid var(--border);
   }
-  .ecf-proj-grid::-webkit-scrollbar { width:4px; }
-  .ecf-proj-grid::-webkit-scrollbar-thumb { background:#C8C6C4; border-radius:4px; }
   .ecf-proj {
-    display:flex; align-items:center; gap:10px;
-    padding:8px 14px; margin:0;
-    border:none; border-bottom:1px solid #F3F2F1;
-    cursor:pointer; background:#fff;
-    text-transform:none; letter-spacing:0; font-weight:400;
-    transition:background .1s;
+    display:flex; align-items:center; gap:8px;
+    padding:7px 12px; margin:0; border:none; border-bottom:1px solid #EDEBE9;
+    cursor:pointer; background:#fff; text-transform:none; letter-spacing:0; font-weight:400;
   }
-  .ecf-proj:last-child { border-bottom:none; }
   .ecf-proj:hover { background:#F3F2F1; }
-  .ecf-proj.is-on {
-    background:#DEECF9;
-    box-shadow:inset 3px 0 0 var(--brand);
-  }
+  .ecf-proj.is-on { background:#DEECF9; }
   .ecf-proj.is-on:hover { background:#C7E0F4; }
-  .ecf-proj input[type="checkbox"] {
-    width:15px; height:15px; margin:0; flex-shrink:0;
-    accent-color:var(--brand);
-  }
-  .ecf-proj-name {
-    font-size:12.5px; font-weight:600; color:#201F1E;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-  .ecf-proj-meta { font-size:11px; color:#8A8886; white-space:nowrap; }
-  .ecf-proj-amt {
-    margin-left:auto; font-size:12px; font-weight:600; color:#323130;
-    font-variant-numeric:tabular-nums; flex-shrink:0;
-  }
+  .ecf-proj-name { font-size:12.5px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ecf-proj-meta { font-size:11px; color:var(--muted); white-space:nowrap; }
+  .ecf-proj-amt { margin-left:auto; font-size:12px; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; flex-shrink:0; }
   .ecf-proj.ecf-hidden { display:none; }
-  .ecf-empty {
-    padding:28px 16px; text-align:center;
-    color:#8A8886; font-size:13px; line-height:1.45;
-  }
 
   /* Request list */
-  .ecf-req-list {
-    max-height:min(360px, 40vh); overflow-y:auto;
+  .ecf-req-toolbar {
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    padding:8px 12px; background:#FAF9F8; border-bottom:1px solid var(--border);
   }
-  .ecf-req-list::-webkit-scrollbar { width:4px; }
-  .ecf-req-list::-webkit-scrollbar-thumb { background:#C8C6C4; border-radius:4px; }
+  .ecf-req-list { max-height:min(380px, 42vh); overflow-y:auto; }
   .ecf-req-group {
     position:sticky; top:0; z-index:2;
-    padding:6px 14px;
-    font-size:10.5px; font-weight:700; text-transform:uppercase;
-    letter-spacing:.05em; color:#004578;
-    background:#DEECF9; border-bottom:1px solid #C7E0F4;
+    padding:5px 12px; font-size:10.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.04em; color:#004578; background:#DEECF9; border-bottom:1px solid #C7E0F4;
   }
   .ecf-req {
     display:grid; grid-template-columns:18px minmax(0,1fr) auto;
     align-items:center; gap:8px 10px;
-    padding:9px 14px;
-    border-bottom:1px solid #F3F2F1;
+    padding:7px 12px; border-bottom:1px solid #EDEBE9;
     cursor:pointer; text-transform:none; letter-spacing:0; font-weight:400; margin:0;
-    transition:background .1s;
   }
   .ecf-req:hover { background:#FAF9F8; }
-  .ecf-req input[type="checkbox"] {
-    width:15px; height:15px; margin:0; accent-color:var(--brand);
-  }
-  .ecf-req-title {
-    font-size:12.5px; font-weight:600; color:#201F1E;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-  .ecf-req-sub {
-    font-size:11px; color:#8A8886;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-  .ecf-req-amt {
-    font-size:12.5px; font-weight:700; color:#201F1E;
-    font-variant-numeric:tabular-nums; white-space:nowrap;
-  }
+  .ecf-req-title { font-size:12.5px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ecf-req-sub { font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ecf-req-amt { font-size:12.5px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap; }
 
-  /* Form header fields */
-  .ecf-header-body {
-    display:flex; flex-direction:column; gap:16px;
-    padding:16px !important;
-  }
-  .ecf-group-title {
-    font-size:10.5px; font-weight:700; text-transform:uppercase;
-    letter-spacing:.06em; color:#605E5C; margin-bottom:8px;
-  }
-  .ecf-grid {
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
-    gap:10px 14px;
-  }
+  /* Form header */
+  .ecf-header-body { display:flex; flex-direction:column; gap:12px; }
+  .ecf-group-title { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:6px; }
+  .ecf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px 12px; }
   .ecf-grid .form-group { margin:0; }
-  .ecf-grid label {
-    font-size:11.5px; font-weight:600; color:#605E5C; margin-bottom:4px;
-  }
-  .ecf-grid input,
-  .ecf-grid select {
-    border-radius:3px;
-    padding:7px 10px;
-    font-size:13px;
-    border-color:#C8C6C4;
-  }
-  .ecf-grid input:focus,
-  .ecf-grid select:focus {
-    border-color:var(--brand);
-    box-shadow:0 0 0 1px var(--brand);
-  }
-  .ecf-codes {
-    border:1px solid #E1DFDD; border-radius:4px;
-    padding:10px 12px; background:#FAF9F8;
-    transition:border-color .12s;
-  }
-  .ecf-codes[open] { border-color:#C8C6C4; background:#FFFFFF; }
-  .ecf-codes summary {
-    cursor:pointer; display:flex; align-items:center; gap:8px;
-    list-style:none; user-select:none;
-  }
+  .ecf-codes { border:1px solid var(--border); border-radius:6px; padding:8px 10px; background:#FAF9F8; }
+  .ecf-codes summary { cursor:pointer; display:flex; align-items:center; gap:8px; list-style:none; }
   .ecf-codes summary::-webkit-details-marker { display:none; }
-  .ecf-codes summary::before {
-    content:'';
-    width:0; height:0;
-    border-left:5px solid #8A8886;
-    border-top:4px solid transparent;
-    border-bottom:4px solid transparent;
-    transition:transform .15s;
-  }
+  .ecf-codes summary::before { content:'▸'; color:var(--muted); font-size:11px; transition:transform .15s; }
   .ecf-codes[open] summary::before { transform:rotate(90deg); }
-  .ecf-codes-state { font-size:11px; margin-left:auto; font-weight:500; }
+  .ecf-codes-state { font-size:11px; margin-left:auto; }
 
-  /* Sticky summary panel */
-  .ecf-panel {
-    overflow:hidden;
-    border:1px solid #E1DFDD !important;
-    box-shadow:0 1px 4px rgba(16,24,40,.04);
-  }
-  .ecf-panel .card-header {
-    background:linear-gradient(180deg, #FAF9F8 0%, #F3F2F1 100%) !important;
-  }
-  .ecf-panel-body {
-    display:flex; flex-direction:column; gap:0;
-    padding:0 !important;
-  }
-  .ecf-panel-section {
-    padding:14px;
-    border-top:1px solid #EDEBE9;
-  }
+  /* Unified sticky panel: totals → checklist → signature → export */
+  .ecf-panel { overflow:hidden; }
+  .ecf-panel-body { display:flex; flex-direction:column; gap:14px; padding:14px !important; }
+  .ecf-panel-section { padding-top:12px; border-top:1px solid var(--border); }
   .ecf-panel-label {
-    font-size:12px; font-weight:600; color:#201F1E;
-    margin-bottom:10px; display:flex; align-items:center;
+    font-size:12px; font-weight:600; color:var(--ink);
+    margin-bottom:8px; display:flex; align-items:center;
   }
-  .ecf-sum {
-    display:flex; flex-direction:column; gap:0;
-    padding:14px;
-  }
+  .ecf-sum { display:flex; flex-direction:column; gap:0; }
   .ecf-sum-total {
-    display:flex; flex-direction:column; gap:3px;
-    padding:12px 14px;
-    margin:-14px -14px 12px;
-    background:linear-gradient(135deg, #0078D4 0%, #106EBE 100%);
-    color:#fff;
+    display:flex; flex-direction:column; gap:2px;
+    padding:0 0 10px; margin-bottom:8px; border-bottom:1px solid var(--border);
   }
-  .ecf-sum-total span {
-    font-size:10.5px; color:rgba(255,255,255,.8);
-    text-transform:uppercase; letter-spacing:.05em; font-weight:600;
-  }
-  .ecf-sum-total strong {
-    font-size:24px; font-weight:700; color:#fff;
-    letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1.15;
-  }
-  .ecf-sum-rows { display:flex; flex-direction:column; gap:6px; }
-  .ecf-sum-row {
-    display:flex; justify-content:space-between; align-items:baseline;
-    gap:10px; font-size:12.5px; color:#323130;
-  }
-  .ecf-sum-row > span:first-child { color:#605E5C; flex:1; min-width:0; }
-  .ecf-sum-row > span:last-child {
-    white-space:nowrap; font-variant-numeric:tabular-nums; font-weight:600;
-  }
-  .ecf-sum-row.ecf-sum-bal > span:last-child { font-weight:700; font-size:13px; }
+  .ecf-sum-total span { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-weight:600; }
+  .ecf-sum-total strong { font-size:22px; font-weight:700; color:var(--ink); letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1.15; }
+  .ecf-sum-rows { display:flex; flex-direction:column; gap:5px; }
+  .ecf-sum-row { display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:12.5px; color:var(--ink); }
+  .ecf-sum-row > span:first-child { color:var(--muted); flex:1; min-width:0; }
+  .ecf-sum-row > span:last-child { white-space:nowrap; font-variant-numeric:tabular-nums; font-weight:600; }
+  .ecf-sum-row.ecf-sum-bal > span:last-child { font-weight:700; }
   .ecf-sum-note {
-    margin-top:10px; font-size:11px; color:#004578;
-    background:#DEECF9; border-radius:3px; padding:7px 9px; line-height:1.4;
+    margin-top:8px; font-size:11px; color:#004578; background:#DEECF9;
+    border-radius:4px; padding:6px 8px; line-height:1.4;
   }
   .ecf-checks {
-    list-style:none; margin:12px 0 0; padding:12px 0 0;
-    border-top:1px solid #EDEBE9; display:grid; gap:6px;
+    list-style:none; margin:10px 0 0; padding:10px 0 0;
+    border-top:1px solid var(--border); display:grid; gap:5px;
   }
-  .ecf-checks li {
-    font-size:12px; padding-left:20px; position:relative; line-height:1.4;
-  }
-  .ecf-checks li::before {
-    position:absolute; left:0; top:1px; font-weight:700; font-size:12px;
-  }
-  .ecf-checks li.ok { color:#323130; }
+  .ecf-checks li { font-size:12px; padding-left:18px; position:relative; line-height:1.35; }
+  .ecf-checks li::before { position:absolute; left:0; top:0; font-weight:700; }
+  .ecf-checks li.ok { color:var(--ink); }
   .ecf-checks li.ok::before { content:'✓'; color:#107C10; }
   .ecf-checks li.todo { color:#835C00; }
   .ecf-checks li.todo::before { content:'○'; color:#C19C00; }
-
-  /* Signature */
   .ecf-sig-canvas {
-    width:100%; height:92px;
-    border:1.5px dashed #C8C6C4; border-radius:4px;
+    width:100%; height:88px; border:1.5px dashed #C8C6C4; border-radius:6px;
     cursor:crosshair; background:#fff; display:block; touch-action:none;
-    transition:border-color .12s;
   }
-  .ecf-sig-canvas:hover { border-color:#8A8886; }
   .ecf-sig-tools {
     display:flex; justify-content:space-between; align-items:center;
-    margin-top:8px; gap:8px; font-size:11.5px;
+    margin-top:6px; gap:8px; font-size:11.5px;
   }
-  .ecf-sig-tools a { color:var(--brand); font-weight:500; text-decoration:none; }
-  .ecf-sig-tools a:hover { text-decoration:underline; }
-  .ecf-sig-note { font-size:11px; color:#8A8886; margin-top:4px; }
+  .ecf-sig-tools a { color:var(--brand); }
+  .ecf-sig-note { font-size:11px; color:var(--muted); margin-top:4px; }
   .ecf-sig-saved {
-    display:grid; grid-template-columns:68px minmax(0,1fr);
+    display:grid; grid-template-columns:64px minmax(0,1fr);
     gap:10px; align-items:center;
-    padding:10px; border:1px solid #E1DFDD; border-radius:4px;
-    background:linear-gradient(180deg, #FAF9F8 0%, #F3F2F1 100%);
+    padding:8px; border:1px solid var(--border); border-radius:6px; background:#FAF9F8;
   }
   .ecf-sig-saved img {
-    width:68px; height:42px; object-fit:contain;
-    border:1px solid #EDEBE9; border-radius:3px; padding:3px; background:#fff;
+    width:64px; height:40px; object-fit:contain;
+    border:1px solid var(--border); border-radius:4px; padding:2px; background:#fff;
   }
   .ecf-sig-saved .ecf-sig-info { min-width:0; }
-  .ecf-sig-saved .ecf-sig-info strong {
-    display:block; font-size:12.5px; font-weight:600; color:#201F1E;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-  .ecf-sig-saved .ecf-sig-info span {
-    display:block; font-size:11px; color:#107C10; margin-top:2px; font-weight:500;
-  }
+  .ecf-sig-saved .ecf-sig-info strong { display:block; font-size:12.5px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ecf-sig-saved .ecf-sig-info span { display:block; font-size:11px; color:#107C10; margin-top:2px; }
   .ecf-sig-saved .ecf-sig-info a { font-size:11px; color:var(--brand); }
-
-  /* Export actions */
   .ecf-actions {
-    display:flex; flex-direction:column; gap:8px;
-    padding:14px; border-top:1px solid #EDEBE9;
-    background:#FAF9F8;
+    display:flex; flex-direction:column; gap:6px;
+    padding-top:12px; border-top:1px solid var(--border); margin-top:2px;
   }
-  .ecf-actions .btn {
-    width:100%; min-width:0; flex:none !important;
-    justify-content:center; gap:8px;
-    border-radius:3px; font-size:13px; padding:9px 14px;
-  }
-  .ecf-actions .btn-primary {
-    box-shadow:0 1px 3px rgba(0,120,212,.25);
-  }
+  .ecf-actions .btn { width:100%; min-width:0; flex:none !important; justify-content:center; gap:8px; }
 
   @media (max-width:1100px) {
     .ecf-layout { grid-template-columns:1fr; }
     .ecf-side { position:static; max-height:none; overflow:visible; }
-    .ecf-proj-grid { max-height:180px; }
-    .ecf-req-list { max-height:260px; }
+    .ecf-proj-grid { max-height:200px; }
+    .ecf-req-list { max-height:280px; }
   }
   @media (max-width:768px) {
     .ecf-head-actions { display:none; }
     .ecf-actions {
-      position:sticky; bottom:8px; background:#fff; padding:10px;
-      border:1px solid #E1DFDD; border-radius:6px;
-      box-shadow:0 6px 20px rgba(0,0,0,.12); z-index:5;
+      position:sticky; bottom:8px; background:#fff; padding:8px;
+      border:1px solid var(--border); border-radius:8px;
+      box-shadow:0 4px 14px rgba(0,0,0,.12); z-index:5;
     }
-    .ecf-sum-total { margin:-14px -14px 12px; }
   }
   /* Floating new-request button */
+  
+  /* ── Payment Request Form (PRF) ─────────────────────────── */
+  .prf-budget-strip {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:10px; padding:12px; background:#FAF9F8; border:1px solid #EDEBE9; border-radius:4px;
+  }
+  .prf-budget-strip .prf-kpi { display:flex; flex-direction:column; gap:2px; }
+  .prf-budget-strip .prf-kpi span { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:#605E5C; }
+  .prf-budget-strip .prf-kpi strong { font-size:16px; font-weight:700; color:#201F1E; font-variant-numeric:tabular-nums; }
+  .prf-budget-strip .prf-kpi strong.warn { color:#C19C00; }
+  .prf-budget-strip .prf-kpi strong.danger { color:#A4262C; }
+  .prf-budget-strip .prf-kpi strong.ok { color:#107C10; }
+  .prf-lines-table { min-width:640px; width:100%; }
+  .prf-lines-table th { font-size:11px; }
+  .prf-lines-table td { font-size:12.5px; vertical-align:middle; }
+  .prf-lines-table input[type="number"] {
+    width:100px; max-width:100%; padding:5px 8px; font-size:12.5px;
+    border:1px solid #C8C6C4; border-radius:3px; font-family:inherit;
+  }
+  .prf-lines-table input[type="checkbox"] { width:15px; height:15px; accent-color:var(--brand); }
+  .prf-lines-table tr.is-over td { background:#FDE7E9; }
+  .prf-insight {
+    border:1px solid #EDEBE9; border-radius:4px; padding:10px 12px; margin-bottom:8px; background:#FAF9F8;
+  }
+  .prf-insight.warn { border-color:#FFE17A; background:#FFF4CE; }
+  .prf-insight.danger { border-color:#F1A9A9; background:#FDE7E9; }
+  .prf-insight strong { display:block; font-size:13px; margin-bottom:3px; color:#201F1E; }
+  .prf-insight p { margin:0; font-size:12px; color:#605E5C; line-height:1.4; }
+  #view-prf .page-header .ws-actions .btn.active {
+    background:var(--brand); color:#fff; border-color:var(--brand);
+  }
+  .ecf-empty { padding:28px 16px; text-align:center; color:#8A8886; font-size:13px; line-height:1.45; }
+
+
   .rq-fab { position:fixed; right:24px; bottom:24px; width:54px; height:54px; border-radius:50%; border:none; background:var(--brand); color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.25); cursor:pointer; z-index:110; display:flex; align-items:center; justify-content:center; transition:transform .12s, box-shadow .12s; }
   .rq-fab:hover { transform:scale(1.06); box-shadow:0 8px 22px rgba(0,0,0,.3); }
   @media (max-width:768px) {
@@ -2795,21 +2644,22 @@
     <div class="page-header">
       <div class="ecf-head">
         <div>
-          <h1>Expense Claim</h1>
-          <p>Projects → paid lines → header &amp; sign → export PDF</p>
+          <h1>Expense Claim Form</h1>
+          <p>Select projects → tick paid lines → header &amp; sign → export (one PDF per project when multi-selected)</p>
         </div>
+        <!-- Export actions live in the sticky summary panel only -->
       </div>
     </div>
     <div class="view-body">
     <div class="ecf-layout">
 
-      <!-- Main column -->
+      <!-- ===== Main column ===== -->
       <div class="ecf-main">
 
-        <div class="card">
+        <div class="card" style="overflow:hidden">
           <div class="card-header">
             <div class="card-title"><span class="ecf-step">1</span>Projects <span class="badge badge-gray" id="ecfProjCount" style="margin-left:6px">0</span></div>
-            <div class="gap-2 flex items-center">
+            <div style="display:flex;gap:6px">
               <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(true)">All</button>
               <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(false)">None</button>
             </div>
@@ -2822,14 +2672,14 @@
             <span class="ecf-meta" id="ecfProjSelectedMeta">0 selected</span>
           </div>
           <div id="ecfProjectList" class="ecf-proj-grid">
-            <div class="ecf-empty">Loading projects…</div>
+            <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">Loading projects…</div>
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" style="overflow:hidden">
           <div class="card-header">
             <div class="card-title"><span class="ecf-step">2</span>Paid requests <span class="badge badge-gray" id="ecfReqCount" style="margin-left:6px">0</span></div>
-            <div class="gap-2 flex items-center">
+            <div style="display:flex;gap:6px;align-items:center">
               <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(true);ecfUpdateSummary()">All</button>
               <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(false);ecfUpdateSummary()">None</button>
             </div>
@@ -2842,14 +2692,14 @@
             <span class="ecf-meta" id="ecfReqSelectedMeta">0 selected</span>
           </div>
           <div id="ecfRequestList" class="ecf-req-list">
-            <div class="ecf-empty">Select one or more projects to load paid requests.</div>
+            <div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">Select one or more projects to load paid requests.</div>
           </div>
         </div>
 
         <div class="card">
           <div class="card-header">
             <div class="card-title"><span class="ecf-step">3</span>Form header</div>
-            <button class="btn btn-ghost btn-sm" onclick="ecfAutoHeader(true);ecfUpdateSummary()" title="Refill from your profile and the project budget">↻ Auto-fill</button>
+            <button class="btn btn-ghost btn-sm" onclick="ecfAutoHeader(true);ecfUpdateSummary()" title="Refill from your profile and the project budget">&#8635; Auto-fill</button>
           </div>
           <div class="card-body ecf-header-body">
             <div class="ecf-group">
@@ -2858,7 +2708,7 @@
                 <div class="form-group"><label>Name of claimant</label><input id="ecfClaimant" type="text" placeholder="Full name"></div>
                 <div class="form-group"><label>Job title</label><input id="ecfJobTitle" type="text" placeholder="e.g. Finance Manager"></div>
                 <div class="form-group"><label>Bank / M-Pesa No.</label><input id="ecfBank" type="text" placeholder="Account or M-Pesa number"></div>
-                <div class="form-group"><label>Date</label><input id="ecfDate" type="date"></div>
+                <div class="form-group"><label>Date</label><input id="ecfDate" type="date" placeholder=""></div>
               </div>
             </div>
             <div class="ecf-group">
@@ -2869,11 +2719,8 @@
               </div>
             </div>
             <details class="ecf-group ecf-codes" id="ecfCodes">
-              <summary>
-                <span class="ecf-group-title" style="margin:0">Entity &amp; accounting codes</span>
-                <span class="ecf-codes-state" id="ecfCodesState"></span>
-              </summary>
-              <div class="ecf-grid" style="margin-top:12px">
+              <summary><span class="ecf-group-title" style="margin:0">Entity &amp; accounting codes</span> <span class="ecf-codes-state" id="ecfCodesState"></span></summary>
+              <div class="ecf-grid" style="margin-top:10px">
                 <div class="form-group"><label>Burn entity</label><input id="ecfEntity" type="text" placeholder="e.g. BMTZ (Tanzania)"></div>
                 <div class="form-group"><label>Country code</label><input id="ecfCountry" type="text" placeholder="e.g. TZ"></div>
                 <div class="form-group"><label>Business unit</label><input id="ecfBizUnit" type="text" placeholder="e.g. Biomass"></div>
@@ -2889,7 +2736,7 @@
         </div>
       </div>
 
-      <!-- Sticky summary panel -->
+      <!-- ===== Sticky panel: summary + signature + single export ===== -->
       <aside class="ecf-side">
         <div class="card ecf-panel">
           <div class="card-header">
@@ -2916,7 +2763,7 @@
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Export PDF
               </button>
-              <button type="button" class="btn btn-secondary" onclick="ecfOpenPreview()">Preview</button>
+              <button type="button" class="btn btn-ghost" onclick="ecfOpenPreview()">Preview</button>
             </div>
           </div>
         </div>
@@ -2942,7 +2789,158 @@
     </div>
   </div>
 
-  <!-- -- STEP 6: RECONCILIATION -- -->
+  
+  <!-- -- PAYMENT REQUEST FORM (PRF) -- -->
+  <div id="view-prf" class="view">
+    <div class="page-header">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <h1>Payment Request Form</h1>
+          <p>Raise a PRF against an approved project budget — request funds in parts until the balance is used</p>
+        </div>
+        <div class="ws-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="prfTabForm" onclick="prfSwitchTab('form')">New PRF</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="prfTabBalance" onclick="prfSwitchTab('balance')">Budget balance</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="prfTabList" onclick="prfSwitchTab('list')">PRF list</button>
+        </div>
+      </div>
+    </div>
+    <div class="view-body">
+      <div id="prfPanelForm" class="prf-panel">
+        <div class="ecf-layout">
+          <div class="ecf-main">
+            <div class="card">
+              <div class="card-header"><div class="card-title"><span class="ecf-step">1</span>Project &amp; budget</div></div>
+              <div class="card-body" style="padding:14px">
+                <div class="ecf-grid" style="margin-bottom:12px">
+                  <div class="form-group"><label>Project</label><select id="prfProject" onchange="prfOnProjectChange()"></select></div>
+                  <div class="form-group"><label>Currency</label>
+                    <select id="prfCurrency" onchange="prfRecalc()">
+                      <option value="KES">KES</option><option value="USD">USD</option>
+                      <option value="TZS">TZS</option><option value="UGX">UGX</option>
+                      <option value="EUR">EUR</option><option value="GBP">GBP</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="prfBudgetStrip" class="prf-budget-strip">Select a project to see budget vs requested balance.</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><span class="ecf-step">2</span>Budget lines to fund</div>
+                <span class="ecf-meta" id="prfLinesMeta">0 lines · 0 selected</span>
+              </div>
+              <div class="card-body" style="padding:0">
+                <div class="table-scroll" style="max-height:min(320px,40vh)">
+                  <table class="prf-lines-table">
+                    <thead><tr>
+                      <th style="width:36px"></th><th>Category / Cost item</th>
+                      <th>Budgeted</th><th>Already PRF'd</th><th>Balance</th><th>This request</th>
+                    </tr></thead>
+                    <tbody id="prfLinesBody"><tr><td colspan="6" class="ecf-empty">Select a project first.</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><span class="ecf-step">3</span>PRF header</div>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="prfAutoHeader()">Auto-fill</button>
+              </div>
+              <div class="card-body ecf-header-body">
+                <div class="ecf-group">
+                  <div class="ecf-group-title">Burn company &amp; booking</div>
+                  <div class="ecf-grid">
+                    <div class="form-group"><label>Burn company (1)</label><select id="prfCompany"></select></div>
+                    <div class="form-group"><label>Country code (2)</label><select id="prfCountry"></select></div>
+                    <div class="form-group"><label>Business unit (3)</label><select id="prfBizUnit"></select></div>
+                    <div class="form-group"><label>Cost centre (4)</label><select id="prfCostCentre" onchange="prfOnCostCentreChange()"></select></div>
+                    <div class="form-group"><label>Dimension code (5)</label><select id="prfDimCode"></select></div>
+                    <div class="form-group"><label>Profit centre (6)</label><select id="prfProfitCentre"></select></div>
+                    <div class="form-group"><label>Product code (7)</label><select id="prfProductCode"></select></div>
+                    <div class="form-group"><label>R&amp;D project code (8)</label><select id="prfRdCode"></select></div>
+                    <div class="form-group"><label>Carbon / project code (9)</label><select id="prfCarbonCode"></select></div>
+                  </div>
+                </div>
+                <div class="ecf-group">
+                  <div class="ecf-group-title">Requisition &amp; payment</div>
+                  <div class="ecf-grid">
+                    <div class="form-group"><label>Requestor name</label><input id="prfRequestor" type="text" placeholder="Full name"></div>
+                    <div class="form-group"><label>Request date</label><input id="prfDate" type="date"></div>
+                    <div class="form-group"><label>Mode of payment</label>
+                      <select id="prfMode"><option>Bank Transfer</option><option>Mpesa</option><option>Card</option><option>Cash</option><option>Other (specify)</option></select>
+                    </div>
+                    <div class="form-group"><label>Mobile / Till / Paybill</label><input id="prfPayee" type="text" placeholder="Optional"></div>
+                    <div class="form-group"><label>Cash advance required?</label>
+                      <select id="prfAdvance"><option value="NO">NO</option><option value="YES">YES</option></select>
+                    </div>
+                    <div class="form-group"><label>Est. payment date</label><input id="prfEstDate" type="date"></div>
+                  </div>
+                </div>
+                <div class="ecf-group">
+                  <div class="ecf-group-title">Purpose (in detail)</div>
+                  <textarea id="prfPurpose" rows="3" placeholder="Describe why these funds are needed…" style="width:100%;resize:vertical"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+          <aside class="ecf-side">
+            <div class="card ecf-panel">
+              <div class="card-header"><div class="card-title">PRF summary</div></div>
+              <div class="card-body ecf-panel-body">
+                <div id="prfSummary" class="ecf-sum"></div>
+                <div class="ecf-actions">
+                  <button type="button" class="btn btn-primary" id="prfSubmitBtn" onclick="prfSubmit()">Submit PRF</button>
+                  <button type="button" class="btn btn-secondary" onclick="prfExportPDF()">Export PDF</button>
+                  <button type="button" class="btn btn-ghost" onclick="prfResetForm()">Clear form</button>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+      <div id="prfPanelBalance" class="prf-panel" style="display:none">
+        <div class="stats" id="prfBalanceStats" style="margin-bottom:12px"></div>
+        <div class="two-col" style="gap:12px">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Budget balance by project</div></div>
+            <div class="card-body" style="padding:0">
+              <div class="table-scroll" style="max-height:min(480px,55vh)">
+                <table>
+                  <thead><tr><th>Project</th><th>Budgeted</th><th>PRF requested</th><th>Balance</th><th>% used</th></tr></thead>
+                  <tbody id="prfBalanceBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Cross-project insights</div></div>
+            <div class="card-body" id="prfInsightsBody">
+              <p class="text-muted text-sm">Compares paid expense requests against each project's budget to flag overspends and possible fund sharing.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="prfPanelList" class="prf-panel" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Submitted payment requests</div>
+            <span class="ecf-meta" id="prfListMeta">0</span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="table-scroll" style="max-height:min(520px,60vh)">
+              <table>
+                <thead><tr><th>Ref</th><th>Project</th><th>Requestor</th><th>Amount</th><th>Date</th><th>Status</th><th></th></tr></thead>
+                <tbody id="prfListBody"><tr><td colspan="7" class="ecf-empty">No PRFs yet.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- -- STEP 6: RECONCILIATION -- -->
   <div id="view-reconciliation" class="view">
     <div class="page-header">
       <h1>Monthly Reconciliation</h1>
@@ -5596,6 +5594,7 @@ function showView(id, el) {
   try { if (arguments[0] === "requests" || arguments[0] === "history") updateReqFormSettingsBtn(); } catch(e) {}
 
   if (id === 'expenses') { setTimeout(ecfInit, 80); }
+  if (id === 'prf') { setTimeout(prfInit, 80); }
   if (!id || id === 'undefined') { console.warn('showView called with bad id:', id); return; }
   var viewEl = document.getElementById('view-' + id);
   if (!viewEl) { console.warn('showView: no element for view-' + id); return; }
@@ -10863,6 +10862,7 @@ var ICONS = {
   requests:       '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/>',
   history:        '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
   expenses:       '<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  prf:            '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 14h4M14 14h4"/>',
   reconciliation: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
   transactions:   '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
   users:          '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
@@ -10904,6 +10904,7 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Payment Request',  view:'prf',            icon:'prf' },
       { type:'item', label:'Expense Claim',    view:'expenses',       icon:'expenses' },
       { type:'section', label:'Reports' },
       { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
@@ -10915,6 +10916,7 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Payment Request',  view:'prf',            icon:'prf' },
       { type:'item', label:'Expense Claim',    view:'expenses',       icon:'expenses' },
       { type:'section', label:'Reports' },
       { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
@@ -10926,6 +10928,7 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Payment Request',  view:'prf',            icon:'prf' },
       { type:'item', label:'Expense Claim',    view:'expenses',       icon:'expenses' },
       { type:'section', label:'Reports' },
       { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
@@ -12605,6 +12608,475 @@ function ecfUpdateSummary() {
 // wrapTables called from main DOMContentLoaded below
 
 // ==============================================================
+
+// ==============================================================
+// PAYMENT REQUEST FORM (PRF)
+// ==============================================================
+var PRF_MAP = {
+  companies: ['BMC (US)','BBK (Kenya Branch)','BMTZ (Tanzania)','BMSOL (Somaliland)','BMSO (Somalia)','BMPL (Puntland)','BMMZ (Mozambique)','BMGH (Ghana)','BMNG (Nigeria)','BMSN (Senegal)','BMCI (Ivory Coast)','BMDRC (DRC)','BMUG (Uganda)','BMRW (Rwanda)','BMZM (Zambia)','BMMU (Mauritius)','BMKE (Kenya Ltd)','BBV (Kenya)','BMMW (Malawi)'],
+  countries: ['US','KE','TZ','SOL','SO','ET','MZ','GH','NG','SN','CI','DRC','UG','RW','ZM','MU','MW'],
+  bizUnits: ['Electric','Biomass','Shared Services'],
+  costCentres: {
+    '1MF (Manufacturing (FOH))': ['11MF (Production)','12MF (Procurement)','13MF (Planning)','14MF-01 (Inbound Logistics)','14MF-02 (Outbound Logistics)','15MF (Factory Warehousing)','16MF-01 (Quality)','16MF-02 (Repairs)','16MF-03 (Warranty)','17MF-01 (Maintenance)','17MF-02 (Engineering)','17MF-03 (Tooling)','18MF-01 (BPL Canteen)','18MF-02 (RBP Canteen)','18MF-03 (Mfg. Others)','19MF (OPS Admin)'],
+    '2LO (Logistics OPS)': ['21LO (General)','22LO-01 (Field Warehousing)','22LO-02 (Field Distribution)',"23LO (SPV's Logistics Costs)"],
+    '3GA (General & Admin)': ['31GA-01 (Creative)','31GA-02 (Communication)','31GA-03 (Govt. Relations)','31GA-04 (General)','31GA-05 (Grants)','31GA-06 (Office Canteen)','32GA-01 (Finance)','32GA-02 (Controlling)','32GA-03 (Corporate Finance)','32GA-04 (Credit Management)','33GA-01 (HR)','33GA-02 (Admin)','33GA-03 (Recruitment)','34GA-01 (Legal)','34GA-02 (Tax & Compl.)','34GA-03 (Risk & ESG)','35GA-01 (Internal Audit)','35GA-02 (B2C & Carbon Audit)','36GA-01 (IT)','36GA-02 (IT & SW Developm.)','37GA (ERP)'],
+    '4RD (R&D)': ['41RD (Operations)','42RD (NPD)','43RD (Market Research)','44RD (Lab)','45RD (Durability)'],
+    '5CO (Commercial)': ['51CO (General)','52CO (Marketing)','53CO (BizDev)','54CO (Sales)','55CO (Data Analytics)','56CO (MRV)','57CO (e-commerce)'],
+    '6SO (Sales Ops)': ['61SO (General)','62SO (CX)','63SO (Sales Ops)','64SO (Training)'],
+    '7CN (Carbon)': ['71CN (Carbon Finance)','72CN (Carbon Credit Sales)','73CN (Carbon Marketing)','74CN (Carbon Policy)','75CN-01 (Monitoring)','75CN-02 (Verification)','75CN-03 (External Audit)','76CN-01 (Charcoal)','76CN-02 (Wood)'],
+    '8EL (Electric)': ['81EL (General)','82EL (EL NPD)','83EL (EL Marketing)','84EL (Electric Sales)']
+  },
+  profitCentres: ['21 B2B','22 B2C','23 BizDev','24 Carbon','25 e-comm.'],
+  productCodes: ['51 Charcoal','52 Wood','53 Electric','54 Cookware','55 LPG','56 Grill'],
+  rdCodes: ['001 (New Product Development)','002 (MMJ)','003 (MMX)','004 (MCS)','005 (Double Burner LPG)','006 (Single Burner LPG )','007 (Kerosene)','008 (Ethanol)','009 (TurboPro)','010 (TURBO)','011 (Instove)','012 (KWB)','013 (Pot Skirt)','014 (Grill)','015 (Extended Life Stove)'],
+  carbonCodes: ['001 (9265-CPA-002..6-Kenya-Kuniokoa)','002 (8438-CPA-004..5-Kenya-Jikokoa)','005 (5642-VPA-001-Kenya-Jikokoa)','153(00002-AIM-2-Malawi-Char)','999 (General Carbon)','CMC-1 Contract Manufacturing']
+};
+
+function loadPrfStore() {
+  try { var s = localStorage.getItem('mrv_prfs'); return s ? JSON.parse(s) : []; } catch(e) { return []; }
+}
+function persistPrfStore() {
+  try { localStorage.setItem('mrv_prfs', JSON.stringify(prfStore)); } catch(e) {}
+}
+var prfStore = loadPrfStore();
+
+function prfLineKey(l) {
+  return [l.project||'', l.type||'', l.category||'', l.costSummary||'', l.costItem||''].join('|');
+}
+function prfRequestedByLine() {
+  var map = {};
+  (prfStore || []).forEach(function(p) {
+    if (!p || p.status === 'Rejected' || p.status === 'Draft') return;
+    (p.lines || []).forEach(function(ln) {
+      var k = ln.budgetKey || '';
+      if (!k) return;
+      map[k] = (map[k] || 0) + (parseFloat(ln.amount) || 0);
+    });
+  });
+  return map;
+}
+function prfProjectTotals() {
+  var reqByLine = prfRequestedByLine();
+  var byProj = {};
+  (budgetLines || []).forEach(function(l) {
+    var p = l.project || 'Unknown';
+    if (!byProj[p]) byProj[p] = { project:p, budgeted:0, requested:0, currency:l.currency||'KES' };
+    byProj[p].budgeted += parseFloat(l.budgetedAmount) || 0;
+    byProj[p].requested += reqByLine[prfLineKey(l)] || 0;
+  });
+  Object.keys(byProj).forEach(function(p) {
+    byProj[p].balance = byProj[p].budgeted - byProj[p].requested;
+    byProj[p].pct = byProj[p].budgeted > 0 ? (byProj[p].requested / byProj[p].budgeted) * 100 : 0;
+  });
+  return byProj;
+}
+function prfFillSelect(id, options, blankLabel) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var cur = el.value;
+  var opts = (blankLabel !== false) ? [''] : [];
+  opts = opts.concat(options || []);
+  el.innerHTML = opts.map(function(o) {
+    var v = o || '';
+    var lab = o || (blankLabel || '— Select —');
+    return '<option value="'+_rqEsc(v)+'">'+_rqEsc(lab)+'</option>';
+  }).join('');
+  if (cur && opts.indexOf(cur) >= 0) el.value = cur;
+}
+function prfPopulateMapping() {
+  prfFillSelect('prfCompany', PRF_MAP.companies);
+  prfFillSelect('prfCountry', PRF_MAP.countries);
+  prfFillSelect('prfBizUnit', PRF_MAP.bizUnits);
+  var allCc = [];
+  Object.keys(PRF_MAP.costCentres).forEach(function(p) {
+    allCc.push(p);
+    (PRF_MAP.costCentres[p] || []).forEach(function(c) { allCc.push(c); });
+  });
+  prfFillSelect('prfCostCentre', allCc);
+  prfFillSelect('prfDimCode', allCc);
+  prfFillSelect('prfProfitCentre', PRF_MAP.profitCentres);
+  prfFillSelect('prfProductCode', PRF_MAP.productCodes);
+  prfFillSelect('prfRdCode', PRF_MAP.rdCodes);
+  prfFillSelect('prfCarbonCode', PRF_MAP.carbonCodes);
+}
+function prfOnCostCentreChange() {
+  var cc = (document.getElementById('prfCostCentre') || {}).value || '';
+  var dim = document.getElementById('prfDimCode');
+  if (dim && cc && !dim.value) {
+    var kids = PRF_MAP.costCentres[cc];
+    if (kids && kids[0]) dim.value = kids[0];
+    else dim.value = cc;
+  }
+}
+function prfInit() {
+  prfPopulateMapping();
+  var projEl = document.getElementById('prfProject');
+  if (projEl) {
+    var projects = (typeof getProjects === 'function') ? getProjects() : [];
+    if (!projects.length && budgetLines && budgetLines.length) {
+      projects = [];
+      var seen = {};
+      budgetLines.forEach(function(l) {
+        if (l.project && !seen[l.project]) { seen[l.project]=1; projects.push(l.project); }
+      });
+    }
+    prfFillSelect('prfProject', projects, '— Select project —');
+  }
+  var dateEl = document.getElementById('prfDate');
+  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+  if (currentUser) {
+    var r = document.getElementById('prfRequestor');
+    if (r && !r.value) r.value = currentUser.name || '';
+  }
+  prfRecalc();
+  prfSwitchTab('form');
+}
+function prfSwitchTab(which) {
+  ['form','balance','list'].forEach(function(t) {
+    var pan = document.getElementById('prfPanel' + t.charAt(0).toUpperCase() + t.slice(1));
+    var btn = document.getElementById('prfTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (pan) pan.style.display = (t === which) ? '' : 'none';
+    if (btn) btn.classList.toggle('active', t === which);
+  });
+  if (which === 'balance') prfRenderBalance();
+  if (which === 'list') prfRenderList();
+}
+function prfOnProjectChange() {
+  var proj = (document.getElementById('prfProject') || {}).value || '';
+  var reqByLine = prfRequestedByLine();
+  var lines = (budgetLines || []).filter(function(l){ return l.project === proj; });
+  var body = document.getElementById('prfLinesBody');
+  var strip = document.getElementById('prfBudgetStrip');
+  var meta = document.getElementById('prfLinesMeta');
+  if (!proj || !lines.length) {
+    if (body) body.innerHTML = '<tr><td colspan="6" class="ecf-empty">'+(proj ? 'No budget lines for this project.' : 'Select a project first.')+'</td></tr>';
+    if (strip) strip.textContent = 'Select a project to see budget vs requested balance.';
+    if (meta) meta.textContent = '0 lines · 0 selected';
+    prfRecalc();
+    return;
+  }
+  var cur = (document.getElementById('prfCurrency') || {}).value || lines[0].currency || 'KES';
+  var totB = 0, totR = 0;
+  body.innerHTML = lines.map(function(l) {
+    var key = prfLineKey(l);
+    var bud = parseFloat(l.budgetedAmount) || 0;
+    var already = reqByLine[key] || 0;
+    var bal = bud - already;
+    totB += bud; totR += already;
+    var label = [l.category, l.costSummary || l.costItem].filter(Boolean).join(' · ');
+    return '<tr data-key="'+_rqEsc(key)+'">'
+      + '<td><input type="checkbox" class="prf-line-chk" onchange="prfRecalc()"></td>'
+      + '<td><div style="font-weight:600">'+_rqEsc(label)+'</div>'
+      +   '<div class="text-muted text-sm">'+_rqEsc(l.type||'')+(l.unitOfMeasure?' · '+_rqEsc(l.unitOfMeasure):'')+'</div></td>'
+      + '<td>'+bud.toLocaleString()+'</td>'
+      + '<td>'+already.toLocaleString()+'</td>'
+      + '<td><strong>'+bal.toLocaleString()+'</strong></td>'
+      + '<td><input type="number" class="prf-line-amt" min="0" step="0.01" placeholder="0" value="" oninput="prfRecalc()" data-balance="'+bal+'"></td>'
+      + '</tr>';
+  }).join('');
+  if (meta) meta.textContent = lines.length + ' lines · 0 selected';
+  if (strip) {
+    var bal = totB - totR;
+    strip.innerHTML =
+      '<div class="prf-kpi"><span>Budgeted</span><strong>'+_rqEsc(cur)+' '+totB.toLocaleString()+'</strong></div>'
+      + '<div class="prf-kpi"><span>Already PRF’d</span><strong>'+_rqEsc(cur)+' '+totR.toLocaleString()+'</strong></div>'
+      + '<div class="prf-kpi"><span>Remaining</span><strong class="'+(bal<0?'danger':(bal===0?'warn':'ok'))+'">'+_rqEsc(cur)+' '+bal.toLocaleString()+'</strong></div>'
+      + '<div class="prf-kpi"><span>Lines</span><strong>'+lines.length+'</strong></div>';
+  }
+  var curEl = document.getElementById('prfCurrency');
+  if (curEl && lines[0].currency) curEl.value = lines[0].currency;
+  prfRecalc();
+}
+function prfGatherLines() {
+  var rows = document.querySelectorAll('#prfLinesBody tr[data-key]');
+  var out = [];
+  rows.forEach(function(tr) {
+    var chk = tr.querySelector('.prf-line-chk');
+    var amtEl = tr.querySelector('.prf-line-amt');
+    if (!chk || !chk.checked) return;
+    var amt = parseFloat(amtEl && amtEl.value) || 0;
+    if (amt <= 0) return;
+    var bal = parseFloat(amtEl.getAttribute('data-balance')) || 0;
+    var cells = tr.querySelectorAll('td');
+    var desc = cells[1] ? cells[1].innerText.replace(/\s+/g,' ').trim() : '';
+    out.push({ budgetKey: tr.getAttribute('data-key'), description: desc, amount: amt, balance: bal, over: amt > bal + 0.001 });
+  });
+  return out;
+}
+function prfRecalc() {
+  var lines = prfGatherLines();
+  var total = lines.reduce(function(s,l){ return s + l.amount; }, 0);
+  var cur = (document.getElementById('prfCurrency') || {}).value || 'KES';
+  var proj = (document.getElementById('prfProject') || {}).value || '';
+  var requestor = String((document.getElementById('prfRequestor') || {}).value || '').trim();
+  var over = lines.some(function(l){ return l.over; });
+  var meta = document.getElementById('prfLinesMeta');
+  if (meta) {
+    var nLines = document.querySelectorAll('#prfLinesBody tr[data-key]').length;
+    meta.textContent = nLines + ' lines · ' + lines.length + ' selected';
+  }
+  document.querySelectorAll('#prfLinesBody tr[data-key]').forEach(function(tr) {
+    var amtEl = tr.querySelector('.prf-line-amt');
+    var chk = tr.querySelector('.prf-line-chk');
+    var amt = parseFloat(amtEl && amtEl.value) || 0;
+    var bal = parseFloat(amtEl && amtEl.getAttribute('data-balance')) || 0;
+    tr.classList.toggle('is-over', !!(chk && chk.checked && amt > bal + 0.001));
+  });
+  var checks = [
+    [!!proj, proj ? 'Project: ' + proj : 'Select a project'],
+    [lines.length > 0, lines.length ? lines.length + ' line(s) selected' : 'Select budget lines & amounts'],
+    [total > 0, total > 0 ? 'Amount: ' + cur + ' ' + total.toLocaleString() : 'Enter request amounts'],
+    [!over, over ? 'Some lines exceed remaining balance' : 'Within budget balances'],
+    [!!requestor, requestor ? 'Requestor: ' + requestor : 'Enter requestor name']
+  ];
+  var box = document.getElementById('prfSummary');
+  if (box) {
+    box.innerHTML =
+      '<div class="ecf-sum-total"><span>This PRF total</span><strong>'+_rqEsc(cur)+' '+total.toLocaleString()+'</strong></div>'
+      + '<div class="ecf-sum-rows"><div class="ecf-sum-row"><span>Lines</span><span>'+lines.length+'</span></div>'
+      + (over ? '<div class="ecf-sum-note" style="background:#FDE7E9;color:#A4262C">One or more amounts exceed remaining budget for that line.</div>' : '')
+      + '</div><ul class="ecf-checks">'+checks.map(function(c){
+          return '<li class="'+(c[0]?'ok':'todo')+'">'+_rqEsc(c[1])+'</li>';
+        }).join('')+'</ul>';
+  }
+  var btn = document.getElementById('prfSubmitBtn');
+  if (btn) {
+    var ready = checks.every(function(c){ return c[0]; });
+    btn.disabled = !ready;
+    btn.style.opacity = ready ? '1' : '.55';
+  }
+}
+function prfAutoHeader() {
+  if (currentUser) {
+    var r = document.getElementById('prfRequestor');
+    if (r) r.value = currentUser.name || '';
+  }
+  var d = document.getElementById('prfDate');
+  if (d) d.value = new Date().toISOString().slice(0,10);
+  prfRecalc();
+  toast('Header filled from profile');
+}
+function prfSubmit() {
+  var lines = prfGatherLines();
+  if (!lines.length) { toast('Select at least one budget line with an amount'); return; }
+  if (lines.some(function(l){ return l.over; })) {
+    if (!confirm('Some amounts exceed remaining budget. Submit anyway?')) return;
+  }
+  var proj = (document.getElementById('prfProject') || {}).value || '';
+  var cur = (document.getElementById('prfCurrency') || {}).value || 'KES';
+  var total = lines.reduce(function(s,l){ return s + l.amount; }, 0);
+  var ref = 'PRF-' + Date.now().toString(36).toUpperCase().slice(-7);
+  var rec = {
+    ref: ref, project: proj,
+    company: (document.getElementById('prfCompany') || {}).value || '',
+    country: (document.getElementById('prfCountry') || {}).value || '',
+    businessUnit: (document.getElementById('prfBizUnit') || {}).value || '',
+    costCentre: (document.getElementById('prfCostCentre') || {}).value || '',
+    dimensionCode: (document.getElementById('prfDimCode') || {}).value || '',
+    profitCentre: (document.getElementById('prfProfitCentre') || {}).value || '',
+    productCode: (document.getElementById('prfProductCode') || {}).value || '',
+    rdCode: (document.getElementById('prfRdCode') || {}).value || '',
+    carbonCode: (document.getElementById('prfCarbonCode') || {}).value || '',
+    requestor: (document.getElementById('prfRequestor') || {}).value || '',
+    date: (document.getElementById('prfDate') || {}).value || '',
+    modeOfPayment: (document.getElementById('prfMode') || {}).value || '',
+    payeeNo: (document.getElementById('prfPayee') || {}).value || '',
+    cashAdvance: (document.getElementById('prfAdvance') || {}).value || 'NO',
+    currency: cur,
+    estPaymentDate: (document.getElementById('prfEstDate') || {}).value || '',
+    purpose: (document.getElementById('prfPurpose') || {}).value || '',
+    amount: total, vat: 0, status: 'Pending',
+    lines: lines.map(function(l) {
+      return { budgetKey:l.budgetKey, description:l.description, qty:1, um:'Lot', unitPrice:l.amount, amount:l.amount };
+    }),
+    createdAt: new Date().toISOString(),
+    createdBy: (currentUser && currentUser.email) || ''
+  };
+  prfStore.unshift(rec);
+  persistPrfStore();
+  toast('PRF submitted · ' + ref);
+  prfOnProjectChange();
+  prfRenderList();
+}
+function prfResetForm() {
+  ['prfPurpose','prfPayee'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  var adv = document.getElementById('prfAdvance'); if (adv) adv.value = 'NO';
+  document.querySelectorAll('#prfLinesBody .prf-line-chk').forEach(function(c){ c.checked = false; });
+  document.querySelectorAll('#prfLinesBody .prf-line-amt').forEach(function(a){ a.value = ''; });
+  prfRecalc();
+}
+function prfRenderBalance() {
+  var byProj = prfProjectTotals();
+  var list = Object.keys(byProj).map(function(k){ return byProj[k]; }).sort(function(a,b){ return b.pct - a.pct; });
+  var stats = document.getElementById('prfBalanceStats');
+  var totB = list.reduce(function(s,r){ return s+r.budgeted; },0);
+  var totR = list.reduce(function(s,r){ return s+r.requested; },0);
+  var overN = list.filter(function(r){ return r.balance < 0; }).length;
+  if (stats) {
+    stats.innerHTML =
+      '<div class="stat-card"><div class="stat-label">Projects</div><div class="stat-value">'+list.length+'</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Total budgeted</div><div class="stat-value">'+totB.toLocaleString()+'</div></div>'
+      + '<div class="stat-card"><div class="stat-label">PRF requested</div><div class="stat-value">'+totR.toLocaleString()+'</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Over-requested</div><div class="stat-value">'+overN+'</div></div>';
+  }
+  var body = document.getElementById('prfBalanceBody');
+  if (body) {
+    if (!list.length) body.innerHTML = '<tr><td colspan="5" class="ecf-empty">No budgets loaded.</td></tr>';
+    else body.innerHTML = list.map(function(r) {
+      var cls = r.balance < 0 ? 'badge-danger' : (r.pct >= 90 ? 'badge-amber' : 'badge-green');
+      return '<tr><td>'+_rqEsc(r.project)+'</td><td>'+r.budgeted.toLocaleString()+'</td><td>'+r.requested.toLocaleString()
+        +'</td><td><strong>'+r.balance.toLocaleString()+'</strong></td><td><span class="badge '+cls+'">'+r.pct.toFixed(0)+'%</span></td></tr>';
+    }).join('');
+  }
+  var spendByProj = {};
+  (requestsStore || []).forEach(function(r) {
+    if (!r || (r.status !== 'Paid' && r.status !== 'Approved')) return;
+    var p = r.project || 'Unknown';
+    spendByProj[p] = (spendByProj[p] || 0) + (parseFloat(r.amount) || 0);
+  });
+  var insights = document.getElementById('prfInsightsBody');
+  if (!insights) return;
+  var cards = [];
+  list.forEach(function(r) {
+    var spend = spendByProj[r.project] || 0;
+    if (r.requested > r.budgeted) {
+      cards.push({ cls:'danger', title:r.project, text:'PRF requested ('+r.requested.toLocaleString()+') exceeds budgeted ('+r.budgeted.toLocaleString()+').' });
+    } else if (spend > r.budgeted) {
+      cards.push({ cls:'warn', title:r.project, text:'Paid/approved spend ('+spend.toLocaleString()+') exceeds budgeted ('+r.budgeted.toLocaleString()+'). Possible use of other project funds.' });
+    } else if (r.pct >= 85) {
+      cards.push({ cls:'warn', title:r.project, text:r.pct.toFixed(0)+'% of budget committed via PRFs. Remaining '+r.balance.toLocaleString()+'.' });
+    }
+  });
+  Object.keys(spendByProj).forEach(function(p) {
+    if (!byProj[p] && spendByProj[p] > 0) {
+      cards.push({ cls:'danger', title:p, text:'Has spend of '+spendByProj[p].toLocaleString()+' but no budget lines — funds may be drawn from other projects.' });
+    }
+  });
+  if (!cards.length) {
+    insights.innerHTML = '<p class="text-muted text-sm">No overspends or high utilisation detected. PRF commitments are within project budgets.</p>';
+  } else {
+    insights.innerHTML = cards.map(function(c) {
+      return '<div class="prf-insight '+c.cls+'"><strong>'+_rqEsc(c.title)+'</strong><p>'+_rqEsc(c.text)+'</p></div>';
+    }).join('');
+  }
+}
+function prfRenderList() {
+  var body = document.getElementById('prfListBody');
+  var meta = document.getElementById('prfListMeta');
+  if (meta) meta.textContent = (prfStore || []).length + ' PRF(s)';
+  if (!body) return;
+  if (!prfStore.length) {
+    body.innerHTML = '<tr><td colspan="7" class="ecf-empty">No PRFs yet.</td></tr>';
+    return;
+  }
+  body.innerHTML = prfStore.map(function(p) {
+    var badge = p.status === 'Pending' ? 'badge-amber' : (p.status === 'Approved' ? 'badge-green' : 'badge-gray');
+    return '<tr><td>'+_rqEsc(p.ref)+'</td><td>'+_rqEsc(p.project)+'</td><td>'+_rqEsc(p.requestor)+'</td>'
+      + '<td>'+_rqEsc(p.currency||'')+' '+(parseFloat(p.amount)||0).toLocaleString()+'</td>'
+      + '<td>'+_rqEsc(p.date||'')+'</td><td><span class="badge '+badge+'">'+_rqEsc(p.status||'')+'</span></td>'
+      + '<td><button class="btn btn-ghost btn-sm" onclick="prfExportOne(\''+_rqEsc(p.ref)+'\')">PDF</button></td></tr>';
+  }).join('');
+}
+function prfExportOne(ref) {
+  var p = (prfStore || []).find(function(x){ return x.ref === ref; });
+  if (!p) { toast('PRF not found'); return; }
+  prfBuildPdf(p);
+}
+function prfExportPDF() {
+  var lines = prfGatherLines();
+  if (!lines.length) { toast('Select lines and amounts first'); return; }
+  var total = lines.reduce(function(s,l){ return s + l.amount; }, 0);
+  var draft = {
+    ref: 'DRAFT',
+    project: (document.getElementById('prfProject') || {}).value || '',
+    company: (document.getElementById('prfCompany') || {}).value || '',
+    country: (document.getElementById('prfCountry') || {}).value || '',
+    businessUnit: (document.getElementById('prfBizUnit') || {}).value || '',
+    costCentre: (document.getElementById('prfCostCentre') || {}).value || '',
+    dimensionCode: (document.getElementById('prfDimCode') || {}).value || '',
+    profitCentre: (document.getElementById('prfProfitCentre') || {}).value || '',
+    productCode: (document.getElementById('prfProductCode') || {}).value || '',
+    rdCode: (document.getElementById('prfRdCode') || {}).value || '',
+    carbonCode: (document.getElementById('prfCarbonCode') || {}).value || '',
+    requestor: (document.getElementById('prfRequestor') || {}).value || '',
+    date: (document.getElementById('prfDate') || {}).value || '',
+    modeOfPayment: (document.getElementById('prfMode') || {}).value || '',
+    payeeNo: (document.getElementById('prfPayee') || {}).value || '',
+    cashAdvance: (document.getElementById('prfAdvance') || {}).value || 'NO',
+    currency: (document.getElementById('prfCurrency') || {}).value || 'KES',
+    estPaymentDate: (document.getElementById('prfEstDate') || {}).value || '',
+    purpose: (document.getElementById('prfPurpose') || {}).value || '',
+    amount: total, vat: 0,
+    lines: lines.map(function(l){ return { description:l.description, qty:1, um:'Lot', unitPrice:l.amount, amount:l.amount }; })
+  };
+  prfBuildPdf(draft);
+}
+function prfBuildPdf(p) {
+  if (!window.jspdf || !window.jspdf.jsPDF) { toast('PDF library not loaded'); return; }
+  var JsPDF = window.jspdf.jsPDF;
+  var doc = new JsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  var ML = 12, y = 12, PW = 210;
+  function fb(s){ doc.setFont('helvetica','bold'); doc.setFontSize(s); }
+  function fn(s){ doc.setFont('helvetica','normal'); doc.setFontSize(s); }
+  fb(14); doc.text('PAYMENT REQUEST FORM (PRF)', PW/2, y, { align:'center' });
+  y += 6; fn(9); doc.setTextColor(100);
+  doc.text((p.ref || '') + (p.project ? '  ·  ' + p.project : ''), PW/2, y, { align:'center' });
+  doc.setTextColor(30); y += 8;
+  fb(9); doc.text('BURN COMPANY & BOOKING', ML, y); y += 5; fn(8);
+  [[ 'Company', p.company, 'Country', p.country ],
+   [ 'Business Unit', p.businessUnit, 'Cost Centre', p.costCentre ],
+   [ 'Dimension Code', p.dimensionCode, 'Profit Centre', p.profitCentre ],
+   [ 'Product Code', p.productCode, 'R&D Code', p.rdCode ],
+   [ 'Carbon / Project Code', p.carbonCode, 'Currency', p.currency ]
+  ].forEach(function(row) {
+    fb(7.5); doc.text(row[0]+':', ML, y); fn(7.5); doc.text(String(row[1]||''), ML+38, y);
+    fb(7.5); doc.text(row[2]+':', ML+100, y); fn(7.5); doc.text(String(row[3]||''), ML+130, y);
+    y += 4.5;
+  });
+  y += 2; fb(9); doc.text('REQUISITION & PAYMENT', ML, y); y += 5; fn(8);
+  [[ 'Requestor', p.requestor, 'Date', p.date ],
+   [ 'Mode of payment', p.modeOfPayment, 'Payee / Till', p.payeeNo ],
+   [ 'Cash advance', p.cashAdvance, 'Est. payment', p.estPaymentDate ]
+  ].forEach(function(row) {
+    fb(7.5); doc.text(row[0]+':', ML, y); fn(7.5); doc.text(String(row[1]||''), ML+38, y);
+    fb(7.5); doc.text(row[2]+':', ML+100, y); fn(7.5); doc.text(String(row[3]||''), ML+130, y);
+    y += 4.5;
+  });
+  y += 2; fb(9); doc.text('PURPOSE', ML, y); y += 4; fn(8);
+  var purposeLines = doc.splitTextToSize(String(p.purpose||''), PW - 2*ML);
+  doc.text(purposeLines, ML, y); y += Math.max(8, purposeLines.length * 3.8 + 2);
+  fb(9); doc.text('LINE ITEMS', ML, y); y += 3;
+  var colW = [10, 90, 15, 15, 25, 25];
+  var heads = ['#','Description','Qty','U/M','Unit','Total'];
+  doc.setFillColor(236,236,236); doc.rect(ML, y, PW-2*ML, 6, 'F');
+  fb(7); var x = ML;
+  heads.forEach(function(h,i){ doc.text(h, x+1, y+4); x += colW[i]; });
+  y += 6; fn(7.5);
+  (p.lines || []).forEach(function(ln, i) {
+    if (y > 270) { doc.addPage(); y = 15; }
+    x = ML;
+    [String(i+1), ln.description||'', String(ln.qty||1), ln.um||'', Number(ln.unitPrice||0).toLocaleString(), Number(ln.amount||0).toLocaleString()]
+      .forEach(function(v, vi) {
+        var t = doc.splitTextToSize(String(v), colW[vi]-2)[0] || '';
+        doc.text(t, x+1, y+3.5); x += colW[vi];
+      });
+    y += 6;
+  });
+  y += 2; fb(9);
+  doc.text('TOTAL: '+(p.currency||'')+' '+(Number(p.amount||0).toLocaleString()), PW-ML, y, { align:'right' });
+  y += 14; fn(8); doc.setDrawColor(80);
+  doc.line(ML, y, ML+50, y); doc.line(ML+70, y, ML+120, y); doc.line(ML+140, y, PW-ML, y);
+  y += 4; fn(7); doc.setTextColor(100);
+  doc.text('Requestor (name, date & sign.)', ML, y);
+  doc.text('1st Approval', ML+70, y);
+  doc.text('2nd Approval', ML+140, y);
+  doc.save('PRF_'+(p.ref||'draft')+'_'+(p.date||'')+'.pdf');
+  toast('PDF downloaded');
+}
+
+
 // END RESPONSIVE
 // ==============================================================
 </script>
