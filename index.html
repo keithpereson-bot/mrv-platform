@@ -12839,7 +12839,18 @@ function prfGatherLines() {
     var bal = parseFloat(amtEl.getAttribute('data-balance')) || 0;
     var cells = tr.querySelectorAll('td');
     var desc = cells[1] ? cells[1].innerText.replace(/\s+/g,' ').trim() : '';
-    out.push({ budgetKey: tr.getAttribute('data-key'), description: desc, amount: amt, balance: bal, over: amt > bal + 0.001 });
+    var bu = (document.getElementById('prfBizUnit') || {}).value || '';
+    out.push({
+      budgetKey: tr.getAttribute('data-key'),
+      description: desc,
+      amount: amt,
+      qty: 1,
+      um: 'Lot',
+      unitPrice: amt,
+      businessUnit: bu,
+      balance: bal,
+      over: amt > bal + 0.001
+    });
   });
   return out;
 }
@@ -13108,73 +13119,353 @@ function prfExportPDF() {
     estPaymentDate: (document.getElementById('prfEstDate') || {}).value || '',
     purpose: (document.getElementById('prfPurpose') || {}).value || '',
     amount: total, vat: 0,
-    lines: lines.map(function(l){ return { description:l.description, qty:1, um:'Lot', unitPrice:l.amount, amount:l.amount }; })
+    lines: lines.map(function(l){ return { description:l.description, qty:l.qty||1, um:l.um||'Lot', unitPrice:l.unitPrice!=null?l.unitPrice:l.amount, amount:l.amount, businessUnit:(document.getElementById('prfBizUnit')||{}).value||'' }; })
   };
   prfBuildPdf(draft);
 }
 function prfBuildPdf(p) {
   if (!window.jspdf || !window.jspdf.jsPDF) { toast('PDF library not loaded'); return; }
   var JsPDF = window.jspdf.jsPDF;
-  var doc = new JsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-  var ML = 12, y = 12, PW = 210;
-  function fb(s){ doc.setFont('helvetica','bold'); doc.setFontSize(s); }
-  function fn(s){ doc.setFont('helvetica','normal'); doc.setFontSize(s); }
-  fb(14); doc.text('PAYMENT REQUEST FORM (PRF)', PW/2, y, { align:'center' });
-  y += 6; fn(9); doc.setTextColor(100);
-  doc.text((p.ref || '') + (p.project ? '  ·  ' + p.project : ''), PW/2, y, { align:'center' });
-  doc.setTextColor(30); y += 8;
-  fb(9); doc.text('BURN COMPANY & BOOKING', ML, y); y += 5; fn(8);
-  [[ 'Company', p.company, 'Country', p.country ],
-   [ 'Business Unit', p.businessUnit, 'Cost Centre', p.costCentre ],
-   [ 'Dimension Code', p.dimensionCode, 'Profit Centre', p.profitCentre ],
-   [ 'Product Code', p.productCode, 'R&D Code', p.rdCode ],
-   [ 'Carbon / Project Code', p.carbonCode, 'Currency', p.currency ]
-  ].forEach(function(row) {
-    fb(7.5); doc.text(row[0]+':', ML, y); fn(7.5); doc.text(String(row[1]||''), ML+38, y);
-    fb(7.5); doc.text(row[2]+':', ML+100, y); fn(7.5); doc.text(String(row[3]||''), ML+130, y);
-    y += 4.5;
-  });
-  y += 2; fb(9); doc.text('REQUISITION & PAYMENT', ML, y); y += 5; fn(8);
-  [[ 'Requestor', p.requestor, 'Date', p.date ],
-   [ 'Mode of payment', p.modeOfPayment, 'Payee / Till', p.payeeNo ],
-   [ 'Cash advance', p.cashAdvance, 'Est. payment', p.estPaymentDate ]
-  ].forEach(function(row) {
-    fb(7.5); doc.text(row[0]+':', ML, y); fn(7.5); doc.text(String(row[1]||''), ML+38, y);
-    fb(7.5); doc.text(row[2]+':', ML+100, y); fn(7.5); doc.text(String(row[3]||''), ML+130, y);
-    y += 4.5;
-  });
-  y += 2; fb(9); doc.text('PURPOSE', ML, y); y += 4; fn(8);
-  var purposeLines = doc.splitTextToSize(String(p.purpose||''), PW - 2*ML);
-  doc.text(purposeLines, ML, y); y += Math.max(8, purposeLines.length * 3.8 + 2);
-  fb(9); doc.text('LINE ITEMS', ML, y); y += 3;
-  var colW = [10, 90, 15, 15, 25, 25];
-  var heads = ['#','Description','Qty','U/M','Unit','Total'];
-  doc.setFillColor(236,236,236); doc.rect(ML, y, PW-2*ML, 6, 'F');
-  fb(7); var x = ML;
-  heads.forEach(function(h,i){ doc.text(h, x+1, y+4); x += colW[i]; });
-  y += 6; fn(7.5);
-  (p.lines || []).forEach(function(ln, i) {
-    if (y > 270) { doc.addPage(); y = 15; }
-    x = ML;
-    [String(i+1), ln.description||'', String(ln.qty||1), ln.um||'', Number(ln.unitPrice||0).toLocaleString(), Number(ln.amount||0).toLocaleString()]
-      .forEach(function(v, vi) {
-        var t = doc.splitTextToSize(String(v), colW[vi]-2)[0] || '';
-        doc.text(t, x+1, y+3.5); x += colW[vi];
-      });
-    y += 6;
-  });
-  y += 2; fb(9);
-  doc.text('TOTAL: '+(p.currency||'')+' '+(Number(p.amount||0).toLocaleString()), PW-ML, y, { align:'right' });
-  y += 14; fn(8); doc.setDrawColor(80);
-  doc.line(ML, y, ML+50, y); doc.line(ML+70, y, ML+120, y); doc.line(ML+140, y, PW-ML, y);
-  y += 4; fn(7); doc.setTextColor(100);
-  doc.text('Requestor (name, date & sign.)', ML, y);
-  doc.text('1st Approval', ML+70, y);
-  doc.text('2nd Approval', ML+140, y);
-  doc.save('PRF_'+(p.ref||'draft')+'_'+(p.date||'')+'.pdf');
-  toast('PDF downloaded');
-}
+  var doc = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
+  // Page geometry — match official Burn PRF margins
+  var L = 10, R = 200, T = 8, pageW = 210, usable = R - L;
+  var y = T;
+  var thin = 0.25, mid = 0.4;
+
+  function setStroke(g) { doc.setDrawColor(g, g, g); }
+  function setFill(r,g,b) { doc.setFillColor(r, g, b); }
+  function fb(s) { doc.setFont('helvetica', 'bold'); doc.setFontSize(s); }
+  function fn(s) { doc.setFont('helvetica', 'normal'); doc.setFontSize(s); }
+  function fi(s) { doc.setFont('helvetica', 'italic'); doc.setFontSize(s); }
+  function money(n) {
+    var v = Number(n) || 0;
+    try { return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    catch (e) { return v.toFixed(2); }
+  }
+  function cell(x, y, w, h, opts) {
+    opts = opts || {};
+    if (opts.fill) { setFill.apply(null, opts.fill); doc.rect(x, y, w, h, 'F'); }
+    setStroke(opts.stroke != null ? opts.stroke : 40);
+    doc.setLineWidth(opts.lw != null ? opts.lw : thin);
+    doc.rect(x, y, w, h, 'S');
+    if (opts.label != null) {
+      fb(opts.labelSize || 7);
+      doc.setTextColor(opts.labelColor ? opts.labelColor[0] : 30,
+                       opts.labelColor ? opts.labelColor[1] : 30,
+                       opts.labelColor ? opts.labelColor[2] : 30);
+      var lx = opts.labelAlign === 'center' ? x + w / 2 : x + 1.2;
+      var la = opts.labelAlign || 'left';
+      doc.text(String(opts.label), lx, y + (opts.labelY || 3.4), { align: la, maxWidth: w - 2.4 });
+    }
+    if (opts.value != null && String(opts.value) !== '') {
+      fn(opts.valueSize || 8);
+      doc.setTextColor(20);
+      var lines = doc.splitTextToSize(String(opts.value), w - 2.4);
+      var vy = y + (opts.valueY || (opts.label != null ? 7.2 : 4.2));
+      doc.text(lines.slice(0, opts.maxLines || 3), x + 1.2, vy);
+    }
+    if (opts.hint) {
+      fi(5.5);
+      doc.setTextColor(120);
+      doc.text(String(opts.hint), x + 1.2, y + h - 1.3);
+    }
+  }
+  function hline(x1, x2, yy) {
+    setStroke(40); doc.setLineWidth(thin); doc.line(x1, yy, x2, yy);
+  }
+  function vline(xx, y1, y2) {
+    setStroke(40); doc.setLineWidth(thin); doc.line(xx, y1, xx, y2);
+  }
+
+  // ── Title + Burn wordmark ──────────────────────────────────
+  fb(13);
+  doc.setTextColor(20);
+  doc.text('PAYMENT REQUEST FORM (PRF)', pageW / 2, y + 5, { align: 'center' });
+  // Simple Burn logo mark (top-right) — orange circle + word
+  setFill(255, 102, 0);
+  doc.circle(R - 18, y + 3.5, 3.2, 'F');
+  fb(7); doc.setTextColor(255);
+  doc.text('b', R - 18, y + 4.6, { align: 'center' });
+  fb(8); doc.setTextColor(40);
+  doc.text('burn', R - 12, y + 4.8);
+  fi(6); doc.setTextColor(120);
+  doc.text('life. saving. stoves', R - 12, y + 7.5);
+  y += 11;
+
+  // Ref line (small, top-left like template Ref: FR_IM_001-F)
+  fn(6.5); doc.setTextColor(100);
+  doc.text('Ref: ' + (p.ref || 'DRAFT') + (p.project ? '  ·  ' + p.project : ''), L, y);
+  y += 2;
+
+  // ── BOOKING INFORMATION grid (2-col nested cells) ─────────
+  // Row heights tuned to official form
+  var rowH = [9, 9, 9, 9, 9]; // 5 data rows
+  var half = usable / 2;
+  var q = usable / 4; // quarter for label|value|label|value on some rows
+  var gridTop = y;
+
+  // Section header strip
+  var hdrH = 6;
+  setFill(245, 245, 245);
+  doc.rect(L, y, usable, hdrH, 'F');
+  setStroke(40); doc.setLineWidth(mid); doc.rect(L, y, usable, hdrH, 'S');
+  fb(8); doc.setTextColor(20);
+  doc.text('BOOKING INFORMATION', L + usable / 2, y + 4.2, { align: 'center' });
+  y += hdrH;
+
+  // Helper to draw a 4-column row: label | value | label | value
+  function bookingRow(yy, h, aLabel, aVal, bLabel, bVal, aHint, bHint) {
+    var x0 = L, wL = 42, wV = half - 42;
+    // left pair
+    cell(x0, yy, wL, h, { label: aLabel, labelSize: 6.5, fill: [250, 250, 250], hint: aHint });
+    cell(x0 + wL, yy, wV, h, { value: aVal, valueSize: 9, valueY: h / 2 + 1.2 });
+    // right pair
+    cell(x0 + half, yy, wL, h, { label: bLabel, labelSize: 6.5, fill: [250, 250, 250], hint: bHint });
+    cell(x0 + half + wL, yy, wV, h, { value: bVal, valueSize: 9, valueY: h / 2 + 1.2 });
+  }
+
+  // Row 1: Burn Company (1) | Vendor Name
+  bookingRow(y, rowH[0],
+    'BURN COMPANY (1)', p.company || '',
+    'Vendor Name', p.vendorName || '',
+    'Mandatory (B&C, B&N etc.)', '');
+  y += rowH[0];
+
+  // Row 2: Country Code (2) | Account No./Name
+  bookingRow(y, rowH[1],
+    'Country Code (2)', p.country || '',
+    'Account No./Name', p.accountNo || '',
+    '(Country code if applicable. Only for B&C & B&N)', '(Vendor to fill in)');
+  y += rowH[1];
+
+  // Row 3: Cost Centre (3) | Dimension Code (4)
+  bookingRow(y, rowH[2],
+    'Cost Centre (3)', p.costCentre || '',
+    'Dimension Code (4)', p.dimensionCode || '',
+    'Mandatory if Cost Centre, select from Cost Centre dropdown', 'Mandatory if Cost Centre dropdown');
+  y += rowH[2];
+
+  // Row 4: Profit Centre (5) | Product Code (6)
+  bookingRow(y, rowH[3],
+    'Profit Centre (5)', p.profitCentre || '',
+    'Product Code (6)', p.productCode || '',
+    'Mandatory if Cost Centre, select from Cost Centre dropdown', 'Only if applicable');
+  y += rowH[3];
+
+  // Row 5: R&D Project Code (7) | Carbon / Project Code (8)
+  bookingRow(y, rowH[4],
+    'R&D Project Code (7)', p.rdCode || '',
+    'Carbon / Project Code (8)', p.carbonCode || '',
+    'Only if applicable', 'Only if applicable');
+  y += rowH[4];
+
+  // Outer border reinforcement for booking block
+  setStroke(40); doc.setLineWidth(mid);
+  doc.rect(L, gridTop + hdrH, usable, y - gridTop - hdrH, 'S');
+
+  y += 3;
+
+  // ── REQUISITION INFORMATION ────────────────────────────────
+  var reqTop = y;
+  setFill(245, 245, 245);
+  doc.rect(L, y, usable, 6, 'F');
+  setStroke(40); doc.setLineWidth(mid); doc.rect(L, y, usable, 6, 'S');
+  fb(8); doc.setTextColor(20);
+  doc.text('REQUISITION INFORMATION', L + 2, y + 4.2);
+  y += 6;
+
+  var rqH = 8;
+  // A. Requestors Name
+  cell(L, y, 55, rqH, { label: 'A. Requestors Name', labelSize: 7, fill: [250, 250, 250] });
+  cell(L + 55, y, usable - 55, rqH, { value: p.requestor || '', valueSize: 10, valueY: 5.2 });
+  y += rqH;
+  // B. Request Date
+  cell(L, y, 55, rqH, { label: 'B. Request Date', labelSize: 7, fill: [250, 250, 250] });
+  cell(L + 55, y, usable - 55, rqH, { value: p.date || '', valueSize: 10, valueY: 5.2 });
+  y += rqH;
+
+  y += 2;
+
+  // ── PAYMENT INFORMATION ────────────────────────────────────
+  setFill(245, 245, 245);
+  doc.rect(L, y, usable, 6, 'F');
+  setStroke(40); doc.setLineWidth(mid); doc.rect(L, y, usable, 6, 'S');
+  fb(8); doc.setTextColor(20);
+  doc.text('PAYMENT INFORMATION', L + 2, y + 4.2);
+  y += 6;
+
+  var payH = 9;
+  // C. Mode of payment | Mobile/Till/Paybill no.
+  cell(L, y, 55, payH, { label: 'C. Mode of payment (Cash,\nMpesa, card, bank transfer)', labelSize: 6, fill: [250, 250, 250], labelY: 3 });
+  cell(L + 55, y, 55, payH, { value: p.modeOfPayment || '', valueSize: 10, valueY: 5.5 });
+  cell(L + 110, y, 40, payH, { label: 'Mobile/Till/\nPaybill no.', labelSize: 6, fill: [250, 250, 250], labelY: 3 });
+  cell(L + 150, y, usable - 150, payH, { value: p.payeeNo || '', valueSize: 9, valueY: 5.5 });
+  y += payH;
+
+  // D. Cash advance | Currency
+  cell(L, y, 55, payH, { label: 'D. Cash advance required? (Y/N)', labelSize: 6.5, fill: [250, 250, 250] });
+  cell(L + 55, y, 55, payH, { value: p.cashAdvance || 'NO', valueSize: 10, valueY: 5.5 });
+  cell(L + 110, y, 40, payH, { label: 'Currency', labelSize: 7, fill: [250, 250, 250] });
+  cell(L + 150, y, usable - 150, payH, { value: p.currency || '', valueSize: 10, valueY: 5.5 });
+  y += payH;
+
+  // E. Est. payment date | Amount
+  cell(L, y, 55, payH, { label: 'E. Est. payment date', labelSize: 7, fill: [250, 250, 250] });
+  cell(L + 55, y, 55, payH, { value: p.estPaymentDate || '', valueSize: 10, valueY: 5.5 });
+  cell(L + 110, y, 40, payH, { label: 'Amount', labelSize: 7, fill: [250, 250, 250] });
+  cell(L + 150, y, usable - 150, payH, { value: money(p.amount), valueSize: 10, valueY: 5.5 });
+  y += payH;
+
+  y += 2;
+
+  // ── PURPOSE ────────────────────────────────────────────────
+  setFill(245, 245, 245);
+  doc.rect(L, y, usable, 6, 'F');
+  setStroke(40); doc.setLineWidth(mid); doc.rect(L, y, usable, 6, 'S');
+  fb(8); doc.setTextColor(20);
+  doc.text('PURPOSE (in detail)', L + 2, y + 4.2);
+  y += 6;
+  var purposeH = 14;
+  cell(L, y, usable, purposeH, { value: p.purpose || '', valueSize: 8, valueY: 4, maxLines: 4 });
+  y += purposeH + 3;
+
+  // ── LINE ITEMS TABLE ───────────────────────────────────────
+  // Columns: S/No | Business Unit (9) | Description & Specifications | Qty | Unit Price | Total Price
+  var cols = [
+    { key: 'no',   label: 'S/No', w: 10 },
+    { key: 'bu',   label: 'Business Unit (9)', w: 28 },
+    { key: 'desc', label: 'Description & Specifications in detail', w: 82 },
+    { key: 'qty',  label: 'Qty', w: 14 },
+    { key: 'unit', label: 'Unit Price', w: 28 },
+    { key: 'tot',  label: 'Total Price', w: 28 }
+  ];
+  // normalize widths to usable
+  var sumW = cols.reduce(function(s, c){ return s + c.w; }, 0);
+  cols.forEach(function(c){ c.w = c.w / sumW * usable; });
+
+  var th = 7;
+  setFill(236, 236, 236);
+  doc.rect(L, y, usable, th, 'F');
+  setStroke(40); doc.setLineWidth(thin);
+  doc.rect(L, y, usable, th, 'S');
+  var cx = L;
+  fb(6.5); doc.setTextColor(20);
+  cols.forEach(function(c) {
+    doc.rect(cx, y, c.w, th, 'S');
+    doc.text(c.label, cx + c.w / 2, y + 4.5, { align: 'center', maxWidth: c.w - 1.5 });
+    cx += c.w;
+  });
+  y += th;
+
+  // Always show 8 rows like the official form
+  var lines = (p.lines || []).slice();
+  while (lines.length < 8) lines.push({ description: '', qty: '', um: '', unitPrice: '', amount: '', businessUnit: '' });
+  var rowH2 = 7.2;
+  var subTotal = 0;
+  lines.forEach(function(ln, i) {
+    if (y > 250) return;
+    var qty = ln.qty != null && ln.qty !== '' ? Number(ln.qty) : (ln.amount ? 1 : '');
+    var unit = ln.unitPrice != null && ln.unitPrice !== '' ? Number(ln.unitPrice) : (ln.amount ? Number(ln.amount) : '');
+    var tot = ln.amount != null && ln.amount !== '' ? Number(ln.amount) : '';
+    if (tot) subTotal += Number(tot) || 0;
+    var bu = ln.businessUnit || p.businessUnit || '';
+    var vals = [
+      String(i + 1) + '.',
+      i < (p.lines || []).length ? bu : '',
+      ln.description || '',
+      qty !== '' ? String(qty) : '',
+      unit !== '' ? money(unit) : '',
+      tot !== '' ? money(tot) : ''
+    ];
+    // zebra
+    if (i % 2 === 1) { setFill(252, 252, 252); doc.rect(L, y, usable, rowH2, 'F'); }
+    cx = L;
+    fn(7.5); doc.setTextColor(20);
+    cols.forEach(function(c, ci) {
+      doc.setDrawColor(40); doc.setLineWidth(thin);
+      doc.rect(cx, y, c.w, rowH2, 'S');
+      var t = vals[ci] || '';
+      if (t) {
+        var align = (ci === 0 || ci >= 3) ? 'right' : 'left';
+        var tx = align === 'right' ? cx + c.w - 1.5 : cx + 1.2;
+        var clipped = doc.splitTextToSize(String(t), c.w - 2.4)[0] || '';
+        doc.text(clipped, tx, y + 4.8, { align: align });
+      }
+      cx += c.w;
+    });
+    y += rowH2;
+  });
+
+  // Note under table (left) + totals block (right)
+  var totalsW = 70;
+  var noteW = usable - totalsW - 2;
+  var noteY = y + 1;
+  fi(6); doc.setTextColor(90);
+  var note = 'The PRF limit is within monthly approved consolidated PRF';
+  doc.text(doc.splitTextToSize(note, noteW), L, noteY + 3);
+  fi(5.5);
+  doc.text(doc.splitTextToSize('If the total amount is above the authorization limit of 1st approver, then 2nd approval from as per approval matrix shared earlier!', noteW), L, noteY + 9);
+
+  // Totals box
+  var tx0 = L + noteW + 2;
+  var ty = y;
+  var tH = 6;
+  cell(tx0, ty, 28, tH, { label: 'SUB-TOTAL', labelSize: 7, fill: [245, 245, 245] });
+  cell(tx0 + 28, ty, totalsW - 28, tH, { value: money(subTotal || p.amount), valueSize: 8, valueY: 4 });
+  ty += tH;
+  var vatPct = p.vatPct != null ? p.vatPct : '';
+  var vatAmt = p.vat != null ? Number(p.vat) : 0;
+  cell(tx0, ty, 28, tH, { label: 'VAT Appl.  ' + (p.vatAppl || 'No'), labelSize: 6.5, fill: [245, 245, 245] });
+  cell(tx0 + 28, ty, totalsW - 28, tH, { value: (vatPct !== '' ? vatPct + '%  ' : '') + (vatAmt ? money(vatAmt) : ''), valueSize: 8, valueY: 4 });
+  ty += tH;
+  var grand = (subTotal || Number(p.amount) || 0) + vatAmt;
+  setFill(235, 235, 235);
+  doc.rect(tx0, ty, totalsW, tH, 'F');
+  cell(tx0, ty, 28, tH, { label: 'TOTAL', labelSize: 8, fill: [235, 235, 235] });
+  cell(tx0 + 28, ty, totalsW - 28, tH, { value: money(grand), valueSize: 9, valueY: 4.2 });
+  ty += tH + 2;
+  fi(5.5); doc.setTextColor(100);
+  doc.text('Specify if USD!', tx0 + totalsW, ty, { align: 'right' });
+
+  y = Math.max(y + 22, ty + 4);
+
+  // ── SIGNATURE BLOCKS ───────────────────────────────────────
+  if (y > 260) { doc.addPage(); y = 15; }
+  var sigH = 22;
+  var sigW = usable / 3;
+  var labels = [
+    'Requestor (name, date & sign.)',
+    '1st Approval (name, date & sign.)',
+    '2nd Approval (name, date & sign.)'
+  ];
+  var names = [p.requestor || '', p.approver1 || '', p.approver2 || ''];
+  for (var si = 0; si < 3; si++) {
+    var sx = L + si * sigW;
+    setStroke(40); doc.setLineWidth(thin);
+    doc.rect(sx, y, sigW - (si < 2 ? 2 : 0), sigH, 'S');
+    fn(6.5); doc.setTextColor(90);
+    doc.text(labels[si], sx + 1.5, y + 4);
+    if (names[si]) {
+      fb(8); doc.setTextColor(20);
+      doc.text(String(names[si]), sx + 1.5, y + 10);
+    }
+    // signature line
+    setStroke(150); doc.setLineWidth(0.2);
+    doc.line(sx + 4, y + sigH - 5, sx + sigW - 8, y + sigH - 5);
+  }
+  y += sigH + 4;
+
+  // Footer
+  fi(6); doc.setTextColor(120);
+  doc.text('Finance Director', L, y);
+  doc.text('Approved by: CFO', L + 55, y);
+  doc.text('Release Date: Jan 8, 2025', R, y, { align: 'right' });
+
+  var fname = 'PRF_' + (p.ref || 'draft') + '_' + (p.date || '').replace(/\//g, '-') + '.pdf';
+  doc.save(fname);
+  toast('PDF downloaded — Burn PRF layout');
+}
 
 
 /** Push PRF store to Sheets (PRFs tab). Falls back gracefully if action missing. */
