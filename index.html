@@ -7963,15 +7963,17 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // App configuration
 // Configuration
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwH9d4iQNSB8FoZtn99Vrkc5qhdn3qRAOUewIQshM00dHckRHhbXIXoXMhDIYVjXmw/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby36GIVohf0x8NolK_kWXiiqp48j9dyv83JdEC9VSL1dRuVLd8qUR-3E6R1l4RbFLE/exec';
 // ════════════════════════════════════════════════════════════
 
-// State -- use hardcoded URL if set, otherwise fall back to localStorage
-// Treat placeholder as not set
+// State — prefer a URL the admin saved in this browser; fall back to hardcoded team URL
 const _hw = (HARDCODED_WEB_APP_URL && HARDCODED_WEB_APP_URL !== 'YOUR_WEB_APP_URL_HERE') ? HARDCODED_WEB_APP_URL : '';
-function _decodeUrl(s) { try { return s ? decodeURIComponent(escape(atob(s))) : ''; } catch(e) { return s; } }
-let gsWebAppUrl  = _hw || _decodeUrl(localStorage.getItem('mrv_webapp_url')) || '';
-let gsConnected  = !!gsWebAppUrl;
+function _decodeUrl(s) { try { return s ? decodeURIComponent(escape(atob(s))) : ''; } catch(e) { return s || ''; } }
+var _savedUrl = _decodeUrl(localStorage.getItem('mrv_webapp_url')) || '';
+// Saved URL wins so a redeploy is not blocked by a stale hardcoded deployment ID
+let gsWebAppUrl  = _savedUrl || _hw || '';
+let gsConnected  = false; // only true after a successful ping/call
+window._gasDeploymentDead = false;
 let gsAutoSyncTimer= null;
 
 // Dummy -- kept so old gapi script tags don't crash
@@ -7987,28 +7989,44 @@ async function connectWebApp() {
   gsWebAppUrl = url;
   window._gas404Until = 0;
   window._gas404Count = 0;
-  appendSyncLog('Testing connection…');
+  window._gasDeploymentDead = false;
+  appendSyncLog('Testing connection (ping)…');
+  var badge = document.getElementById('connStatusBadge');
+  if (badge) { badge.className = 'badge badge-gold'; badge.textContent = 'Connecting…'; }
   try {
-    var res = await gasCall({ action: 'ping' });
+    // Direct raw ping with short timeout — do not sit in a long queue
+    var res = await _gasCallRaw({ action: 'ping' });
     if (!res || !res.ok) throw new Error((res && res.error) || 'Unknown error');
     localStorage.setItem('mrv_webapp_url', btoa(unescape(encodeURIComponent(url))));
+    localStorage.setItem('mrv_webapp_url_raw', url);
     gsConnected = true;
-    document.getElementById('connStatusBadge').className = 'badge badge-teal';
-    document.getElementById('connStatusBadge').textContent = 'OK Connected';
-    document.getElementById('connSuccessMsg').textContent = res.message || 'Connected';
-    document.getElementById('connSuccessUrl').textContent = url;
-    document.getElementById('connSuccessBox').style.display = 'flex';
-    document.getElementById('disconnectBtn').style.display = '';
-    document.getElementById('syncControlCard').style.cssText = '';
+    window._gasDeploymentDead = false;
+    if (badge) { badge.className = 'badge badge-teal'; badge.textContent = 'OK Connected'; }
+    var msg = document.getElementById('connSuccessMsg');
+    if (msg) msg.textContent = res.message || 'Connected';
+    var uEl = document.getElementById('connSuccessUrl');
+    if (uEl) uEl.textContent = url;
+    var box = document.getElementById('connSuccessBox');
+    if (box) box.style.display = 'flex';
+    var disc = document.getElementById('disconnectBtn');
+    if (disc) disc.style.display = '';
+    var ctrl = document.getElementById('syncControlCard');
+    if (ctrl) ctrl.style.cssText = '';
     updateSheetStatusPill(true);
-    appendSyncLog('OK ' + (res.message || 'Connected'));
+    appendSyncLog('OK ' + (res.message || 'Connected') + ' · version ' + (res.version != null ? res.version : '—'));
     toast('Connected to Apps Script OK');
-    await pushToSheets();
+    // Non-blocking push — do not hold the Connect button for a full sync
+    try { backgroundPush({ fast: true, skipActuals: true }); } catch (e2) {}
   } catch(e) {
     gsConnected = false;
     updateSheetStatusPill(false);
-    appendSyncLog('X Connection failed: ' + e.message);
-    toast('Connection failed — ' + (e.message || 'check URL / redeploy'));
+    if (badge) { badge.className = 'badge badge-red'; badge.textContent = 'Connection failed'; }
+    var hint = String(e.message || e);
+    if (/404/.test(hint)) {
+      hint = '404 — deployment URL is dead. In Apps Script: Deploy → Manage deployments → ✎ Edit → New version → Deploy. Copy the fresh /exec URL and paste it here.';
+    }
+    appendSyncLog('X Connection failed: ' + hint);
+    toast('Connection failed — see sync log');
   }
 }
 
@@ -8060,6 +8078,7 @@ function _gasPump() {
 function _gasNoteSuccess() {
   window._gas404Count = 0;
   window._gas404Until = 0;
+  window._gasDeploymentDead = false;
   if (gsWebAppUrl && !gsConnected) {
     gsConnected = true;
     try {
@@ -8105,22 +8124,30 @@ async function _gasCallRaw(payload) {
   var url = normalizeWebAppUrl_(raw);
   if (!url) throw new Error('No Web App URL set');
 
-  // Always attempt the request. Circuit breaker only slows auto-sync polling,
-  // it must never invent "paused" errors that cascade and block login/users.
+  var action = (payload && payload.action) || '';
+  // If deployment is known-dead, fail immediately (except explicit ping from Connect)
+  if (window._gasDeploymentDead && action !== 'ping') {
+    throw new Error('HTTP 404 from Apps Script — redeploy Web App and paste the new /exec URL.');
+  }
+
+  // Short timeouts: ping 8s, reads 15s, writes 35s (was 60s for everything)
+  var timeoutMs = action === 'ping' ? 8000
+    : ({ getVersion:1, getUsers:1, getClients:1, getRequests:1, getBudgets:1,
+         getSettings:1, getInviteInfo:1, getDeletedRefs:1, getMySignature:1,
+         getAll:1, getPrfs:1 }[action] ? 15000 : 35000);
 
   var controller = new AbortController();
-  var timer = setTimeout(function() { controller.abort(); }, 60000);
+  var timer = setTimeout(function() { controller.abort(); }, timeoutMs);
 
   try {
     var resp;
-    var action = (payload && payload.action) || '';
     // Reads via GET (many deployments accept GET but reject POST with 405).
     // Writes must use POST — if POST returns 405, the Web App must be redeployed
     // (Execute as: Me, Who has access: Anyone, New version).
     var readActions = {
       ping:1, getVersion:1, getUsers:1, getClients:1, getRequests:1,
       getAll:1, getBudgets:1, getSettings:1, getInviteInfo:1, getDeletedRefs:1,
-      getMySignature:1
+      getMySignature:1, getPrfs:1
     };
     if (readActions[action]) {
       var q = 'action=' + encodeURIComponent(action);
@@ -8147,8 +8174,16 @@ async function _gasCallRaw(payload) {
         throw new Error('HTTP 405 — Web App rejects POST. In Apps Script: Deploy → Manage deployments → Edit → Execute as: Me, Anyone → New version. Then paste the new /exec URL.');
       }
       if (resp.status === 404) {
+        window._gasDeploymentDead = true;
         _gasNoteFailure('404');
-        throw new Error('HTTP 404 from Apps Script. Open the /exec URL in a browser — you must see JSON. If not, redeploy.');
+        // Drop queued jobs so boot does not wait on a dead deployment
+        try {
+          while (_gasQueue.length) {
+            var dead = _gasQueue.shift();
+            try { dead.reject(new Error('HTTP 404 — deployment unreachable')); } catch (e0) {}
+          }
+        } catch (e1) {}
+        throw new Error('HTTP 404 from Apps Script. Open the /exec URL in a browser — you must see JSON. If not, redeploy (New version) and paste the new URL.');
       }
       _gasNoteFailure('http');
       throw new Error('HTTP ' + resp.status);
@@ -11206,13 +11241,28 @@ async function afterLogin() {
       try {
         window._gas404Until = 0;
         window._gas404Count = 0;
+        window._gasDeploymentDead = false;
+        // Fast health check — if /exec is 404, skip the rest so login stays snappy
+        try {
+          var ping = await _gasCallRaw({ action: 'ping' });
+          if (ping && ping.ok) {
+            gsConnected = true;
+            try { updateSheetStatusPill(true); } catch (e0) {}
+            appendSyncLog('Sheets ping OK' + (ping.version != null ? (' · v' + ping.version) : ''));
+          }
+        } catch (pe) {
+          appendSyncLog('Sheets unreachable at boot: ' + (pe.message || pe));
+          try { updateSheetStatusPill(false); } catch (e1) {}
+          // Do not queue budget/clients/requests against a dead URL
+          return;
+        }
         await pullBudgetLinesFromSheets().catch(function(e){ appendSyncLog('Budget pull failed: ' + (e.message||e)); });
         await pullClientsFromSheets().catch(function(e){ appendSyncLog('Clients pull failed: ' + (e.message||e)); });
         try { seedDemoDataIfEmpty(); } catch(e) {}
         try { populateAllDropdowns(); renderDashboard(); rebuildRequestsTable(); } catch(e) {}
         await pullRequestsOnly().catch(function(e){ appendSyncLog('Pull failed: ' + (e.message||e)); });
       } finally {
-        startAutoSync();
+        if (!window._gasDeploymentDead) startAutoSync();
       }
     })();
   } else {
