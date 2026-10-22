@@ -3821,7 +3821,7 @@ let deletedStore = loadDeletedFromStorage();
 var _pendingLocalRefs = {};          // ref -> timestamp (ms)
 var _localWriteGraceUntil = 0;     // epoch ms — skip pulls until then
 var LOCAL_REF_PROTECT_MS = 900000; // keep local-only refs safe for 15 min (failed pushes must not drop them)
-var LOCAL_WRITE_GRACE_MS = 2500;   // skip pulls briefly after a local write/push
+var LOCAL_WRITE_GRACE_MS = 8000;   // skip pulls briefly after a local write/push (status settle)
 
 function markLocalWrite(ref) {
   var now = Date.now();
@@ -3865,6 +3865,77 @@ function shouldSkipPull() {
  */
 var STATUS_RANK = { 'Draft':0, 'Pending':1, 'Approved':2, 'Paid':3 };
 
+/** Canonicalise any status string → Draft|Pending|Approved|Paid (case/space safe). */
+function normalizeStatus_(s) {
+  if (s == null || s === '') return 'Draft';
+  var t = String(s).trim().toLowerCase();
+  if (t === 'paid' || t === 'payment' || t === 'complete' || t === 'completed') return 'Paid';
+  if (t === 'approved' || t === 'approve' || t === 'authorised' || t === 'authorized') return 'Approved';
+  if (t === 'pending' || t === 'submitted' || t === 'in review' || t === 'review') return 'Pending';
+  if (t === 'draft' || t === 'new') return 'Draft';
+  // Title-case known keys as fallback
+  var title = String(s).trim();
+  if (STATUS_RANK[title] != null) return title;
+  return 'Pending';
+}
+
+function statusRank_(s) {
+  return STATUS_RANK[normalizeStatus_(s)] || 0;
+}
+
+/** Highest status ever confirmed on this browser — survives bad/stale Sheet pulls. */
+var _statusFloor = (function() {
+  try {
+    var raw = localStorage.getItem('mrv_status_floor');
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+})();
+
+function persistStatusFloor_() {
+  try { localStorage.setItem('mrv_status_floor', JSON.stringify(_statusFloor)); } catch (e) {}
+}
+
+function raiseStatusFloor(ref, status) {
+  if (!ref) return;
+  var n = normalizeStatus_(status);
+  var r = statusRank_(n);
+  var prev = _statusFloor[String(ref)];
+  if (!prev || statusRank_(prev) < r) {
+    _statusFloor[String(ref)] = n;
+    persistStatusFloor_();
+  }
+}
+
+function floorStatus(ref, status) {
+  var n = normalizeStatus_(status);
+  var f = _statusFloor[String(ref)];
+  if (f && statusRank_(f) > statusRank_(n)) return normalizeStatus_(f);
+  return n;
+}
+
+/** Apply floor to every local request (call after load / before first paint). */
+function applyStatusFloorToStore() {
+  var changed = false;
+  (requestsStore || []).forEach(function(r) {
+    if (!r || !r.ref) return;
+    // Raise floor from whatever we already have locally
+    raiseStatusFloor(r.ref, r.status);
+    var floored = floorStatus(r.ref, r.status);
+    if (floored !== normalizeStatus_(r.status)) {
+      r.status = floored;
+      changed = true;
+    } else {
+      r.status = normalizeStatus_(r.status);
+    }
+  });
+  if (changed) {
+    try { persistRequestsToStorage(); } catch (e) {}
+  }
+}
+
+// Apply as soon as helpers exist (requestsStore already loaded above)
+try { applyStatusFloorToStore(); } catch (e) {}
+
 function mergeRequestsFromServer(serverRows) {
   if (!serverRows || !serverRows.length) {
     // Empty server response must NOT wipe local data
@@ -3904,12 +3975,17 @@ function mergeRequestsFromServer(serverRows) {
     }
 
     var local = localByRef[ref];
-    var sheetsStatus = String(r['Status'] || r.status || 'Draft').trim() || 'Draft';
+    var sheetsStatus = normalizeStatus_(r['Status'] || r.status || 'Draft');
+    var localStatus  = local ? normalizeStatus_(local.status) : 'Draft';
+    // Never downgrade: max(sheets, local, persistent floor)
     var finalStatus = sheetsStatus;
-    if (local) {
-      var localRank  = (STATUS_RANK && STATUS_RANK[local.status])  || 0;
-      var sheetsRank = (STATUS_RANK && STATUS_RANK[sheetsStatus])  || 0;
-      if (localRank > sheetsRank) finalStatus = local.status;
+    if (statusRank_(localStatus) > statusRank_(finalStatus)) finalStatus = localStatus;
+    finalStatus = floorStatus(ref, finalStatus);
+    // Keep floor in sync with the winner (and heal Sheets later if needed)
+    raiseStatusFloor(ref, finalStatus);
+    if (statusRank_(finalStatus) > statusRank_(sheetsStatus)) {
+      // Sheets is behind — keep ref dirty so next push repairs it
+      try { markLocalWrite(ref); } catch (e) {}
     }
 
     var amount = parseFloat(r['Amount (KES)'] != null ? r['Amount (KES)'] : (r['Amount'] != null ? r['Amount'] : r.amount));
@@ -3926,7 +4002,7 @@ function mergeRequestsFromServer(serverRows) {
       amount:           amount,
       requester:        String(r['Requester']         || r.requester    || '').trim(),
       createdBy:        String((local && local.createdBy) || r.createdBy || r['Created By'] || '').trim().toLowerCase(),
-      status:           finalStatus,
+      status:           normalizeStatus_(finalStatus),
       date:             String(r['Date']              || r.date         || '').trim(),
       sigLabel:         r['Signed By']            || r.sigLabel         || (local && local.sigLabel)         || null,
       sigTime:          r['Sign Time']            || r.sigTime          || (local && local.sigTime)          || null,
@@ -5984,6 +6060,7 @@ function approveRequest(ref) {
       requestsStore[i].approvedAt = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
                                   + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
       found = true;
+      raiseStatusFloor(requestsStore[i].ref, 'Approved');
       markLocalWrite(requestsStore[i].ref);
     }
   }
@@ -6018,6 +6095,7 @@ function confirmSignAndApprove() {
     e.sigDataUrl = pendingModalSig;
     e.sigLabel   = sigLabel;
     e.sigTime    = sigTime;
+    raiseStatusFloor(e.ref, 'Paid');
     markLocalWrite(e.ref);
   });
 
@@ -8302,6 +8380,16 @@ async function pullRequestsOnly() {
     rebuildRequestsTable();
     renderHistory();
     renderDashboard();
+    // If Sheets lagged behind Approved/Paid, push the floor so other browsers stop flipping
+    try {
+      var needsHeal = (merged || []).some(function(r) {
+        return r && r.ref && statusRank_(_statusFloor[String(r.ref)] || 'Draft') >= 2
+          && isProtectedLocalRef(r.ref);
+      });
+      if (needsHeal && typeof backgroundPush === 'function') {
+        backgroundPush({ fast: true, skipActuals: true, dirtyOnly: true });
+      }
+    } catch (e) {}
   } catch(e) {
     if ((window._gas404Count || 0) < 2) console.warn('pullRequestsOnly:', e);
   }
@@ -8370,10 +8458,11 @@ async function pullFromSheets(silent) {
         amount:      parseFloat(r['Amount (KES)'] || r['Amount'] || r.amount) || 0,
         requester:   String(r['Requester']    || r.requester   || '').trim(),
         status:      (function(){
-          var s = String(r['Status'] || r.status || 'Draft').trim();
-          var loc = requestsStore.find(function(x){ return x.ref===String(r['Ref #']||r.ref||'').trim(); });
-          if (loc && (STATUS_RANK[loc.status]||0) > (STATUS_RANK[s]||0)) return loc.status;
-          return s;
+          var ref = String(r['Ref #']||r.ref||'').trim();
+          var s = normalizeStatus_(r['Status'] || r.status || 'Draft');
+          var loc = requestsStore.find(function(x){ return x.ref===ref; });
+          if (loc && statusRank_(loc.status) > statusRank_(s)) s = normalizeStatus_(loc.status);
+          return floorStatus(ref, s);
         })(),
         date:        String(r['Date']         || r.date        || '').trim(),
         sigLabel:         r['Signed By']          || r.sigLabel         || null,
@@ -11086,6 +11175,7 @@ async function afterLogin() {
   try { pullMySignature(); } catch(e) {}
 
   // ── STEP 3: Render from localStorage cache ──────────────────
+  try { applyStatusFloorToStore(); } catch (e) {}
   var safeRender = function(fn, name) {
     try { fn(); } catch(e) { console.error('Render error in ' + name + ':', e); }
   };
