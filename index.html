@@ -2226,6 +2226,24 @@
   /* Floating new-request button */
   
   /* ── Payment Request Form (PRF) ─────────────────────────── */
+  .prf-check-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 6px 10px;
+  }
+  .prf-check-grid label.prf-chk {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 10px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 12.5px; cursor: pointer;
+    background: var(--surface); line-height: 1.35;
+  }
+  .prf-check-grid label.prf-chk:hover { border-color: var(--accent, #3b82f6); }
+  .prf-check-grid label.prf-chk.is-on {
+    border-color: var(--accent, #3b82f6);
+    background: color-mix(in srgb, var(--accent, #3b82f6) 8%, var(--surface));
+  }
+  .prf-check-grid label.prf-chk input { margin-top: 2px; }
+
   .prf-budget-strip {
     display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
     gap:10px; padding:12px; background:#FAF9F8; border:1px solid #EDEBE9; border-radius:4px;
@@ -2810,90 +2828,102 @@
         <div class="ecf-layout">
           <div class="ecf-main">
             <div class="card">
-              <div class="card-header"><div class="card-title"><span class="ecf-step">1</span>Project &amp; budget</div></div>
+              <div class="card-header"><div class="card-title"><span class="ecf-step">1</span>Country</div>
+                <span class="ecf-meta" id="prfCountryMeta">Select one or more</span>
+              </div>
               <div class="card-body" style="padding:14px">
-                <div class="ecf-grid" style="margin-bottom:12px">
-                  <div class="form-group"><label>Project</label><select id="prfProject" onchange="prfOnProjectChange()"></select></div>
-                  <div class="form-group"><label>Currency</label>
-                    <select id="prfCurrency" onchange="prfRecalc()">
-                      <option value="KES">KES</option><option value="USD">USD</option>
-                      <option value="TZS">TZS</option><option value="UGX">UGX</option>
-                      <option value="EUR">EUR</option><option value="GBP">GBP</option>
-                    </select>
-                  </div>
-                </div>
-                <div id="prfBudgetStrip" class="prf-budget-strip">Select a project to see budget vs requested balance.</div>
+                <p class="text-muted text-sm" style="margin:0 0 10px">PRFs are generated per country. Multiple countries → one PDF each, downloaded as a ZIP.</p>
+                <div id="prfCountryList" class="prf-check-grid"></div>
               </div>
             </div>
             <div class="card">
-              <div class="card-header">
-                <div class="card-title"><span class="ecf-step">2</span>Budget lines to fund</div>
-                <span class="ecf-meta" id="prfLinesMeta">0 lines · 0 selected</span>
+              <div class="card-header"><div class="card-title"><span class="ecf-step">2</span>Projects</div>
+                <span class="ecf-meta" id="prfProjectMeta">0 selected</span>
+              </div>
+              <div class="card-body" style="padding:14px">
+                <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+                  <input type="search" id="prfProjectFilter" class="input-sm" placeholder="Filter projects…" oninput="prfFilterProjects(this.value)" style="flex:1;min-width:160px">
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="prfToggleAllProjects(true)">Select all</button>
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="prfToggleAllProjects(false)">Clear</button>
+                </div>
+                <div id="prfProjectList" class="prf-check-grid" style="max-height:220px;overflow:auto"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title"><span class="ecf-step">3</span>Cost summary lines</div>
+                <span class="ecf-meta" id="prfCostMeta">0 selected</span>
               </div>
               <div class="card-body" style="padding:0">
-                <div class="table-scroll" style="max-height:min(320px,40vh)">
+                <div class="table-scroll" style="max-height:min(280px,36vh)">
                   <table class="prf-lines-table">
                     <thead><tr>
-                      <th style="width:36px"></th><th>Category / Cost item</th>
-                      <th>Budgeted</th><th>Already PRF'd</th><th>Balance</th><th>This request</th>
+                      <th style="width:36px"><input type="checkbox" id="prfCostCheckAll" onchange="prfToggleAllCosts(this.checked)"></th>
+                      <th>Cost summary</th><th>Project</th><th>Budgeted</th><th>Actuals</th><th>PRF'd</th><th>Balance</th><th>This run (30%)</th>
                     </tr></thead>
-                    <tbody id="prfLinesBody"><tr><td colspan="6" class="ecf-empty">Select a project first.</td></tr></tbody>
+                    <tbody id="prfCostBody"><tr><td colspan="8" class="ecf-empty">Select country and project(s) first.</td></tr></tbody>
                   </table>
                 </div>
               </div>
             </div>
             <div class="card">
-              <div class="card-header">
-                <div class="card-title"><span class="ecf-step">3</span>PRF header</div>
-                <button type="button" class="btn btn-ghost btn-sm" onclick="prfAutoHeader()">Auto-fill</button>
+              <div class="card-header"><div class="card-title"><span class="ecf-step">4</span>Header defaults</div>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="prfAutoHeader(true)">Auto-fill</button>
               </div>
               <div class="card-body ecf-header-body">
                 <div class="ecf-group">
-                  <div class="ecf-group-title">Burn company &amp; booking</div>
-                  <div class="ecf-grid">
-                    <div class="form-group"><label>Burn company (1)</label><select id="prfCompany"></select></div>
-                    <div class="form-group"><label>Country code (2)</label><select id="prfCountry"></select></div>
-                    <div class="form-group"><label>Business unit (3)</label><select id="prfBizUnit"></select></div>
-                    <div class="form-group"><label>Cost centre (4)</label><select id="prfCostCentre" onchange="prfOnCostCentreChange()"></select></div>
-                    <div class="form-group"><label>Dimension code (5)</label><select id="prfDimCode"></select></div>
-                    <div class="form-group"><label>Profit centre (6)</label><select id="prfProfitCentre"></select></div>
-                    <div class="form-group"><label>Product code (7)</label><select id="prfProductCode"></select></div>
-                    <div class="form-group"><label>R&amp;D project code (8)</label><select id="prfRdCode"></select></div>
-                    <div class="form-group"><label>Carbon / project code (9)</label><select id="prfCarbonCode"></select></div>
-                  </div>
-                </div>
-                <div class="ecf-group">
-                  <div class="ecf-group-title">Requisition &amp; payment</div>
+                  <div class="ecf-group-title">Requestor &amp; payment</div>
                   <div class="ecf-grid">
                     <div class="form-group"><label>Requestor name</label><input id="prfRequestor" type="text" placeholder="Full name"></div>
-                    <div class="form-group"><label>Request date</label><input id="prfDate" type="date"></div>
+                    <div class="form-group"><label>Date</label><input id="prfDate" type="date"></div>
                     <div class="form-group"><label>Mode of payment</label>
-                      <select id="prfMode"><option>Bank Transfer</option><option>Mpesa</option><option>Card</option><option>Cash</option><option>Other (specify)</option></select>
+                      <select id="prfMode">
+                        <option value="Mpesa Wallet">Mpesa Wallet</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Card">Card</option>
+                      </select>
                     </div>
-                    <div class="form-group"><label>Mobile / Till / Paybill</label><input id="prfPayee" type="text" placeholder="Optional"></div>
-                    <div class="form-group"><label>Cash advance required?</label>
+                    <div class="form-group"><label>Payee / Till / Paybill</label><input id="prfPayee" type="text"></div>
+                    <div class="form-group"><label>Cash advance?</label>
                       <select id="prfAdvance"><option value="NO">NO</option><option value="YES">YES</option></select>
                     </div>
                     <div class="form-group"><label>Est. payment date</label><input id="prfEstDate" type="date"></div>
+                    <div class="form-group"><label>Currency</label>
+                      <select id="prfCurrency">
+                        <option value="KES">KES</option><option value="USD">USD</option>
+                        <option value="TZS">TZS</option><option value="UGX">UGX</option>
+                        <option value="EUR">EUR</option><option value="GBP">GBP</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
                 <div class="ecf-group">
-                  <div class="ecf-group-title">Purpose (in detail)</div>
-                  <textarea id="prfPurpose" rows="3" placeholder="Describe why these funds are needed…" style="width:100%;resize:vertical"></textarea>
+                  <div class="ecf-group-title">Purpose (auto)</div>
+                  <div class="form-group form-full">
+                    <textarea id="prfPurpose" rows="2" readonly placeholder="Field Costs for …"></textarea>
+                    <p class="text-muted text-sm" style="margin:6px 0 0">Always set to “Field Costs for (project name(s))”. Dimension codes with more than one value become <strong>Various</strong>.</p>
+                  </div>
                 </div>
+                <!-- Hidden booking fields filled on generate -->
+                <input type="hidden" id="prfCompany"><input type="hidden" id="prfCountry">
+                <input type="hidden" id="prfBizUnit"><input type="hidden" id="prfCostCentre">
+                <input type="hidden" id="prfDimCode"><input type="hidden" id="prfProfitCentre">
+                <input type="hidden" id="prfProductCode"><input type="hidden" id="prfRdCode">
+                <input type="hidden" id="prfCarbonCode">
               </div>
             </div>
           </div>
-          <aside class="ecf-side">
+          <aside class="ecf-aside">
             <div class="card ecf-panel">
-              <div class="card-header"><div class="card-title">PRF summary</div></div>
+              <div class="card-header"><div class="card-title">Generate PRFs</div></div>
               <div class="card-body ecf-panel-body">
                 <div id="prfSummary" class="ecf-sum"></div>
                 <div class="ecf-actions">
-                  <button type="button" class="btn btn-primary" id="prfSubmitBtn" onclick="prfSubmit()">Submit PRF</button>
-                  <button type="button" class="btn btn-secondary" onclick="prfExportPDF()">Export PDF</button>
-                  <button type="button" class="btn btn-ghost" onclick="prfResetForm()">Clear form</button>
+                  <button type="button" class="btn btn-primary" id="prfSubmitBtn" onclick="prfGenerateBatch()">Generate PRFs</button>
+                  <button type="button" class="btn btn-secondary" id="prfPreviewBtn" onclick="prfPreviewBatch()">Preview selection</button>
+                  <button type="button" class="btn btn-ghost" onclick="prfResetForm()">Clear</button>
                 </div>
+                <p class="text-muted text-sm" style="margin:10px 0 0">Each run requests <strong>30%</strong> of the original budget line (capped at remaining balance = Budget − Actuals − already PRF’d). Typically 3–4 runs deplete a line.</p>
               </div>
             </div>
           </aside>
@@ -2914,9 +2944,9 @@
             </div>
           </div>
           <div class="card">
-            <div class="card-header"><div class="card-title">Cross-project insights</div></div>
+            <div class="card-header"><div class="card-title">Funds requisitioned vs actuals</div></div>
             <div class="card-body" id="prfInsightsBody">
-              <p class="text-muted text-sm">Compares paid expense requests against each project's budget to flag overspends and possible fund sharing.</p>
+              <p class="text-muted text-sm">PRF funds raised vs paid actuals by project — flags projects consuming more than requisitioned (borrowing other projects' funds).</p>
             </div>
           </div>
         </div>
@@ -12885,333 +12915,592 @@ function prfOnCostCentreChange() {
     else dim.value = cc;
   }
 }
+
+var PRF_TRANCHE_PCT = 0.30; // 30% of original budget line per run
+
 function prfInit() {
   prfPopulateMapping();
   if (gsWebAppUrl && typeof prfPullFromSheets === 'function') prfPullFromSheets();
-  var projEl = document.getElementById('prfProject');
-  if (projEl) {
-    var projects = (typeof getProjects === 'function') ? getProjects() : [];
-    if (!projects.length && budgetLines && budgetLines.length) {
-      projects = [];
-      var seen = {};
-      budgetLines.forEach(function(l) {
-        if (l.project && !seen[l.project]) { seen[l.project]=1; projects.push(l.project); }
-      });
-    }
-    prfFillSelect('prfProject', projects, '— Select project —');
-  }
   var dateEl = document.getElementById('prfDate');
   if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
   if (currentUser) {
     var r = document.getElementById('prfRequestor');
     if (r && !r.value) r.value = currentUser.name || '';
   }
-  prfRecalc();
+  prfRenderCountries();
+  prfRenderProjects();
+  prfRenderCostLines();
+  prfUpdatePurpose();
+  prfRecalcSummary();
   prfSwitchTab('form');
 }
+
 function prfSwitchTab(which) {
   ['form','balance','list'].forEach(function(t) {
-    var pan = document.getElementById('prfPanel' + t.charAt(0).toUpperCase() + t.slice(1));
-    var btn = document.getElementById('prfTab' + t.charAt(0).toUpperCase() + t.slice(1));
-    if (pan) pan.style.display = (t === which) ? '' : 'none';
-    if (btn) btn.classList.toggle('active', t === which);
+    var p = document.getElementById('prfPanel' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (p) p.style.display = (t === which) ? '' : 'none';
+    var b = document.getElementById('prfTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (b) b.classList.toggle('active', t === which);
   });
   if (which === 'balance') prfRenderBalance();
   if (which === 'list') prfRenderList();
 }
-function prfOnProjectChange() {
-  var proj = (document.getElementById('prfProject') || {}).value || '';
-  var reqByLine = prfRequestedByLine();
-  var lines = (budgetLines || []).filter(function(l){ return l.project === proj; });
-  var body = document.getElementById('prfLinesBody');
-  var strip = document.getElementById('prfBudgetStrip');
-  var meta = document.getElementById('prfLinesMeta');
-  if (!proj || !lines.length) {
-    if (body) body.innerHTML = '<tr><td colspan="6" class="ecf-empty">'+(proj ? 'No budget lines for this project.' : 'Select a project first.')+'</td></tr>';
-    if (strip) strip.textContent = 'Select a project to see budget vs requested balance.';
-    if (meta) meta.textContent = '0 lines · 0 selected';
-    prfRecalc();
+
+function prfBudgetCountries() {
+  var set = {};
+  (budgetLines || []).forEach(function(l) {
+    var c = (l.country || l.countryCode || '').trim();
+    if (c) set[c] = 1;
+  });
+  // Also from PRF_MAP
+  (PRF_MAP.countries || []).forEach(function(c){ if (c) set[c] = 1; });
+  return Object.keys(set).sort();
+}
+
+function prfSelectedCountries() {
+  var out = [];
+  document.querySelectorAll('#prfCountryList input.prf-country-chk:checked').forEach(function(c) {
+    out.push(c.value);
+  });
+  return out;
+}
+
+function prfSelectedProjects() {
+  var out = [];
+  document.querySelectorAll('#prfProjectList input.prf-proj-chk:checked').forEach(function(c) {
+    out.push(c.value);
+  });
+  return out;
+}
+
+function prfRenderCountries() {
+  var list = document.getElementById('prfCountryList');
+  if (!list) return;
+  var prev = {};
+  prfSelectedCountries().forEach(function(c){ prev[c] = 1; });
+  var countries = prfBudgetCountries();
+  if (!countries.length) {
+    list.innerHTML = '<div class="ecf-empty">No countries on budget lines yet. Pull budgets from Sheets.</div>';
     return;
   }
-  var cur = (document.getElementById('prfCurrency') || {}).value || lines[0].currency || 'KES';
-  var totB = 0, totR = 0;
-  body.innerHTML = lines.map(function(l) {
+  list.innerHTML = countries.map(function(c) {
+    var on = prev[c] ? ' checked' : '';
+    return '<label class="prf-chk'+(prev[c]?' is-on':'')+'"><input type="checkbox" class="prf-country-chk" value="'+_rqEsc(c)+'"'+on+' onchange="prfOnCountryChange()"><span>'+_rqEsc(c)+'</span></label>';
+  }).join('');
+  var meta = document.getElementById('prfCountryMeta');
+  if (meta) meta.textContent = prfSelectedCountries().length + ' selected';
+}
+
+function prfOnCountryChange() {
+  document.querySelectorAll('#prfCountryList label.prf-chk').forEach(function(lab) {
+    var inp = lab.querySelector('input');
+    lab.classList.toggle('is-on', !!(inp && inp.checked));
+  });
+  var meta = document.getElementById('prfCountryMeta');
+  if (meta) meta.textContent = prfSelectedCountries().length + ' selected';
+  prfRenderProjects();
+  prfRenderCostLines();
+  prfUpdatePurpose();
+  prfRecalcSummary();
+}
+
+function prfProjectsForCountries(countries) {
+  var set = {};
+  (budgetLines || []).forEach(function(l) {
+    if (!l.project) return;
+    if (countries.length) {
+      var c = (l.country || l.countryCode || '').trim();
+      if (countries.indexOf(c) < 0) return;
+    }
+    set[l.project] = 1;
+  });
+  return Object.keys(set).sort(function(a,b){ return a.localeCompare(b); });
+}
+
+function prfRenderProjects() {
+  var list = document.getElementById('prfProjectList');
+  if (!list) return;
+  var countries = prfSelectedCountries();
+  var prev = {};
+  prfSelectedProjects().forEach(function(p){ prev[p] = 1; });
+  var projects = prfProjectsForCountries(countries);
+  if (!countries.length) {
+    list.innerHTML = '<div class="ecf-empty">Select a country first.</div>';
+    var meta0 = document.getElementById('prfProjectMeta');
+    if (meta0) meta0.textContent = '0 selected';
+    return;
+  }
+  if (!projects.length) {
+    list.innerHTML = '<div class="ecf-empty">No projects for selected country.</div>';
+    return;
+  }
+  list.innerHTML = projects.map(function(p) {
+    var on = prev[p] ? ' checked' : '';
+    return '<label class="prf-chk'+(prev[p]?' is-on':'')+'" data-name="'+_rqEsc(p.toLowerCase())+'"><input type="checkbox" class="prf-proj-chk" value="'+_rqEsc(p)+'"'+on+' onchange="prfOnProjectPick()"><span>'+_rqEsc(p)+'</span></label>';
+  }).join('');
+  var meta = document.getElementById('prfProjectMeta');
+  if (meta) meta.textContent = prfSelectedProjects().length + ' selected';
+}
+
+function prfFilterProjects(q) {
+  q = String(q || '').toLowerCase().trim();
+  document.querySelectorAll('#prfProjectList label.prf-chk').forEach(function(lab) {
+    var name = lab.getAttribute('data-name') || '';
+    lab.style.display = (!q || name.indexOf(q) >= 0) ? '' : 'none';
+  });
+}
+
+function prfToggleAllProjects(on) {
+  document.querySelectorAll('#prfProjectList label.prf-chk').forEach(function(lab) {
+    if (lab.style.display === 'none') return;
+    var inp = lab.querySelector('input');
+    if (inp) { inp.checked = !!on; lab.classList.toggle('is-on', !!on); }
+  });
+  prfOnProjectPick();
+}
+
+function prfOnProjectPick() {
+  document.querySelectorAll('#prfProjectList label.prf-chk').forEach(function(lab) {
+    var inp = lab.querySelector('input');
+    lab.classList.toggle('is-on', !!(inp && inp.checked));
+  });
+  var meta = document.getElementById('prfProjectMeta');
+  if (meta) meta.textContent = prfSelectedProjects().length + ' selected';
+  prfRenderCostLines();
+  prfUpdatePurpose();
+  prfRecalcSummary();
+}
+
+function prfLineActual(l) {
+  var a = 0;
+  if (typeof getActualForLine === 'function') {
+    a = getActualForLine(l.project, l.type, l.category, l.costSummary, l.costItem) || 0;
+  }
+  var sheet = parseFloat(l.sheetActual) || parseFloat(l.actual) || 0;
+  return Math.max(a, sheet);
+}
+
+/** Remaining against Budget − Actuals − already PRF'd */
+function prfLineRemaining(l, reqByLine) {
+  var bud = parseFloat(l.budgetedAmount) || 0;
+  var act = prfLineActual(l);
+  var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
+  // Balance for next PRF run uses Budget − Actuals, then subtract already PRF'd above actuals
+  var consumed = Math.max(act, prfd);
+  return Math.max(0, bud - consumed);
+}
+
+function prfTrancheAmount(l, reqByLine) {
+  var bud = parseFloat(l.budgetedAmount) || 0;
+  var rem = prfLineRemaining(l, reqByLine);
+  var tranche = bud * PRF_TRANCHE_PCT;
+  return Math.min(tranche, rem);
+}
+
+function prfRenderCostLines() {
+  var body = document.getElementById('prfCostBody');
+  if (!body) return;
+  var projects = prfSelectedProjects();
+  var countries = prfSelectedCountries();
+  if (!projects.length) {
+    body.innerHTML = '<tr><td colspan="8" class="ecf-empty">Select project(s) first.</td></tr>';
+    var m0 = document.getElementById('prfCostMeta');
+    if (m0) m0.textContent = '0 selected';
+    return;
+  }
+  var reqByLine = prfRequestedByLine();
+  var lines = (budgetLines || []).filter(function(l) {
+    if (!l.project || projects.indexOf(l.project) < 0) return false;
+    if (countries.length) {
+      var c = (l.country || l.countryCode || '').trim();
+      if (c && countries.indexOf(c) < 0) return false;
+    }
+    return true;
+  });
+  // Dedupe by cost summary + project
+  var seen = {};
+  var unique = [];
+  lines.forEach(function(l) {
+    var k = (l.project||'') + '||' + (l.costSummary||'');
+    if (seen[k]) return;
+    seen[k] = 1;
+    unique.push(l);
+  });
+  unique.sort(function(a,b) {
+    var c = (a.costSummary||'').localeCompare(b.costSummary||'');
+    return c || (a.project||'').localeCompare(b.project||'');
+  });
+  if (!unique.length) {
+    body.innerHTML = '<tr><td colspan="8" class="ecf-empty">No budget lines for selection.</td></tr>';
+    return;
+  }
+  var prev = {};
+  document.querySelectorAll('#prfCostBody input.prf-cost-chk:checked').forEach(function(c){ prev[c.value] = 1; });
+  function fmtN(n) {
+    try { return Number(n||0).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+    catch(e) { return String(Math.round(n||0)); }
+  }
+  body.innerHTML = unique.map(function(l) {
     var key = prfLineKey(l);
     var bud = parseFloat(l.budgetedAmount) || 0;
-    var already = reqByLine[key] || 0;
-    var bal = bud - already;
-    totB += bud; totR += already;
-    var label = [l.category, l.costSummary || l.costItem].filter(Boolean).join(' · ');
-    return '<tr data-key="'+_rqEsc(key)+'">'
-      + '<td><input type="checkbox" class="prf-line-chk" onchange="prfRecalc()"></td>'
-      + '<td><div style="font-weight:600">'+_rqEsc(label)+'</div>'
-      +   '<div class="text-muted text-sm">'+_rqEsc(l.type||'')+(l.unitOfMeasure?' · '+_rqEsc(l.unitOfMeasure):'')+'</div></td>'
-      + '<td>'+bud.toLocaleString()+'</td>'
-      + '<td>'+already.toLocaleString()+'</td>'
-      + '<td><strong>'+bal.toLocaleString()+'</strong></td>'
-      + '<td><input type="number" class="prf-line-amt" min="0" step="0.01" placeholder="0" value="" oninput="prfRecalc()" data-balance="'+bal+'"></td>'
+    var act = prfLineActual(l);
+    var prfd = reqByLine[key] || 0;
+    var rem = prfLineRemaining(l, reqByLine);
+    var tranche = prfTrancheAmount(l, reqByLine);
+    var disabled = tranche <= 0.009 ? ' disabled' : '';
+    var checked = prev[key] && !disabled ? ' checked' : '';
+    return '<tr data-key="'+_rqEsc(key)+'" data-project="'+_rqEsc(l.project||'')+'" data-country="'+_rqEsc(l.country||l.countryCode||'')+'" data-summary="'+_rqEsc(l.costSummary||'')+'">'
+      + '<td><input type="checkbox" class="prf-cost-chk" value="'+_rqEsc(key)+'"'+checked+disabled+' onchange="prfRecalcSummary()"></td>'
+      + '<td>'+_rqEsc(l.costSummary||'')+'</td>'
+      + '<td>'+_rqEsc(l.project||'')+'</td>'
+      + '<td style="text-align:right">'+fmtN(bud)+'</td>'
+      + '<td style="text-align:right">'+fmtN(act)+'</td>'
+      + '<td style="text-align:right">'+fmtN(prfd)+'</td>'
+      + '<td style="text-align:right">'+fmtN(rem)+'</td>'
+      + '<td style="text-align:right;font-weight:600" data-tranche="'+tranche+'">'+fmtN(tranche)+'</td>'
       + '</tr>';
   }).join('');
-  if (meta) meta.textContent = lines.length + ' lines · 0 selected';
-  if (strip) {
-    var bal = totB - totR;
-    strip.innerHTML =
-      '<div class="prf-kpi"><span>Budgeted</span><strong>'+_rqEsc(cur)+' '+totB.toLocaleString()+'</strong></div>'
-      + '<div class="prf-kpi"><span>Already PRF’d</span><strong>'+_rqEsc(cur)+' '+totR.toLocaleString()+'</strong></div>'
-      + '<div class="prf-kpi"><span>Remaining</span><strong class="'+(bal<0?'danger':(bal===0?'warn':'ok'))+'">'+_rqEsc(cur)+' '+bal.toLocaleString()+'</strong></div>'
-      + '<div class="prf-kpi"><span>Lines</span><strong>'+lines.length+'</strong></div>';
-  }
-  var curEl = document.getElementById('prfCurrency');
-  if (curEl && lines[0].currency) curEl.value = lines[0].currency;
-  // Auto-fill company / dimension codes from budget meta (like Expense Claim)
-  if (typeof prfAutoHeader === 'function') prfAutoHeader(true);
-  else prfRecalc();
+  prfRecalcSummary();
 }
-function prfGatherLines() {
-  var rows = document.querySelectorAll('#prfLinesBody tr[data-key]');
+
+function prfToggleAllCosts(on) {
+  document.querySelectorAll('#prfCostBody input.prf-cost-chk:not(:disabled)').forEach(function(c) {
+    c.checked = !!on;
+  });
+  prfRecalcSummary();
+}
+
+function prfGatherSelectedLines() {
+  var reqByLine = prfRequestedByLine();
   var out = [];
-  rows.forEach(function(tr) {
-    var chk = tr.querySelector('.prf-line-chk');
-    var amtEl = tr.querySelector('.prf-line-amt');
-    if (!chk || !chk.checked) return;
-    var amt = parseFloat(amtEl && amtEl.value) || 0;
+  document.querySelectorAll('#prfCostBody tr[data-key]').forEach(function(tr) {
+    var chk = tr.querySelector('.prf-cost-chk');
+    if (!chk || !chk.checked || chk.disabled) return;
+    var key = tr.getAttribute('data-key') || '';
+    var line = (budgetLines || []).find(function(l){ return prfLineKey(l) === key; });
+    if (!line) return;
+    var amt = prfTrancheAmount(line, reqByLine);
     if (amt <= 0) return;
-    var bal = parseFloat(amtEl.getAttribute('data-balance')) || 0;
-    var cells = tr.querySelectorAll('td');
-    var desc = cells[1] ? cells[1].innerText.replace(/\s+/g,' ').trim() : '';
-    var bu = (document.getElementById('prfBizUnit') || {}).value || '';
     out.push({
-      budgetKey: tr.getAttribute('data-key'),
-      description: desc,
+      budgetKey: key,
+      project: line.project || '',
+      country: (line.country || line.countryCode || '').trim(),
+      description: line.costSummary || line.costItem || '',
+      costSummary: line.costSummary || '',
+      category: line.category || '',
+      type: line.type || '',
       amount: amt,
       qty: 1,
       um: 'Lot',
       unitPrice: amt,
-      businessUnit: bu,
-      balance: bal,
-      over: amt > bal + 0.001
+      budgeted: parseFloat(line.budgetedAmount) || 0,
+      actual: prfLineActual(line),
+      currency: line.currency || 'KES',
+      meta: line
     });
   });
   return out;
 }
-function prfRecalc() {
-  var lines = prfGatherLines();
-  var total = lines.reduce(function(s,l){ return s + l.amount; }, 0);
-  var cur = (document.getElementById('prfCurrency') || {}).value || 'KES';
-  var proj = (document.getElementById('prfProject') || {}).value || '';
-  var requestor = String((document.getElementById('prfRequestor') || {}).value || '').trim();
-  var over = lines.some(function(l){ return l.over; });
-  var meta = document.getElementById('prfLinesMeta');
-  if (meta) {
-    var nLines = document.querySelectorAll('#prfLinesBody tr[data-key]').length;
-    meta.textContent = nLines + ' lines · ' + lines.length + ' selected';
-  }
-  document.querySelectorAll('#prfLinesBody tr[data-key]').forEach(function(tr) {
-    var amtEl = tr.querySelector('.prf-line-amt');
-    var chk = tr.querySelector('.prf-line-chk');
-    var amt = parseFloat(amtEl && amtEl.value) || 0;
-    var bal = parseFloat(amtEl && amtEl.getAttribute('data-balance')) || 0;
-    tr.classList.toggle('is-over', !!(chk && chk.checked && amt > bal + 0.001));
+
+function prfUpdatePurpose() {
+  var projs = prfSelectedProjects();
+  var el = document.getElementById('prfPurpose');
+  if (!el) return;
+  if (!projs.length) { el.value = ''; return; }
+  el.value = 'Field Costs for ' + projs.join(', ');
+}
+
+function prfRecalcSummary() {
+  var lines = prfGatherSelectedLines();
+  var byCountry = {};
+  var total = 0;
+  lines.forEach(function(l) {
+    total += l.amount;
+    var c = l.country || '—';
+    if (!byCountry[c]) byCountry[c] = { n:0, amount:0, projects:{} };
+    byCountry[c].n++;
+    byCountry[c].amount += l.amount;
+    byCountry[c].projects[l.project] = 1;
   });
-  var checks = [
-    [!!proj, proj ? 'Project: ' + proj : 'Select a project'],
-    [lines.length > 0, lines.length ? lines.length + ' line(s) selected' : 'Select budget lines & amounts'],
-    [total > 0, total > 0 ? 'Amount: ' + cur + ' ' + total.toLocaleString() : 'Enter request amounts'],
-    [!over, over ? 'Some lines exceed remaining balance' : 'Within budget balances'],
-    [!!requestor, requestor ? 'Requestor: ' + requestor : 'Enter requestor name']
-  ];
-  var box = document.getElementById('prfSummary');
-  if (box) {
-    box.innerHTML =
-      '<div class="ecf-sum-total"><span>This PRF total</span><strong>'+_rqEsc(cur)+' '+total.toLocaleString()+'</strong></div>'
-      + '<div class="ecf-sum-rows"><div class="ecf-sum-row"><span>Lines</span><span>'+lines.length+'</span></div>'
-      + (over ? '<div class="ecf-sum-note" style="background:#FDE7E9;color:#A4262C">One or more amounts exceed remaining budget for that line.</div>' : '')
-      + '</div><ul class="ecf-checks">'+checks.map(function(c){
-          return '<li class="'+(c[0]?'ok':'todo')+'">'+_rqEsc(c[1])+'</li>';
-        }).join('')+'</ul>';
+  var countries = Object.keys(byCountry);
+  var sum = document.getElementById('prfSummary');
+  if (sum) {
+    function fmtN(n) {
+      try { return Number(n||0).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+      catch(e) { return String(Math.round(n||0)); }
+    }
+    var html = '<div class="ecf-sum-row"><span>Lines selected</span><strong>'+lines.length+'</strong></div>'
+      + '<div class="ecf-sum-row"><span>Countries</span><strong>'+countries.length+(countries.length>1?' → ZIP':'')+'</strong></div>'
+      + '<div class="ecf-sum-row"><span>Total this run (30%)</span><strong>'+fmtN(total)+'</strong></div>';
+    countries.forEach(function(c) {
+      var g = byCountry[c];
+      html += '<div class="ecf-sum-row text-muted"><span>'+_rqEsc(c)+' · '+Object.keys(g.projects).length+' proj</span><span>'+fmtN(g.amount)+'</span></div>';
+    });
+    sum.innerHTML = html;
   }
+  var meta = document.getElementById('prfCostMeta');
+  if (meta) meta.textContent = lines.length + ' selected';
   var btn = document.getElementById('prfSubmitBtn');
   if (btn) {
-    var ready = checks.every(function(c){ return c[0]; });
-    btn.disabled = !ready;
-    btn.style.opacity = ready ? '1' : '.55';
-  }
-}
-function prfSetField(id, val, force) {
-  if (val == null || val === '') return;
-  var el = document.getElementById(id);
-  if (!el) return;
-  if (!force && el.value) return;
-  val = String(val);
-  if (el.tagName === 'SELECT') {
-    var has = Array.prototype.some.call(el.options, function(o){ return o.value === val; });
-    if (!has) {
-      var opt = document.createElement('option');
-      opt.value = val;
-      opt.textContent = val;
-      el.appendChild(opt);
-    }
-    el.value = val;
-  } else {
-    el.value = val;
+    btn.disabled = !lines.length;
+    btn.style.opacity = lines.length ? '1' : '.55';
   }
 }
 
-/** Auto-fill PRF header from profile + project budget meta (same source as Expense Claim). */
-function prfAutoHeader(force) {
-  force = force !== false;
-  var d = document.getElementById('prfDate');
-  if (d && (!d.value || force)) d.value = new Date().toISOString().slice(0,10);
-  if (currentUser) {
-    prfSetField('prfRequestor', currentUser.name || '', force);
-    if (currentUser.country) {
-      var cc = String(currentUser.country);
-      // Prefer ISO-style code when present
-      var code = cc.length <= 3 ? cc.toUpperCase() : cc;
-      prfSetField('prfCountry', code, force);
-    }
-    if (currentUser.payeeNumber) prfSetField('prfPayee', currentUser.payeeNumber, force);
-  }
-  var proj = (document.getElementById('prfProject') || {}).value || '';
-  if (!proj) {
-    prfRecalc();
-    if (force) toast('Select a project to load dimension codes');
-    return;
-  }
-  var meta = (typeof getProjectBudgetMeta === 'function') ? getProjectBudgetMeta(proj) : null;
-  if (!meta) {
-    prfRecalc();
-    if (force) toast('No budget meta for this project — codes left blank');
-    return;
-  }
-  // Mirror Expense Claim field mapping
-  prfSetField('prfCompany', meta.burnEntity, force);
-  prfSetField('prfCountry', meta.countryCode || meta.country, force);
-  prfSetField('prfBizUnit', meta.businessUnit || meta.type, force);
-  prfSetField('prfCostCentre', meta.costCentre, force);
-  prfSetField('prfDimCode', meta.dimensionCode, force);
-  prfSetField('prfProfitCentre', meta.profitCentre, force);
-  prfSetField('prfProductCode', meta.productCode, force);
-  prfSetField('prfRdCode', meta.rdCode || meta.rdProjectCode, force);
-  prfSetField('prfCarbonCode', meta.carbonCode, force);
-  if (meta.currency) prfSetField('prfCurrency', meta.currency, force);
-  if (typeof prfOnCostCentreChange === 'function') prfOnCostCentreChange();
-  prfRecalc();
-  if (force) toast('Header filled from project budget');
+function prfPreviewBatch() {
+  var lines = prfGatherSelectedLines();
+  if (!lines.length) { toast('Select cost summary lines first'); return; }
+  prfUpdatePurpose();
+  prfRecalcSummary();
+  toast(lines.length + ' line(s) ready · ' + prfSelectedProjects().length + ' project(s)');
 }
-function prfSubmit() {
-  var lines = prfGatherLines();
-  if (!lines.length) { toast('Select at least one budget line with an amount'); return; }
-  if (lines.some(function(l){ return l.over; })) {
-    if (!confirm('Some amounts exceed remaining budget. Submit anyway?')) return;
+
+/** Resolve dimension fields from selected lines — "Various" if more than one distinct value. */
+function prfResolveDimensions(lines) {
+  function uniq(getter) {
+    var s = {};
+    lines.forEach(function(l) {
+      var m = l.meta || {};
+      var v = getter(m);
+      if (v) s[String(v).trim()] = 1;
+    });
+    var keys = Object.keys(s);
+    if (!keys.length) return '';
+    if (keys.length === 1) return keys[0];
+    return 'Various';
   }
-  var proj = (document.getElementById('prfProject') || {}).value || '';
-  var cur = (document.getElementById('prfCurrency') || {}).value || 'KES';
+  return {
+    company:      uniq(function(m){ return m.burnEntity || m.company; }),
+    country:      uniq(function(m){ return m.countryCode || m.country; }),
+    businessUnit: uniq(function(m){ return m.businessUnit || m.type; }),
+    costCentre:   uniq(function(m){ return m.costCentre; }),
+    dimensionCode:uniq(function(m){ return m.dimensionCode; }),
+    profitCentre: uniq(function(m){ return m.profitCentre; }),
+    productCode:  uniq(function(m){ return m.productCode; }),
+    rdCode:       uniq(function(m){ return m.rdCode || m.rdProjectCode; }),
+    carbonCode:   uniq(function(m){ return m.carbonCode; }),
+    currency:     uniq(function(m){ return m.currency; }) || 'KES'
+  };
+}
+
+function prfBuildRecord(projectNames, lines, dims, country) {
   var total = lines.reduce(function(s,l){ return s + l.amount; }, 0);
-  var ref = 'PRF-' + Date.now().toString(36).toUpperCase().slice(-7);
-  var rec = {
-    ref: ref, project: proj,
-    company: (document.getElementById('prfCompany') || {}).value || '',
-    country: (document.getElementById('prfCountry') || {}).value || '',
-    businessUnit: (document.getElementById('prfBizUnit') || {}).value || '',
-    costCentre: (document.getElementById('prfCostCentre') || {}).value || '',
-    dimensionCode: (document.getElementById('prfDimCode') || {}).value || '',
-    profitCentre: (document.getElementById('prfProfitCentre') || {}).value || '',
-    productCode: (document.getElementById('prfProductCode') || {}).value || '',
-    rdCode: (document.getElementById('prfRdCode') || {}).value || '',
-    carbonCode: (document.getElementById('prfCarbonCode') || {}).value || '',
-    requestor: (document.getElementById('prfRequestor') || {}).value || '',
-    date: (document.getElementById('prfDate') || {}).value || '',
-    modeOfPayment: (document.getElementById('prfMode') || {}).value || '',
+  var purpose = 'Field Costs for ' + projectNames.join(', ');
+  var ref = 'PRF-' + Date.now().toString(36).toUpperCase().slice(-6) + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+  return {
+    ref: ref,
+    project: projectNames.join(', '),
+    projects: projectNames.slice(),
+    country: country || dims.country || '',
+    company: dims.company || '',
+    businessUnit: dims.businessUnit || '',
+    costCentre: dims.costCentre || '',
+    dimensionCode: dims.dimensionCode || '',
+    profitCentre: dims.profitCentre || '',
+    productCode: dims.productCode || '',
+    rdCode: dims.rdCode || '',
+    carbonCode: dims.carbonCode || '',
+    requestor: (document.getElementById('prfRequestor') || {}).value || (currentUser && currentUser.name) || '',
+    date: (document.getElementById('prfDate') || {}).value || new Date().toISOString().slice(0,10),
+    modeOfPayment: (document.getElementById('prfMode') || {}).value || 'Bank Transfer',
     payeeNo: (document.getElementById('prfPayee') || {}).value || '',
     cashAdvance: (document.getElementById('prfAdvance') || {}).value || 'NO',
-    currency: cur,
+    currency: (document.getElementById('prfCurrency') || {}).value || dims.currency || 'KES',
     estPaymentDate: (document.getElementById('prfEstDate') || {}).value || '',
-    purpose: (document.getElementById('prfPurpose') || {}).value || '',
-    amount: total, vat: 0, status: 'Pending',
+    purpose: purpose,
+    amount: total,
+    vat: 0,
+    status: 'Submitted',
     lines: lines.map(function(l) {
-      return { budgetKey:l.budgetKey, description:l.description, qty:1, um:'Lot', unitPrice:l.amount, amount:l.amount };
+      return {
+        budgetKey: l.budgetKey,
+        description: l.description,
+        qty: 1,
+        um: 'Lot',
+        unitPrice: l.amount,
+        amount: l.amount,
+        businessUnit: dims.businessUnit || '',
+        project: l.project
+      };
     }),
     createdAt: new Date().toISOString(),
-    createdBy: (currentUser && currentUser.email) || ''
+    createdBy: (currentUser && (currentUser.email || currentUser.name)) || ''
   };
-  prfStore.unshift(rec);
-  persistPrfStore();
-  toast('PRF submitted · ' + ref);
-  prfOnProjectChange();
-  prfRenderList();
-  // Sync to Google Sheets when connected (same pattern as requests)
-  if (gsWebAppUrl && typeof backgroundPush === 'function') {
-    try { backgroundPush({ fast: true, skipActuals: true }); } catch(e) {}
-  }
-  if (gsWebAppUrl && typeof prfPushToSheets === 'function') {
-    prfPushToSheets().catch(function(err){ appendSyncLog('PRF push: ' + ((err && err.message) || err)); });
-  }
 }
-function prfResetForm() {
-  ['prfPurpose','prfPayee'].forEach(function(id) {
-    var el = document.getElementById(id); if (el) el.value = '';
+
+async function prfGenerateBatch() {
+  var lines = prfGatherSelectedLines();
+  if (!lines.length) { toast('Select at least one cost summary with remaining balance'); return; }
+  prfUpdatePurpose();
+
+  // Group by country
+  var byCountry = {};
+  lines.forEach(function(l) {
+    var c = l.country || 'Unknown';
+    if (!byCountry[c]) byCountry[c] = [];
+    byCountry[c].push(l);
   });
-  var adv = document.getElementById('prfAdvance'); if (adv) adv.value = 'NO';
-  document.querySelectorAll('#prfLinesBody .prf-line-chk').forEach(function(c){ c.checked = false; });
-  document.querySelectorAll('#prfLinesBody .prf-line-amt').forEach(function(a){ a.value = ''; });
-  prfRecalc();
+  var countries = Object.keys(byCountry);
+  var records = [];
+
+  countries.forEach(function(country) {
+    var cLines = byCountry[country];
+    // One PRF per country covering all selected projects in that country
+    var projSet = {};
+    cLines.forEach(function(l){ projSet[l.project] = 1; });
+    var projNames = Object.keys(projSet).sort();
+    var dims = prfResolveDimensions(cLines);
+    // Force country code from group
+    if (country && country !== 'Unknown') dims.country = country;
+    var rec = prfBuildRecord(projNames, cLines, dims, country);
+    records.push(rec);
+    prfStore.unshift(rec);
+  });
+
+  persistPrfStore();
+  prfRenderCostLines();
+  prfRenderList();
+  prfRecalcSummary();
+
+  if (gsWebAppUrl && typeof prfPushToSheets === 'function') {
+    prfPushToSheets().catch(function(){});
+  }
+
+  // Export PDFs — ZIP if multiple countries
+  try {
+    if (records.length > 1 && window.JSZip) {
+      await prfDownloadZip(records);
+      toast('Generated ' + records.length + ' PRFs (ZIP download)');
+    } else {
+      for (var i = 0; i < records.length; i++) {
+        prfBuildPdf(records[i], { autoSave: true });
+      }
+      toast('Generated ' + records.length + ' PRF(s)');
+    }
+  } catch (e) {
+    console.warn(e);
+    toast('PRFs saved — PDF export issue: ' + (e.message || e));
+  }
 }
+
+async function prfDownloadZip(records) {
+  if (!window.JSZip) {
+    records.forEach(function(r){ prfBuildPdf(r, { autoSave: true }); });
+    return;
+  }
+  var zip = new JSZip();
+  for (var i = 0; i < records.length; i++) {
+    var blob = prfBuildPdf(records[i], { autoSave: false, returnBlob: true });
+    if (blob && typeof blob.then === 'function') blob = await blob;
+    if (!blob) continue;
+    var fname = 'PRF_' + (records[i].country || 'x') + '_' + (records[i].ref || i) + '.pdf';
+    zip.file(fname, blob);
+  }
+  var content = await zip.generateAsync({ type: 'blob' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(content);
+  a.download = 'PRF_batch_' + new Date().toISOString().slice(0,10) + '.zip';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+
+function prfResetForm() {
+  document.querySelectorAll('#prfCountryList input.prf-country-chk').forEach(function(c){ c.checked = false; });
+  prfOnCountryChange();
+  var p = document.getElementById('prfPurpose');
+  if (p) p.value = '';
+  prfRecalcSummary();
+}
+
+function prfAutoHeader(force) {
+  if (currentUser) {
+    var r = document.getElementById('prfRequestor');
+    if (r && (force || !r.value)) r.value = currentUser.name || '';
+  }
+  var d = document.getElementById('prfDate');
+  if (d && (force || !d.value)) d.value = new Date().toISOString().slice(0,10);
+  prfUpdatePurpose();
+  toast('Header filled');
+}
+
 function prfRenderBalance() {
   var byProj = prfProjectTotals();
-  var list = Object.keys(byProj).map(function(k){ return byProj[k]; }).sort(function(a,b){ return b.pct - a.pct; });
+  var reqByLine = prfRequestedByLine();
+  // Enrich with actuals
+  var rows = Object.keys(byProj).map(function(p) {
+    var o = byProj[p];
+    var actual = 0;
+    (budgetLines || []).filter(function(l){ return l.project === p; }).forEach(function(l) {
+      actual += prfLineActual(l);
+    });
+    o.actual = actual;
+    o.gap = o.requested - actual; // positive = funds raised not yet spent; negative = spent beyond PRFs
+    return o;
+  }).sort(function(a,b){ return a.project.localeCompare(b.project); });
+
   var stats = document.getElementById('prfBalanceStats');
-  var totB = list.reduce(function(s,r){ return s+r.budgeted; },0);
-  var totR = list.reduce(function(s,r){ return s+r.requested; },0);
-  var overN = list.filter(function(r){ return r.balance < 0; }).length;
   if (stats) {
+    var tb = rows.reduce(function(s,r){ return s+r.budgeted; }, 0);
+    var tr = rows.reduce(function(s,r){ return s+r.requested; }, 0);
+    var ta = rows.reduce(function(s,r){ return s+r.actual; }, 0);
+    function fmtN(n){ try { return Number(n||0).toLocaleString(); } catch(e){ return String(n); } }
     stats.innerHTML =
-      '<div class="stat-card"><div class="stat-label">Projects</div><div class="stat-value">'+list.length+'</div></div>'
-      + '<div class="stat-card"><div class="stat-label">Total budgeted</div><div class="stat-value">'+totB.toLocaleString()+'</div></div>'
-      + '<div class="stat-card"><div class="stat-label">PRF requested</div><div class="stat-value">'+totR.toLocaleString()+'</div></div>'
-      + '<div class="stat-card"><div class="stat-label">Over-requested</div><div class="stat-value">'+overN+'</div></div>';
+      '<div class="stat"><div class="stat-label">Budgeted</div><div class="stat-value">'+fmtN(tb)+'</div></div>'
+      + '<div class="stat"><div class="stat-label">PRF requisitioned</div><div class="stat-value">'+fmtN(tr)+'</div></div>'
+      + '<div class="stat"><div class="stat-label">Actuals (paid)</div><div class="stat-value">'+fmtN(ta)+'</div></div>'
+      + '<div class="stat"><div class="stat-label">PRF − Actuals</div><div class="stat-value">'+(tr-ta>=0?'+':'')+fmtN(tr-ta)+'</div></div>';
   }
+
   var body = document.getElementById('prfBalanceBody');
   if (body) {
-    if (!list.length) body.innerHTML = '<tr><td colspan="5" class="ecf-empty">No budgets loaded.</td></tr>';
-    else body.innerHTML = list.map(function(r) {
-      var cls = r.balance < 0 ? 'badge-danger' : (r.pct >= 90 ? 'badge-amber' : 'badge-green');
-      return '<tr><td>'+_rqEsc(r.project)+'</td><td>'+r.budgeted.toLocaleString()+'</td><td>'+r.requested.toLocaleString()
-        +'</td><td><strong>'+r.balance.toLocaleString()+'</strong></td><td><span class="badge '+cls+'">'+r.pct.toFixed(0)+'%</span></td></tr>';
-    }).join('');
+    function fmtN(n){ try { return Number(n||0).toLocaleString(); } catch(e){ return String(n); } }
+    body.innerHTML = rows.map(function(r) {
+      var pct = r.budgeted > 0 ? Math.round(r.requested / r.budgeted * 100) : 0;
+      return '<tr><td>'+_rqEsc(r.project)+'</td>'
+        + '<td style="text-align:right">'+fmtN(r.budgeted)+'</td>'
+        + '<td style="text-align:right">'+fmtN(r.requested)+'</td>'
+        + '<td style="text-align:right">'+fmtN(r.balance)+'</td>'
+        + '<td style="text-align:right">'+pct+'%</td></tr>';
+    }).join('') || '<tr><td colspan="5" class="ecf-empty">No budget data</td></tr>';
   }
-  var spendByProj = {};
-  (requestsStore || []).forEach(function(r) {
-    if (!r || (r.status !== 'Paid' && r.status !== 'Approved')) return;
-    var p = r.project || 'Unknown';
-    spendByProj[p] = (spendByProj[p] || 0) + (parseFloat(r.amount) || 0);
-  });
+
+  // Cross-project: actuals vs PRF requisitioned
   var insights = document.getElementById('prfInsightsBody');
-  if (!insights) return;
-  var cards = [];
-  list.forEach(function(r) {
-    var spend = spendByProj[r.project] || 0;
-    if (r.requested > r.budgeted) {
-      cards.push({ cls:'danger', title:r.project, text:'PRF requested ('+r.requested.toLocaleString()+') exceeds budgeted ('+r.budgeted.toLocaleString()+').' });
-    } else if (spend > r.budgeted) {
-      cards.push({ cls:'warn', title:r.project, text:'Paid/approved spend ('+spend.toLocaleString()+') exceeds budgeted ('+r.budgeted.toLocaleString()+'). Possible use of other project funds.' });
-    } else if (r.pct >= 85) {
-      cards.push({ cls:'warn', title:r.project, text:r.pct.toFixed(0)+'% of budget committed via PRFs. Remaining '+r.balance.toLocaleString()+'.' });
+  if (insights) {
+    function fmtN(n){ try { return Number(n||0).toLocaleString(); } catch(e){ return String(n); } }
+    var over = rows.filter(function(r){ return r.actual > r.requested + 1; });
+    var under = rows.filter(function(r){ return r.requested > r.actual + 1; });
+    var html = '<table style="width:100%;font-size:12.5px"><thead><tr>'
+      + '<th>Project</th><th style="text-align:right">PRF raised</th><th style="text-align:right">Actuals</th><th style="text-align:right">Gap</th><th>Flag</th>'
+      + '</tr></thead><tbody>';
+    rows.forEach(function(r) {
+      var gap = r.requested - r.actual;
+      var flag = '';
+      if (r.actual > r.requested + 1) flag = '<span style="color:var(--danger,#b91c1c);font-weight:600">Consuming beyond PRF</span>';
+      else if (r.requested > r.actual + 1 && r.requested > 0) flag = '<span class="text-muted">Funds on hand</span>';
+      else flag = '—';
+      html += '<tr><td>'+_rqEsc(r.project)+'</td>'
+        + '<td style="text-align:right">'+fmtN(r.requested)+'</td>'
+        + '<td style="text-align:right">'+fmtN(r.actual)+'</td>'
+        + '<td style="text-align:right">'+(gap>=0?'+':'')+fmtN(gap)+'</td>'
+        + '<td>'+flag+'</td></tr>';
+    });
+    html += '</tbody></table>';
+    if (over.length) {
+      html += '<p style="margin:12px 0 0;font-size:12.5px;color:var(--danger,#b91c1c)"><strong>'+over.length
+        + ' project(s)</strong> have actuals above PRF funds raised — likely consuming other projects\' requisitions: '
+        + over.map(function(r){ return r.project; }).join(', ') + '.</p>';
+    } else {
+      html += '<p class="text-muted text-sm" style="margin:12px 0 0">No project is spending above its PRF requisition total.</p>';
     }
-  });
-  Object.keys(spendByProj).forEach(function(p) {
-    if (!byProj[p] && spendByProj[p] > 0) {
-      cards.push({ cls:'danger', title:p, text:'Has spend of '+spendByProj[p].toLocaleString()+' but no budget lines — funds may be drawn from other projects.' });
+    if (under.length) {
+      html += '<p class="text-muted text-sm" style="margin:8px 0 0">'+under.length+' project(s) still hold unspent PRF funds.</p>';
     }
-  });
-  if (!cards.length) {
-    insights.innerHTML = '<p class="text-muted text-sm">No overspends or high utilisation detected. PRF commitments are within project budgets.</p>';
-  } else {
-    insights.innerHTML = cards.map(function(c) {
-      return '<div class="prf-insight '+c.cls+'"><strong>'+_rqEsc(c.title)+'</strong><p>'+_rqEsc(c.text)+'</p></div>';
-    }).join('');
+    insights.innerHTML = html;
   }
 }
+
 function prfRenderList() {
   var body = document.getElementById('prfListBody');
   var meta = document.getElementById('prfListMeta');
@@ -13221,48 +13510,28 @@ function prfRenderList() {
     body.innerHTML = '<tr><td colspan="7" class="ecf-empty">No PRFs yet.</td></tr>';
     return;
   }
+  function fmtN(n){ try { return Number(n||0).toLocaleString(); } catch(e){ return String(n); } }
   body.innerHTML = prfStore.map(function(p) {
-    var badge = p.status === 'Pending' ? 'badge-amber' : (p.status === 'Approved' ? 'badge-green' : 'badge-gray');
-    return '<tr><td>'+_rqEsc(p.ref)+'</td><td>'+_rqEsc(p.project)+'</td><td>'+_rqEsc(p.requestor)+'</td>'
-      + '<td>'+_rqEsc(p.currency||'')+' '+(parseFloat(p.amount)||0).toLocaleString()+'</td>'
-      + '<td>'+_rqEsc(p.date||'')+'</td><td><span class="badge '+badge+'">'+_rqEsc(p.status||'')+'</span></td>'
+    return '<tr><td>'+_rqEsc(p.ref||'')+'</td><td>'+_rqEsc(p.project||'')+'</td>'
+      + '<td>'+_rqEsc(p.requestor||'')+'</td>'
+      + '<td style="text-align:right">'+_rqEsc(p.currency||'')+' '+fmtN(p.amount)+'</td>'
+      + '<td>'+_rqEsc(p.date||'')+'</td><td>'+_rqEsc(p.status||'')+'</td>'
       + '<td><button class="btn btn-ghost btn-sm" onclick="prfExportOne(\''+_rqEsc(p.ref)+'\')">PDF</button></td></tr>';
   }).join('');
 }
+
 function prfExportOne(ref) {
   var p = (prfStore || []).find(function(x){ return x.ref === ref; });
   if (!p) { toast('PRF not found'); return; }
-  prfBuildPdf(p);
+  prfBuildPdf(p, { autoSave: true });
 }
+
 function prfExportPDF() {
-  var lines = prfGatherLines();
-  if (!lines.length) { toast('Select lines and amounts first'); return; }
-  var total = lines.reduce(function(s,l){ return s + l.amount; }, 0);
-  var draft = {
-    ref: 'DRAFT',
-    project: (document.getElementById('prfProject') || {}).value || '',
-    company: (document.getElementById('prfCompany') || {}).value || '',
-    country: (document.getElementById('prfCountry') || {}).value || '',
-    businessUnit: (document.getElementById('prfBizUnit') || {}).value || '',
-    costCentre: (document.getElementById('prfCostCentre') || {}).value || '',
-    dimensionCode: (document.getElementById('prfDimCode') || {}).value || '',
-    profitCentre: (document.getElementById('prfProfitCentre') || {}).value || '',
-    productCode: (document.getElementById('prfProductCode') || {}).value || '',
-    rdCode: (document.getElementById('prfRdCode') || {}).value || '',
-    carbonCode: (document.getElementById('prfCarbonCode') || {}).value || '',
-    requestor: (document.getElementById('prfRequestor') || {}).value || '',
-    date: (document.getElementById('prfDate') || {}).value || '',
-    modeOfPayment: (document.getElementById('prfMode') || {}).value || '',
-    payeeNo: (document.getElementById('prfPayee') || {}).value || '',
-    cashAdvance: (document.getElementById('prfAdvance') || {}).value || 'NO',
-    currency: (document.getElementById('prfCurrency') || {}).value || 'KES',
-    estPaymentDate: (document.getElementById('prfEstDate') || {}).value || '',
-    purpose: (document.getElementById('prfPurpose') || {}).value || '',
-    amount: total, vat: 0,
-    lines: lines.map(function(l){ return { description:l.description, qty:l.qty||1, um:l.um||'Lot', unitPrice:l.unitPrice!=null?l.unitPrice:l.amount, amount:l.amount, businessUnit:(document.getElementById('prfBizUnit')||{}).value||'' }; })
-  };
-  prfBuildPdf(draft);
+  // Legacy single-form export — generate from current selection
+  prfGenerateBatch();
 }
+
+
 function prfBuildPdf(p) {
   if (!window.jspdf || !window.jspdf.jsPDF) { toast('PDF library not loaded'); return; }
   var JsPDF = window.jspdf.jsPDF;
@@ -13625,8 +13894,16 @@ function prfBuildPdf(p) {
   doc.text('Approved By: CFO', L + 55, y);
   doc.text('Release Date: Jan 8, 2025', R, y, { align: 'right' });
 
-  doc.save('PRF_' + (p.ref || 'draft') + '_' + String(p.date || '').replace(/\//g, '-') + '.pdf');
-  toast('PDF downloaded — Burn PRF layout');
+    var fname = 'PRF_' + (p.ref || 'draft') + '_' + String(p.date || '').replace(/\//g, '-') + '.pdf';
+  var opts = arguments[1] || {};
+  if (opts.returnBlob) {
+    try { return doc.output('blob'); } catch (e) { return null; }
+  }
+  if (opts.autoSave !== false) {
+    doc.save(fname);
+    if (!opts.silent) toast('PDF downloaded — Burn PRF layout');
+  }
+  return null;
 }
 
 async function prfPushToSheets() {
