@@ -2327,13 +2327,15 @@
   #view-prf .ecf-aside .ecf-panel {
     position: sticky; top: 12px;
     border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 8px 24px rgba(15,23,42,.06);
+    border: 1px solid var(--border, #e2e8f0);
+    box-shadow: 0 4px 16px rgba(15,23,42,.05);
+    background: var(--surface, #fff);
   }
   #view-prf .ecf-aside .card-header {
-    background: #0f172a; color: #fff; border-bottom: none;
+    background: linear-gradient(180deg, #fafbfc 0%, #f6f7f9 100%);
+    border-bottom: 1px solid var(--border, #e5e7eb);
   }
-  #view-prf .ecf-aside .card-title { color: #fff; }
+  #view-prf .ecf-aside .card-title { color: var(--text, #111827); }
   #view-prf .ecf-sum { display: flex; flex-direction: column; gap: 8px; }
   #view-prf .ecf-sum-row {
     display: flex; justify-content: space-between; align-items: baseline;
@@ -2938,6 +2940,24 @@
   </div>
 
   
+
+  <div id="prfPreviewModal" class="modal-overlay" onclick="closeModalOutside(event,'prfPreviewModal')">
+    <div class="modal modal-wide" style="width:min(920px,96vw)">
+      <div class="modal-header">
+        <strong>PRF preview</strong>
+        <button class="close-btn" onclick="closeModal('prfPreviewModal')">×</button>
+      </div>
+      <div class="modal-body" style="background:var(--surface-2,#f8fafc);max-height:70vh;overflow:auto">
+        <div id="prfPreviewBody"></div>
+      </div>
+      <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="closeModal('prfPreviewModal')">Close</button>
+        <button class="btn btn-secondary" onclick="prfPreviewExportPdfs()">Download draft PDF(s)</button>
+        <button class="btn btn-primary" onclick="closeModal('prfPreviewModal');prfGenerateBatch()">Generate PRFs</button>
+      </div>
+    </div>
+  </div>
+
   <!-- -- PAYMENT REQUEST FORM (PRF) -- -->
   <div id="view-prf" class="view">
     <div class="page-header">
@@ -3053,7 +3073,7 @@
                   <button type="button" class="btn btn-secondary" id="prfPreviewBtn" onclick="prfPreviewBatch()">Preview selection</button>
                   <button type="button" class="btn btn-ghost" onclick="prfResetForm()">Clear</button>
                 </div>
-                <p class="text-muted text-sm" style="margin:10px 0 0"><strong>1st run:</strong> 50% of each cost-item budget.<br><strong>2nd run:</strong> <em>Budget − Actuals</em> (balances the books — e.g. budget 50k / first 25k → if actuals 30k then request 20k; if actuals 20k then 30k; if 25k then 25k).</p>
+                <p class="text-muted text-sm" style="margin:10px 0 0"><strong>1st run:</strong> 50% of each cost-item budget.<br><strong>2nd run:</strong> <em>Budget − Actuals</em> after the first PRF is <strong>Marked paid</strong> (funds received). Over-budget lines are excluded.</p>
               </div>
             </div>
           </aside>
@@ -12981,9 +13001,12 @@ function prfLineKey(l) {
   return [l.project||'', l.type||'', l.category||'', l.costSummary||'', l.costItem||''].join('|');
 }
 function prfRequestedByLine() {
+  // Only PAID PRFs affect 50% / final-tranche math (funds actually received)
   var map = {};
   (prfStore || []).forEach(function(p) {
-    if (!p || p.status === 'Rejected' || p.status === 'Draft') return;
+    if (!p) return;
+    var st = String(p.status || '').trim().toLowerCase();
+    if (st !== 'paid') return;
     (p.lines || []).forEach(function(ln) {
       var k = ln.budgetKey || '';
       if (!k) return;
@@ -13077,14 +13100,13 @@ function prfSwitchTab(which) {
 }
 
 function prfBudgetCountries() {
+  // Only Budgets sheet column "Country" (mapped to l.country) — never Country Code
   var set = {};
   (budgetLines || []).forEach(function(l) {
-    var c = (l.country || l.countryCode || '').trim();
+    var c = String(l.country || '').trim();
     if (c) set[c] = 1;
   });
-  // Also from PRF_MAP
-  (PRF_MAP.countries || []).forEach(function(c){ if (c) set[c] = 1; });
-  return Object.keys(set).sort();
+  return Object.keys(set).sort(function(a,b){ return a.localeCompare(b); });
 }
 
 function prfSelectedCountries() {
@@ -13139,7 +13161,7 @@ function prfProjectsForCountries(countries) {
   (budgetLines || []).forEach(function(l) {
     if (!l.project) return;
     if (countries.length) {
-      var c = (l.country || l.countryCode || '').trim();
+      var c = String(l.country || '').trim();
       if (countries.indexOf(c) < 0) return;
     }
     set[l.project] = 1;
@@ -13237,19 +13259,28 @@ function prfLineRemaining(l, reqByLine) {
  * 1st run: always 50% of line budget when no prior PRF on the line.
  * 2nd run: Budget − Actuals (balances the books against real spend).
  */
+function prfIsOverBudget(l) {
+  var bud = parseFloat(l.budgetedAmount) || 0;
+  var act = prfLineActual(l);
+  return bud > 0 && act > bud + 0.009;
+}
+
 function prfTrancheAmount(l, reqByLine) {
   var bud = parseFloat(l.budgetedAmount) || 0;
   var act = prfLineActual(l);
   var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
   if (bud <= 0) return 0;
+  // Never raise a PRF on a line that is already over budget
+  if (act > bud + 0.009) return 0;
   if (prfd <= 0.009) {
     return Math.round(bud * PRF_FIRST_TRANCHE_PCT * 100) / 100;
   }
-  // Final run — Budget − Actuals
+  // Final run — Budget − Actuals (only after prior tranche is Paid)
   return Math.round(Math.max(0, bud - act) * 100) / 100;
 }
 
 function prfTrancheLabel(l, reqByLine) {
+  if (prfIsOverBudget(l)) return 'Over budget';
   var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
   if (prfd <= 0.009) return '50%';
   return 'Bud−Act';
@@ -13270,7 +13301,7 @@ function prfRenderCostLines() {
   var lines = (budgetLines || []).filter(function(l) {
     if (!l.project || projects.indexOf(l.project) < 0) return false;
     if (countries.length) {
-      var c = (l.country || l.countryCode || '').trim();
+      var c = String(l.country || '').trim();
       if (c && countries.indexOf(c) < 0) return false;
     }
     return true;
@@ -13308,7 +13339,8 @@ function prfRenderCostLines() {
     var prfd = reqByLine[key] || 0;
     var rem = prfLineRemaining(l, reqByLine);
     var tranche = prfTrancheAmount(l, reqByLine);
-    var disabled = tranche <= 0.009 ? ' disabled' : '';
+    var over = prfIsOverBudget(l);
+    var disabled = (over || tranche <= 0.009) ? ' disabled' : '';
     var checked = prev[key] && !disabled ? ' checked' : '';
     var runLab = prfTrancheLabel(l, reqByLine);
     var itemLabel = l.costItem || l.costSummary || '';
@@ -13342,12 +13374,13 @@ function prfGatherSelectedLines() {
     var key = tr.getAttribute('data-key') || '';
     var line = (budgetLines || []).find(function(l){ return prfLineKey(l) === key; });
     if (!line) return;
+    if (prfIsOverBudget(line)) return;
     var amt = prfTrancheAmount(line, reqByLine);
     if (amt <= 0) return;
     out.push({
       budgetKey: key,
       project: line.project || '',
-      country: (line.country || line.countryCode || '').trim(),
+      country: String(line.country || '').trim(),
       description: line.costItem || line.costSummary || '',
       costSummary: line.costSummary || '',
       costItem: line.costItem || '',
@@ -13411,12 +13444,68 @@ function prfRecalcSummary() {
   }
 }
 
-function prfPreviewBatch() {
+function prfBuildDraftRecords() {
   var lines = prfGatherSelectedLines();
-  if (!lines.length) { toast('Select cost summary lines first'); return; }
+  if (!lines.length) return [];
+  var byCountry = {};
+  lines.forEach(function(l) {
+    var c = l.country || 'Unknown';
+    if (!byCountry[c]) byCountry[c] = [];
+    byCountry[c].push(l);
+  });
+  var records = [];
+  Object.keys(byCountry).forEach(function(country) {
+    var cLines = byCountry[country];
+    var projSet = {};
+    cLines.forEach(function(l){ projSet[l.project] = 1; });
+    var projNames = Object.keys(projSet).sort();
+    var dims = prfResolveDimensions(cLines);
+    if (country && country !== 'Unknown') dims.country = country;
+    var rec = prfBuildRecord(projNames, cLines, dims, country);
+    rec.status = 'Draft';
+    records.push(rec);
+  });
+  return records;
+}
+
+function prfPreviewBatch() {
+  var records = prfBuildDraftRecords();
+  if (!records.length) { toast('Select cost items with a positive this-run amount'); return; }
   prfUpdatePurpose();
   prfRecalcSummary();
-  toast(lines.length + ' line(s) ready · ' + prfSelectedProjects().length + ' project(s)');
+  window._prfPreviewRecords = records;
+  var body = document.getElementById('prfPreviewBody');
+  if (!body) { toast('Preview UI missing'); return; }
+  function fmtN(n) {
+    try { return Number(n||0).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+    catch(e) { return String(n); }
+  }
+  var html = records.map(function(p, idx) {
+    var lines = (p.lines || []).map(function(ln, i) {
+      return '<tr><td>'+(i+1)+'</td><td>'+_rqEsc(ln.description||'')+'</td>'
+        + '<td style="text-align:right">'+fmtN(ln.amount)+'</td></tr>';
+    }).join('');
+    return '<div class="card" style="margin-bottom:12px">'
+      + '<div class="card-header"><div class="card-title">'+_rqEsc(p.country||'')+' · '+_rqEsc(p.project||'')+'</div>'
+      + '<span class="ecf-meta">'+_rqEsc(p.currency||'')+' '+fmtN(p.amount)+'</span></div>'
+      + '<div class="card-body" style="padding:12px 14px">'
+      + '<div class="text-sm" style="margin-bottom:8px"><strong>Purpose:</strong> '+_rqEsc(p.purpose||'')+'</div>'
+      + '<div class="text-sm text-muted" style="margin-bottom:8px">Company: '+_rqEsc(p.company||'—')
+      + ' · Dim: '+_rqEsc(p.dimensionCode||'—')
+      + ' · Cost centre: '+_rqEsc(p.costCentre||'—')+'</div>'
+      + '<table style="width:100%;font-size:12.5px"><thead><tr><th>#</th><th>Cost item</th><th style="text-align:right">Amount</th></tr></thead>'
+      + '<tbody>'+lines+'</tbody></table>'
+      + '</div></div>';
+  }).join('');
+  body.innerHTML = html || '<p class="text-muted">Nothing to preview.</p>';
+  openModal('prfPreviewModal');
+}
+
+function prfPreviewExportPdfs() {
+  var records = window._prfPreviewRecords || [];
+  if (!records.length) { toast('Nothing to export'); return; }
+  records.forEach(function(r){ prfBuildPdf(r, { autoSave: true, silent: true }); });
+  toast('Draft PDF(s) downloaded');
 }
 
 /** Resolve dimension fields from selected lines — "Various" if more than one distinct value. */
@@ -13475,6 +13564,9 @@ function prfBuildRecord(projectNames, lines, dims, country) {
     amount: total,
     vat: 0,
     status: 'Submitted',
+    sigDataUrl: null,
+    sigLabel: null,
+    sigTime: null,
     lines: lines.map(function(l) {
       return {
         budgetKey: l.budgetKey,
@@ -13490,6 +13582,20 @@ function prfBuildRecord(projectNames, lines, dims, country) {
     createdAt: new Date().toISOString(),
     createdBy: (currentUser && (currentUser.email || currentUser.name)) || ''
   };
+}
+
+function prfAttachSignature(rec) {
+  if (!rec) return rec;
+  var sig = null;
+  try {
+    if (typeof savedSigs !== 'undefined' && savedSigs && savedSigs[0] && savedSigs[0].dataUrl) sig = savedSigs[0];
+  } catch (e) {}
+  if (!sig) return rec;
+  rec.sigDataUrl = sig.dataUrl;
+  rec.sigLabel = sig.label || (currentUser && currentUser.name) || 'Signed';
+  rec.sigTime = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+    + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  return rec;
 }
 
 async function prfGenerateBatch() {
@@ -13517,9 +13623,14 @@ async function prfGenerateBatch() {
     // Force country code from group
     if (country && country !== 'Unknown') dims.country = country;
     var rec = prfBuildRecord(projNames, cLines, dims, country);
+    rec = prfAttachSignature(rec);
     records.push(rec);
     prfStore.unshift(rec);
   });
+
+  if (records.length && !(savedSigs && savedSigs[0] && savedSigs[0].dataUrl)) {
+    toast('Tip: save My Signature so PRFs include a requestor sign-off');
+  }
 
   persistPrfStore();
   prfRenderCostLines();
@@ -13671,17 +13782,48 @@ function prfRenderList() {
   if (meta) meta.textContent = (prfStore || []).length + ' PRF(s)';
   if (!body) return;
   if (!prfStore.length) {
-    body.innerHTML = '<tr><td colspan="7" class="ecf-empty">No PRFs yet.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="ecf-empty">No PRFs yet. Generate a PRF, then Mark paid when funds arrive — only Paid PRFs drive the next tranche.</td></tr>';
     return;
   }
   function fmtN(n){ try { return Number(n||0).toLocaleString(); } catch(e){ return String(n); } }
   body.innerHTML = prfStore.map(function(p) {
+    var st = String(p.status || 'Submitted');
+    var paid = st.toLowerCase() === 'paid';
+    var actions = '<button class="btn btn-ghost btn-sm" onclick="prfExportOne(\''+_rqEsc(p.ref)+'\')">PDF</button>';
+    if (!paid) {
+      actions += ' <button class="btn btn-primary btn-sm" onclick="prfMarkPaid(\''+_rqEsc(p.ref)+'\')">Mark paid</button>';
+    }
+    var stBadge = paid
+      ? '<span class="badge badge-teal">Paid</span>'
+      : '<span class="badge badge-gold">'+_rqEsc(st)+'</span>';
     return '<tr><td>'+_rqEsc(p.ref||'')+'</td><td>'+_rqEsc(p.project||'')+'</td>'
       + '<td>'+_rqEsc(p.requestor||'')+'</td>'
       + '<td style="text-align:right">'+_rqEsc(p.currency||'')+' '+fmtN(p.amount)+'</td>'
-      + '<td>'+_rqEsc(p.date||'')+'</td><td>'+_rqEsc(p.status||'')+'</td>'
-      + '<td><button class="btn btn-ghost btn-sm" onclick="prfExportOne(\''+_rqEsc(p.ref)+'\')">PDF</button></td></tr>';
+      + '<td>'+_rqEsc(p.date||'')+'</td><td>'+stBadge+'</td>'
+      + '<td style="white-space:nowrap">'+actions+'</td></tr>';
   }).join('');
+}
+
+/** Funds received → mark Paid. Only then does the line count toward 50% / final tranche. */
+function prfMarkPaid(ref) {
+  var p = (prfStore || []).find(function(x){ return x.ref === ref; });
+  if (!p) { toast('PRF not found'); return; }
+  if (String(p.status || '').toLowerCase() === 'paid') { toast('Already paid'); return; }
+  if (!p.sigDataUrl) prfAttachSignature(p);
+  if (!p.sigDataUrl && !(savedSigs && savedSigs[0] && savedSigs[0].dataUrl)) {
+    if (!confirm('No signature on file. Mark as paid without signature?')) return;
+  }
+  p.status = 'Paid';
+  p.paidAt = new Date().toISOString();
+  p.paidBy = (currentUser && (currentUser.name || currentUser.email)) || '';
+  persistPrfStore();
+  prfRenderList();
+  if (typeof prfRenderCostLines === 'function') prfRenderCostLines();
+  if (typeof prfRenderBalance === 'function') prfRenderBalance();
+  if (gsWebAppUrl && typeof prfPushToSheets === 'function') {
+    prfPushToSheets().catch(function(){});
+  }
+  toast('PRF marked Paid — next tranche uses updated balances');
 }
 
 function prfExportOne(ref) {
@@ -14043,12 +14185,23 @@ function prfBuildPdf(p) {
     rect(sx, y, sw, sigH);
     fn(6.5); doc.setTextColor(mute);
     doc.text(sigLabels[si], sx + 1.5, y + 3.8);
-    if (sigNames[si]) {
-      fb(9); doc.setTextColor(ink);
-      doc.text(String(sigNames[si]), sx + 1.5, y + 9);
+    if (si === 0 && p.sigDataUrl) {
+      try {
+        var fmt = String(p.sigDataUrl).indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
+        doc.addImage(p.sigDataUrl, fmt, sx + 4, y + 5.5, Math.min(sw - 8, 36), 10);
+      } catch (eSig) {}
+      if (sigNames[si]) {
+        fn(7); doc.setTextColor(ink);
+        doc.text(String(sigNames[si]), sx + 1.5, y + sigH - 2.5);
+      }
+    } else {
+      if (sigNames[si]) {
+        fb(9); doc.setTextColor(ink);
+        doc.text(String(sigNames[si]), sx + 1.5, y + 9);
+      }
+      stroke(160, 0.25);
+      doc.line(sx + 4, y + sigH - 4, sx + sw - 4, y + sigH - 4);
     }
-    stroke(160, 0.25);
-    doc.line(sx + 4, y + sigH - 4, sx + sw - 4, y + sigH - 4);
   }
   y += sigH + 4;
 
