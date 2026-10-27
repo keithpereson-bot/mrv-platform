@@ -14112,112 +14112,117 @@ function prfBuildPdf(p) {
     y += rh;
   });
 
-  // Notes (left) + totals (right) — match official VAT row
-  var totalsW = 72;
-  var noteW = usable - totalsW - 4;
-  var noteY = y + 1.5;
-  fi(6); doc.setTextColor(mute);
-  doc.text(textClip('The PRF limit is within monthly approved consolidated PRF', noteW), L, noteY + 2);
-  doc.text(textClip('If the total amount is above the authorization limit of 1st approver, then 2nd approval from as per approval matrix shared earlier!', noteW), L, noteY + 7.5);
+  // Totals (right) + approval note (left) — no "PRF limit" line
+  var totalsW = 78;
+  var noteW = usable - totalsW - 5;
+  var tx0 = L + noteW + 5;
+  var ty = y + 1;
+  var tH = 6.0;
 
-  var tx0 = L + noteW + 4;
-  var ty = y;
-  var tH = 5.6;
-
-  // SUB-TOTAL
+  // SUB-TOTAL row: label | amount spanning
   fillRGB(grayFill[0], grayFill[1], grayFill[2]);
-  doc.rect(tx0, ty, 30, tH, 'F');
-  rectS(tx0, ty, 30, tH);
-  fb(7); doc.setTextColor(ink);
-  doc.text('SUB-TOTAL', tx0 + 1.5, ty + 3.8);
-  rectS(tx0 + 30, ty, totalsW - 30, tH);
-  fn(8); doc.text(money(subTotal || p.amount), tx0 + totalsW - 1.5, ty + 3.8, { align: 'right' });
+  doc.rect(tx0, ty, 32, tH, 'F');
+  rectS(tx0, ty, 32, tH);
+  fb(7.5); doc.setTextColor(ink);
+  doc.text('SUB-TOTAL', tx0 + 16, ty + 4.1, { align: 'center' });
+  rectS(tx0 + 32, ty, totalsW - 32, tH);
+  fn(8.5);
+  doc.text(money(subTotal || p.amount), tx0 + totalsW - 2, ty + 4.1, { align: 'right' });
   ty += tH;
 
-  // VAT Appl. | No | 16% | VAT | blank  (official structure)
+  // VAT row matching official: [VAT Appl.][No][16%][VAT][amount]
+  // Proportional segments that fill totalsW exactly
   var vatAppl = p.vatAppl || 'No';
-  var vatPct = (p.vatPct != null && p.vatPct !== '') ? String(p.vatPct) : '16%';
+  var vatPct = (p.vatPct != null && String(p.vatPct) !== '') ? String(p.vatPct).replace(/%/,'') + '%' : '16%';
   var vatAmt = Number(p.vat) || 0;
-  var seg = [22, 12, 12, 14];
+  var segs = [
+    { w: 22, label: 'VAT Appl.', fill: true, bold: true },
+    { w: 12, label: vatAppl, fill: false, red: true },
+    { w: 12, label: vatPct, fill: false },
+    { w: 14, label: 'VAT', fill: true, bold: true },
+    { w: totalsW - 22 - 12 - 12 - 14, label: vatAmt ? money(vatAmt) : '-', fill: false, right: true }
+  ];
   var segX = tx0;
-  // VAT Appl.
-  fillRGB(grayFill[0], grayFill[1], grayFill[2]);
-  doc.rect(segX, ty, seg[0], tH, 'F');
-  rectS(segX, ty, seg[0], tH);
-  fb(6.5); doc.text('VAT Appl.', segX + 1, ty + 3.8);
-  segX += seg[0];
-  // Yes/No
-  rectS(segX, ty, seg[1], tH);
-  fn(7); doc.setTextColor(200, 40, 40);
-  doc.text(vatAppl, segX + seg[1] / 2, ty + 3.8, { align: 'center' });
-  doc.setTextColor(ink);
-  segX += seg[1];
-  // 16%
-  rectS(segX, ty, seg[2], tH);
-  fn(7); doc.text(vatPct, segX + seg[2] / 2, ty + 3.8, { align: 'center' });
-  segX += seg[2];
-  // VAT label
-  fillRGB(grayFill[0], grayFill[1], grayFill[2]);
-  doc.rect(segX, ty, seg[3], tH, 'F');
-  rectS(segX, ty, seg[3], tH);
-  fb(7); doc.text('VAT', segX + seg[3] / 2, ty + 3.8, { align: 'center' });
-  segX += seg[3];
-  // VAT amount
-  rectS(segX, ty, tx0 + totalsW - segX, tH);
-  fn(7.5);
-  doc.text(vatAmt ? money(vatAmt) : '-', tx0 + totalsW - 1.5, ty + 3.8, { align: 'right' });
+  segs.forEach(function(s) {
+    if (s.fill) {
+      fillRGB(grayFill[0], grayFill[1], grayFill[2]);
+      doc.rect(segX, ty, s.w, tH, 'F');
+    }
+    rectS(segX, ty, s.w, tH);
+    if (s.bold) { fb(6.5); } else { fn(7); }
+    if (s.red) doc.setTextColor(180, 30, 30);
+    else doc.setTextColor(ink);
+    var ax = s.right ? segX + s.w - 1.5 : segX + s.w / 2;
+    var al = s.right ? 'right' : 'center';
+    doc.text(String(s.label), ax, ty + 4.1, { align: al });
+    segX += s.w;
+  });
   ty += tH;
 
   // TOTAL
   fillRGB(200, 200, 200);
-  doc.rect(tx0, ty, 30, tH, 'F');
-  rectS(tx0, ty, 30, tH);
+  doc.rect(tx0, ty, 32, tH, 'F');
+  rectS(tx0, ty, 32, tH);
   fb(8); doc.setTextColor(ink);
-  doc.text('TOTAL', tx0 + 1.5, ty + 3.8);
+  doc.text('TOTAL', tx0 + 16, ty + 4.1, { align: 'center' });
   fillRGB(200, 200, 200);
-  doc.rect(tx0 + 30, ty, totalsW - 30, tH, 'F');
-  rectS(tx0 + 30, ty, totalsW - 30, tH);
-  fb(8);
+  doc.rect(tx0 + 32, ty, totalsW - 32, tH, 'F');
+  rectS(tx0 + 32, ty, totalsW - 32, tH);
+  fb(8.5);
   var grand = (subTotal || Number(p.amount) || 0) + vatAmt;
-  doc.text(money(grand), tx0 + totalsW - 1.5, ty + 3.8, { align: 'right' });
-  ty += tH + 1.2;
+  doc.text(money(grand), tx0 + totalsW - 2, ty + 4.1, { align: 'right' });
+  ty += tH + 1.5;
   fi(5.5); doc.setTextColor(mute);
   doc.text('Specify if USD!', tx0 + totalsW, ty, { align: 'right' });
 
-  y = Math.max(y + 22, ty + 4);
+  // Approval note — left of totals, well wrapped
+  var noteLines = doc.splitTextToSize(
+    'If the total amount is above the authorization limit of 1st approver, then 2nd approval from as per approval matrix shared earlier!',
+    noteW - 2
+  );
+  fi(6.5); doc.setTextColor(50);
+  doc.text(noteLines, L, y + 4);
 
-  // ── SIGNATURES ─────────────────────────────────────────────
-  if (y > 262) { doc.addPage(); y = 14; }
-  // Requestor name above left box (official style)
+  y = Math.max(y + 22, ty + 5);
+
+  // ── SIGNATURES — equal boxes, dark labels ──────────────────
+  if (y > 258) { doc.addPage(); y = 14; }
+
+  // Requestor name above left box
   if (p.requestor) {
-    fb(9); doc.setTextColor(ink);
-    doc.text(String(p.requestor), L, y);
-    y += 3.5;
+    fb(10); doc.setTextColor(ink);
+    doc.text(String(p.requestor), L + 1, y);
+    y += 4;
   }
-  var sigH = 20;
-  var sigW = usable / 3;
+
+  var sigH = 24;
+  var gap = 3;
+  var sigW = (usable - gap * 2) / 3;
   var sigLabels = [
     'Requestor (name, date & sign.)',
     '1st Approval (name, date & sign.)',
     '2nd Approval (name, date & sign.)'
   ];
   for (var si = 0; si < 3; si++) {
-    var sx = L + si * sigW;
-    var sw = sigW - (si < 2 ? 2.5 : 0);
-    rectS(sx, y, sw, sigH);
-    fn(6.2); doc.setTextColor(mute);
-    doc.text(sigLabels[si], sx + 1.5, y + 3.5);
+    var sx = L + si * (sigW + gap);
+    // Outer box
+    stroke(40, 0.4);
+    doc.rect(sx, y, sigW, sigH, 'S');
+    // Label in dark ink (not grey)
+    fn(7); doc.setTextColor(30);
+    doc.text(sigLabels[si], sx + 2, y + 4);
     if (si === 0 && p.sigDataUrl) {
       try {
         var fmt = String(p.sigDataUrl).indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
-        doc.addImage(p.sigDataUrl, fmt, sx + 3, y + 5, Math.min(sw - 6, 40), 11);
+        doc.addImage(p.sigDataUrl, fmt, sx + 4, y + 6, Math.min(sigW - 8, 42), 12);
       } catch (eSig) {}
     } else {
-      stroke(160, 0.25);
-      doc.line(sx + 4, y + sigH - 4.5, sx + sw - 4, y + sigH - 4.5);
+      // Signature line
+      stroke(80, 0.3);
+      doc.line(sx + 5, y + sigH - 5, sx + sigW - 5, y + sigH - 5);
     }
   }
-  y += sigH + 4;
+  y += sigH + 5;
 
   // Footer
   fi(6); doc.setTextColor(mute);
