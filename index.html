@@ -2225,43 +2225,173 @@
   }
   /* Floating new-request button */
   
-  /* ── Payment Request Form (PRF) ─────────────────────────── */
+  /* ── Payment Request Form (PRF) — modern ERP ───────────── */
+  #view-prf .page-header {
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    padding-bottom: 14px;
+    margin-bottom: 4px;
+  }
+  #view-prf .page-header h1 {
+    font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
+    margin: 0 0 4px;
+  }
+  #view-prf .page-header p { margin: 0; color: var(--muted, #6b7280); font-size: 13px; }
+  #view-prf .ws-actions {
+    display: inline-flex; gap: 4px; padding: 3px;
+    background: var(--surface-2, #f3f4f6); border-radius: 10px;
+    border: 1px solid var(--border, #e5e7eb);
+  }
+  #view-prf .ws-actions .btn {
+    border: none; border-radius: 8px; font-weight: 600; font-size: 12.5px;
+    padding: 7px 12px; background: transparent; color: var(--muted, #6b7280);
+  }
+  #view-prf .ws-actions .btn.active {
+    background: #fff; color: var(--text, #111827);
+    box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.04);
+  }
+  #view-prf .ecf-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 16px; align-items: start;
+  }
+  @media (max-width: 960px) {
+    #view-prf .ecf-layout { grid-template-columns: 1fr; }
+  }
+  #view-prf .ecf-main { display: flex; flex-direction: column; gap: 12px; }
+  #view-prf .card {
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    background: var(--surface, #fff);
+    overflow: hidden;
+  }
+  #view-prf .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 12px 16px;
+    background: linear-gradient(180deg, #fafbfc 0%, #f6f7f9 100%);
+    border-bottom: 1px solid var(--border, #e5e7eb);
+  }
+  #view-prf .card-title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13.5px; font-weight: 650; color: var(--text, #111827);
+  }
+  #view-prf .ecf-step {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 7px;
+    font-size: 11px; font-weight: 700;
+    background: #0f172a; color: #fff;
+  }
+  #view-prf .ecf-meta {
+    font-size: 11.5px; font-weight: 600; color: var(--muted, #6b7280);
+    background: #fff; border: 1px solid var(--border, #e5e7eb);
+    padding: 3px 8px; border-radius: 999px;
+  }
+  #view-prf .card-body { padding: 14px 16px; }
   .prf-check-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 6px 10px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
   }
   .prf-check-grid label.prf-chk {
     display: flex; align-items: flex-start; gap: 8px;
-    padding: 8px 10px; border: 1px solid var(--border);
-    border-radius: 8px; font-size: 12.5px; cursor: pointer;
-    background: var(--surface); line-height: 1.35;
+    padding: 10px 12px;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 10px; font-size: 12.5px; cursor: pointer;
+    background: #fff; line-height: 1.35;
+    transition: border-color .15s, box-shadow .15s, background .15s;
   }
-  .prf-check-grid label.prf-chk:hover { border-color: var(--accent, #3b82f6); }
+  .prf-check-grid label.prf-chk:hover {
+    border-color: #94a3b8;
+    box-shadow: 0 1px 2px rgba(15,23,42,.05);
+  }
   .prf-check-grid label.prf-chk.is-on {
-    border-color: var(--accent, #3b82f6);
-    background: color-mix(in srgb, var(--accent, #3b82f6) 8%, var(--surface));
+    border-color: #2563eb;
+    background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%);
+    box-shadow: 0 0 0 1px rgba(37,99,235,.12);
   }
-  .prf-check-grid label.prf-chk input { margin-top: 2px; }
-
+  .prf-check-grid label.prf-chk input { margin-top: 2px; accent-color: #2563eb; }
+  #view-prf .prf-lines-table { min-width: 720px; width: 100%; border-collapse: separate; border-spacing: 0; }
+  #view-prf .prf-lines-table thead th {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; color: #64748b;
+    background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+    padding: 10px 12px; position: sticky; top: 0; z-index: 1;
+  }
+  #view-prf .prf-lines-table td {
+    font-size: 12.5px; vertical-align: middle;
+    padding: 10px 12px; border-bottom: 1px solid #f1f5f9;
+    font-variant-numeric: tabular-nums;
+  }
+  #view-prf .prf-lines-table tbody tr:hover td { background: #f8fafc; }
+  #view-prf .prf-lines-table input[type="checkbox"] { width: 15px; height: 15px; accent-color: #2563eb; }
+  #view-prf .ecf-aside .ecf-panel {
+    position: sticky; top: 12px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 24px rgba(15,23,42,.06);
+  }
+  #view-prf .ecf-aside .card-header {
+    background: #0f172a; color: #fff; border-bottom: none;
+  }
+  #view-prf .ecf-aside .card-title { color: #fff; }
+  #view-prf .ecf-sum { display: flex; flex-direction: column; gap: 8px; }
+  #view-prf .ecf-sum-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 12px; font-size: 12.5px; color: #475569;
+  }
+  #view-prf .ecf-sum-row strong {
+    font-size: 14px; font-weight: 700; color: #0f172a;
+    font-variant-numeric: tabular-nums;
+  }
+  #view-prf .ecf-actions {
+    display: flex; flex-direction: column; gap: 8px; margin-top: 14px;
+  }
+  #view-prf .ecf-actions .btn { width: 100%; justify-content: center; border-radius: 9px; font-weight: 650; }
+  #view-prf .ecf-actions .btn-primary {
+    background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+    border: none; color: #fff;
+    box-shadow: 0 1px 2px rgba(29,78,216,.35);
+  }
+  #view-prf .ecf-actions .btn-primary:disabled { opacity: .45; box-shadow: none; }
+  #view-prf .ecf-group-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: #64748b; margin: 0 0 10px;
+  }
+  #view-prf .ecf-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;
+  }
+  #view-prf .form-group label {
+    display: block; font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 4px;
+  }
+  #view-prf .form-group input,
+  #view-prf .form-group select,
+  #view-prf .form-group textarea {
+    width: 100%; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  #view-prf .form-group input:focus,
+  #view-prf .form-group select:focus,
+  #view-prf .form-group textarea:focus {
+    outline: none; border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+  }
+  #view-prf #prfPurpose {
+    background: #f8fafc; font-weight: 600; color: #0f172a;
+  }
+  #view-prf .table-scroll {
+    border-radius: 0 0 12px 12px;
+  }
   .prf-budget-strip {
     display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
-    gap:10px; padding:12px; background:#FAF9F8; border:1px solid #EDEBE9; border-radius:4px;
+    gap:10px; padding:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px;
   }
   .prf-budget-strip .prf-kpi { display:flex; flex-direction:column; gap:2px; }
-  .prf-budget-strip .prf-kpi span { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:#605E5C; }
-  .prf-budget-strip .prf-kpi strong { font-size:16px; font-weight:700; color:#201F1E; font-variant-numeric:tabular-nums; }
-  .prf-budget-strip .prf-kpi strong.warn { color:#C19C00; }
-  .prf-budget-strip .prf-kpi strong.danger { color:#A4262C; }
-  .prf-budget-strip .prf-kpi strong.ok { color:#107C10; }
-  .prf-lines-table { min-width:640px; width:100%; }
-  .prf-lines-table th { font-size:11px; }
-  .prf-lines-table td { font-size:12.5px; vertical-align:middle; }
-  .prf-lines-table input[type="number"] {
-    width:100px; max-width:100%; padding:5px 8px; font-size:12.5px;
-    border:1px solid #C8C6C4; border-radius:3px; font-family:inherit;
-  }
-  .prf-lines-table input[type="checkbox"] { width:15px; height:15px; accent-color:var(--brand); }
+  .prf-budget-strip .prf-kpi span { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:#64748b; }
+  .prf-budget-strip .prf-kpi strong { font-size:16px; font-weight:700; color:#0f172a; font-variant-numeric:tabular-nums; }
+  .prf-budget-strip .prf-kpi strong.warn { color:#b45309; }
+  .prf-budget-strip .prf-kpi strong.danger { color:#b91c1c; }
+  .prf-budget-strip .prf-kpi strong.ok { color:#047857; }
   .prf-lines-table tr.is-over td { background:#FDE7E9; }
   .prf-insight {
     border:1px solid #EDEBE9; border-radius:4px; padding:10px 12px; margin-bottom:8px; background:#FAF9F8;
@@ -2814,7 +2944,7 @@
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div>
           <h1>Payment Request Form</h1>
-          <p>Raise a PRF against an approved project budget — request funds in parts until the balance is used</p>
+          <p>Country → projects → cost items → generate. First run 50% of budget; final run balances <strong>Budget − Actuals</strong>.</p>
         </div>
         <div class="ws-actions">
           <button type="button" class="btn btn-ghost btn-sm" id="prfTabForm" onclick="prfSwitchTab('form')">New PRF</button>
@@ -2850,7 +2980,7 @@
               </div>
             </div>
             <div class="card">
-              <div class="card-header"><div class="card-title"><span class="ecf-step">3</span>Cost summary lines</div>
+              <div class="card-header"><div class="card-title"><span class="ecf-step">3</span>Cost items</div>
                 <span class="ecf-meta" id="prfCostMeta">0 selected</span>
               </div>
               <div class="card-body" style="padding:0">
@@ -2858,7 +2988,7 @@
                   <table class="prf-lines-table">
                     <thead><tr>
                       <th style="width:36px"><input type="checkbox" id="prfCostCheckAll" onchange="prfToggleAllCosts(this.checked)"></th>
-                      <th>Cost summary</th><th>Project</th><th>Budgeted</th><th>Actuals</th><th>PRF'd</th><th>Balance</th><th>This run (30%)</th>
+                      <th>Cost item</th><th>Project</th><th>Budgeted</th><th>Actuals</th><th>PRF'd</th><th>Bud−Act</th><th>This run</th>
                     </tr></thead>
                     <tbody id="prfCostBody"><tr><td colspan="8" class="ecf-empty">Select country and project(s) first.</td></tr></tbody>
                   </table>
@@ -2923,7 +3053,7 @@
                   <button type="button" class="btn btn-secondary" id="prfPreviewBtn" onclick="prfPreviewBatch()">Preview selection</button>
                   <button type="button" class="btn btn-ghost" onclick="prfResetForm()">Clear</button>
                 </div>
-                <p class="text-muted text-sm" style="margin:10px 0 0">Each run requests <strong>30%</strong> of the original budget line (capped at remaining balance = Budget − Actuals − already PRF’d). Typically 3–4 runs deplete a line.</p>
+                <p class="text-muted text-sm" style="margin:10px 0 0"><strong>1st run:</strong> 50% of each cost-item budget.<br><strong>2nd run:</strong> <em>Budget − Actuals</em> (balances the books — e.g. budget 50k / first 25k → if actuals 30k then request 20k; if actuals 20k then 30k; if 25k then 25k).</p>
               </div>
             </div>
           </aside>
@@ -12916,7 +13046,7 @@ function prfOnCostCentreChange() {
   }
 }
 
-var PRF_TRANCHE_PCT = 0.30; // 30% of original budget line per run
+var PRF_FIRST_TRANCHE_PCT = 0.50; // 1st run: 50% of budget; 2nd run: Budget − Actuals
 
 function prfInit() {
   prfPopulateMapping();
@@ -13081,20 +13211,48 @@ function prfLineActual(l) {
 }
 
 /** Remaining against Budget − Actuals − already PRF'd */
+/** Budget balance used for final-run sizing: Budget − Actuals (example 47). */
+function prfBudgetActualBalance(l) {
+  var bud = parseFloat(l.budgetedAmount) || 0;
+  var act = prfLineActual(l);
+  return Math.max(0, bud - act);
+}
+
+/** Display remaining after accounting for PRFs already raised (informational). */
 function prfLineRemaining(l, reqByLine) {
   var bud = parseFloat(l.budgetedAmount) || 0;
   var act = prfLineActual(l);
   var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
-  // Balance for next PRF run uses Budget − Actuals, then subtract already PRF'd above actuals
-  var consumed = Math.max(act, prfd);
-  return Math.max(0, bud - consumed);
+  // Books balance is Budget − Actuals; show how much of that is still unfunded by PRF
+  var bal = Math.max(0, bud - act);
+  // Informational remaining vs cumulative PRF (can differ from next-request amount)
+  return Math.max(0, bal);
 }
 
+/**
+ * Example (budget 50,000 — first tranche 25,000):
+ *  i. actual 30k → final request 20k  (50k − 30k)
+ * ii. actual 20k → final request 30k  (50k − 20k)
+ * iii. actual 25k → final request 25k (50k − 25k)
+ * 1st run: always 50% of line budget when no prior PRF on the line.
+ * 2nd run: Budget − Actuals (balances the books against real spend).
+ */
 function prfTrancheAmount(l, reqByLine) {
   var bud = parseFloat(l.budgetedAmount) || 0;
-  var rem = prfLineRemaining(l, reqByLine);
-  var tranche = bud * PRF_TRANCHE_PCT;
-  return Math.min(tranche, rem);
+  var act = prfLineActual(l);
+  var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
+  if (bud <= 0) return 0;
+  if (prfd <= 0.009) {
+    return Math.round(bud * PRF_FIRST_TRANCHE_PCT * 100) / 100;
+  }
+  // Final run — Budget − Actuals
+  return Math.round(Math.max(0, bud - act) * 100) / 100;
+}
+
+function prfTrancheLabel(l, reqByLine) {
+  var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
+  if (prfd <= 0.009) return '50%';
+  return 'Bud−Act';
 }
 
 function prfRenderCostLines() {
@@ -13117,17 +13275,20 @@ function prfRenderCostLines() {
     }
     return true;
   });
-  // Dedupe by cost summary + project
+  // Dedupe by cost item (fallback cost summary) + project
   var seen = {};
   var unique = [];
   lines.forEach(function(l) {
-    var k = (l.project||'') + '||' + (l.costSummary||'');
+    var item = l.costItem || l.costSummary || '';
+    var k = (l.project||'') + '||' + item + '||' + (l.costSummary||'');
     if (seen[k]) return;
     seen[k] = 1;
     unique.push(l);
   });
   unique.sort(function(a,b) {
-    var c = (a.costSummary||'').localeCompare(b.costSummary||'');
+    var ia = (a.costItem || a.costSummary || '');
+    var ib = (b.costItem || b.costSummary || '');
+    var c = ia.localeCompare(ib);
     return c || (a.project||'').localeCompare(b.project||'');
   });
   if (!unique.length) {
@@ -13149,15 +13310,17 @@ function prfRenderCostLines() {
     var tranche = prfTrancheAmount(l, reqByLine);
     var disabled = tranche <= 0.009 ? ' disabled' : '';
     var checked = prev[key] && !disabled ? ' checked' : '';
+    var runLab = prfTrancheLabel(l, reqByLine);
+    var itemLabel = l.costItem || l.costSummary || '';
     return '<tr data-key="'+_rqEsc(key)+'" data-project="'+_rqEsc(l.project||'')+'" data-country="'+_rqEsc(l.country||l.countryCode||'')+'" data-summary="'+_rqEsc(l.costSummary||'')+'">'
       + '<td><input type="checkbox" class="prf-cost-chk" value="'+_rqEsc(key)+'"'+checked+disabled+' onchange="prfRecalcSummary()"></td>'
-      + '<td>'+_rqEsc(l.costSummary||'')+'</td>'
+      + '<td>'+_rqEsc(itemLabel)+(l.costItem && l.costSummary && l.costItem!==l.costSummary ? '<div class="text-muted text-sm">'+_rqEsc(l.costSummary)+'</div>' : '')+'</td>'
       + '<td>'+_rqEsc(l.project||'')+'</td>'
       + '<td style="text-align:right">'+fmtN(bud)+'</td>'
       + '<td style="text-align:right">'+fmtN(act)+'</td>'
       + '<td style="text-align:right">'+fmtN(prfd)+'</td>'
       + '<td style="text-align:right">'+fmtN(rem)+'</td>'
-      + '<td style="text-align:right;font-weight:600" data-tranche="'+tranche+'">'+fmtN(tranche)+'</td>'
+      + '<td style="text-align:right;font-weight:600" data-tranche="'+tranche+'" title="'+runLab+'">'+fmtN(tranche)+' <span class="text-muted" style="font-weight:400;font-size:11px">'+runLab+'</span></td>'
       + '</tr>';
   }).join('');
   prfRecalcSummary();
@@ -13185,8 +13348,9 @@ function prfGatherSelectedLines() {
       budgetKey: key,
       project: line.project || '',
       country: (line.country || line.countryCode || '').trim(),
-      description: line.costSummary || line.costItem || '',
+      description: line.costItem || line.costSummary || '',
       costSummary: line.costSummary || '',
+      costItem: line.costItem || '',
       category: line.category || '',
       type: line.type || '',
       amount: amt,
@@ -13231,7 +13395,7 @@ function prfRecalcSummary() {
     }
     var html = '<div class="ecf-sum-row"><span>Lines selected</span><strong>'+lines.length+'</strong></div>'
       + '<div class="ecf-sum-row"><span>Countries</span><strong>'+countries.length+(countries.length>1?' → ZIP':'')+'</strong></div>'
-      + '<div class="ecf-sum-row"><span>Total this run (30%)</span><strong>'+fmtN(total)+'</strong></div>';
+      + '<div class="ecf-sum-row"><span>Total this run</span><strong>'+fmtN(total)+'</strong></div>';
     countries.forEach(function(c) {
       var g = byCountry[c];
       html += '<div class="ecf-sum-row text-muted"><span>'+_rqEsc(c)+' · '+Object.keys(g.projects).length+' proj</span><span>'+fmtN(g.amount)+'</span></div>';
