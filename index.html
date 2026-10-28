@@ -13874,7 +13874,7 @@ function prfBuildPdf(p) {
   var head = [232, 232, 232];
   var y = 8;
 
-  function stroke(g, wgt) { doc.setDrawColor(g, g, g); doc.setLineWidth(wgt == null ? 0.35 : wgt); }
+  function stroke(g, wgt) { doc.setDrawColor(g, g, g); doc.setLineWidth(wgt == null ? 0.18 : wgt); }
   function fillG(g) { doc.setFillColor(g, g, g); }
   function fb(s) { doc.setFont('helvetica', 'bold'); doc.setFontSize(s); }
   function fn(s) { doc.setFont('helvetica', 'normal'); doc.setFontSize(s); }
@@ -13894,7 +13894,7 @@ function prfBuildPdf(p) {
       else fillG(opts.fill);
       doc.rect(bx, yy, bw, h, 'F');
     }
-    stroke(lineC, 0.35);
+    stroke(lineC, 0.18);
     doc.rect(bx, yy, bw, h, 'S');
     if (opts.text != null && opts.text !== '') {
       if (opts.bold) fb(opts.size || 8); else fn(opts.size || 8);
@@ -13925,7 +13925,7 @@ function prfBuildPdf(p) {
   function sectionBar(yy, h, title) {
     fillG(gray[0]);
     doc.rect(x('B'), yy, usable, h, 'F');
-    stroke(lineC, 0.35);
+    stroke(lineC, 0.18);
     doc.rect(x('B'), yy, usable, h, 'S');
     fb(8); doc.setTextColor(ink);
     doc.text(title, x('B') + 1.5, yy + h / 2 + 1.15);
@@ -13966,13 +13966,53 @@ function prfBuildPdf(p) {
     var bx = x(c1), bw = wTo(c1, c2);
     fillG(gray[0]);
     doc.rect(bx, yy, bw, h, 'F');
-    stroke(lineC, 0.35);
+    stroke(lineC, 0.18);
     doc.rect(bx, yy, bw, h, 'S');
-    if (num != null) labelWithRedNum(base, num, bx, yy, bw, h);
-    else {
-      fb(7); doc.setTextColor(ink);
-      var lines = doc.splitTextToSize(base, bw - 2);
-      doc.text(lines.slice(0, 2), bx + bw / 2, yy + (lines.length > 1 ? 2.6 : h / 2 + 1.1), { align: 'center' });
+    var maxW = Math.max(bw - 1.6, 4);
+    if (num != null) {
+      // Wrap base + red (n) inside the cell
+      fb(6.2); doc.setTextColor(ink);
+      var full = base + ' (' + num + ')';
+      var lines = doc.splitTextToSize(base, maxW);
+      if (lines.length >= 2) {
+        // Multi-line: last line carries the red number
+        var ty = yy + 2.4;
+        doc.text(lines[0], bx + bw / 2, ty, { align: 'center' });
+        var last = lines[1] || '';
+        var numStr = '(' + num + ')';
+        fb(6.2);
+        var lastW = doc.getTextWidth(last + ' ' + numStr);
+        var lx = bx + (bw - lastW) / 2;
+        doc.setTextColor(ink);
+        doc.text(last + ' ', lx, ty + 2.8);
+        doc.setTextColor(180, 40, 40);
+        doc.text(numStr, lx + doc.getTextWidth(last + ' '), ty + 2.8);
+        doc.setTextColor(ink);
+      } else {
+        // Single line centered with red number
+        var prefix = base + ' ';
+        var numStr2 = '(' + num + ')';
+        var tw = doc.getTextWidth(prefix + numStr2);
+        if (tw > maxW) {
+          // force wrap base
+          lines = doc.splitTextToSize(base, maxW * 0.9);
+          var ty2 = yy + 2.4;
+          doc.text(lines[0], bx + bw / 2, ty2, { align: 'center' });
+          doc.setTextColor(180, 40, 40);
+          doc.text(numStr2, bx + bw / 2, ty2 + 2.8, { align: 'center' });
+          doc.setTextColor(ink);
+        } else {
+          var startX = bx + (bw - tw) / 2;
+          doc.text(prefix, startX, yy + h / 2 + 1.05);
+          doc.setTextColor(180, 40, 40);
+          doc.text(numStr2, startX + doc.getTextWidth(prefix), yy + h / 2 + 1.05);
+          doc.setTextColor(ink);
+        }
+      }
+    } else {
+      fb(6.5); doc.setTextColor(ink);
+      var lines2 = doc.splitTextToSize(base, maxW);
+      doc.text(lines2.slice(0, 2), bx + bw / 2, yy + (lines2.length > 1 ? 2.5 : h / 2 + 1.05), { align: 'center' });
     }
   }
 
@@ -14067,7 +14107,7 @@ function prfBuildPdf(p) {
   doc.text('PURPOSE (in detail)', x('B'), y + 3);
   y += 4.2;
   var purposeH = 13;
-  stroke(lineC, 0.35);
+  stroke(lineC, 0.18);
   doc.rect(x('B'), y, usable, purposeH, 'S');
   fn(9); doc.setTextColor(ink);
   var pLines = doc.splitTextToSize(p.purpose || '', usable - 4);
@@ -14157,10 +14197,21 @@ function prfBuildPdf(p) {
   doc.text(noteLine1, x('B') + 0.5, vatRowY + 4.8);
   doc.text(noteLine2, x('B') + 0.5, vatRowY + 8.0);
 
-  // Specify if USD! — bold, under TOTAL (right)
-  y += 1.2;
-  fb(6.5); doc.setTextColor(ink);
-  doc.text('Specify if USD!', x('Q') + wTo('Q', 'Q') / 2, y, { align: 'center' });
+  // Specify if USD! — italic; "f" of "if" sits under right border of TOTAL (col Q right edge)
+  y += 1.0;
+  fi(6.5); doc.setTextColor(ink);
+  // Right edge of TOTAL amount cell = x('Q') + wTo('Q','Q') = R
+  // Position so the letter "f" in "if" lands on that edge:
+  // "Specify i" width ends at edge, then "f USD!" continues right — use anchor on "Specify i"
+  var usdFull = 'Specify if USD!';
+  var usdBeforeF = 'Specify i'; // up to but not including "f"
+  fb(6.5); // measure with same size
+  // measure with italic
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  var beforeW = doc.getTextWidth(usdBeforeF);
+  var totalRight = x('Q') + wTo('Q', 'Q'); // right border of TOTAL cell
+  doc.text(usdFull, totalRight - beforeW, y);
   y += 5;
 
   // ── SIGNATURES — name + signature inside requestor box ─────
@@ -14174,7 +14225,7 @@ function prfBuildPdf(p) {
   sigDefs.forEach(function(sd, si) {
     var bx = x(sd.c1);
     var bw = wTo(sd.c1, sd.c2);
-    stroke(35, 0.4);
+    stroke(90, 0.2);
     doc.rect(bx, sigY, bw, sigH, 'S');
     fi(6.2); doc.setTextColor(40);
     doc.text(sd.lab, bx + 1.5, sigY + 3.0);
