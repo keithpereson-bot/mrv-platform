@@ -14049,26 +14049,42 @@ function prfBuildPdf(p) {
   y += purposeH + 3;
 
   // ── LINE ITEMS TABLE ───────────────────────────────────────
-  var cols = [
-    { w: 11, h: 'S/No' },
-    { w: 28, h: 'Business Unit (9)' },
-    { w: 78, h: 'Description & Specifications in detail' },
-    { w: 14, h: 'Qty' },
-    { w: 28.5, h: 'Unit Price' },
-    { w: 28.5, h: 'Total Price' }
-  ];
-  var sumW = cols.reduce(function(s, c){ return s + c.w; }, 0);
-  cols.forEach(function(c){ c.w = c.w / sumW * usable; });
+  // Column widths match official Burn PRF proportions
+  var colW = {
+    sno: 11,
+    bu: 28,
+    desc: 78,
+    qty: 14,
+    unit: 28.5,
+    total: 28.5
+  };
+  // normalize to usable width
+  var colSum = colW.sno + colW.bu + colW.desc + colW.qty + colW.unit + colW.total;
+  Object.keys(colW).forEach(function(k){ colW[k] = colW[k] / colSum * usable; });
+  var colX = {
+    sno: L,
+    bu: L + colW.sno,
+    desc: L + colW.sno + colW.bu,
+    qty: L + colW.sno + colW.bu + colW.desc,
+    unit: L + colW.sno + colW.bu + colW.desc + colW.qty,
+    total: L + colW.sno + colW.bu + colW.desc + colW.qty + colW.unit
+  };
 
   var th = 6.5;
   fillRGB(headFill[0], headFill[1], headFill[2]);
   doc.rect(L, y, usable, th, 'F');
-  var cx = L;
+  var headers = [
+    [colX.sno, colW.sno, 'S/No'],
+    [colX.bu, colW.bu, 'Business Unit (9)'],
+    [colX.desc, colW.desc, 'Description & Specifications in detail'],
+    [colX.qty, colW.qty, 'Qty'],
+    [colX.unit, colW.unit, 'Unit Price'],
+    [colX.total, colW.total, 'Total Price']
+  ];
   fb(6.5); doc.setTextColor(ink);
-  cols.forEach(function(c) {
-    rectS(cx, y, c.w, th);
-    doc.text(c.h, cx + c.w / 2, y + 4.3, { align: 'center', maxWidth: c.w - 1.2 });
-    cx += c.w;
+  headers.forEach(function(h) {
+    rectS(h[0], y, h[1], th);
+    doc.text(h[2], h[0] + h[1] / 2, y + 4.3, { align: 'center', maxWidth: h[1] - 1 });
   });
   y += th;
 
@@ -14084,112 +14100,118 @@ function prfBuildPdf(p) {
     if (tot !== '') subTotal += Number(tot) || 0;
     var bu = has ? (ln.businessUnit || p.businessUnit || '') : '';
     var vals = [
-      (i + 1) + '.',
-      bu,
-      has ? (ln.description || '') : '',
-      qty !== '' ? String(qty) : '',
-      unit !== '' ? money(unit) : '',
-      tot !== '' ? money(tot) : (has ? '' : '-')
+      [(i + 1) + '.', colX.sno, colW.sno, 'right'],
+      [has ? bu : '', colX.bu, colW.bu, 'left'],
+      [has ? (ln.description || '') : '', colX.desc, colW.desc, 'left'],
+      [qty !== '' ? String(qty) : '', colX.qty, colW.qty, 'right'],
+      [unit !== '' ? money(unit) : '', colX.unit, colW.unit, 'right'],
+      [tot !== '' ? money(tot) : (has ? '' : '-'), colX.total, colW.total, 'right']
     ];
-    // Gray first column on empty-ish rows like official form
     if (!has) {
       fillRGB(245, 245, 245);
-      doc.rect(L, y, cols[0].w, rh, 'F');
+      doc.rect(colX.sno, y, colW.sno, rh, 'F');
     }
-    cx = L;
     fn(7.5); doc.setTextColor(ink);
-    cols.forEach(function(c, ci) {
-      rectS(cx, y, c.w, rh);
-      var t = vals[ci] || '';
-      if (t) {
-        var align = (ci === 0 || ci >= 3) ? 'right' : 'left';
-        var tx = align === 'right' ? cx + c.w - 1.5 : cx + 1.2;
-        var clipped = textClip(t, c.w - 2.2)[0] || '';
-        doc.text(clipped, tx, y + 4.4, { align: align });
+    vals.forEach(function(v) {
+      rectS(v[1], y, v[2], rh);
+      if (v[0]) {
+        var tx = v[3] === 'right' ? v[1] + v[2] - 1.5 : v[1] + 1.2;
+        var clipped = (doc.splitTextToSize(String(v[0]), v[2] - 2.2)[0] || '');
+        doc.text(clipped, tx, y + 4.4, { align: v[3] });
       }
-      cx += c.w;
     });
     y += rh;
   });
 
-  // Lower block: approval note (left) + totals stack (right) — no overlap
-  // Official form keeps a clear gap between the note and the totals grid
-  var totalsW = 82;
-  var gapMid = 8;
-  var noteW = usable - totalsW - gapMid;
-  var tx0 = L + noteW + gapMid;
-  var ty = y + 1.5;
+  // ── Lower block — matches PRF_2026.xlsx exactly ────────────
+  // Excel layout:
+  //   [                  ]  SUB-TOTAL | amount
+  //   [note line 1       ]  VAT Appl. | No | 16% | VAT | amt
+  //   [note line 2       ]  TOTAL     | amount
+  //                         Specify if USD!
   var tH = 6.2;
+  var leftW = colW.sno + colW.bu + colW.desc; // under description cols
+  var rightX = colX.qty;
+  var rightW = colW.qty + colW.unit + colW.total;
+  var labW = colW.qty + colW.unit; // SUB-TOTAL / TOTAL label width
 
-  // ── SUB-TOTAL ──────────────────────────────────────────────
+  // Row 1: SUB-TOTAL only (no note on this row — matches Excel)
   fillRGB(grayFill[0], grayFill[1], grayFill[2]);
-  doc.rect(tx0, ty, 34, tH, 'F');
-  rectS(tx0, ty, 34, tH);
+  doc.rect(rightX, y, labW, tH, 'F');
+  rectS(rightX, y, labW, tH);
   fb(7.5); doc.setTextColor(ink);
-  doc.text('SUB-TOTAL', tx0 + 17, ty + 4.2, { align: 'center' });
-  rectS(tx0 + 34, ty, totalsW - 34, tH);
-  fn(9);
-  doc.text(money(subTotal || p.amount), tx0 + totalsW - 2, ty + 4.2, { align: 'right' });
-  ty += tH;
+  doc.text('SUB-TOTAL', rightX + labW / 2, y + 4.2, { align: 'center' });
+  rectS(colX.total, y, colW.total, tH);
+  fn(8.5);
+  doc.text(money(subTotal || p.amount), colX.total + colW.total - 1.5, y + 4.2, { align: 'right' });
+  y += tH;
 
-  // ── VAT Appl. | No | 16% | VAT | amount ────────────────────
-  // Screenshot proportions: small Yes/No and 16% cells, wider VAT label, amount
+  // VAT + TOTAL geometry
   var vatAppl = p.vatAppl || 'No';
-  var vatPct = (p.vatPct != null && String(p.vatPct) !== '') ? String(p.vatPct).replace(/%/g,'') + '%' : '16%';
+  var vatPctRaw = (p.vatPct != null && String(p.vatPct) !== '') ? String(p.vatPct) : '16%';
+  // Excel shows 0.16 or 16% — prefer 16% display
+  var vatPct = vatPctRaw.indexOf('%') >= 0 ? vatPctRaw : (parseFloat(vatPctRaw) <= 1 ? (parseFloat(vatPctRaw) * 100) + '%' : vatPctRaw + '%');
+  if (vatPct === 'NaN%') vatPct = '16%';
   var vatAmt = Number(p.vat) || 0;
-  var segs = [
-    { w: 24, text: 'VAT Appl.', fill: true, bold: true, center: true },
-    { w: 11, text: vatAppl, fill: false, red: true, center: true },
-    { w: 11, text: vatPct, fill: false, center: true },
-    { w: 16, text: 'VAT', fill: true, bold: true, center: true },
-    { w: totalsW - 24 - 11 - 11 - 16, text: vatAmt ? money(vatAmt) : '-', fill: false, right: true }
-  ];
-  var segX = tx0;
-  segs.forEach(function(s) {
-    if (s.fill) {
-      fillRGB(grayFill[0], grayFill[1], grayFill[2]);
-      doc.rect(segX, ty, s.w, tH, 'F');
-    }
-    rectS(segX, ty, s.w, tH);
-    if (s.bold) fb(6.5); else fn(7);
-    if (s.red) doc.setTextColor(180, 30, 30);
-    else doc.setTextColor(ink);
-    var ax = s.right ? (segX + s.w - 1.5) : (segX + s.w / 2);
-    var al = s.right ? 'right' : 'center';
-    doc.text(String(s.text), ax, ty + 4.2, { align: al });
-    segX += s.w;
-  });
-  ty += tH;
+  var v1 = rightW * 0.28; // VAT Appl.
+  var v2 = rightW * 0.12; // Yes/No
+  var v3 = rightW * 0.12; // 16%
+  var v4 = rightW * 0.16; // VAT
+  var v5 = rightW - v1 - v2 - v3 - v4; // amount
 
-  // ── TOTAL ──────────────────────────────────────────────────
+  function cellBox(x, w, h, text, opts) {
+    opts = opts || {};
+    if (opts.fill) {
+      fillRGB(opts.fillR != null ? opts.fillR : grayFill[0],
+              opts.fillG != null ? opts.fillG : grayFill[1],
+              opts.fillB != null ? opts.fillB : grayFill[2]);
+      doc.rect(x, y, w, h, 'F');
+    }
+    rectS(x, y, w, h);
+    if (opts.bold) fb(opts.size || 6.5); else fn(opts.size || 7);
+    doc.setTextColor(opts.red ? 180 : ink, opts.red ? 30 : ink, opts.red ? 30 : ink);
+    var ax = opts.right ? x + w - 1.3 : x + w / 2;
+    doc.text(String(text == null ? '' : text), ax, y + h / 2 + 1.15, { align: opts.right ? 'right' : 'center' });
+  }
+
+  // Fixed 2-line note matching Excel wording (beside VAT + TOTAL rows only)
+  var noteL1 = 'If the total amount is above the authorization limit of 1st approver,';
+  var noteL2 = 'then 2nd approval from as per approval matrix shared earlier!';
+  fi(6.5); doc.setTextColor(35);
+  // Clip each line to leftW so it can never spill into totals
+  var n1 = doc.splitTextToSize(noteL1, leftW - 2)[0] || noteL1;
+  var n2 = doc.splitTextToSize(noteL2, leftW - 2)[0] || noteL2;
+  doc.text(n1, L + 1, y + 4.2);
+  // VAT row
+  cellBox(rightX, v1, tH, 'VAT Appl.', { fill: true, bold: true });
+  cellBox(rightX + v1, v2, tH, vatAppl, { red: true });
+  cellBox(rightX + v1 + v2, v3, tH, vatPct, {});
+  cellBox(rightX + v1 + v2 + v3, v4, tH, 'VAT', { fill: true, bold: true });
+  cellBox(rightX + v1 + v2 + v3 + v4, v5, tH, vatAmt ? money(vatAmt) : '-', { right: true });
+  y += tH;
+
+  // Note line 2 + TOTAL row
+  fi(6.5); doc.setTextColor(35);
+  doc.text(n2, L + 1, y + 4.2);
   fillRGB(200, 200, 200);
-  doc.rect(tx0, ty, 34, tH, 'F');
-  rectS(tx0, ty, 34, tH);
+  doc.rect(rightX, y, labW, tH, 'F');
+  rectS(rightX, y, labW, tH);
   fb(8); doc.setTextColor(ink);
-  doc.text('TOTAL', tx0 + 17, ty + 4.2, { align: 'center' });
+  doc.text('TOTAL', rightX + labW / 2, y + 4.2, { align: 'center' });
   fillRGB(200, 200, 200);
-  doc.rect(tx0 + 34, ty, totalsW - 34, tH, 'F');
-  rectS(tx0 + 34, ty, totalsW - 34, tH);
+  doc.rect(colX.total, y, colW.total, tH, 'F');
+  rectS(colX.total, y, colW.total, tH);
   fb(9);
   var grand = (subTotal || Number(p.amount) || 0) + vatAmt;
-  doc.text(money(grand), tx0 + totalsW - 2, ty + 4.2, { align: 'right' });
-  ty += tH + 1.8;
+  doc.text(money(grand), colX.total + colW.total - 1.5, y + 4.2, { align: 'right' });
+  y += tH + 1.5;
   fi(5.5); doc.setTextColor(mute);
-  doc.text('Specify if USD!', tx0 + totalsW, ty, { align: 'right' });
-
-  // Approval note — strictly left of totals, multi-line, no collision
-  var noteText = 'If the total amount is above the authorization limit of 1st approver, then 2nd approval from as per approval matrix shared earlier!';
-  var noteLines = doc.splitTextToSize(noteText, noteW - 1);
-  fi(6.8); doc.setTextColor(40);
-  doc.text(noteLines, L, y + 4);
-
-  // Move past totals block + note
-  y = Math.max(y + noteLines.length * 3.2 + 6, ty + 6);
+  doc.text('Specify if USD!', R, y, { align: 'right' });
+  y += 5;
 
   // ── SIGNATURES ─────────────────────────────────────────────
   if (y > 255) { doc.addPage(); y = 14; }
 
-  // Requestor name above left box (official style)
   if (p.requestor) {
     fb(10); doc.setTextColor(ink);
     doc.text(String(p.requestor), L + 1, y);
@@ -14208,15 +14230,13 @@ function prfBuildPdf(p) {
     var sx = L + si * (sigW + gapS);
     stroke(35, 0.45);
     doc.rect(sx, y, sigW, sigH, 'S');
-    // Dark labels (not grey)
     fn(7); doc.setTextColor(25);
     doc.text(sigLabels[si], sx + 2, y + 4.2);
     if (si === 0 && p.sigDataUrl) {
       try {
         var fmt = String(p.sigDataUrl).indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
         var imgW = Math.min(sigW - 10, 44);
-        var imgH = 13;
-        doc.addImage(p.sigDataUrl, fmt, sx + (sigW - imgW) / 2, y + 6.5, imgW, imgH);
+        doc.addImage(p.sigDataUrl, fmt, sx + (sigW - imgW) / 2, y + 6.5, imgW, 13);
       } catch (eSig) {}
     } else {
       stroke(90, 0.3);
