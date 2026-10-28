@@ -13962,64 +13962,70 @@ function prfBuildPdf(p) {
   var rH = 7.2;   // data row height (~30pt)
   var hH = 3.2;   // hint row
 
-  function bookLabel(c1, c2, yy, h, base, num) {
+  function bookLabel(c1, c2, yy, h, base, num, align) {
+    align = align || 'center';
     var bx = x(c1), bw = wTo(c1, c2);
     fillG(gray[0]);
     doc.rect(bx, yy, bw, h, 'F');
     stroke(lineC, 0.18);
     doc.rect(bx, yy, bw, h, 'S');
-    var maxW = Math.max(bw - 1.6, 4);
+    var maxW = Math.max(bw - 1.8, 4);
+    var leftX = bx + 1.2;
     if (num != null) {
-      // Wrap base + red (n) inside the cell
       fb(6.2); doc.setTextColor(ink);
-      var full = base + ' (' + num + ')';
       var lines = doc.splitTextToSize(base, maxW);
-      if (lines.length >= 2) {
-        // Multi-line: last line carries the red number
+      if (lines.length >= 2 || doc.getTextWidth(base + ' (' + num + ')') > maxW) {
+        lines = doc.splitTextToSize(base, maxW);
         var ty = yy + 2.4;
-        doc.text(lines[0], bx + bw / 2, ty, { align: 'center' });
-        var last = lines[1] || '';
-        var numStr = '(' + num + ')';
-        fb(6.2);
-        var lastW = doc.getTextWidth(last + ' ' + numStr);
-        var lx = bx + (bw - lastW) / 2;
-        doc.setTextColor(ink);
-        doc.text(last + ' ', lx, ty + 2.8);
-        doc.setTextColor(180, 40, 40);
-        doc.text(numStr, lx + doc.getTextWidth(last + ' '), ty + 2.8);
+        if (align === 'left') {
+          doc.text(lines[0], leftX, ty);
+          var last = lines[1] || '';
+          doc.setTextColor(ink);
+          doc.text(last + (last ? ' ' : ''), leftX, ty + 2.8);
+          doc.setTextColor(180, 40, 40);
+          doc.text('(' + num + ')', leftX + doc.getTextWidth(last + (last ? ' ' : '')), ty + 2.8);
+        } else {
+          doc.text(lines[0], bx + bw / 2, ty, { align: 'center' });
+          var last2 = lines[1] || '';
+          var numStr = '(' + num + ')';
+          var lastW = doc.getTextWidth(last2 + ' ' + numStr);
+          var lx = bx + (bw - lastW) / 2;
+          doc.text(last2 + ' ', lx, ty + 2.8);
+          doc.setTextColor(180, 40, 40);
+          doc.text(numStr, lx + doc.getTextWidth(last2 + ' '), ty + 2.8);
+        }
         doc.setTextColor(ink);
       } else {
-        // Single line centered with red number
         var prefix = base + ' ';
         var numStr2 = '(' + num + ')';
-        var tw = doc.getTextWidth(prefix + numStr2);
-        if (tw > maxW) {
-          // force wrap base
-          lines = doc.splitTextToSize(base, maxW * 0.9);
-          var ty2 = yy + 2.4;
-          doc.text(lines[0], bx + bw / 2, ty2, { align: 'center' });
+        if (align === 'left') {
+          doc.text(prefix, leftX, yy + h / 2 + 1.05);
           doc.setTextColor(180, 40, 40);
-          doc.text(numStr2, bx + bw / 2, ty2 + 2.8, { align: 'center' });
-          doc.setTextColor(ink);
+          doc.text(numStr2, leftX + doc.getTextWidth(prefix), yy + h / 2 + 1.05);
         } else {
+          var tw = doc.getTextWidth(prefix + numStr2);
           var startX = bx + (bw - tw) / 2;
           doc.text(prefix, startX, yy + h / 2 + 1.05);
           doc.setTextColor(180, 40, 40);
           doc.text(numStr2, startX + doc.getTextWidth(prefix), yy + h / 2 + 1.05);
-          doc.setTextColor(ink);
         }
+        doc.setTextColor(ink);
       }
     } else {
       fb(6.5); doc.setTextColor(ink);
       var lines2 = doc.splitTextToSize(base, maxW);
-      doc.text(lines2.slice(0, 2), bx + bw / 2, yy + (lines2.length > 1 ? 2.5 : h / 2 + 1.05), { align: 'center' });
+      if (align === 'left') {
+        doc.text(lines2.slice(0, 2), leftX, yy + (lines2.length > 1 ? 2.5 : h / 2 + 1.05));
+      } else {
+        doc.text(lines2.slice(0, 2), bx + bw / 2, yy + (lines2.length > 1 ? 2.5 : h / 2 + 1.05), { align: 'center' });
+      }
     }
   }
 
   // Row: Burn Company | Vendor
   bookLabel('B', 'E', y, rH, 'BURN COMPANY', 1);
   box('F', 'I', y, rH, { text: p.company || '', size: 9, align: 'center' });
-  bookLabel('K', 'K', y, rH, 'Vendor Name', null);
+  bookLabel('K', 'K', y, rH, 'Vendor Name', null, 'left');
   box('L', 'Q', y, rH, { text: p.vendorName || '', size: 8 });
   y += rH;
   hint('B', y + 2.2, '(Mandatory; BMC, BBK etc.)');
@@ -14027,7 +14033,7 @@ function prfBuildPdf(p) {
 
   bookLabel('B', 'E', y, rH, 'Country Code', 2);
   box('F', 'I', y, rH, { text: p.country || '', size: 9, align: 'center' });
-  bookLabel('K', 'K', y, rH, 'Account No./Name', null);
+  bookLabel('K', 'K', y, rH, 'Account No./Name', null, 'left');
   box('L', 'Q', y, rH, { text: p.accountNo || '', size: 7.5, maxLines: 2 });
   y += rH;
   hint('B', y + 2.2, '(Country code if applicable; Only for BMC & BBK)');
@@ -14036,7 +14042,7 @@ function prfBuildPdf(p) {
 
   bookLabel('B', 'E', y, rH, 'Cost Centre', 3);
   box('F', 'I', y, rH, { text: p.costCentre || '', size: 9, align: 'center' });
-  bookLabel('K', 'K', y, rH, 'Dimension Code', 4);
+  bookLabel('K', 'K', y, rH, 'Dimension Code', 4, 'left');
   box('L', 'Q', y, rH, { text: p.dimensionCode || '', size: 8, align: 'center' });
   y += rH;
   hint('B', y + 2.2, '(Mandatory if Cost Centre, leave blank if Profit Centre)');
@@ -14045,7 +14051,7 @@ function prfBuildPdf(p) {
 
   bookLabel('B', 'E', y, rH, 'Profit Centre', 5);
   box('F', 'I', y, rH, { text: p.profitCentre || '', size: 9, align: 'center' });
-  bookLabel('K', 'K', y, rH, 'Product Code', 6);
+  bookLabel('K', 'K', y, rH, 'Product Code', 6, 'left');
   box('L', 'Q', y, rH, { text: p.productCode || '', size: 8, align: 'center' });
   y += rH;
   hint('B', y + 2.2, '(Mandatory if Cost Centre blank)');
@@ -14055,7 +14061,7 @@ function prfBuildPdf(p) {
   bookLabel('B', 'E', y, rH, 'R&D Project Code', 7);
   box('F', 'I', y, rH, { text: p.rdCode || '', size: 9, align: 'center' });
   // Carbon label may wrap — use multi-line centre
-  bookLabel('K', 'K', y, rH, 'Carbon / Project Code', 8);
+  bookLabel('K', 'K', y, rH, 'Carbon / Project Code', 8, 'left');
   box('L', 'Q', y, rH, { text: p.carbonCode || '', size: 7.5, align: 'center' });
   y += rH;
   hint('B', y + 2.2, '(Fill in, if applicable)');
@@ -14197,17 +14203,19 @@ function prfBuildPdf(p) {
   doc.text(noteLine1, x('B') + 0.5, vatRowY + 4.8);
   doc.text(noteLine2, x('B') + 0.5, vatRowY + 8.0);
 
-  // Specify if USD! — bold, slightly lower under TOTAL; "f" on TOTAL label right edge
-  y += 2.2;
+  // Specify if USD! — bold italic, vertically centered in gap before signature boxes
+  // Horizontal: "f" of "if" on right edge of TOTAL label cell
   var usd = 'Specify if USD!';
-  doc.setFont('helvetica', 'bold');
+  var gapBeforeSig = 6.5; // space reserved under TOTAL before signatures
+  var usdY = y + gapBeforeSig / 2 + 1.0;
+  doc.setFont('helvetica', 'boldoblique'); // bold + italic
   doc.setFontSize(7.5);
   doc.setTextColor(ink);
   var beforeF = 'Specify i';
   var fAnchor = x('Q');
   var beforeW = doc.getTextWidth(beforeF);
-  doc.text(usd, fAnchor - beforeW, y);
-  y += 5.0;
+  doc.text(usd, fAnchor - beforeW, usdY);
+  y += gapBeforeSig;
 
   // ── SIGNATURES — name + signature inside requestor box ─────
   var sigH = 17;
