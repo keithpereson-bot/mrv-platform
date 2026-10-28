@@ -14197,19 +14197,17 @@ function prfBuildPdf(p) {
   doc.text(noteLine1, x('B') + 0.5, vatRowY + 4.8);
   doc.text(noteLine2, x('B') + 0.5, vatRowY + 8.0);
 
-  // Specify if USD! — italic, in the gap under TOTAL and above signature boxes.
-  // Official form: the letter "f" in "if" sits on the right border of the TOTAL *label* cell
-  // (boundary between "TOTAL" and the amount). Text runs rightward under the amount.
-  y += 0.8;
+  // Specify if USD! — bold, slightly lower under TOTAL; "f" on TOTAL label right edge
+  y += 2.2;
   var usd = 'Specify if USD!';
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(6.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
   doc.setTextColor(ink);
-  var beforeF = 'Specify i'; // width up to the "f"
-  var fAnchor = x('Q'); // right border of TOTAL label (col P ends / col Q starts)
+  var beforeF = 'Specify i';
+  var fAnchor = x('Q');
   var beforeW = doc.getTextWidth(beforeF);
   doc.text(usd, fAnchor - beforeW, y);
-  y += 4.5;
+  y += 5.0;
 
   // ── SIGNATURES — name + signature inside requestor box ─────
   var sigH = 17;
