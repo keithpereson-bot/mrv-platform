@@ -13872,6 +13872,7 @@ function prfBuildPdf(p) {
   var orange = [230, 120, 30];
   var gray = [216, 216, 216];
   var head = [216, 216, 216];
+  var val = [240, 240, 240];  // light fill for value/input cells (official PRF)
   var y = 8;
 
   function stroke(g, wgt) { doc.setDrawColor(g, g, g); doc.setLineWidth(wgt == null ? 0.18 : wgt); }
@@ -14024,45 +14025,45 @@ function prfBuildPdf(p) {
 
   // Row: Burn Company | Vendor
   bookLabel('B', 'E', y, rH, 'BURN COMPANY', 1);
-  box('F', 'I', y, rH, { text: p.company || '', size: 9, align: 'center' });
+  box('F', 'I', y, rH, { fill: val, text: p.company || '', size: 9, align: 'center' });
   bookLabel('K', 'K', y, rH, 'Vendor Name', null, 'left');
-  box('L', 'Q', y, rH, { text: p.vendorName || '', size: 8 });
+  box('L', 'Q', y, rH, { fill: val, text: p.vendorName || '', size: 8 });
   y += rH;
   hint('B', y + 2.2, '(Mandatory; BMC, BBK etc.)');
   y += hH;
 
   bookLabel('B', 'E', y, rH, 'Country Code', 2);
-  box('F', 'I', y, rH, { text: p.country || '', size: 9, align: 'center' });
+  box('F', 'I', y, rH, { fill: val, text: p.country || '', size: 9, align: 'center' });
   bookLabel('K', 'K', y, rH, 'Account No./Name', null, 'left');
-  box('L', 'Q', y, rH, { text: p.accountNo || '', size: 7.5, maxLines: 2 });
+  box('L', 'Q', y, rH, { fill: val, text: p.accountNo || '', size: 7.5, maxLines: 2 });
   y += rH;
   hint('B', y + 2.2, '(Country code if applicable; Only for BMC & BBK)');
   hint('K', y + 2.2, '(Finance to fill in)');
   y += hH;
 
   bookLabel('B', 'E', y, rH, 'Cost Centre', 3);
-  box('F', 'I', y, rH, { text: p.costCentre || '', size: 9, align: 'center' });
+  box('F', 'I', y, rH, { fill: val, text: p.costCentre || '', size: 9, align: 'center' });
   bookLabel('K', 'K', y, rH, 'Dimension Code', 4, 'left');
-  box('L', 'Q', y, rH, { text: p.dimensionCode || '', size: 8, align: 'center' });
+  box('L', 'Q', y, rH, { fill: val, text: p.dimensionCode || '', size: 8, align: 'center' });
   y += rH;
   hint('B', y + 2.2, '(Mandatory if Cost Centre, leave blank if Profit Centre)');
   hint('K', y + 2.2, '(Mandatory if Cost Centre applied)');
   y += hH;
 
   bookLabel('B', 'E', y, rH, 'Profit Centre', 5);
-  box('F', 'I', y, rH, { text: p.profitCentre || '', size: 9, align: 'center' });
+  box('F', 'I', y, rH, { fill: val, text: p.profitCentre || '', size: 9, align: 'center' });
   bookLabel('K', 'K', y, rH, 'Product Code', 6, 'left');
-  box('L', 'Q', y, rH, { text: p.productCode || '', size: 8, align: 'center' });
+  box('L', 'Q', y, rH, { fill: val, text: p.productCode || '', size: 8, align: 'center' });
   y += rH;
   hint('B', y + 2.2, '(Mandatory if Cost Centre blank)');
   hint('K', y + 2.2, '(Fill in, if applicable)');
   y += hH;
 
   bookLabel('B', 'E', y, rH, 'R&D Project Code', 7);
-  box('F', 'I', y, rH, { text: p.rdCode || '', size: 9, align: 'center' });
+  box('F', 'I', y, rH, { fill: val, text: p.rdCode || '', size: 9, align: 'center' });
   // Carbon label may wrap — use multi-line centre
   bookLabel('K', 'K', y, rH, 'Carbon / Project Code', 8, 'left');
-  box('L', 'Q', y, rH, { text: p.carbonCode || '', size: 7.5, align: 'center' });
+  box('L', 'Q', y, rH, { fill: val, text: p.carbonCode || '', size: 7.5, align: 'center' });
   y += rH;
   hint('B', y + 2.2, '(Fill in, if applicable)');
   hint('K', y + 2.2, '(Fill in, if applicable)');
@@ -14077,11 +14078,11 @@ function prfBuildPdf(p) {
   var reqTop = y;
   box('B', 'B', y, qH, { fill: gray, text: 'A.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, qH, { fill: gray, text: 'Requestors Name', size: 7.5 });
-  box('G', 'Q', y, qH, { text: p.requestor || '', size: 9 });
+  box('G', 'Q', y, qH, { fill: val, text: p.requestor || '', size: 9 });
   y += qH;
   box('B', 'B', y, qH, { fill: gray, text: 'B.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, qH, { fill: gray, text: 'Request Date', size: 7.5 });
-  box('G', 'Q', y, qH, { text: p.date || '', size: 9 });
+  box('G', 'Q', y, qH, { fill: val, text: p.date || '', size: 9 });
   y += qH + 1.5;
 
   // ── PAYMENT INFORMATION (title only) ───────────────────────
@@ -14091,21 +14092,21 @@ function prfBuildPdf(p) {
   var pH = 6.8;
   box('B', 'B', y, pH, { fill: gray, text: 'C.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, pH, { fill: gray, text: 'Mode of payment (Cash, Mpesa, card, bank transfer)', size: 6, maxLines: 2 });
-  box('G', 'K', y, pH, { text: p.modeOfPayment || '', size: 9, align: 'center' });
+  box('G', 'K', y, pH, { fill: val, text: p.modeOfPayment || '', size: 9, align: 'center' });
   box('L', 'N', y, pH, { fill: gray, text: 'Mobile/Till/ Paybill no.', size: 6, maxLines: 2, align: 'center' });
-  box('O', 'Q', y, pH, { text: p.payeeNo || '', size: 9, align: 'center' });
+  box('O', 'Q', y, pH, { fill: val, text: p.payeeNo || '', size: 9, align: 'center' });
   y += pH;
   box('B', 'B', y, pH, { fill: gray, text: 'D.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, pH, { fill: gray, text: 'Cash advance required? (Y/N)', size: 6.5, maxLines: 2 });
-  box('G', 'K', y, pH, { text: p.cashAdvance || 'NO', size: 9, align: 'center' });
+  box('G', 'K', y, pH, { fill: val, text: p.cashAdvance || 'NO', size: 9, align: 'center' });
   box('L', 'N', y, pH, { fill: gray, text: 'Currency', size: 7, align: 'center' });
-  box('O', 'Q', y, pH, { text: p.currency || '', size: 9, align: 'center' });
+  box('O', 'Q', y, pH, { fill: val, text: p.currency || '', size: 9, align: 'center' });
   y += pH;
   box('B', 'B', y, pH, { fill: gray, text: 'E.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, pH, { fill: gray, text: 'Est. payment date', size: 7.5 });
-  box('G', 'K', y, pH, { text: p.estPaymentDate || '', size: 9, align: 'center' });
+  box('G', 'K', y, pH, { fill: val, text: p.estPaymentDate || '', size: 9, align: 'center' });
   box('L', 'N', y, pH, { fill: gray, text: 'Amount', size: 7, align: 'center' });
-  box('O', 'Q', y, pH, { text: money(p.amount), size: 9, align: 'center' });
+  box('O', 'Q', y, pH, { fill: val, text: money(p.amount), size: 9, align: 'center' });
   y += pH + 1.5;
 
   // ── PURPOSE (title only + content box) ─────────────────────
@@ -14113,6 +14114,8 @@ function prfBuildPdf(p) {
   doc.text('PURPOSE (in detail)', x('B'), y + 3);
   y += 4.2;
   var purposeH = 13;
+  doc.setFillColor(val[0], val[1], val[2]);
+  doc.rect(x('B'), y, usable, purposeH, 'F');
   stroke(lineC, 0.18);
   doc.rect(x('B'), y, usable, purposeH, 'S');
   fn(9); doc.setTextColor(ink);
@@ -14149,18 +14152,18 @@ function prfBuildPdf(p) {
     var bu = has ? (ln.businessUnit || p.businessUnit || '') : '';
     // S/No column is always grey-filled (official PRF)
     box('B', 'C', y, rh, { fill: gray, text: (i + 1) + '.', size: 8, align: 'center' });
-    box('D', 'E', y, rh, { text: bu, size: 7.5 });
-    box('F', 'M', y, rh, { text: has ? (ln.description || '') : '', size: 7.5 });
-    box('N', 'O', y, rh, { text: qty !== '' ? String(qty) : '', size: 8, align: 'right' });
-    box('P', 'P', y, rh, { text: unit !== '' ? money(unit) : '', size: 8, align: 'right' });
-    box('Q', 'Q', y, rh, { text: tot !== '' ? money(tot) : (has ? '' : '-'), size: 8, align: 'right' });
+    box('D', 'E', y, rh, { fill: val, text: bu, size: 7.5 });
+    box('F', 'M', y, rh, { fill: val, text: has ? (ln.description || '') : '', size: 7.5 });
+    box('N', 'O', y, rh, { fill: val, text: qty !== '' ? String(qty) : '', size: 8, align: 'right' });
+    box('P', 'P', y, rh, { fill: val, text: unit !== '' ? money(unit) : '', size: 8, align: 'right' });
+    box('Q', 'Q', y, rh, { fill: val, text: tot !== '' ? money(tot) : (has ? '' : '-'), size: 8, align: 'right' });
     y += rh;
   });
 
   // ── SUB-TOTAL (P–Q only) — Excel row 33 ────────────────────
   var tH = 5.2;
   box('P', 'P', y, tH, { fill: gray, text: 'SUB-TOTAL', bold: true, size: 7.5, align: 'center' });
-  box('Q', 'Q', y, tH, { text: money(subTotal || p.amount), size: 8.5, align: 'right' });
+  box('Q', 'Q', y, tH, { fill: val, text: money(subTotal || p.amount), size: 8.5, align: 'right' });
   y += tH;
 
   // ── VAT row + TOTAL, with tight 2-line note on the left ─────
@@ -14177,15 +14180,16 @@ function prfBuildPdf(p) {
   var vatRowY = y;
   // VAT Appl. is white (no fill) on official form; Yes/No in red
   box('L', 'M', y, tH, { text: 'VAT Appl.', bold: true, size: 6.5, align: 'center' });
-  box('N', 'N', y, tH, { text: vatAppl, size: 7, align: 'center', red: true });
-  box('O', 'O', y, tH, { text: vatPct, size: 7, align: 'center' });
+  box('N', 'N', y, tH, { fill: val, text: vatAppl, size: 7, align: 'center', red: true });
+  box('O', 'O', y, tH, { fill: val, text: vatPct, size: 7, align: 'center' });
   box('P', 'P', y, tH, { fill: gray, text: 'VAT', bold: true, size: 7, align: 'center' });
-  box('Q', 'Q', y, tH, { text: vatAmt ? money(vatAmt) : '-', size: 8, align: 'right' });
+  box('Q', 'Q', y, tH, { fill: val, text: vatAmt ? money(vatAmt) : '-', size: 8, align: 'right' });
   y += tH;
 
   // TOTAL label grey; amount white (official PRF — do not grey-fill amount)
   box('P', 'P', y, tH, { fill: gray, text: 'TOTAL', bold: true, size: 8, align: 'center' });
   box('Q', 'Q', y, tH, {
+    fill: val,
     text: money((subTotal || Number(p.amount) || 0) + vatAmt),
     bold: true, size: 9, align: 'right'
   });
