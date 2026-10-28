@@ -14203,20 +14203,16 @@ function prfBuildPdf(p) {
   doc.text(noteLine1, x('B') + 0.5, vatRowY + 4.8);
   doc.text(noteLine2, x('B') + 0.5, vatRowY + 8.0);
 
-  // Specify if USD! — bold + italic (boldoblique), centered in gap under TOTAL
+  // Specify if USD! — italic, right-aligned under TOTAL amount (col Q), like official PRF
   var usd = 'Specify if USD!';
-  var gapBeforeSig = 6.5;
-  var usdY = y + gapBeforeSig / 2 + 1.0;
-  doc.setFont('helvetica', 'boldoblique');
-  doc.setFontSize(7.5);
+  var gapBeforeSig = 5.5;
+  var usdY = y + 3.2;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7);
   doc.setTextColor(ink);
-  var beforeF = 'Specify i';
-  var fAnchor = x('Q');
-  var beforeW = doc.getTextWidth(beforeF);
-  var usdX = fAnchor - beforeW;
-  // Draw twice with a slight offset so bold+italic stays visible in all jsPDF builds
-  doc.text(usd, usdX + 0.12, usdY);
-  doc.text(usd, usdX, usdY);
+  // Right edge of col Q (same as TOTAL amount column)
+  var usdRight = x('Q') + wTo('Q', 'Q');
+  doc.text(usd, usdRight, usdY, { align: 'right' });
   y += gapBeforeSig;
 
   // ── SIGNATURES — name + signature inside requestor box ─────
