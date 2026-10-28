@@ -14197,22 +14197,19 @@ function prfBuildPdf(p) {
   doc.text(noteLine1, x('B') + 0.5, vatRowY + 4.8);
   doc.text(noteLine2, x('B') + 0.5, vatRowY + 8.0);
 
-  // Specify if USD! — italic; "f" of "if" sits under right border of TOTAL (col Q right edge)
-  y += 1.0;
-  fi(6.5); doc.setTextColor(ink);
-  // Right edge of TOTAL amount cell = x('Q') + wTo('Q','Q') = R
-  // Position so the letter "f" in "if" lands on that edge:
-  // "Specify i" width ends at edge, then "f USD!" continues right — use anchor on "Specify i"
-  var usdFull = 'Specify if USD!';
-  var usdBeforeF = 'Specify i'; // up to but not including "f"
-  fb(6.5); // measure with same size
-  // measure with italic
+  // Specify if USD! — italic, in the gap under TOTAL and above signature boxes.
+  // Official form: the letter "f" in "if" sits on the right border of the TOTAL *label* cell
+  // (boundary between "TOTAL" and the amount). Text runs rightward under the amount.
+  y += 0.8;
+  var usd = 'Specify if USD!';
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(6.5);
-  var beforeW = doc.getTextWidth(usdBeforeF);
-  var totalRight = x('Q') + wTo('Q', 'Q'); // right border of TOTAL cell
-  doc.text(usdFull, totalRight - beforeW, y);
-  y += 5;
+  doc.setTextColor(ink);
+  var beforeF = 'Specify i'; // width up to the "f"
+  var fAnchor = x('Q'); // right border of TOTAL label (col P ends / col Q starts)
+  var beforeW = doc.getTextWidth(beforeF);
+  doc.text(usd, fAnchor - beforeW, y);
+  y += 4.5;
 
   // ── SIGNATURES — name + signature inside requestor box ─────
   var sigH = 17;
