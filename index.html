@@ -13870,8 +13870,8 @@ function prfBuildPdf(p) {
 
   var ink = 25, mute = 100, lineC = 40;
   var orange = [230, 120, 30];
-  var gray = [230, 230, 230];
-  var head = [220, 220, 220];
+  var gray = [232, 232, 232];
+  var head = [232, 232, 232];
   var y = 8;
 
   function stroke(g, wgt) { doc.setDrawColor(g, g, g); doc.setLineWidth(wgt == null ? 0.35 : wgt); }
@@ -14022,11 +14022,13 @@ function prfBuildPdf(p) {
   hint('K', y + 2.2, '(Fill in, if applicable)');
   y += hH + 1.2;
 
-  // ── REQUISITION INFORMATION (full-width grey bar) ──────────
-  var secH = 5.6;
-  sectionBar(y, secH, 'REQUISITION INFORMATION');
-  y += secH;
-  var qH = 7.0;
+  // ── REQUISITION INFORMATION (title only — no dark bar) ─────
+  fb(8); doc.setTextColor(ink);
+  doc.text('REQUISITION INFORMATION', x('B'), y + 3);
+  y += 4.2;
+  var qH = 6.8;
+  // Outer border around A+B block
+  var reqTop = y;
   box('B', 'B', y, qH, { fill: gray, text: 'A.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, qH, { fill: gray, text: 'Requestors Name', size: 7.5 });
   box('G', 'Q', y, qH, { text: p.requestor || '', size: 9 });
@@ -14034,12 +14036,13 @@ function prfBuildPdf(p) {
   box('B', 'B', y, qH, { fill: gray, text: 'B.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, qH, { fill: gray, text: 'Request Date', size: 7.5 });
   box('G', 'Q', y, qH, { text: p.date || '', size: 9 });
-  y += qH + 1.2;
+  y += qH + 1.5;
 
-  // ── PAYMENT INFORMATION (full-width grey bar) ──────────────
-  sectionBar(y, secH, 'PAYMENT INFORMATION');
-  y += secH;
-  var pH = 7.2;
+  // ── PAYMENT INFORMATION (title only) ───────────────────────
+  fb(8); doc.setTextColor(ink);
+  doc.text('PAYMENT INFORMATION', x('B'), y + 3);
+  y += 4.2;
+  var pH = 6.8;
   box('B', 'B', y, pH, { fill: gray, text: 'C.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, pH, { fill: gray, text: 'Mode of payment (Cash, Mpesa, card, bank transfer)', size: 6, maxLines: 2 });
   box('G', 'K', y, pH, { text: p.modeOfPayment || '', size: 9, align: 'center' });
@@ -14057,17 +14060,18 @@ function prfBuildPdf(p) {
   box('G', 'K', y, pH, { text: p.estPaymentDate || '', size: 9, align: 'center' });
   box('L', 'N', y, pH, { fill: gray, text: 'Amount', size: 7, align: 'center' });
   box('O', 'Q', y, pH, { text: money(p.amount), size: 9, align: 'center' });
-  y += pH + 1.2;
+  y += pH + 1.5;
 
-  // ── PURPOSE (full-width grey bar + content box) ────────────
-  sectionBar(y, secH, 'PURPOSE (in detail)');
-  y += secH;
-  var purposeH = 14;
+  // ── PURPOSE (title only + content box) ─────────────────────
+  fb(8); doc.setTextColor(ink);
+  doc.text('PURPOSE (in detail)', x('B'), y + 3);
+  y += 4.2;
+  var purposeH = 13;
   stroke(lineC, 0.35);
   doc.rect(x('B'), y, usable, purposeH, 'S');
   fn(9); doc.setTextColor(ink);
   var pLines = doc.splitTextToSize(p.purpose || '', usable - 4);
-  doc.text(pLines.slice(0, 4), x('B') + 2, y + 4.2);
+  doc.text(pLines.slice(0, 4), x('B') + 2, y + 4.0);
   y += purposeH + 2.0;
 
   // ── LINE TABLE (Excel cols) ────────────────────────────────
@@ -14160,7 +14164,7 @@ function prfBuildPdf(p) {
   y += 5;
 
   // ── SIGNATURES — name + signature inside requestor box ─────
-  var sigH = 18;
+  var sigH = 17;
   var sigDefs = [
     { c1: 'B', c2: 'G', lab: 'Requestor (name, date & sign.)' },
     { c1: 'I', c2: 'M', lab: '1st Approval (name, date & sign.)' },
@@ -14172,33 +14176,32 @@ function prfBuildPdf(p) {
     var bw = wTo(sd.c1, sd.c2);
     stroke(35, 0.4);
     doc.rect(bx, sigY, bw, sigH, 'S');
-    // Italic label at top of box
-    fi(6.5); doc.setTextColor(40);
-    doc.text(sd.lab, bx + 1.5, sigY + 3.2);
+    fi(6.2); doc.setTextColor(40);
+    doc.text(sd.lab, bx + 1.5, sigY + 3.0);
     if (si === 0) {
-      // Requestor name inside the box
-      if (p.requestor) {
-        fb(10); doc.setTextColor(ink);
-        doc.text(String(p.requestor), bx + 3, sigY + 9);
+      // Name centered-left inside box; signature to its right (official layout)
+      var name = String(p.requestor || '');
+      if (name) {
+        fb(11); doc.setTextColor(ink);
+        doc.text(name, bx + 3, sigY + 10.5);
       }
       if (p.sigDataUrl) {
         try {
           var fmt = String(p.sigDataUrl).indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
-          var imgW = Math.min(bw - 12, 32);
-          // Signature to the right of the name inside the box
-          var nameW = p.requestor ? Math.min(doc.getTextWidth(String(p.requestor)) + 4, bw * 0.55) : 4;
-          doc.addImage(p.sigDataUrl, fmt, bx + 3 + nameW, sigY + 5, imgW, 10);
+          fb(11);
+          var nameW = name ? Math.min(doc.getTextWidth(name) + 3, bw * 0.5) : 2;
+          var imgW = Math.min(bw - nameW - 8, 30);
+          doc.addImage(p.sigDataUrl, fmt, bx + 3 + nameW, sigY + 5.5, imgW, 9.5);
         } catch (eS) {}
       }
     }
   });
-  y = sigY + sigH + 3.5;
+  y = sigY + sigH + 3;
 
-  // Footer directly under signature boxes — normal (not italic), photo layout
-  // Author + Approved By stacked under left box; Release Date on the right
-  fn(6.5); doc.setTextColor(mute);
+  // Footer under boxes — regular weight, stacked left + right date
+  fn(6.5); doc.setTextColor(90);
   doc.text('Author: Finance Director', x('B'), y);
-  doc.text('Approved By: CFO', x('B'), y + 3.5);
+  doc.text('Approved By: CFO', x('B'), y + 3.2);
   doc.text('Release Date: Jan 8, 2025', R, y, { align: 'right' });
 
   var fname = 'PRF_' + (p.ref || 'draft') + '_' + String(p.date || '').replace(/\//g, '-') + '.pdf';
