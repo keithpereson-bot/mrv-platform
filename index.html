@@ -13901,11 +13901,18 @@ function prfBuildPdf(p) {
       if (opts.red) doc.setTextColor(180, 30, 30);
       else doc.setTextColor(ink);
       var align = opts.align || 'left';
-      var tx = align === 'center' ? bx + bw / 2 : (align === 'right' ? bx + bw - 1.4 : bx + 1.4);
-      var lines = doc.splitTextToSize(String(opts.text), bw - 2.4);
-      var maxL = opts.maxLines || 2;
-      var ty = yy + (lines.length > 1 ? 2.8 : h / 2 + 1.15);
-      doc.text(lines.slice(0, maxL), tx, ty, { align: align });
+      var tx = align === 'center' ? bx + bw / 2 : (align === 'right' ? bx + bw - 1.2 : bx + 1.2);
+      var maxW = Math.max(bw - 1.0, 3.5);
+      var textStr = String(opts.text);
+      // Narrow letter cells (A.–E.): never clip via splitTextToSize
+      if (bw < 8 || textStr.length <= 3) {
+        doc.text(textStr, tx, yy + h / 2 + 1.15, { align: align });
+      } else {
+        var lines = doc.splitTextToSize(textStr, maxW);
+        var maxL = opts.maxLines || 2;
+        var ty = yy + (lines.length > 1 ? 2.8 : h / 2 + 1.15);
+        doc.text(lines.slice(0, maxL), tx, ty, { align: align });
+      }
     }
     return bw;
   }
@@ -14095,9 +14102,9 @@ function prfBuildPdf(p) {
   }
   var vatAmt = Number(p.vat) || 0;
 
-  fi(6.5); doc.setTextColor(35);
-  var n1 = doc.splitTextToSize('If the total amount is above the authorization limit of 1st approver,', wTo('B', 'K') - 2)[0];
-  doc.text(n1, x('B') + 0.5, y + 3.8);
+  fi(7); doc.setTextColor(35);
+  var n1 = 'If the total amount is above the authorization limit of 1st approver,';
+  doc.text(doc.splitTextToSize(n1, wTo('B', 'K') - 2)[0], x('B') + 0.5, y + 3.6);
 
   box('L', 'M', y, tH, { fill: gray, text: 'VAT Appl.', bold: true, size: 6.5, align: 'center' });
   box('N', 'N', y, tH, { text: vatAppl, size: 7, align: 'center', red: true });
@@ -14107,9 +14114,9 @@ function prfBuildPdf(p) {
   y += tH;
 
   // ── Note line 2 + TOTAL (P–Q) — Excel row 35 ───────────────
-  fi(6.5); doc.setTextColor(35);
-  var n2 = doc.splitTextToSize('then 2nd approval from as per approval matrix shared earlier!', wTo('B', 'K') - 2)[0];
-  doc.text(n2, x('B') + 0.5, y + 3.8);
+  fi(7); doc.setTextColor(35);
+  var n2 = 'then 2nd approval from as per approval matrix shared earlier!';
+  doc.text(doc.splitTextToSize(n2, wTo('B', 'K') - 2)[0], x('B') + 0.5, y + 3.6);
 
   box('P', 'P', y, tH, { fill: [200, 200, 200], text: 'TOTAL', bold: true, size: 8, align: 'center' });
   box('Q', 'Q', y, tH, { fill: [200, 200, 200], text: money((subTotal || Number(p.amount) || 0) + vatAmt), bold: true, size: 9, align: 'right' });
@@ -14118,15 +14125,24 @@ function prfBuildPdf(p) {
   doc.text('Specify if USD!', x('P') + wTo('P', 'Q') / 2, y, { align: 'center' });
   y += 4.5;
 
-  // ── SIGNATURES — Excel B:G | I:M | O:Q ─────────────────────
-  if (y > 255) { doc.addPage(); y = 14; }
+  // ── SIGNATURES + footer pinned to bottom of page ───────────
+  // A4 height 297mm; footer ~5mm from bottom, boxes above it
+  var pageH = 297;
+  var footerY = pageH - 8;
+  var sigH = 16;          // shorter boxes (was 24)
+  var sigGap = 3;
+  var nameH = p.requestor ? 4 : 0;
+  var sigBlockH = nameH + sigH + 2;
+  var sigTop = footerY - 5 - sigBlockH;
+  // If content already past sigTop, stay where we are (rare overflow)
+  if (y < sigTop) y = sigTop;
+
   if (p.requestor) {
-    fb(10); doc.setTextColor(ink);
+    fb(9); doc.setTextColor(ink);
     doc.text(String(p.requestor), x('B') + 1, y);
     y += 3.5;
   }
-  var sigH = 24;
-  // Three boxes from merges B:G, I:M, O:Q
+  // Three boxes from merges B:G, I:M, O:Q — italic labels
   var sigDefs = [
     { c1: 'B', c2: 'G', lab: 'Requestor (name, date & sign.)' },
     { c1: 'I', c2: 'M', lab: '1st Approval (name, date & sign.)' },
@@ -14137,25 +14153,25 @@ function prfBuildPdf(p) {
     var bw = wTo(sd.c1, sd.c2);
     stroke(35, 0.45);
     doc.rect(bx, y, bw, sigH, 'S');
-    fn(7); doc.setTextColor(25);
-    doc.text(sd.lab, bx + 1.5, y + 4);
+    fi(6.5); doc.setTextColor(40);  // italic labels
+    doc.text(sd.lab, bx + 1.5, y + 3.5);
     if (si === 0 && p.sigDataUrl) {
       try {
         var fmt = String(p.sigDataUrl).indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
-        var imgW = Math.min(bw - 8, 42);
-        doc.addImage(p.sigDataUrl, fmt, bx + (bw - imgW) / 2, y + 6, imgW, 12);
+        var imgW = Math.min(bw - 8, 38);
+        doc.addImage(p.sigDataUrl, fmt, bx + (bw - imgW) / 2, y + 4.5, imgW, 9);
       } catch (eS) {}
     } else {
       stroke(90, 0.3);
-      doc.line(bx + 5, y + sigH - 5, bx + bw - 5, y + sigH - 5);
+      doc.line(bx + 5, y + sigH - 4, bx + bw - 5, y + sigH - 4);
     }
   });
-  y += sigH + 4;
 
+  // Footer at very bottom
   fi(6); doc.setTextColor(mute);
-  doc.text('Author: Finance Director', x('B'), y);
-  doc.text('Approved By: CFO', x('B') + 55, y);
-  doc.text('Release Date: Jan 8, 2025', R, y, { align: 'right' });
+  doc.text('Author: Finance Director', x('B'), footerY);
+  doc.text('Approved By: CFO', pageW / 2, footerY, { align: 'center' });
+  doc.text('Release Date: Jan 8, 2025', R, footerY, { align: 'right' });
 
   var fname = 'PRF_' + (p.ref || 'draft') + '_' + String(p.date || '').replace(/\//g, '-') + '.pdf';
   var opts = arguments[1] || {};
