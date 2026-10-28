@@ -14102,19 +14102,8 @@ function prfBuildPdf(p) {
   }
   var vatAmt = Number(p.vat) || 0;
 
-  // Draw both note lines as a tight block spanning VAT+TOTAL rows (no large gap)
-  var noteBlockTop = y;
-  var noteMaxW = wTo('B', 'K') - 2;
-  fi(6.8); doc.setTextColor(35);
-  var noteLine1 = doc.splitTextToSize(
-    'If the total amount is above the authorization limit of 1st approver,', noteMaxW)[0];
-  var noteLine2 = doc.splitTextToSize(
-    'then 2nd approval from as per approval matrix shared earlier!', noteMaxW)[0];
-  // Tight line spacing (~3.2mm between baselines)
-  doc.text(noteLine1, x('B') + 0.5, noteBlockTop + 3.5);
-  doc.text(noteLine2, x('B') + 0.5, noteBlockTop + 6.7);
-
-  // VAT row cells
+  // VAT + TOTAL rows on the right; note on the left (slightly lower than row tops)
+  var vatRowY = y;
   box('L', 'M', y, tH, { fill: gray, text: 'VAT Appl.', bold: true, size: 6.5, align: 'center' });
   box('N', 'N', y, tH, { text: vatAppl, size: 7, align: 'center', red: true });
   box('O', 'O', y, tH, { text: vatPct, size: 7, align: 'center' });
@@ -14122,54 +14111,71 @@ function prfBuildPdf(p) {
   box('Q', 'Q', y, tH, { text: vatAmt ? money(vatAmt) : '-', size: 8, align: 'right' });
   y += tH;
 
-  // TOTAL row
   box('P', 'P', y, tH, { fill: [200, 200, 200], text: 'TOTAL', bold: true, size: 8, align: 'center' });
   box('Q', 'Q', y, tH, {
     fill: [200, 200, 200],
     text: money((subTotal || Number(p.amount) || 0) + vatAmt),
     bold: true, size: 9, align: 'right'
   });
-  y += tH + 1.0;
-  fi(5.5); doc.setTextColor(mute);
-  doc.text('Specify if USD!', x('P') + wTo('P', 'Q') / 2, y, { align: 'center' });
+  y += tH;
+
+  // Note slightly lower than the VAT row top, tight 2-line block
+  var noteMaxW = wTo('B', 'K') - 2;
+  fi(6.8); doc.setTextColor(35);
+  var noteLine1 = doc.splitTextToSize(
+    'If the total amount is above the authorization limit of 1st approver,', noteMaxW)[0];
+  var noteLine2 = doc.splitTextToSize(
+    'then 2nd approval from as per approval matrix shared earlier!', noteMaxW)[0];
+  doc.text(noteLine1, x('B') + 0.5, vatRowY + 4.8);
+  doc.text(noteLine2, x('B') + 0.5, vatRowY + 8.0);
+
+  // Specify if USD! — bold, under TOTAL (right)
+  y += 1.2;
+  fb(6.5); doc.setTextColor(ink);
+  doc.text('Specify if USD!', x('Q') + wTo('Q', 'Q') / 2, y, { align: 'center' });
   y += 5;
 
-  // ── SIGNATURES — directly under content (not forced to page bottom)
-  if (p.requestor) {
-    fb(9); doc.setTextColor(ink);
-    doc.text(String(p.requestor), x('B') + 1, y);
-    y += 3.2;
-  }
-  var sigH = 15;
+  // ── SIGNATURES — name + signature inside requestor box ─────
+  var sigH = 18;
   var sigDefs = [
     { c1: 'B', c2: 'G', lab: 'Requestor (name, date & sign.)' },
     { c1: 'I', c2: 'M', lab: '1st Approval (name, date & sign.)' },
     { c1: 'O', c2: 'Q', lab: '2nd Approval (name, date & sign.)' }
   ];
+  var sigY = y;
   sigDefs.forEach(function(sd, si) {
     var bx = x(sd.c1);
     var bw = wTo(sd.c1, sd.c2);
     stroke(35, 0.4);
-    doc.rect(bx, y, bw, sigH, 'S');
-    // Italic label only — no extra baseline lines inside the box
+    doc.rect(bx, sigY, bw, sigH, 'S');
+    // Italic label at top of box
     fi(6.5); doc.setTextColor(40);
-    doc.text(sd.lab, bx + 1.5, y + 3.3);
-    if (si === 0 && p.sigDataUrl) {
-      try {
-        var fmt = String(p.sigDataUrl).indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
-        var imgW = Math.min(bw - 10, 36);
-        doc.addImage(p.sigDataUrl, fmt, bx + 3, y + 4.5, imgW, 9);
-      } catch (eS) {}
+    doc.text(sd.lab, bx + 1.5, sigY + 3.2);
+    if (si === 0) {
+      // Requestor name inside the box
+      if (p.requestor) {
+        fb(10); doc.setTextColor(ink);
+        doc.text(String(p.requestor), bx + 3, sigY + 9);
+      }
+      if (p.sigDataUrl) {
+        try {
+          var fmt = String(p.sigDataUrl).indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
+          var imgW = Math.min(bw - 12, 32);
+          // Signature to the right of the name inside the box
+          var nameW = p.requestor ? Math.min(doc.getTextWidth(String(p.requestor)) + 4, bw * 0.55) : 4;
+          doc.addImage(p.sigDataUrl, fmt, bx + 3 + nameW, sigY + 5, imgW, 10);
+        } catch (eS) {}
+      }
     }
-    // No underline strokes — keep boxes clean like the template
   });
+  y = sigY + sigH + 3.5;
 
-  // Footer ONLY at the bottom of the page
-  var footerY = 297 - 8;
-  fi(6); doc.setTextColor(mute);
-  doc.text('Author: Finance Director', x('B'), footerY);
-  doc.text('Approved By: CFO', pageW / 2, footerY, { align: 'center' });
-  doc.text('Release Date: Jan 8, 2025', R, footerY, { align: 'right' });
+  // Footer directly under signature boxes — normal (not italic), photo layout
+  // Author + Approved By stacked under left box; Release Date on the right
+  fn(6.5); doc.setTextColor(mute);
+  doc.text('Author: Finance Director', x('B'), y);
+  doc.text('Approved By: CFO', x('B'), y + 3.5);
+  doc.text('Release Date: Jan 8, 2025', R, y, { align: 'right' });
 
   var fname = 'PRF_' + (p.ref || 'draft') + '_' + String(p.date || '').replace(/\//g, '-') + '.pdf';
   var opts = arguments[1] || {};
