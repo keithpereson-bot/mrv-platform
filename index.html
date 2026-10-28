@@ -14203,18 +14203,20 @@ function prfBuildPdf(p) {
   doc.text(noteLine1, x('B') + 0.5, vatRowY + 4.8);
   doc.text(noteLine2, x('B') + 0.5, vatRowY + 8.0);
 
-  // Specify if USD! — bold italic, vertically centered in gap before signature boxes
-  // Horizontal: "f" of "if" on right edge of TOTAL label cell
+  // Specify if USD! — bold + italic (boldoblique), centered in gap under TOTAL
   var usd = 'Specify if USD!';
-  var gapBeforeSig = 6.5; // space reserved under TOTAL before signatures
+  var gapBeforeSig = 6.5;
   var usdY = y + gapBeforeSig / 2 + 1.0;
-  doc.setFont('helvetica', 'boldoblique'); // bold + italic
+  doc.setFont('helvetica', 'boldoblique');
   doc.setFontSize(7.5);
   doc.setTextColor(ink);
   var beforeF = 'Specify i';
   var fAnchor = x('Q');
   var beforeW = doc.getTextWidth(beforeF);
-  doc.text(usd, fAnchor - beforeW, usdY);
+  var usdX = fAnchor - beforeW;
+  // Draw twice with a slight offset so bold+italic stays visible in all jsPDF builds
+  doc.text(usd, usdX + 0.12, usdY);
+  doc.text(usd, usdX, usdY);
   y += gapBeforeSig;
 
   // ── SIGNATURES — name + signature inside requestor box ─────
