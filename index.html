@@ -13000,13 +13000,22 @@ var prfStore = loadPrfStore();
 function prfLineKey(l) {
   return [l.project||'', l.type||'', l.category||'', l.costSummary||'', l.costItem||''].join('|');
 }
-function prfRequestedByLine() {
-  // Only PAID PRFs affect 50% / final-tranche math (funds actually received)
+function prfRequestedByLine(opts) {
+  // Amounts already committed on PRFs per budget line.
+  // Default: all active PRFs (Submitted / Approved / Paid) so you cannot
+  // request more than budgeted even before Mark paid.
+  // opts.paidOnly = true → only Paid (funds received).
+  opts = opts || {};
+  var paidOnly = !!opts.paidOnly;
   var map = {};
   (prfStore || []).forEach(function(p) {
     if (!p) return;
     var st = String(p.status || '').trim().toLowerCase();
-    if (st !== 'paid') return;
+    if (paidOnly) {
+      if (st !== 'paid') return;
+    } else {
+      if (st === 'draft' || st === 'rejected' || st === 'cancelled' || st === 'deleted' || st === 'archived') return;
+    }
     (p.lines || []).forEach(function(ln) {
       var k = ln.budgetKey || '';
       if (!k) return;
@@ -13069,7 +13078,7 @@ function prfOnCostCentreChange() {
   }
 }
 
-var PRF_FIRST_TRANCHE_PCT = 0.50; // 1st run: 50% of budget; 2nd run: Budget − Actuals
+var PRF_FIRST_TRANCHE_PCT = 0.50; // 1st: min(50% budget, remaining); later: remaining = budget − max(actuals, committed PRFs)
 
 function prfInit() {
   prfPopulateMapping();
@@ -13245,10 +13254,8 @@ function prfLineRemaining(l, reqByLine) {
   var bud = parseFloat(l.budgetedAmount) || 0;
   var act = prfLineActual(l);
   var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
-  // Books balance is Budget − Actuals; show how much of that is still unfunded by PRF
-  var bal = Math.max(0, bud - act);
-  // Informational remaining vs cumulative PRF (can differ from next-request amount)
-  return Math.max(0, bal);
+  // What can still be requested on this line
+  return Math.max(0, bud - Math.max(act, prfd));
 }
 
 /**
@@ -13261,8 +13268,10 @@ function prfLineRemaining(l, reqByLine) {
  */
 function prfIsOverBudget(l) {
   var bud = parseFloat(l.budgetedAmount) || 0;
+  if (bud <= 0) return false;
   var act = prfLineActual(l);
-  return bud > 0 && act > bud + 0.009;
+  var prfd = prfRequestedByLine()[prfLineKey(l)] || 0;
+  return act > bud + 0.009 || prfd > bud + 0.009;
 }
 
 function prfTrancheAmount(l, reqByLine) {
@@ -13270,20 +13279,24 @@ function prfTrancheAmount(l, reqByLine) {
   var act = prfLineActual(l);
   var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
   if (bud <= 0) return 0;
-  // Never raise a PRF on a line that is already over budget
+  // Hard stop: actuals already over budgeted
   if (act > bud + 0.009) return 0;
+  // Remaining capacity on this cost line (cannot exceed budgeted)
+  var available = Math.max(0, bud - Math.max(act, prfd));
+  if (available <= 0.009) return 0;
   if (prfd <= 0.009) {
-    return Math.round(bud * PRF_FIRST_TRANCHE_PCT * 100) / 100;
+    // 1st tranche: 50% of budget, but never more than available
+    return Math.round(Math.min(bud * PRF_FIRST_TRANCHE_PCT, available) * 100) / 100;
   }
-  // Final run — Budget − Actuals (only after prior tranche is Paid)
-  return Math.round(Math.max(0, bud - act) * 100) / 100;
+  // Later tranche: only what is still uncommitted / unspent
+  return Math.round(available * 100) / 100;
 }
 
 function prfTrancheLabel(l, reqByLine) {
   if (prfIsOverBudget(l)) return 'Over budget';
   var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
-  if (prfd <= 0.009) return '50%';
-  return 'Bud−Act';
+  if (prfd <= 0.009) return '50% first';
+  return 'Balance left';
 }
 
 function prfRenderCostLines() {
@@ -13538,21 +13551,20 @@ function prfResolveDimensions(lines) {
 
 
 function prfBuildBudgetBreakdown(projectNames, lines) {
-  // Snapshot budget vs this PRF for approvers (within / outside budget)
-  var reqByLine = prfRequestedByLine();
+  // Approver snapshot: can this PRF be funded within each cost-line budget?
+  var committed = prfRequestedByLine();          // submitted + approved + paid
+  var paidOnly = prfRequestedByLine({ paidOnly: true });
+
   var projSet = {};
   (projectNames || []).forEach(function(p){ if (p) projSet[p] = 1; });
   (lines || []).forEach(function(l){ if (l && l.project) projSet[l.project] = 1; });
 
   var thisByKey = {};
-  var thisByProj = {};
   (lines || []).forEach(function(l) {
     if (!l) return;
     var k = l.budgetKey || '';
     var amt = parseFloat(l.amount) || 0;
     if (k) thisByKey[k] = (thisByKey[k] || 0) + amt;
-    var p = l.project || 'Unknown';
-    thisByProj[p] = (thisByProj[p] || 0) + amt;
   });
 
   var lineRows = [];
@@ -13560,79 +13572,73 @@ function prfBuildBudgetBreakdown(projectNames, lines) {
 
   Object.keys(projSet).forEach(function(proj) {
     projAgg[proj] = {
-      project: proj,
-      budgeted: 0,
-      actual: 0,
-      priorPrf: 0,
-      thisPrf: thisByProj[proj] || 0,
-      currency: 'KES'
+      project: proj, budgeted: 0, actual: 0, committed: 0, paid: 0, thisPrf: 0, currency: 'KES'
     };
-    (budgetLines || []).filter(function(l){ return l.project === proj; }).forEach(function(l) {
-      var bud = parseFloat(l.budgetedAmount) || 0;
-      var act = prfLineActual(l);
-      var key = prfLineKey(l);
-      var prior = reqByLine[key] || 0;
-      var thisAmt = thisByKey[key] || 0;
-      var currency = l.currency || 'KES';
-      projAgg[proj].budgeted += bud;
-      projAgg[proj].actual += act;
-      projAgg[proj].priorPrf += prior;
-      projAgg[proj].currency = currency;
-
-      // Only include lines that appear on this PRF, or that are over budget (signal)
-      if (thisAmt > 0 || (bud > 0 && (prior + thisAmt) > bud + 0.009) || (bud > 0 && act > bud + 0.009)) {
-        var after = bud - prior - thisAmt;
-        var over = (prior + thisAmt) > bud + 0.009 || (act > bud + 0.009);
-        lineRows.push({
-          project: proj,
-          description: l.costItem || l.costSummary || '',
-          costSummary: l.costSummary || '',
-          budgeted: bud,
-          actual: act,
-          priorPrf: prior,
-          thisPrf: thisAmt,
-          afterPrf: after,
-          currency: currency,
-          status: over ? 'OVER BUDGET' : 'WITHIN BUDGET'
-        });
-      }
-    });
   });
 
-  // Ensure every line on this PRF appears even if budgetLines miss it
+  // Lines on THIS PRF only (what the approver needs)
   (lines || []).forEach(function(l) {
-    if (!l || !l.budgetKey) return;
-    var exists = lineRows.some(function(r){
-      return r.project === l.project && (r.description === (l.description || l.costItem || '') || r.thisPrf === (parseFloat(l.amount)||0));
-    });
-    if (exists) return;
-    var bud = parseFloat(l.budgeted) || 0;
-    var act = parseFloat(l.actual) || 0;
-    var prior = reqByLine[l.budgetKey] || 0;
+    if (!l) return;
+    var key = l.budgetKey || '';
+    var bl = key ? (budgetLines || []).find(function(x){ return prfLineKey(x) === key; }) : null;
+    var bud = bl ? (parseFloat(bl.budgetedAmount) || 0) : (parseFloat(l.budgeted) || 0);
+    var act = bl ? prfLineActual(bl) : (parseFloat(l.actual) || 0);
+    var prior = key ? (committed[key] || 0) : 0;
+    // If this PRF is already in store, prior includes it — strip this request for "before" view
     var thisAmt = parseFloat(l.amount) || 0;
-    var after = bud - prior - thisAmt;
-    var over = bud > 0 && ((prior + thisAmt) > bud + 0.009 || act > bud + 0.009);
+    var priorExcl = Math.max(0, prior - thisAmt);
+    // Prefer paid-only for "already paid" column; committed-excl for capacity
+    var paid = key ? (paidOnly[key] || 0) : 0;
+    if (paid > priorExcl) paid = priorExcl; // safety
+    var after = bud - priorExcl - thisAmt;
+    var over = bud > 0 && (priorExcl + thisAmt) > bud + 0.009;
+    var proj = (bl && bl.project) || l.project || 'Unknown';
+    var currency = (bl && bl.currency) || l.currency || 'KES';
+
+    if (!projAgg[proj]) {
+      projAgg[proj] = { project: proj, budgeted: 0, actual: 0, committed: 0, paid: 0, thisPrf: 0, currency: currency };
+    }
+
     lineRows.push({
-      project: l.project || '',
-      description: l.description || l.costItem || '',
-      costSummary: l.costSummary || '',
+      project: proj,
+      description: (bl && (bl.costItem || bl.costSummary)) || l.description || l.costItem || '',
       budgeted: bud,
       actual: act,
-      priorPrf: prior,
+      alreadyRequested: priorExcl,
       thisPrf: thisAmt,
-      afterPrf: after,
-      currency: l.currency || 'KES',
-      status: over ? 'OVER BUDGET' : (bud > 0 ? 'WITHIN BUDGET' : 'NO BUDGET LINE')
+      remainingAfter: after,
+      currency: currency,
+      status: over ? 'OVER BUDGET' : (bud > 0 ? 'OK' : 'NO BUDGET')
     });
   });
 
+  // Project totals from full budget sheet (context) + this PRF amounts
+  Object.keys(projSet).forEach(function(proj) {
+    var o = projAgg[proj];
+    o.currency = o.currency || 'KES';
+    (budgetLines || []).filter(function(l){ return l.project === proj; }).forEach(function(l) {
+      var key = prfLineKey(l);
+      o.budgeted += parseFloat(l.budgetedAmount) || 0;
+      o.actual += prfLineActual(l);
+      o.committed += committed[key] || 0;
+      o.paid += paidOnly[key] || 0;
+    });
+    // this PRF for project
+    (lines || []).forEach(function(l) {
+      if ((l.project || '') === proj) o.thisPrf += parseFloat(l.amount) || 0;
+    });
+    // exclude this PRF from committed if already stored
+    var committedExcl = Math.max(0, o.committed - o.thisPrf);
+    o.alreadyRequested = committedExcl;
+    o.remainingAfter = o.budgeted - committedExcl - o.thisPrf;
+  });
+
+  // Project status: over if any line on this PRF is over, OR project remaining negative
   var projects = Object.keys(projAgg).sort().map(function(p) {
     var o = projAgg[p];
-    o.afterPrf = o.budgeted - o.priorPrf - o.thisPrf;
-    o.booksRemaining = o.budgeted - o.actual;
-    var over = (o.budgeted > 0 && (o.priorPrf + o.thisPrf) > o.budgeted + 0.009)
-      || (o.budgeted > 0 && o.actual > o.budgeted + 0.009);
-    o.status = over ? 'OVER BUDGET' : (o.budgeted > 0 ? 'WITHIN BUDGET' : 'NO BUDGET');
+    var lineOver = lineRows.some(function(r){ return r.project === p && r.status === 'OVER BUDGET'; });
+    var projOver = o.budgeted > 0 && o.remainingAfter < -0.009;
+    o.status = (lineOver || projOver) ? 'OVER BUDGET' : (o.budgeted > 0 ? 'OK' : 'NO BUDGET');
     return o;
   });
 
@@ -13641,12 +13647,9 @@ function prfBuildBudgetBreakdown(projectNames, lines) {
 
   return {
     generatedAt: new Date().toISOString(),
-    overallStatus: anyOver ? 'OUTSIDE BUDGET' : 'WITHIN BUDGET',
+    overallStatus: anyOver ? 'OUTSIDE BUDGET — do not approve' : 'WITHIN BUDGET',
     projects: projects,
-    lines: lineRows.sort(function(a,b){
-      var c = String(a.project).localeCompare(String(b.project));
-      return c || String(a.description).localeCompare(String(b.description));
-    })
+    lines: lineRows
   };
 }
 
@@ -13991,14 +13994,13 @@ function prfEnsureBudgetBreakdown(p) {
 
 function prfDrawBudgetBreakdownPage(doc, p) {
   var bd = prfEnsureBudgetBreakdown(p);
-  if (!bd || !(bd.projects || []).length) return;
+  if (!bd || (!(bd.lines || []).length && !(bd.projects || []).length)) return;
 
   doc.addPage();
-  var pageW = 210;
-  var L = 12, R = 198, usable = R - L;
-  var ink = 25, lineC = 40;
-  var gray = [216, 216, 216];
-  var y = 14;
+  var pageW = 210, L = 14, usable = 182;
+  var ink = 30, lineC = 60;
+  var gray = [230, 230, 230];
+  var y = 16;
 
   function fb(s){ doc.setFont('helvetica','bold'); doc.setFontSize(s); }
   function fn(s){ doc.setFont('helvetica','normal'); doc.setFontSize(s); }
@@ -14008,148 +14010,145 @@ function prfDrawBudgetBreakdownPage(doc, p) {
     try { return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
     catch(e){ return v.toFixed(2); }
   }
-  function rowBox(x0, yy, w, h, fill, text, opts) {
+  function cell(x0, yy, w, h, fill, text, opts) {
     opts = opts || {};
     if (fill) {
       if (Array.isArray(fill)) doc.setFillColor(fill[0], fill[1], fill[2]);
       else doc.setFillColor(fill, fill, fill);
       doc.rect(x0, yy, w, h, 'F');
     }
-    doc.setDrawColor(lineC); doc.setLineWidth(0.15);
+    doc.setDrawColor(lineC); doc.setLineWidth(0.2);
     doc.rect(x0, yy, w, h, 'S');
-    if (text != null && text !== '') {
-      if (opts.bold) fb(opts.size || 7.5); else fn(opts.size || 7.5);
-      if (opts.red) doc.setTextColor(180, 30, 30);
-      else if (opts.green) doc.setTextColor(16, 110, 16);
-      else doc.setTextColor(ink);
-      var align = opts.align || 'left';
-      var tx = align === 'right' ? x0 + w - 1.2 : (align === 'center' ? x0 + w/2 : x0 + 1.2);
-      var lines = doc.splitTextToSize(String(text), Math.max(w - 2.2, 4));
-      doc.text(lines.slice(0, opts.maxLines || 2), tx, yy + (lines.length > 1 ? 2.6 : h/2 + 1.1), { align: align });
-      doc.setTextColor(ink);
-    }
+    if (text == null || text === '') return;
+    if (opts.bold) fb(opts.size || 8); else fn(opts.size || 8);
+    if (opts.red) doc.setTextColor(180, 40, 40);
+    else if (opts.green) doc.setTextColor(20, 120, 40);
+    else doc.setTextColor(ink);
+    var align = opts.align || 'left';
+    var tx = align === 'right' ? x0 + w - 1.5 : (align === 'center' ? x0 + w / 2 : x0 + 1.5);
+    var maxW = Math.max(w - 3, 4);
+    var parts = doc.splitTextToSize(String(text), maxW);
+    doc.text(parts.slice(0, opts.maxLines || 2), tx, yy + (parts.length > 1 ? 3.2 : h / 2 + 1.2), { align: align });
+    doc.setTextColor(ink);
   }
 
-  fb(12); doc.setTextColor(ink);
-  doc.text('BUDGET BALANCE BREAKDOWN', pageW/2, y, { align: 'center' });
-  y += 5;
-  fn(8); doc.setTextColor(80);
-  doc.text('For approver review — confirms whether project(s) stay within budget after this PRF', pageW/2, y, { align: 'center' });
+  fb(14); doc.setTextColor(ink);
+  doc.text('Budget check for approver', pageW / 2, y, { align: 'center' });
+  y += 6;
+  fn(9); doc.setTextColor(90);
+  doc.text((p.ref || '') + '  ·  ' + (p.date || '') + '  ·  ' + (p.currency || 'KES'), pageW / 2, y, { align: 'center' });
+  y += 8;
+
+  var overall = bd.overallStatus || 'WITHIN BUDGET';
+  var isOver = /OUTSIDE|OVER/i.test(overall);
+  doc.setFillColor(isOver ? 255 : 220, isOver ? 235 : 245, isOver ? 235 : 220);
+  doc.rect(L, y, usable, 10, 'F');
+  doc.setDrawColor(isOver ? 180 : 40, isOver ? 60 : 140, isOver ? 60 : 40);
+  doc.setLineWidth(0.4);
+  doc.rect(L, y, usable, 10, 'S');
+  fb(11);
+  doc.setTextColor(isOver ? 160 : 20, isOver ? 30 : 110, isOver ? 30 : 30);
+  doc.text(isOver ? 'OUTSIDE BUDGET — request exceeds cost-line budget' : 'WITHIN BUDGET — OK to approve', L + 4, y + 6.5);
+  doc.setTextColor(ink);
+  y += 14;
+
+  // Primary table: cost lines (decision unit)
+  fb(10); doc.setTextColor(ink);
+  doc.text('Cost lines on this request', L, y);
+  y += 2;
+  fn(7.5); doc.setTextColor(100);
+  doc.text('A line is OVER if (already requested + this PRF) > budgeted for that cost item.', L, y + 3);
   y += 6;
 
-  fb(8); doc.setTextColor(ink);
-  doc.text('PRF: ' + (p.ref || '—') + '    Date: ' + (p.date || '—') + '    Currency: ' + (p.currency || 'KES'), L, y);
-  y += 5;
-
-  // Overall banner
-  var overall = bd.overallStatus || 'WITHIN BUDGET';
-  var over = /OUTSIDE|OVER/i.test(overall);
-  doc.setFillColor(over ? 253 : 223, over ? 231 : 246, over ? 233 : 221);
-  doc.rect(L, y, usable, 8, 'F');
-  doc.setDrawColor(lineC); doc.rect(L, y, usable, 8, 'S');
-  fb(9);
-  doc.setTextColor(over ? 180 : 16, over ? 30 : 110, over ? 30 : 16);
-  doc.text('Overall: ' + overall, L + 3, y + 5.3);
-  doc.setTextColor(ink);
-  y += 11;
-
-  // Project summary table
-  fb(9); doc.text('Project summary', L, y);
-  y += 3;
   var cols = [
-    { t: 'Project', w: 42 },
+    { t: 'Cost item', w: 48 },
     { t: 'Budgeted', w: 26 },
-    { t: 'Actuals', w: 24 },
-    { t: 'Prior PRFs', w: 24 },
-    { t: 'This PRF', w: 24 },
-    { t: 'After this PRF', w: 26 },
-    { t: 'Status', w: 20 }
+    { t: 'Already on PRFs', w: 28 },
+    { t: 'This PRF', w: 26 },
+    { t: 'Left after', w: 26 },
+    { t: 'Status', w: 28 }
   ];
-  var x0 = L, hH = 6.5;
+  var x0 = L, hH = 7;
   cols.forEach(function(c) {
-    rowBox(x0, y, c.w, hH, gray, c.t, { bold: true, size: 6.5, align: 'center' });
+    cell(x0, y, c.w, hH, gray, c.t, { bold: true, size: 7.5, align: 'center' });
     x0 += c.w;
   });
   y += hH;
-  var rh = 6.8;
-  (bd.projects || []).forEach(function(pr) {
-    if (y > 275) { doc.addPage(); y = 14; }
-    var stOver = /OVER|OUTSIDE/i.test(pr.status || '');
-    var cells = [
-      pr.project || '',
-      money(pr.budgeted),
-      money(pr.actual),
-      money(pr.priorPrf),
-      money(pr.thisPrf),
-      money(pr.afterPrf),
-      pr.status || ''
+
+  var rows = (bd.lines || []).slice();
+  if (!rows.length) {
+    cell(L, y, usable, 8, null, 'No cost lines on this PRF', { size: 8, align: 'center' });
+    y += 10;
+  }
+  rows.forEach(function(ln) {
+    if (y > 270) { doc.addPage(); y = 16; }
+    var over = /OVER/i.test(ln.status || '');
+    var left = Number(ln.remainingAfter);
+    var vals = [
+      (ln.description || '') + (ln.project ? '  (' + ln.project + ')' : ''),
+      money(ln.budgeted),
+      money(ln.alreadyRequested),
+      money(ln.thisPrf),
+      money(ln.remainingAfter),
+      over ? 'OVER BUDGET' : 'OK'
     ];
     x0 = L;
-    cells.forEach(function(txt, i) {
-      var align = i === 0 ? 'left' : (i === 6 ? 'center' : 'right');
-      var opts = { size: 7, align: align, maxLines: 2 };
-      if (i === 6) { opts.bold = true; if (stOver) opts.red = true; else opts.green = true; }
-      if (i === 5 && Number(pr.afterPrf) < -0.009) opts.red = true;
-      rowBox(x0, y, cols[i].w, rh, null, txt, opts);
+    var rh = 8;
+    vals.forEach(function(txt, i) {
+      var opt = { size: 8, align: i === 0 ? 'left' : (i === 5 ? 'center' : 'right'), maxLines: 2 };
+      if (i === 5) { opt.bold = true; if (over) opt.red = true; else opt.green = true; }
+      if (i === 4 && left < -0.009) opt.red = true;
+      if (i === 3) opt.bold = true;
+      cell(x0, y, cols[i].w, rh, over && i === 5 ? [255, 230, 230] : null, txt, opt);
       x0 += cols[i].w;
     });
     y += rh;
   });
-  y += 6;
+  y += 8;
 
-  // Line detail (only lines on this PRF / flagged)
-  if ((bd.lines || []).length) {
-    fb(9); doc.setTextColor(ink);
-    doc.text('Cost lines on this PRF', L, y);
-    y += 3;
-    var lcols = [
-      { t: 'Project', w: 32 },
-      { t: 'Cost item', w: 52 },
-      { t: 'Budgeted', w: 22 },
-      { t: 'Actual', w: 20 },
-      { t: 'This PRF', w: 22 },
-      { t: 'Remaining', w: 22 },
-      { t: 'Status', w: 16 }
+  // Compact project context
+  if ((bd.projects || []).length) {
+    if (y > 250) { doc.addPage(); y = 16; }
+    fb(10); doc.setTextColor(ink);
+    doc.text('Project totals (context)', L, y);
+    y += 5;
+    var pcols = [
+      { t: 'Project', w: 50 },
+      { t: 'Project budget', w: 32 },
+      { t: 'This PRF', w: 32 },
+      { t: 'Status', w: 32 }
     ];
+    // center remaining width
+    var pw = pcols.reduce(function(s,c){ return s + c.w; }, 0);
     x0 = L;
-    lcols.forEach(function(c) {
-      rowBox(x0, y, c.w, hH, gray, c.t, { bold: true, size: 6.5, align: 'center' });
+    pcols.forEach(function(c) {
+      cell(x0, y, c.w, hH, gray, c.t, { bold: true, size: 7.5, align: 'center' });
       x0 += c.w;
     });
     y += hH;
-    (bd.lines || []).forEach(function(ln) {
-      if (y > 275) { doc.addPage(); y = 14; }
-      var stOver = /OVER/i.test(ln.status || '');
-      var cells = [
-        ln.project || '',
-        ln.description || ln.costSummary || '',
-        money(ln.budgeted),
-        money(ln.actual),
-        money(ln.thisPrf),
-        money(ln.afterPrf),
-        ln.status || ''
-      ];
+    (bd.projects || []).forEach(function(pr) {
+      if (y > 275) { doc.addPage(); y = 16; }
+      var over = /OVER/i.test(pr.status || '');
+      var vals = [pr.project || '', money(pr.budgeted), money(pr.thisPrf), over ? 'OVER BUDGET' : 'OK'];
       x0 = L;
-      cells.forEach(function(txt, i) {
-        var align = (i === 0 || i === 1) ? 'left' : (i === 6 ? 'center' : 'right');
-        var opts = { size: 6.5, align: align, maxLines: 2 };
-        if (i === 6) { opts.bold = true; if (stOver) opts.red = true; else opts.green = true; }
-        if (i === 5 && Number(ln.afterPrf) < -0.009) opts.red = true;
-        rowBox(x0, y, lcols[i].w, rh, null, txt, opts);
-        x0 += lcols[i].w;
+      vals.forEach(function(txt, i) {
+        var opt = { size: 8, align: i === 0 ? 'left' : (i === 3 ? 'center' : 'right') };
+        if (i === 3) { opt.bold = true; if (over) opt.red = true; else opt.green = true; }
+        cell(x0, y, pcols[i].w, 7.5, null, txt, opt);
+        x0 += pcols[i].w;
       });
-      y += rh;
+      y += 7.5;
     });
   }
 
-  y += 6;
-  if (y > 270) { doc.addPage(); y = 14; }
-  fn(6.5); doc.setTextColor(90);
-  doc.text('Notes: Prior PRFs = paid requisitions only. "After this PRF" = Budgeted − Prior PRFs − This PRF.', L, y);
-  y += 3.5;
-  doc.text('WITHIN BUDGET if cumulative PRFs (paid + this) and actuals do not exceed the budgeted amount.', L, y);
-  y += 3.5;
-  doc.text('Generated ' + (bd.generatedAt || '').replace('T', ' ').slice(0, 19), L, y);
+  y += 8;
+  if (y > 275) { doc.addPage(); y = 16; }
+  fn(7.5); doc.setTextColor(90);
+  doc.text('Rule: you cannot request more than the cost-line budget. Left after = Budgeted − Already on PRFs − This PRF.', L, y);
+  y += 4;
+  doc.text('Already on PRFs includes Submitted, Approved, and Paid (not Draft / Rejected).', L, y);
+  y += 4;
+  doc.text('Generated ' + String(bd.generatedAt || '').replace('T', ' ').slice(0, 19), L, y);
 }
 
 function prfBuildPdf(p) {
