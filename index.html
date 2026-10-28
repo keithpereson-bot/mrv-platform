@@ -14152,18 +14152,18 @@ function prfBuildPdf(p) {
     var bu = has ? (ln.businessUnit || p.businessUnit || '') : '';
     // S/No column is always grey-filled (official PRF)
     box('B', 'C', y, rh, { fill: gray, text: (i + 1) + '.', size: 8, align: 'center' });
-    box('D', 'E', y, rh, { fill: val, text: bu, size: 7.5 });
-    box('F', 'M', y, rh, { fill: val, text: has ? (ln.description || '') : '', size: 7.5 });
-    box('N', 'O', y, rh, { fill: val, text: qty !== '' ? String(qty) : '', size: 8, align: 'right' });
-    box('P', 'P', y, rh, { fill: val, text: unit !== '' ? money(unit) : '', size: 8, align: 'right' });
-    box('Q', 'Q', y, rh, { fill: val, text: tot !== '' ? money(tot) : (has ? '' : '-'), size: 8, align: 'right' });
+    box('D', 'E', y, rh, { text: bu, size: 7.5 });
+    box('F', 'M', y, rh, { text: has ? (ln.description || '') : '', size: 7.5 });
+    box('N', 'O', y, rh, { text: qty !== '' ? String(qty) : '', size: 8, align: 'right' });
+    box('P', 'P', y, rh, { text: unit !== '' ? money(unit) : '', size: 8, align: 'right' });
+    box('Q', 'Q', y, rh, { text: tot !== '' ? money(tot) : (has ? '' : '-'), size: 8, align: 'right' });
     y += rh;
   });
 
   // ── SUB-TOTAL (P–Q only) — Excel row 33 ────────────────────
   var tH = 5.2;
   box('P', 'P', y, tH, { fill: gray, text: 'SUB-TOTAL', bold: true, size: 7.5, align: 'center' });
-  box('Q', 'Q', y, tH, { fill: val, text: money(subTotal || p.amount), size: 8.5, align: 'right' });
+  box('Q', 'Q', y, tH, { text: money(subTotal || p.amount), size: 8.5, align: 'right' });
   y += tH;
 
   // ── VAT row + TOTAL, with tight 2-line note on the left ─────
@@ -14180,16 +14180,15 @@ function prfBuildPdf(p) {
   var vatRowY = y;
   // VAT Appl. is white (no fill) on official form; Yes/No in red
   box('L', 'M', y, tH, { text: 'VAT Appl.', bold: true, size: 6.5, align: 'center' });
-  box('N', 'N', y, tH, { fill: val, text: vatAppl, size: 7, align: 'center', red: true });
-  box('O', 'O', y, tH, { fill: val, text: vatPct, size: 7, align: 'center' });
+  box('N', 'N', y, tH, { text: vatAppl, size: 7, align: 'center', red: true });
+  box('O', 'O', y, tH, { text: vatPct, size: 7, align: 'center' });
   box('P', 'P', y, tH, { fill: gray, text: 'VAT', bold: true, size: 7, align: 'center' });
-  box('Q', 'Q', y, tH, { fill: val, text: vatAmt ? money(vatAmt) : '-', size: 8, align: 'right' });
+  box('Q', 'Q', y, tH, { text: vatAmt ? money(vatAmt) : '-', size: 8, align: 'right' });
   y += tH;
 
   // TOTAL label grey; amount white (official PRF — do not grey-fill amount)
   box('P', 'P', y, tH, { fill: gray, text: 'TOTAL', bold: true, size: 8, align: 'center' });
   box('Q', 'Q', y, tH, {
-    fill: val,
     text: money((subTotal || Number(p.amount) || 0) + vatAmt),
     bold: true, size: 9, align: 'right'
   });
