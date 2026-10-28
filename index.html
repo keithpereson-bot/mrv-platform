@@ -13921,6 +13921,27 @@ function prfBuildPdf(p) {
     fi(5.4); doc.setTextColor(orange[0], orange[1], orange[2]);
     doc.text(String(text), x(col) + 0.3, yy);
   }
+  /** Full-width grey section header bar (REQUISITION / PAYMENT / PURPOSE). */
+  function sectionBar(yy, h, title) {
+    fillG(gray[0]);
+    doc.rect(x('B'), yy, usable, h, 'F');
+    stroke(lineC, 0.35);
+    doc.rect(x('B'), yy, usable, h, 'S');
+    fb(8); doc.setTextColor(ink);
+    doc.text(title, x('B') + 1.5, yy + h / 2 + 1.15);
+  }
+  /** Label text with red parenthetical number, e.g. BURN COMPANY (1) */
+  function labelWithRedNum(base, num, bx, by, bw, h) {
+    fb(7); doc.setTextColor(ink);
+    var prefix = base + ' ';
+    var numStr = '(' + num + ')';
+    var tw = doc.getTextWidth(prefix + numStr);
+    var startX = bx + (bw - tw) / 2;
+    doc.text(prefix, startX, by + h / 2 + 1.1);
+    doc.setTextColor(180, 40, 40);
+    doc.text(numStr, startX + doc.getTextWidth(prefix), by + h / 2 + 1.1);
+    doc.setTextColor(ink);
+  }
 
   // ── Title + logo ───────────────────────────────────────────
   fb(13.5); doc.setTextColor(ink);
@@ -13941,61 +13962,71 @@ function prfBuildPdf(p) {
   var rH = 7.2;   // data row height (~30pt)
   var hH = 3.2;   // hint row
 
-  // Row: Burn Company (B:E) | value (F:I) | Vendor (K) | value (L:Q)
-  box('B', 'E', y, rH, { fill: gray, text: 'BURN COMPANY (1)', bold: true, size: 7, align: 'center' });
+  function bookLabel(c1, c2, yy, h, base, num) {
+    var bx = x(c1), bw = wTo(c1, c2);
+    fillG(gray[0]);
+    doc.rect(bx, yy, bw, h, 'F');
+    stroke(lineC, 0.35);
+    doc.rect(bx, yy, bw, h, 'S');
+    if (num != null) labelWithRedNum(base, num, bx, yy, bw, h);
+    else {
+      fb(7); doc.setTextColor(ink);
+      var lines = doc.splitTextToSize(base, bw - 2);
+      doc.text(lines.slice(0, 2), bx + bw / 2, yy + (lines.length > 1 ? 2.6 : h / 2 + 1.1), { align: 'center' });
+    }
+  }
+
+  // Row: Burn Company | Vendor
+  bookLabel('B', 'E', y, rH, 'BURN COMPANY', 1);
   box('F', 'I', y, rH, { text: p.company || '', size: 9, align: 'center' });
-  box('K', 'K', y, rH, { fill: gray, text: 'Vendor Name', bold: true, size: 7, align: 'center' });
+  bookLabel('K', 'K', y, rH, 'Vendor Name', null);
   box('L', 'Q', y, rH, { text: p.vendorName || '', size: 8 });
   y += rH;
   hint('B', y + 2.2, '(Mandatory; BMC, BBK etc.)');
   y += hH;
 
-  // Country Code | Account
-  box('B', 'E', y, rH, { fill: gray, text: 'Country Code (2)', bold: true, size: 7, align: 'center' });
+  bookLabel('B', 'E', y, rH, 'Country Code', 2);
   box('F', 'I', y, rH, { text: p.country || '', size: 9, align: 'center' });
-  box('K', 'K', y, rH, { fill: gray, text: 'Account No./Name', bold: true, size: 6.5, align: 'center' });
+  bookLabel('K', 'K', y, rH, 'Account No./Name', null);
   box('L', 'Q', y, rH, { text: p.accountNo || '', size: 7.5, maxLines: 2 });
   y += rH;
   hint('B', y + 2.2, '(Country code if applicable; Only for BMC & BBK)');
   hint('K', y + 2.2, '(Finance to fill in)');
   y += hH;
 
-  // Cost Centre | Dimension
-  box('B', 'E', y, rH, { fill: gray, text: 'Cost Centre (3)', bold: true, size: 7, align: 'center' });
+  bookLabel('B', 'E', y, rH, 'Cost Centre', 3);
   box('F', 'I', y, rH, { text: p.costCentre || '', size: 9, align: 'center' });
-  box('K', 'K', y, rH, { fill: gray, text: 'Dimension Code (4)', bold: true, size: 6.5, align: 'center' });
+  bookLabel('K', 'K', y, rH, 'Dimension Code', 4);
   box('L', 'Q', y, rH, { text: p.dimensionCode || '', size: 8, align: 'center' });
   y += rH;
   hint('B', y + 2.2, '(Mandatory if Cost Centre, leave blank if Profit Centre)');
   hint('K', y + 2.2, '(Mandatory if Cost Centre applied)');
   y += hH;
 
-  // Profit Centre | Product
-  box('B', 'E', y, rH, { fill: gray, text: 'Profit Centre (5)', bold: true, size: 7, align: 'center' });
+  bookLabel('B', 'E', y, rH, 'Profit Centre', 5);
   box('F', 'I', y, rH, { text: p.profitCentre || '', size: 9, align: 'center' });
-  box('K', 'K', y, rH, { fill: gray, text: 'Product Code (6)', bold: true, size: 7, align: 'center' });
+  bookLabel('K', 'K', y, rH, 'Product Code', 6);
   box('L', 'Q', y, rH, { text: p.productCode || '', size: 8, align: 'center' });
   y += rH;
   hint('B', y + 2.2, '(Mandatory if Cost Centre blank)');
   hint('K', y + 2.2, '(Fill in, if applicable)');
   y += hH;
 
-  // R&D | Carbon
-  box('B', 'E', y, rH, { fill: gray, text: 'R&D Project Code (7)', bold: true, size: 6.5, align: 'center' });
+  bookLabel('B', 'E', y, rH, 'R&D Project Code', 7);
   box('F', 'I', y, rH, { text: p.rdCode || '', size: 9, align: 'center' });
-  box('K', 'K', y, rH, { fill: gray, text: 'Carbon / Project Code (8)', bold: true, size: 6, align: 'center', maxLines: 2 });
+  // Carbon label may wrap — use multi-line centre
+  bookLabel('K', 'K', y, rH, 'Carbon / Project Code', 8);
   box('L', 'Q', y, rH, { text: p.carbonCode || '', size: 7.5, align: 'center' });
   y += rH;
   hint('B', y + 2.2, '(Fill in, if applicable)');
   hint('K', y + 2.2, '(Fill in, if applicable)');
-  y += hH + 1.5;
+  y += hH + 1.2;
 
-  // ── REQUISITION INFORMATION ────────────────────────────────
-  fb(8); doc.setTextColor(ink);
-  doc.text('REQUISITION INFORMATION', x('B'), y + 3);
-  y += 4.5;
-  var qH = 7.2;
-  // A. Requestors Name (B | C:F | G:Q)
+  // ── REQUISITION INFORMATION (full-width grey bar) ──────────
+  var secH = 5.6;
+  sectionBar(y, secH, 'REQUISITION INFORMATION');
+  y += secH;
+  var qH = 7.0;
   box('B', 'B', y, qH, { fill: gray, text: 'A.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, qH, { fill: gray, text: 'Requestors Name', size: 7.5 });
   box('G', 'Q', y, qH, { text: p.requestor || '', size: 9 });
@@ -14003,52 +14034,45 @@ function prfBuildPdf(p) {
   box('B', 'B', y, qH, { fill: gray, text: 'B.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, qH, { fill: gray, text: 'Request Date', size: 7.5 });
   box('G', 'Q', y, qH, { text: p.date || '', size: 9 });
-  y += qH + 1.5;
+  y += qH + 1.2;
 
-  // ── PAYMENT INFORMATION ────────────────────────────────────
-  fb(8); doc.setTextColor(ink);
-  doc.text('PAYMENT INFORMATION', x('B'), y + 3);
-  y += 4.5;
-  var pH = 7.6;
-  // C. Mode | Mobile
+  // ── PAYMENT INFORMATION (full-width grey bar) ──────────────
+  sectionBar(y, secH, 'PAYMENT INFORMATION');
+  y += secH;
+  var pH = 7.2;
   box('B', 'B', y, pH, { fill: gray, text: 'C.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, pH, { fill: gray, text: 'Mode of payment (Cash, Mpesa, card, bank transfer)', size: 6, maxLines: 2 });
   box('G', 'K', y, pH, { text: p.modeOfPayment || '', size: 9, align: 'center' });
   box('L', 'N', y, pH, { fill: gray, text: 'Mobile/Till/ Paybill no.', size: 6, maxLines: 2, align: 'center' });
   box('O', 'Q', y, pH, { text: p.payeeNo || '', size: 9, align: 'center' });
   y += pH;
-  // D. Cash advance | Currency
   box('B', 'B', y, pH, { fill: gray, text: 'D.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, pH, { fill: gray, text: 'Cash advance required? (Y/N)', size: 6.5, maxLines: 2 });
   box('G', 'K', y, pH, { text: p.cashAdvance || 'NO', size: 9, align: 'center' });
   box('L', 'N', y, pH, { fill: gray, text: 'Currency', size: 7, align: 'center' });
   box('O', 'Q', y, pH, { text: p.currency || '', size: 9, align: 'center' });
   y += pH;
-  // E. Est date | Amount
   box('B', 'B', y, pH, { fill: gray, text: 'E.', bold: true, size: 8, align: 'center' });
   box('C', 'F', y, pH, { fill: gray, text: 'Est. payment date', size: 7.5 });
   box('G', 'K', y, pH, { text: p.estPaymentDate || '', size: 9, align: 'center' });
   box('L', 'N', y, pH, { fill: gray, text: 'Amount', size: 7, align: 'center' });
   box('O', 'Q', y, pH, { text: money(p.amount), size: 9, align: 'center' });
-  y += pH + 1.5;
+  y += pH + 1.2;
 
-  // ── PURPOSE ────────────────────────────────────────────────
-  fb(8); doc.setTextColor(ink);
-  doc.text('PURPOSE (in detail)', x('B'), y + 3);
-  y += 4.5;
-  var purposeH = 16;
+  // ── PURPOSE (full-width grey bar + content box) ────────────
+  sectionBar(y, secH, 'PURPOSE (in detail)');
+  y += secH;
+  var purposeH = 14;
   stroke(lineC, 0.35);
   doc.rect(x('B'), y, usable, purposeH, 'S');
   fn(9); doc.setTextColor(ink);
   var pLines = doc.splitTextToSize(p.purpose || '', usable - 4);
-  doc.text(pLines.slice(0, 5), x('B') + 2, y + 4.5);
-  y += purposeH + 2.5;
+  doc.text(pLines.slice(0, 4), x('B') + 2, y + 4.2);
+  y += purposeH + 2.0;
 
   // ── LINE TABLE (Excel cols) ────────────────────────────────
   // S/No B:C | BU D:E | Desc F:M | Qty N:O | Unit P | Total Q
   var th = 7.0;
-  fillG(head[0]);
-  doc.rect(x('B'), y, usable, th, 'F');
   var headers = [
     ['B', 'C', 'S/No'],
     ['D', 'E', 'Business Unit (9)'],
@@ -14058,7 +14082,7 @@ function prfBuildPdf(p) {
     ['Q', 'Q', 'Total Price']
   ];
   headers.forEach(function(h) {
-    box(h[0], h[1], y, th, { text: h[2], bold: true, size: 6.5, align: 'center' });
+    box(h[0], h[1], y, th, { fill: head, text: h[2], bold: true, size: 6.5, align: 'center' });
   });
   y += th;
 
