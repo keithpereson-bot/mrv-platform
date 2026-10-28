@@ -14087,25 +14087,34 @@ function prfBuildPdf(p) {
   });
 
   // ── SUB-TOTAL (P–Q only) — Excel row 33 ────────────────────
-  var tH = 5.4;
+  var tH = 5.2;
   box('P', 'P', y, tH, { fill: gray, text: 'SUB-TOTAL', bold: true, size: 7.5, align: 'center' });
   box('Q', 'Q', y, tH, { text: money(subTotal || p.amount), size: 8.5, align: 'right' });
   y += tH;
 
-  // ── Note (B:K) + VAT (L:M | N | O | P | Q) — Excel row 34 ──
+  // ── VAT row + TOTAL, with tight 2-line note on the left ─────
   var vatAppl = p.vatAppl || 'No';
   var vatPct = (p.vatPct != null && String(p.vatPct) !== '') ? String(p.vatPct) : '16%';
   if (vatPct.indexOf('%') < 0) {
-    var n = parseFloat(vatPct);
-    vatPct = (n <= 1 ? (n * 100) : n) + '%';
+    var nv = parseFloat(vatPct);
+    vatPct = (nv <= 1 ? (nv * 100) : nv) + '%';
     if (vatPct === 'NaN%') vatPct = '16%';
   }
   var vatAmt = Number(p.vat) || 0;
 
-  fi(7); doc.setTextColor(35);
-  var n1 = 'If the total amount is above the authorization limit of 1st approver,';
-  doc.text(doc.splitTextToSize(n1, wTo('B', 'K') - 2)[0], x('B') + 0.5, y + 3.6);
+  // Draw both note lines as a tight block spanning VAT+TOTAL rows (no large gap)
+  var noteBlockTop = y;
+  var noteMaxW = wTo('B', 'K') - 2;
+  fi(6.8); doc.setTextColor(35);
+  var noteLine1 = doc.splitTextToSize(
+    'If the total amount is above the authorization limit of 1st approver,', noteMaxW)[0];
+  var noteLine2 = doc.splitTextToSize(
+    'then 2nd approval from as per approval matrix shared earlier!', noteMaxW)[0];
+  // Tight line spacing (~3.2mm between baselines)
+  doc.text(noteLine1, x('B') + 0.5, noteBlockTop + 3.5);
+  doc.text(noteLine2, x('B') + 0.5, noteBlockTop + 6.7);
 
+  // VAT row cells
   box('L', 'M', y, tH, { fill: gray, text: 'VAT Appl.', bold: true, size: 6.5, align: 'center' });
   box('N', 'N', y, tH, { text: vatAppl, size: 7, align: 'center', red: true });
   box('O', 'O', y, tH, { text: vatPct, size: 7, align: 'center' });
@@ -14113,36 +14122,25 @@ function prfBuildPdf(p) {
   box('Q', 'Q', y, tH, { text: vatAmt ? money(vatAmt) : '-', size: 8, align: 'right' });
   y += tH;
 
-  // ── Note line 2 + TOTAL (P–Q) — Excel row 35 ───────────────
-  fi(7); doc.setTextColor(35);
-  var n2 = 'then 2nd approval from as per approval matrix shared earlier!';
-  doc.text(doc.splitTextToSize(n2, wTo('B', 'K') - 2)[0], x('B') + 0.5, y + 3.6);
-
+  // TOTAL row
   box('P', 'P', y, tH, { fill: [200, 200, 200], text: 'TOTAL', bold: true, size: 8, align: 'center' });
-  box('Q', 'Q', y, tH, { fill: [200, 200, 200], text: money((subTotal || Number(p.amount) || 0) + vatAmt), bold: true, size: 9, align: 'right' });
-  y += tH + 1.2;
+  box('Q', 'Q', y, tH, {
+    fill: [200, 200, 200],
+    text: money((subTotal || Number(p.amount) || 0) + vatAmt),
+    bold: true, size: 9, align: 'right'
+  });
+  y += tH + 1.0;
   fi(5.5); doc.setTextColor(mute);
   doc.text('Specify if USD!', x('P') + wTo('P', 'Q') / 2, y, { align: 'center' });
-  y += 4.5;
+  y += 5;
 
-  // ── SIGNATURES + footer pinned to bottom of page ───────────
-  // A4 height 297mm; footer ~5mm from bottom, boxes above it
-  var pageH = 297;
-  var footerY = pageH - 8;
-  var sigH = 16;          // shorter boxes (was 24)
-  var sigGap = 3;
-  var nameH = p.requestor ? 4 : 0;
-  var sigBlockH = nameH + sigH + 2;
-  var sigTop = footerY - 5 - sigBlockH;
-  // If content already past sigTop, stay where we are (rare overflow)
-  if (y < sigTop) y = sigTop;
-
+  // ── SIGNATURES — directly under content (not forced to page bottom)
   if (p.requestor) {
     fb(9); doc.setTextColor(ink);
     doc.text(String(p.requestor), x('B') + 1, y);
-    y += 3.5;
+    y += 3.2;
   }
-  // Three boxes from merges B:G, I:M, O:Q — italic labels
+  var sigH = 15;
   var sigDefs = [
     { c1: 'B', c2: 'G', lab: 'Requestor (name, date & sign.)' },
     { c1: 'I', c2: 'M', lab: '1st Approval (name, date & sign.)' },
@@ -14151,23 +14149,23 @@ function prfBuildPdf(p) {
   sigDefs.forEach(function(sd, si) {
     var bx = x(sd.c1);
     var bw = wTo(sd.c1, sd.c2);
-    stroke(35, 0.45);
+    stroke(35, 0.4);
     doc.rect(bx, y, bw, sigH, 'S');
-    fi(6.5); doc.setTextColor(40);  // italic labels
-    doc.text(sd.lab, bx + 1.5, y + 3.5);
+    // Italic label only — no extra baseline lines inside the box
+    fi(6.5); doc.setTextColor(40);
+    doc.text(sd.lab, bx + 1.5, y + 3.3);
     if (si === 0 && p.sigDataUrl) {
       try {
         var fmt = String(p.sigDataUrl).indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
-        var imgW = Math.min(bw - 8, 38);
-        doc.addImage(p.sigDataUrl, fmt, bx + (bw - imgW) / 2, y + 4.5, imgW, 9);
+        var imgW = Math.min(bw - 10, 36);
+        doc.addImage(p.sigDataUrl, fmt, bx + 3, y + 4.5, imgW, 9);
       } catch (eS) {}
-    } else {
-      stroke(90, 0.3);
-      doc.line(bx + 5, y + sigH - 4, bx + bw - 5, y + sigH - 4);
     }
+    // No underline strokes — keep boxes clean like the template
   });
 
-  // Footer at very bottom
+  // Footer ONLY at the bottom of the page
+  var footerY = 297 - 8;
   fi(6); doc.setTextColor(mute);
   doc.text('Author: Finance Director', x('B'), footerY);
   doc.text('Approved By: CFO', pageW / 2, footerY, { align: 'center' });
