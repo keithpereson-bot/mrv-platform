@@ -13870,8 +13870,8 @@ function prfBuildPdf(p) {
 
   var ink = 25, mute = 100, lineC = 40;
   var orange = [230, 120, 30];
-  var gray = [232, 232, 232];
-  var head = [232, 232, 232];
+  var gray = [216, 216, 216];
+  var head = [216, 216, 216];
   var y = 8;
 
   function stroke(g, wgt) { doc.setDrawColor(g, g, g); doc.setLineWidth(wgt == null ? 0.18 : wgt); }
@@ -14147,11 +14147,8 @@ function prfBuildPdf(p) {
     var tot = has ? (ln.amount != null ? ln.amount : '') : '';
     if (tot !== '') subTotal += Number(tot) || 0;
     var bu = has ? (ln.businessUnit || p.businessUnit || '') : '';
-    if (!has) {
-      fillG(245);
-      doc.rect(x('B'), y, wTo('B', 'C'), rh, 'F');
-    }
-    box('B', 'C', y, rh, { text: (i + 1) + '.', size: 8, align: 'center' });
+    // S/No column is always grey-filled (official PRF)
+    box('B', 'C', y, rh, { fill: gray, text: (i + 1) + '.', size: 8, align: 'center' });
     box('D', 'E', y, rh, { text: bu, size: 7.5 });
     box('F', 'M', y, rh, { text: has ? (ln.description || '') : '', size: 7.5 });
     box('N', 'O', y, rh, { text: qty !== '' ? String(qty) : '', size: 8, align: 'right' });
@@ -14178,16 +14175,17 @@ function prfBuildPdf(p) {
 
   // VAT + TOTAL rows on the right; note on the left (slightly lower than row tops)
   var vatRowY = y;
-  box('L', 'M', y, tH, { fill: gray, text: 'VAT Appl.', bold: true, size: 6.5, align: 'center' });
+  // VAT Appl. is white (no fill) on official form; Yes/No in red
+  box('L', 'M', y, tH, { text: 'VAT Appl.', bold: true, size: 6.5, align: 'center' });
   box('N', 'N', y, tH, { text: vatAppl, size: 7, align: 'center', red: true });
   box('O', 'O', y, tH, { text: vatPct, size: 7, align: 'center' });
   box('P', 'P', y, tH, { fill: gray, text: 'VAT', bold: true, size: 7, align: 'center' });
   box('Q', 'Q', y, tH, { text: vatAmt ? money(vatAmt) : '-', size: 8, align: 'right' });
   y += tH;
 
-  box('P', 'P', y, tH, { fill: [200, 200, 200], text: 'TOTAL', bold: true, size: 8, align: 'center' });
+  // TOTAL label grey; amount white (official PRF — do not grey-fill amount)
+  box('P', 'P', y, tH, { fill: gray, text: 'TOTAL', bold: true, size: 8, align: 'center' });
   box('Q', 'Q', y, tH, {
-    fill: [200, 200, 200],
     text: money((subTotal || Number(p.amount) || 0) + vatAmt),
     bold: true, size: 9, align: 'right'
   });
