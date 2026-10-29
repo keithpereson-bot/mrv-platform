@@ -13419,23 +13419,17 @@ function prfLineKey(l) {
   return [l.project||'', l.type||'', l.category||'', l.costSummary||'', l.costItem||''].join('|');
 }
 function prfRequestedByLine(opts) {
-  // Amounts already committed on PRFs per budget line.
-  // Default: active PRFs (Submitted / Approved / Paid).
-  // opts.paidOnly = true → only Paid
-  // opts.excludeRef = PRF ref to ignore (current form being built/exported)
+  // Only PAID PRFs affect PRF'd / Bud−Act / tranche math.
+  // Pending (Submitted/Approved) do not change balances until Paid or Discarded.
+  // opts.excludeRef = PRF ref to ignore when rebuilding breakdown for that form
   opts = opts || {};
-  var paidOnly = !!opts.paidOnly;
   var excludeRef = opts.excludeRef || null;
   var map = {};
   (prfStore || []).forEach(function(p) {
     if (!p) return;
     if (excludeRef && p.ref === excludeRef) return;
     var st = String(p.status || '').trim().toLowerCase();
-    if (paidOnly) {
-      if (st !== 'paid') return;
-    } else {
-      if (st === 'draft' || st === 'rejected' || st === 'cancelled' || st === 'deleted' || st === 'archived') return;
-    }
+    if (st !== 'paid') return;
     (p.lines || []).forEach(function(ln) {
       var k = ln.budgetKey || '';
       if (!k) return;
@@ -13444,6 +13438,22 @@ function prfRequestedByLine(opts) {
   });
   return map;
 }
+
+function prfIsPendingStatus(st) {
+  st = String(st || '').trim().toLowerCase();
+  return st === 'submitted' || st === 'approved' || st === '' || st === 'pending';
+}
+
+function prfPendingPrfs() {
+  return (prfStore || []).filter(function(p) {
+    return p && prfIsPendingStatus(p.status);
+  });
+}
+
+function prfHasPendingPrfs() {
+  return prfPendingPrfs().length > 0;
+}
+
 function prfProjectTotals() {
   var reqByLine = prfRequestedByLine();
   var byProj = {};
@@ -13690,7 +13700,7 @@ function prfIsOverBudget(l) {
   var bud = parseFloat(l.budgetedAmount) || 0;
   if (bud <= 0) return false;
   var act = prfLineActual(l);
-  var prfd = prfRequestedByLine()[prfLineKey(l)] || 0;
+  var prfd = prfRequestedByLine()[prfLineKey(l)] || 0; // paid only
   return act > bud + 0.009 || prfd > bud + 0.009;
 }
 
@@ -13715,8 +13725,8 @@ function prfTrancheAmount(l, reqByLine) {
 function prfTrancheLabel(l, reqByLine) {
   if (prfIsOverBudget(l)) return 'Over budget';
   var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
-  if (prfd <= 0.009) return '50% first';
-  return 'Balance left';
+  if (prfd <= 0.009) return '50%';
+  return 'Bud−Act';
 }
 
 function prfRenderCostLines() {
@@ -14112,6 +14122,12 @@ function prfAttachSignature(rec) {
 }
 
 async function prfGenerateBatch() {
+  var pending = prfPendingPrfs();
+  if (pending.length) {
+    toast('Resolve ' + pending.length + ' pending PRF(s) first — Mark paid or Discard. PRF\'d amounts only update after Paid.');
+    if (typeof prfRenderList === 'function') prfRenderList();
+    return;
+  }
   var lines = prfGatherSelectedLines();
   if (!lines.length) { toast('Select at least one cost summary with remaining balance'); return; }
   prfUpdatePurpose();
@@ -14292,23 +14308,33 @@ function prfRenderBalance() {
 function prfRenderList() {
   var body = document.getElementById('prfListBody');
   var meta = document.getElementById('prfListMeta');
-  if (meta) meta.textContent = (prfStore || []).length + ' PRF(s)';
+  var pending = prfPendingPrfs();
+  if (meta) {
+    meta.textContent = (prfStore || []).length + ' PRF(s)'
+      + (pending.length ? ' · ' + pending.length + ' pending (Mark paid or Discard before new PRF)' : '');
+  }
   if (!body) return;
   if (!prfStore.length) {
-    body.innerHTML = '<tr><td colspan="7" class="ecf-empty">No PRFs yet. Generate a PRF, then Mark paid when funds arrive — only Paid PRFs drive the next tranche.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="ecf-empty">No PRFs yet. Generate a PRF, then Mark paid (counts toward budget) or Discard (does not). Only Paid updates PRF\\'d / Bud−Act.</td></tr>';
     return;
   }
   function fmtN(n){ try { return Number(n||0).toLocaleString(); } catch(e){ return String(n); } }
   body.innerHTML = prfStore.map(function(p) {
     var st = String(p.status || 'Submitted');
-    var paid = st.toLowerCase() === 'paid';
+    var stl = st.toLowerCase();
+    var paid = stl === 'paid';
+    var discarded = stl === 'discarded';
+    var pending = prfIsPendingStatus(st);
     var actions = '<button class="btn btn-ghost btn-sm" onclick="prfExportOne(\''+_rqEsc(p.ref)+'\')">PDF</button>';
-    if (!paid) {
+    if (pending) {
       actions += ' <button class="btn btn-primary btn-sm" onclick="prfMarkPaid(\''+_rqEsc(p.ref)+'\')">Mark paid</button>';
+      actions += ' <button class="btn btn-ghost btn-sm" onclick="prfMarkDiscarded(\''+_rqEsc(p.ref)+'\')" style="color:var(--danger)">Discard</button>';
     }
     var stBadge = paid
       ? '<span class="badge badge-teal">Paid</span>'
-      : '<span class="badge badge-gold">'+_rqEsc(st)+'</span>';
+      : discarded
+        ? '<span class="badge badge-gray">Discarded</span>'
+        : '<span class="badge badge-gold">'+_rqEsc(st)+'</span>';
     return '<tr><td>'+_rqEsc(p.ref||'')+'</td><td>'+_rqEsc(p.project||'')+'</td>'
       + '<td>'+_rqEsc(p.requestor||'')+'</td>'
       + '<td style="text-align:right">'+_rqEsc(p.currency||'')+' '+fmtN(p.amount)+'</td>'
@@ -14321,7 +14347,9 @@ function prfRenderList() {
 function prfMarkPaid(ref) {
   var p = (prfStore || []).find(function(x){ return x.ref === ref; });
   if (!p) { toast('PRF not found'); return; }
-  if (String(p.status || '').toLowerCase() === 'paid') { toast('Already paid'); return; }
+  var st = String(p.status || '').toLowerCase();
+  if (st === 'paid') { toast('Already paid'); return; }
+  if (st === 'discarded') { toast('PRF was discarded'); return; }
   if (!p.sigDataUrl) prfAttachSignature(p);
   if (!p.sigDataUrl && !(savedSigs && savedSigs[0] && savedSigs[0].dataUrl)) {
     if (!confirm('No signature on file. Mark as paid without signature?')) return;
@@ -14333,10 +14361,32 @@ function prfMarkPaid(ref) {
   prfRenderList();
   if (typeof prfRenderCostLines === 'function') prfRenderCostLines();
   if (typeof prfRenderBalance === 'function') prfRenderBalance();
+  if (typeof prfRecalcSummary === 'function') prfRecalcSummary();
   if (gsWebAppUrl && typeof prfPushToSheets === 'function') {
     prfPushToSheets().catch(function(){});
   }
-  toast('PRF marked Paid — next tranche uses updated balances');
+  toast('PRF marked Paid — PRF\'d / Bud−Act updated for next tranche');
+}
+
+function prfMarkDiscarded(ref) {
+  var p = (prfStore || []).find(function(x){ return x.ref === ref; });
+  if (!p) { toast('PRF not found'); return; }
+  var st = String(p.status || '').toLowerCase();
+  if (st === 'paid') { toast('Already paid — cannot discard'); return; }
+  if (st === 'discarded') { toast('Already discarded'); return; }
+  if (!confirm('Discard PRF ' + (p.ref || '') + '? It will not count toward budget or unlock the next tranche until resolved. You can generate a new PRF after discarding.')) return;
+  p.status = 'Discarded';
+  p.discardedAt = new Date().toISOString();
+  p.discardedBy = (currentUser && (currentUser.name || currentUser.email)) || '';
+  persistPrfStore();
+  prfRenderList();
+  if (typeof prfRenderCostLines === 'function') prfRenderCostLines();
+  if (typeof prfRenderBalance === 'function') prfRenderBalance();
+  if (typeof prfRecalcSummary === 'function') prfRecalcSummary();
+  if (gsWebAppUrl && typeof prfPushToSheets === 'function') {
+    prfPushToSheets().catch(function(){});
+  }
+  toast('PRF discarded — not counted in PRF\'d totals. You can generate a new PRF.');
 }
 
 function prfExportOne(ref) {
@@ -14517,7 +14567,41 @@ function prfDrawBudgetBreakdownPage(doc, p) {
       y += 7.5;
     });
   }
+
+  // Prepared by / date / sign-off
+  y += 14;
+  if (y > 250) { doc.addPage(); y = 16; }
+  fb(10); doc.setTextColor(ink);
+  doc.text('Prepared by / sign-off', L, y);
+  y += 5;
+  var boxH = 28;
+  var half = usable / 2 - 3;
+  // Prepared by
+  doc.setDrawColor(lineC); doc.setLineWidth(0.25);
+  doc.rect(L, y, half, boxH, 'S');
+  fn(7.5); doc.setTextColor(90);
+  doc.text('Prepared by (name)', L + 2, y + 4);
+  fb(11); doc.setTextColor(ink);
+  doc.text(String(p.requestor || p.createdBy || ''), L + 2, y + 12);
+  fn(8); doc.setTextColor(90);
+  doc.text('Date: ' + String(p.date || (bd.generatedAt || '').slice(0, 10) || ''), L + 2, y + 20);
+  if (p.sigDataUrl) {
+    try {
+      var fmt = String(p.sigDataUrl).indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
+      doc.addImage(p.sigDataUrl, fmt, L + half - 36, y + 6, 30, 12);
+    } catch (eS) {}
+  }
+  // Approver sign-off
+  doc.setDrawColor(lineC);
+  doc.rect(L + half + 6, y, half, boxH, 'S');
+  fn(7.5); doc.setTextColor(90);
+  doc.text('Approver sign-off (name, date & sign.)', L + half + 8, y + 4);
+  // signature line
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.2);
+  doc.line(L + half + 10, y + 20, L + half + half - 4, y + 20);
 }
+
 
 function prfBuildPdf(p) {
   if (!window.jspdf || !window.jspdf.jsPDF) { toast('PDF library not loaded'); return; }
