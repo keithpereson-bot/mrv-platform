@@ -8565,7 +8565,7 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // App configuration
 // Configuration
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby36GIVohf0x8NolK_kWXiiqp48j9dyv83JdEC9VSL1dRuVLd8qUR-3E6R1l4RbFLE/exec/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby36GIVohf0x8NolK_kWXiiqp48j9dyv83JdEC9VSL1dRuVLd8qUR-3E6R1l4RbFLE/exec';
 // ════════════════════════════════════════════════════════════
 
 // State — saved URL preferred, but we fall back to hardcoded if saved URL is dead
@@ -14210,7 +14210,7 @@ function prfAttachSignature(rec) {
 async function prfGenerateBatch() {
   var pending = prfPendingPrfs();
   if (pending.length) {
-    toast('Resolve ' + pending.length + ' pending PRF(s) first — Mark paid or Discard. PRF\'d amounts only update after Paid.');
+    toast('Resolve ' + pending.length + ' pending PRF(s) first — Mark paid or Discard. PRFd amounts only update after Paid.');
     if (typeof prfRenderList === 'function') prfRenderList();
     return;
   }
@@ -14401,7 +14401,7 @@ function prfRenderList() {
   }
   if (!body) return;
   if (!prfStore.length) {
-    body.innerHTML = '<tr><td colspan="7" class="ecf-empty">No PRFs yet. Generate a PRF, then Mark paid (counts toward budget) or Discard (does not). Only Paid updates PRF\\'d / Bud−Act.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="ecf-empty">No PRFs yet. Generate a PRF, then Mark paid (counts toward budget) or Discard (does not). Only Paid updates PRFd / Bud-Act.</td></tr>';
     return;
   }
   function fmtN(n){ try { return Number(n||0).toLocaleString(); } catch(e){ return String(n); } }
@@ -14451,7 +14451,7 @@ function prfMarkPaid(ref) {
   if (gsWebAppUrl && typeof prfPushToSheets === 'function') {
     prfPushToSheets().catch(function(){});
   }
-  toast('PRF marked Paid — PRF\'d / Bud−Act updated for next tranche');
+  toast('PRF marked Paid — PRFd / Bud-Act updated for next tranche');
 }
 
 function prfMarkDiscarded(ref) {
@@ -14472,7 +14472,7 @@ function prfMarkDiscarded(ref) {
   if (gsWebAppUrl && typeof prfPushToSheets === 'function') {
     prfPushToSheets().catch(function(){});
   }
-  toast('PRF discarded — not counted in PRF\'d totals. You can generate a new PRF.');
+  toast('PRF discarded — not counted in PRFd totals. You can generate a new PRF.');
 }
 
 function prfExportOne(ref) {
