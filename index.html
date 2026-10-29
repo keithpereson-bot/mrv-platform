@@ -178,7 +178,7 @@
 
   .layout {
     display:flex;
-    height:calc(100vh - 48px);
+    height:100vh;
     overflow:hidden;
   }
 
@@ -791,7 +791,7 @@
       position:relative;
       z-index:2;
     }
-    .layout { height:calc(100vh - 48px); }
+    .layout { height:100vh; }
     aside {
       position:fixed;top:48px;left:0;bottom:52px;
       transform:translateX(-100%);transition:transform .25s cubic-bezier(.4,0,.2,1);
@@ -848,7 +848,7 @@
      ═══════════════════════════════════════════════════════════ */
   .layout {
     display:flex;
-    height:calc(100vh - 48px);
+    height:100vh;
     overflow:hidden;
     background:#FAF9F8;
   }
@@ -1795,7 +1795,7 @@
     padding: 0 18px;
     box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 8px 24px rgba(11,92,171,.18);
   }
-  .layout { height: calc(100vh - 52px); }
+  .layout { height: 100vh; }
   .nav-logo { width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,.18); backdrop-filter: blur(6px); }
   .font-size-toggle, .nav-user { border-radius: 999px; }
   aside {
@@ -1870,6 +1870,12 @@
 
 
 
+
+  /* Top bar removed */
+  nav { display: none !important; height: 0 !important; min-height: 0 !important; border: none !important; padding: 0 !important; overflow: hidden !important; }
+  .layout { height: 100vh !important; max-height: 100vh !important; }
+  body > .layout, body .layout { height: 100vh !important; }
+
   /* ═══════════════════════════════════════════════════════════
      ORACLE NETSUITE–INSPIRED ERP SHELL (app UI only)
      PDF / export builders use their own colors — untouched.
@@ -1930,7 +1936,7 @@
   #menuToggle { color: rgba(255,255,255,.8) !important; }
 
   /* Layout */
-  .layout { background: var(--ns-work) !important; height: calc(100vh - 42px) !important; }
+  .layout { background: var(--ns-work) !important; height: 100vh !important; }
   main, .view {
     background: var(--ns-work) !important;
   }
@@ -2923,35 +2929,7 @@
 </div>
 
 
-<nav>
-  <button id="menuToggle" onclick="toggleSidebar()" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-  <div class="nav-brand">
-    <div class="nav-logo">MRV</div>
-    <div>
-      <div class="nav-title">MRV Finance</div>
-      <div class="nav-sub">Enterprise Resource Planning</div>
-    </div>
-  </div>
-  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto">
-    <!-- Font size accessibility toggle -->
-    <div class="font-size-toggle desktop-only" title="Adjust text size">
-      <button class="fst-btn active" id="fst-normal" onclick="setFontSize('normal')">A</button>
-      <button class="fst-btn" id="fst-lg"     onclick="setFontSize('lg')">A+</button>
-      <button class="fst-btn" id="fst-xl"     onclick="setFontSize('xl')">A++</button>
-    </div>
-    <div id="sheetsStatusPill" onclick="showView('sheets',null)" style="display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:5px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);cursor:pointer;font-size:11.5px;font-weight:500;transition:background .15s;color:rgba(255,255,255,.9)" title="Google Sheets sync">
-      <span id="sheetsStatusDot" style="width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0"></span>
-      <span id="sheetsStatusLabel">Not connected</span>
-    </div>
-    <span class="desktop-only" style="font-size:12px;color:rgba(255,255,255,.75)">June 2026</span>
-    <!-- Mobile sign-out — placed before avatar so it never gets clipped -->
-    <button type="button" id="mobileSignOutBtn" onclick="event.stopPropagation();doLogout();">Sign Out</button>
-    <div class="nav-user" style="position:relative;cursor:pointer;flex-shrink:0" id="navUserAvatar" onclick="toggleUserMenu()" title="Account / Sign Out">
-      <span id="navUserInitials">?</span>
-      <span id="navRoleDot" style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;background:#C89B2A;border-radius:50%;border:2px solid var(--teal);"></span>
-    </div>
-  </div>
-</nav>
+
 
 <div id="sidebarOverlay" onclick="closeSidebar()"></div>
 <div class="layout">
@@ -13540,6 +13518,33 @@ function prfHasPendingPrfs() {
   return prfPendingPrfs().length > 0;
 }
 
+// budgetKey → actuals amount present when the first PRF for that line was marked Paid
+// Used so Bal−Act (budget − paid − actuals) only applies when cost came before PRF payment
+function prfLoadActualsAtFirstPaid() {
+  try {
+    var raw = localStorage.getItem('mrv_prf_actuals_at_first_paid');
+    return raw ? (JSON.parse(raw) || {}) : {};
+  } catch (e) { return {}; }
+}
+function prfSaveActualsAtFirstPaid(map) {
+  try { localStorage.setItem('mrv_prf_actuals_at_first_paid', JSON.stringify(map || {})); } catch (e) {}
+}
+function prfRecordActualsAtFirstPaid(p) {
+  if (!p || !p.lines) return;
+  var map = prfLoadActualsAtFirstPaid();
+  var paidBefore = prfRequestedByLine(); // status not yet Paid on this p if called before status flip
+  (p.lines || []).forEach(function(ln) {
+    var k = ln.budgetKey || '';
+    if (!k) return;
+    if ((paidBefore[k] || 0) > 0.009) return; // not the first paid PRF on this line
+    if (map[k] != null) return;
+    var bl = (budgetLines || []).find(function(l){ return prfLineKey(l) === k; });
+    var act = bl ? prfLineActual(bl) : (parseFloat(ln.actual) || 0);
+    map[k] = act; // may be 0 = PRF came first
+  });
+  prfSaveActualsAtFirstPaid(map);
+}
+
 function prfProjectTotals() {
   var reqByLine = prfRequestedByLine();
   var byProj = {};
@@ -13594,7 +13599,7 @@ function prfOnCostCentreChange() {
   }
 }
 
-var PRF_FIRST_TRANCHE_PCT = 0.50; // 1st: min(50% budget, remaining); later: remaining = budget − max(actuals, committed PRFs)
+var PRF_FIRST_TRANCHE_PCT = 0.50; // 1st: 50%; later: if actuals before first paid → (bud−paid)−act else bud−max(act,paid)
 
 function prfInit() {
   prfPopulateMapping();
@@ -13767,11 +13772,8 @@ function prfBudgetActualBalance(l) {
 
 /** Display remaining after accounting for PRFs already raised (informational). */
 function prfLineRemaining(l, reqByLine) {
-  var bud = parseFloat(l.budgetedAmount) || 0;
-  var act = prfLineActual(l);
-  var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
-  // What can still be requested on this line
-  return Math.max(0, bud - Math.max(act, prfd));
+  // Display the same figure the next tranche would raise
+  return prfTrancheAmount(l, reqByLine);
 }
 
 /**
@@ -13787,32 +13789,42 @@ function prfIsOverBudget(l) {
   if (bud <= 0) return false;
   var act = prfLineActual(l);
   var prfd = prfRequestedByLine()[prfLineKey(l)] || 0; // paid only
+  // Over if actuals alone exceed budget, or paid PRFs exceed budget
   return act > bud + 0.009 || prfd > bud + 0.009;
 }
 
 function prfTrancheAmount(l, reqByLine) {
+  // 1st run (no paid PRF): always 50% of budget.
+  // Next run depends on order of events:
+  //   • Actuals existed when first PRF was marked Paid → (budget − paid) − actuals
+  //       e.g. 6,000,000 budget, 130,000 actuals, 3,000,000 paid → next 2,870,000
+  //   • PRF was paid first (actuals were 0 at that time) → previous rule: budget − max(actuals, paid)
   var bud = parseFloat(l.budgetedAmount) || 0;
   var act = prfLineActual(l);
-  var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
+  var key = prfLineKey(l);
+  var prfd = (reqByLine || prfRequestedByLine())[key] || 0;
   if (bud <= 0) return 0;
-  // Hard stop: actuals already over budgeted
-  if (act > bud + 0.009) return 0;
-  // Remaining capacity on this cost line (cannot exceed budgeted)
-  var available = Math.max(0, bud - Math.max(act, prfd));
-  if (available <= 0.009) return 0;
   if (prfd <= 0.009) {
-    // 1st tranche: 50% of budget, but never more than available
-    return Math.round(Math.min(bud * PRF_FIRST_TRANCHE_PCT, available) * 100) / 100;
+    return Math.round(bud * PRF_FIRST_TRANCHE_PCT * 100) / 100;
   }
-  // Later tranche: only what is still uncommitted / unspent
-  return Math.round(available * 100) / 100;
+  var atFirst = prfLoadActualsAtFirstPaid()[key];
+  var actualsCameFirst = atFirst != null ? (Number(atFirst) > 0.009) : (act > 0.009);
+  if (actualsCameFirst) {
+    return Math.round(Math.max(0, bud - prfd - act) * 100) / 100;
+  }
+  // PRF first — prior logic
+  return Math.round(Math.max(0, bud - Math.max(act, prfd)) * 100) / 100;
 }
 
 function prfTrancheLabel(l, reqByLine) {
   if (prfIsOverBudget(l)) return 'Over budget';
-  var prfd = (reqByLine || prfRequestedByLine())[prfLineKey(l)] || 0;
+  var key = prfLineKey(l);
+  var prfd = (reqByLine || prfRequestedByLine())[key] || 0;
   if (prfd <= 0.009) return '50%';
-  return 'Bud−Act';
+  var atFirst = prfLoadActualsAtFirstPaid()[key];
+  var act = prfLineActual(l);
+  var actualsCameFirst = atFirst != null ? (Number(atFirst) > 0.009) : (act > 0.009);
+  return actualsCameFirst ? 'Bal−Act' : 'Bud−max';
 }
 
 function prfRenderCostLines() {
@@ -14440,6 +14452,8 @@ function prfMarkPaid(ref) {
   if (!p.sigDataUrl && !(savedSigs && savedSigs[0] && savedSigs[0].dataUrl)) {
     if (!confirm('No signature on file. Mark as paid without signature?')) return;
   }
+  // Snapshot actuals before this payment counts (detect actuals-first vs PRF-first)
+  try { prfRecordActualsAtFirstPaid(p); } catch (eSnap) {}
   p.status = 'Paid';
   p.paidAt = new Date().toISOString();
   p.paidBy = (currentUser && (currentUser.name || currentUser.email)) || '';
