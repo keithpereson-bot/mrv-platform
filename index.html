@@ -5759,6 +5759,10 @@ async function pullBudgetLinesFromSheets() {
     // Re-render tables now that budgetLines is populated (country filter was waiting)
     rebuildRequestsTable();
     populateAllDropdowns();
+    try { if (typeof prfInit === 'function') prfInit(); } catch (ePrf) {}
+    try { if (typeof prfRenderCostLines === 'function') prfRenderCostLines(); } catch (ePrf2) {}
+    try { if (typeof prfRenderBalance === 'function') prfRenderBalance(); } catch (ePrf3) {}
+    try { if (typeof renderBudgetView === 'function') renderBudgetView(); } catch (eBv) {}
 
     // RECONCILE: check if app actuals match Sheet actuals
     // If mismatch, push corrections to Sheet
@@ -8561,18 +8565,62 @@ function showReceipt(ref, amount, signer) {
 // REQUIRED: Replace with your Apps Script Web App URL
 // App configuration
 // Configuration
-const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby36GIVohf0x8NolK_kWXiiqp48j9dyv83JdEC9VSL1dRuVLd8qUR-3E6R1l4RbFLE/exec';
+const HARDCODED_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby36GIVohf0x8NolK_kWXiiqp48j9dyv83JdEC9VSL1dRuVLd8qUR-3E6R1l4RbFLE/exec/exec';
 // ════════════════════════════════════════════════════════════
 
-// State — prefer a URL the admin saved in this browser; fall back to hardcoded team URL
+// State — saved URL preferred, but we fall back to hardcoded if saved URL is dead
 const _hw = (HARDCODED_WEB_APP_URL && HARDCODED_WEB_APP_URL !== 'YOUR_WEB_APP_URL_HERE') ? HARDCODED_WEB_APP_URL : '';
 function _decodeUrl(s) { try { return s ? decodeURIComponent(escape(atob(s))) : ''; } catch(e) { return s || ''; } }
-var _savedUrl = _decodeUrl(localStorage.getItem('mrv_webapp_url')) || '';
-// Saved URL wins so a redeploy is not blocked by a stale hardcoded deployment ID
+var _savedUrl = _decodeUrl(localStorage.getItem('mrv_webapp_url')) || localStorage.getItem('mrv_webapp_url_raw') || '';
 let gsWebAppUrl  = _savedUrl || _hw || '';
 let gsConnected  = false; // only true after a successful ping/call
 window._gasDeploymentDead = false;
+window._gas404Until = 0;
+window._gas404Count = 0;
 let gsAutoSyncTimer= null;
+
+/** Ping current URL; if it fails and a hardcoded team URL exists, switch and retry. */
+async function ensureSheetsUrl_() {
+  var candidates = [];
+  if (gsWebAppUrl) candidates.push(gsWebAppUrl);
+  if (_hw && candidates.indexOf(_hw) < 0) candidates.push(_hw);
+  if (_savedUrl && candidates.indexOf(_savedUrl) < 0) candidates.push(_savedUrl);
+  var lastErr = null;
+  for (var i = 0; i < candidates.length; i++) {
+    var url = normalizeWebAppUrl_(candidates[i]);
+    if (!url) continue;
+    gsWebAppUrl = url;
+    window._gasDeploymentDead = false;
+    window._gas404Until = 0;
+    try {
+      var res = await _gasCallRaw({ action: 'ping' });
+      if (res && res.ok) {
+        gsConnected = true;
+        try {
+          localStorage.setItem('mrv_webapp_url', btoa(unescape(encodeURIComponent(url))));
+          localStorage.setItem('mrv_webapp_url_raw', url);
+        } catch (e0) {}
+        try {
+          var urlEl = document.getElementById('webAppUrl');
+          if (urlEl) urlEl.value = url;
+          var badge = document.getElementById('connStatusBadge');
+          if (badge) { badge.className = 'badge badge-teal'; badge.textContent = 'OK Connected'; }
+          updateSheetStatusPill && updateSheetStatusPill(true);
+        } catch (e1) {}
+        appendSyncLog('Sheets connected · ' + url.slice(0, 60) + '…');
+        return true;
+      }
+      lastErr = (res && res.error) || 'ping not ok';
+    } catch (e) {
+      lastErr = e.message || e;
+      appendSyncLog('Sheets candidate failed: ' + lastErr);
+    }
+  }
+  gsConnected = false;
+  try { updateSheetStatusPill && updateSheetStatusPill(false); } catch (e2) {}
+  if (lastErr) appendSyncLog('Sheets not connected: ' + lastErr);
+  return false;
+}
 
 // Dummy -- kept so old gapi script tags don't crash
 function gapiLoaded() {}
@@ -8612,14 +8660,56 @@ async function connectWebApp() {
     if (ctrl) ctrl.style.cssText = '';
     updateSheetStatusPill(true);
     appendSyncLog('OK ' + (res.message || 'Connected') + ' · version ' + (res.version != null ? res.version : '—'));
-    toast('Connected to Apps Script OK');
-    // Non-blocking push — do not hold the Connect button for a full sync
+    toast('Connected to Apps Script OK — loading data…');
+    // Load data immediately so budgets/projects appear
+    try {
+      await pullBudgetLinesFromSheets();
+      await pullClientsFromSheets().catch(function(){});
+      if (typeof pullRequestsOnly === 'function') await pullRequestsOnly().catch(function(){});
+      if (typeof populateAllDropdowns === 'function') populateAllDropdowns();
+      if (typeof renderDashboard === 'function') renderDashboard();
+      if (typeof prfInit === 'function') prfInit();
+      toast('Sheets data loaded');
+    } catch (eLoad) {
+      appendSyncLog('Connected but data load failed: ' + (eLoad.message || eLoad));
+    }
     try { backgroundPush({ fast: true, skipActuals: true }); } catch (e2) {}
   } catch(e) {
     gsConnected = false;
+    var hint = String(e.message || e);
+    // Auto-fallback to hardcoded team URL if pasted URL failed
+    if (_hw && normalizeWebAppUrl_(url) !== normalizeWebAppUrl_(_hw)) {
+      appendSyncLog('Pasted URL failed — trying built-in team URL…');
+      try {
+        gsWebAppUrl = _hw;
+        window._gasDeploymentDead = false;
+        window._gas404Until = 0;
+        var res2 = await _gasCallRaw({ action: 'ping' });
+        if (res2 && res2.ok) {
+          localStorage.setItem('mrv_webapp_url', btoa(unescape(encodeURIComponent(_hw))));
+          localStorage.setItem('mrv_webapp_url_raw', _hw);
+          gsConnected = true;
+          if (badge) { badge.className = 'badge badge-teal'; badge.textContent = 'OK Connected'; }
+          var urlEl2 = document.getElementById('webAppUrl');
+          if (urlEl2) urlEl2.value = _hw;
+          updateSheetStatusPill(true);
+          appendSyncLog('Connected via built-in team URL');
+          toast('Connected using team Web App URL');
+          try { backgroundPush({ fast: true, skipActuals: true }); } catch (e3) {}
+          try {
+            await pullBudgetLinesFromSheets();
+            await pullClientsFromSheets().catch(function(){});
+            if (typeof populateAllDropdowns === 'function') populateAllDropdowns();
+            if (typeof renderDashboard === 'function') renderDashboard();
+          } catch (e4) {}
+          return;
+        }
+      } catch (e5) {
+        hint = (e5 && e5.message) || hint;
+      }
+    }
     updateSheetStatusPill(false);
     if (badge) { badge.className = 'badge badge-red'; badge.textContent = 'Connection failed'; }
-    var hint = String(e.message || e);
     if (/404/.test(hint)) {
       hint = '404 — deployment URL is dead. In Apps Script: Deploy → Manage deployments → ✎ Edit → New version → Deploy. Copy the fresh /exec URL and paste it here.';
     }
@@ -11785,13 +11875,12 @@ async function afterLogin() {
   // ── STEP 0: Build sidebar for this role ─────────────────────
   buildSidebar();
 
-  // ── STEP 1: Restore Sheets UI state ──────────────────────────
+  // ── STEP 1: Restore Sheets UI state (optimistic until boot ping) ─
   if (gsWebAppUrl) {
-    gsConnected = true;
     var urlEl = document.getElementById('webAppUrl');
     if (urlEl) urlEl.value = gsWebAppUrl;
     var badge = document.getElementById('connStatusBadge');
-    if (badge) { badge.className = 'badge badge-teal'; badge.textContent = 'Connected'; }
+    if (badge) { badge.className = 'badge badge-gold'; badge.textContent = 'Connecting…'; }
     var urlDisplay = document.getElementById('connSuccessUrl');
     if (urlDisplay) urlDisplay.textContent = gsWebAppUrl;
     var box = document.getElementById('connSuccessBox');
@@ -11840,20 +11929,17 @@ async function afterLogin() {
         window._gas404Until = 0;
         window._gas404Count = 0;
         window._gasDeploymentDead = false;
-        // Fast health check — if /exec is 404, skip the rest so login stays snappy
-        try {
-          var ping = await _gasCallRaw({ action: 'ping' });
-          if (ping && ping.ok) {
-            gsConnected = true;
-            try { updateSheetStatusPill(true); } catch (e0) {}
-            appendSyncLog('Sheets ping OK' + (ping.version != null ? (' · v' + ping.version) : ''));
-          }
-        } catch (pe) {
+        // Try saved URL, then hardcoded team URL if needed
+        var ok = false;
+        try { ok = await ensureSheetsUrl_(); } catch (pe) {
           appendSyncLog('Sheets unreachable at boot: ' + (pe.message || pe));
+        }
+        if (!ok) {
           try { updateSheetStatusPill(false); } catch (e1) {}
-          // Do not queue budget/clients/requests against a dead URL
+          appendSyncLog('No working Web App URL — paste /exec URL in Settings → Connect');
           return;
         }
+        appendSyncLog('Sheets ping OK — loading data…');
         await pullBudgetLinesFromSheets().catch(function(e){ appendSyncLog('Budget pull failed: ' + (e.message||e)); });
         await pullClientsFromSheets().catch(function(e){ appendSyncLog('Clients pull failed: ' + (e.message||e)); });
         try { seedDemoDataIfEmpty(); } catch(e) {}
