@@ -2394,6 +2394,95 @@
     box-sizing: border-box !important;
   }
 
+
+  /* Sharp corners + brand checks (global consistency) */
+  .prf-chk, .prf-chk.is-on, label.prf-chk {
+    border-radius: 2px !important;
+  }
+  .prf-chk.is-on {
+    border-color: var(--ns-accent, #E8913A) !important;
+    background: var(--brand-lt, #FFF6EB) !important;
+    box-shadow: 0 0 0 1px rgba(232,145,58,.2) !important;
+  }
+  .prf-chk input,
+  .ecf-chk,
+  input[type="checkbox"].ecf-chk,
+  input[type="checkbox"].prf-country-chk,
+  input[type="checkbox"].prf-cost-chk,
+  input.prf-country-chk {
+    accent-color: var(--ns-accent, #E8913A) !important;
+  }
+  .btn, .card, .ecf-search, .ecf-search-wrap input, input, select, textarea,
+  .spend-mode-bar, .spend-mode-btn, .badge, .table-filter-input {
+    border-radius: 2px !important;
+  }
+
+  /* Spend mode tabs — same pattern as System Requests tabs */
+  .spend-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; margin-bottom: 12px; }
+  .spend-mode-bar {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    gap: 8px !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    flex: 1;
+    max-width: 420px;
+  }
+  .spend-mode-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 12px 14px !important;
+    background: #fff !important;
+    border: 1px solid var(--gray-200, #E2E5EA) !important;
+    border-radius: 2px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--gray-700) !important;
+    box-shadow: none !important;
+    text-align: center !important;
+  }
+  .spend-mode-btn:hover {
+    border-color: var(--gray-400) !important;
+    background: var(--gray-50) !important;
+    color: var(--gray-900) !important;
+  }
+  .spend-mode-btn.active {
+    border-color: var(--ns-accent, #E8913A) !important;
+    box-shadow: 0 0 0 1px var(--ns-accent, #E8913A) !important;
+    background: var(--brand-lt, #FFF6EB) !important;
+    color: var(--ns-accent-dk, #C46E1A) !important;
+    font-weight: 700 !important;
+  }
+  .spend-toolbar .ws-actions {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 8px;
+    margin-left: auto;
+  }
+  .spend-toolbar .ws-actions .btn {
+    padding: 12px 14px !important;
+    border: 1px solid var(--gray-200) !important;
+    background: #fff !important;
+    border-radius: 2px !important;
+    font-weight: 600 !important;
+  }
+  .spend-toolbar .ws-actions .btn:hover {
+    border-color: var(--ns-accent, #E8913A) !important;
+    color: var(--ns-accent-dk, #C46E1A) !important;
+  }
+
+
+  #prfTabForm.active, #prfTabBalance.active, #prfTabList.active {
+    border-color: var(--ns-accent, #E8913A) !important;
+    box-shadow: 0 0 0 1px var(--ns-accent, #E8913A) !important;
+    background: var(--brand-lt, #FFF6EB) !important;
+    color: var(--ns-accent-dk, #C46E1A) !important;
+  }
+
 </style>
 
 <style id="rq-styles">
@@ -2843,11 +2932,11 @@
     box-shadow: 0 1px 2px rgba(15,23,42,.05);
   }
   .prf-check-grid label.prf-chk.is-on {
-    border-color: #2563eb;
+    border-color: var(--ns-accent, #E8913A);
     background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%);
-    box-shadow: 0 0 0 1px rgba(37,99,235,.12);
+    box-shadow: 0 0 0 1px rgba(232,145,58,.12);
   }
-  .prf-check-grid label.prf-chk input { margin-top: 2px; accent-color: #2563eb; }
+  .prf-check-grid label.prf-chk input { margin-top: 2px; accent-color: var(--ns-accent, #E8913A); }
   #view-prf .prf-lines-table { min-width: 720px; width: 100%; border-collapse: separate; border-spacing: 0; }
   #view-prf .prf-lines-table thead th {
     font-size: 10.5px; font-weight: 700; text-transform: uppercase;
@@ -2861,7 +2950,7 @@
     font-variant-numeric: tabular-nums;
   }
   #view-prf .prf-lines-table tbody tr:hover td { background: #f8fafc; }
-  #view-prf .prf-lines-table input[type="checkbox"] { width: 15px; height: 15px; accent-color: #2563eb; }
+  #view-prf .prf-lines-table input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--ns-accent, #E8913A); }
   #view-prf .ecf-aside .ecf-panel {
     position: sticky; top: 12px;
     border-radius: 14px;
@@ -2888,7 +2977,7 @@
   }
   #view-prf .ecf-actions .btn { width: 100%; justify-content: center; border-radius: 9px; font-weight: 650; }
   #view-prf .ecf-actions .btn-primary {
-    background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(180deg, var(--ns-accent, #E8913A) 0%, var(--ns-accent-dk, #C46E1A) 100%);
     border: none; color: #fff;
     box-shadow: 0 1px 2px rgba(29,78,216,.35);
   }
@@ -2913,8 +3002,8 @@
   #view-prf .form-group input:focus,
   #view-prf .form-group select:focus,
   #view-prf .form-group textarea:focus {
-    outline: none; border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    outline: none; border-color: var(--ns-accent, #E8913A);
+    box-shadow: 0 0 0 3px rgba(232,145,58,.12);
   }
   #view-prf #prfPurpose {
     background: #f8fafc; font-weight: 600; color: #0f172a;
@@ -12580,39 +12669,61 @@ function ecfLoadRequests() {
     return;
   }
 
+  // Merge paid lines by project + cost item (sum amounts; hide individual #REQ refs)
+  var groups = {};
+  var groupOrder = [];
+  paid.forEach(function(r, i){
+    var itemKey = String(r.costItem || r.costSummary || r.description || r.category || 'Other').trim();
+    var gkey = String(r.project || '') + '||' + itemKey.toLowerCase();
+    if (!groups[gkey]) {
+      groups[gkey] = {
+        project: r.project || '',
+        title: itemKey,
+        category: r.category || '',
+        costSummary: r.costSummary || '',
+        amount: 0,
+        currency: (typeof getCurrency === 'function') ? (getCurrency(r.project, r.type) || 'KES') : 'KES',
+        refs: [],
+        indices: [],
+        search: []
+      };
+      groupOrder.push(gkey);
+    }
+    var g = groups[gkey];
+    g.amount += parseFloat(r.amount) || 0;
+    if (r.ref) g.refs.push(String(r.ref));
+    g.indices.push(i);
+    g.search.push([r.project, r.costSummary, r.description, r.costItem, r.category, r.requester, r.ref].join(' '));
+  });
+
   var html = '';
   var lastProj = null;
-  paid.forEach(function(r, i){
-    if (r.project !== lastProj) {
-      lastProj = r.project;
-      html += '<div class="ecf-req-group">'+(r.project||'').replace(/</g,'&lt;')+'</div>';
+  groupOrder.forEach(function(gkey){
+    var g = groups[gkey];
+    if (g.project !== lastProj) {
+      lastProj = g.project;
+      html += '<div class="ecf-req-group">'+(g.project||'').replace(/</g,'&lt;')+'</div>';
     }
-    var amt = parseFloat(r.amount) || 0;
-    var cur = (typeof getCurrency === 'function') ? getCurrency(r.project, r.type) || 'KES' : 'KES';
-    var desc = (r.costSummary || r.description || r.costItem || 'No description').replace(/</g, '&lt;');
-    var cat  = (r.costItem || r.category || '').replace(/</g, '&lt;');
-    var ref = String(r.ref || '').replace(/"/g,'&quot;');
-    var proj = String(r.project || '').replace(/"/g,'&quot;');
-    var searchBits = [r.project, r.costSummary, r.description, r.costItem, r.category, r.requester, r.ref, r.clientSN].join(' ').replace(/"/g,'&quot;');
-    var sub = [];
-    if (cat) sub.push(cat);
-    if (r.requester) sub.push(String(r.requester).replace(/</g,'&lt;'));
-    if (r.date) sub.push(typeof fmtDate==='function'?fmtDate(r.date):r.date);
-    if (r.clientSN) sub.push('SN '+String(r.clientSN).replace(/</g,'&lt;'));
-    if (r.ref) sub.push('#'+String(r.ref).replace(/</g,'&lt;'));
+    var title = String(g.title || 'Cost item').replace(/</g, '&lt;');
+    var n = g.refs.length || g.indices.length;
+    var sub = n + ' line' + (n === 1 ? '' : 's') + ' merged';
+    if (g.category && g.category !== g.title) sub += ' · ' + String(g.category).replace(/</g,'&lt;');
+    var refsAttr = g.refs.join('|').replace(/"/g, '&quot;');
+    var proj = String(g.project || '').replace(/"/g, '&quot;');
+    var searchBits = g.search.join(' ').replace(/"/g, '&quot;');
     html += '<label class="ecf-req" data-search="'+searchBits+'">'
-      +'<input type="checkbox" class="ecf-chk" onchange="ecfUpdateReqMeta();ecfUpdateSummary()" data-ref="'+ref+'" data-project="'+proj+'" data-i="'+i+'" style="width:14px;height:14px;accent-color:var(--brand);flex-shrink:0" checked>'
+      +'<input type="checkbox" class="ecf-chk" onchange="ecfUpdateReqMeta();ecfUpdateSummary()" data-refs="'+refsAttr+'" data-project="'+proj+'" style="width:14px;height:14px;accent-color:var(--brand);flex-shrink:0" checked>'
       +'<div style="min-width:0">'
-        +'<div class="ecf-req-title" title="'+desc+'">'+desc+'</div>'
-        +'<div class="ecf-req-sub">'+sub.join(' · ')+'</div>'
+        +'<div class="ecf-req-title" title="'+title+'">'+title+'</div>'
+        +'<div class="ecf-req-sub">'+sub+'</div>'
       +'</div>'
-      +'<div class="ecf-req-amt">'+cur+' '+amt.toLocaleString()+'</div>'
+      +'<div class="ecf-req-amt">'+g.currency+' '+g.amount.toLocaleString()+'</div>'
       +'</label>';
   });
   html += '<div id="ecfReqFilterEmpty" style="display:none;padding:16px;text-align:center;color:var(--muted);font-size:12.5px">No requests match your filter.</div>';
   list.innerHTML = html;
 
-  if (countEl) countEl.textContent = paid.length;
+  if (countEl) countEl.textContent = String(groupOrder.length);
   var reqSearch = document.getElementById('ecfReqSearch');
   if (reqSearch && reqSearch.value) ecfFilterRequests(reqSearch.value);
   ecfUpdateReqMeta();
@@ -12703,10 +12814,18 @@ function ecfGetSelected() {
   var byRef = {};
   source.forEach(function(r){ if (r.ref) byRef[r.ref] = r; });
   var out = [];
+  var seen = {};
   document.querySelectorAll('.ecf-chk').forEach(function(c){
     if (!c.checked) return;
-    var ref = c.dataset.ref;
-    if (ref && byRef[ref]) { out.push(byRef[ref]); return; }
+    // Merged rows: data-refs is pipe-separated list of underlying request refs
+    var refs = String(c.dataset.refs || c.dataset.ref || '').split('|').filter(Boolean);
+    if (refs.length) {
+      refs.forEach(function(ref){
+        if (seen[ref]) return;
+        if (byRef[ref]) { out.push(byRef[ref]); seen[ref] = 1; }
+      });
+      return;
+    }
     var i = parseInt(c.dataset.i);
     if (!isNaN(i) && source[i]) out.push(source[i]);
   });
