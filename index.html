@@ -2589,6 +2589,45 @@
     color: var(--gray-600) !important;
   }
 
+
+  /* Expense cost lines = same table language as PRF cost lines */
+  #view-expenses .ecf-cost-table,
+  #view-expenses .prf-lines-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    font-weight: 400;
+  }
+  #view-expenses .ecf-cost-table th,
+  #view-expenses .prf-lines-table th {
+    background: var(--ns-portlet, #F3F4F6) !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    color: var(--gray-600) !important;
+    padding: 7px 10px !important;
+    border-bottom: 1px solid var(--gray-300) !important;
+  }
+  #view-expenses .ecf-cost-table td,
+  #view-expenses .prf-lines-table td {
+    font-weight: 400 !important;
+    font-size: 12.5px !important;
+    padding: 6px 10px !important;
+    border-bottom: 1px solid var(--gray-100) !important;
+    color: var(--gray-800) !important;
+  }
+  #view-expenses .ecf-cost-table tbody tr:nth-child(even) td {
+    background: #FAFBFC !important;
+  }
+  #view-expenses .ecf-cost-table tbody tr:hover td {
+    background: var(--ns-row-hover, #FFF7ED) !important;
+  }
+  #view-prf .prf-lines-table tbody tr:nth-child(even) td {
+    background: #FAFBFC !important;
+  }
+  #view-prf .prf-lines-table tbody tr:hover td {
+    background: var(--ns-row-hover, #FFF7ED) !important;
+  }
+
 </style>
 
 <style id="rq-styles">
@@ -3509,48 +3548,32 @@
       <!-- ===== Main column ===== -->
       <div class="ecf-main">
 
-        <div class="card" style="overflow:hidden">
+                <div class="card" style="overflow:hidden">
           <div class="card-header">
             <div class="card-title"><span class="ecf-step">1</span>Scope</div>
-            <span class="ecf-meta">Projects + paid lines to claim</span>
+            <span class="ecf-meta">Country → one project</span>
           </div>
           <div class="spend-scope-grid">
-            <div class="spend-scope-col" style="max-height:320px;overflow:auto">
+            <div class="spend-scope-col">
               <div class="spend-scope-label">
-                <span>Projects <span class="badge badge-gray" id="ecfProjCount">0</span></span>
-                <span>
-                  <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(true)">All</button>
-                  <button class="btn btn-ghost btn-sm" onclick="ecfSelAllProjects(false)">None</button>
-                </span>
+                <span>Country</span>
+                <span class="ecf-meta" id="ecfCountryMeta">Select one</span>
+              </div>
+              <div id="ecfCountryList" class="prf-check-grid"></div>
+            </div>
+            <div class="spend-scope-col">
+              <div class="spend-scope-label">
+                <span>Project</span>
+                <span class="ecf-meta" id="ecfProjSelectedMeta">None selected</span>
               </div>
               <div class="ecf-toolbar" style="margin-bottom:8px">
-                <div class="ecf-search-wrap">
+                <div class="ecf-search-wrap" style="flex:1;max-width:none">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
                   <input id="ecfProjSearch" class="ecf-search" type="search" placeholder="Filter projects…" oninput="ecfFilterProjects(this.value)" autocomplete="off">
                 </div>
-                <span class="ecf-meta" id="ecfProjSelectedMeta">0 selected</span>
               </div>
-              <div id="ecfProjectList" class="ecf-proj-grid">
-                <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">Loading projects…</div>
-              </div>
-            </div>
-            <div class="spend-scope-col" style="max-height:320px;overflow:auto">
-              <div class="spend-scope-label">
-                <span>Paid requests <span class="badge badge-gray" id="ecfReqCount">0</span></span>
-                <span>
-                  <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(true);ecfUpdateSummary()">All</button>
-                  <button class="btn btn-ghost btn-sm" onclick="ecfSelAll(false);ecfUpdateSummary()">None</button>
-                </span>
-              </div>
-              <div class="ecf-req-toolbar" style="margin-bottom:8px">
-                <div class="ecf-search-wrap">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-                  <input id="ecfReqSearch" class="ecf-search" type="search" placeholder="Filter requests…" oninput="ecfFilterRequests(this.value)" autocomplete="off">
-                </div>
-                <span class="ecf-meta" id="ecfReqSelectedMeta">0 selected</span>
-              </div>
-              <div id="ecfRequestList" class="ecf-req-list">
-                <div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">Select project(s) to load paid requests.</div>
+              <div id="ecfProjectList" class="prf-check-grid" style="max-height:160px;overflow:auto">
+                <div style="padding:12px;text-align:center;color:var(--muted);font-size:12.5px">Select a country first</div>
               </div>
             </div>
           </div>
@@ -3558,7 +3581,43 @@
 
         <div class="card">
           <div class="card-header">
-            <div class="card-title"><span class="ecf-step">2</span>Claimant &amp; header</div>
+            <div class="card-title"><span class="ecf-step">2</span>Cost lines</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span class="ecf-meta" id="ecfReqSelectedMeta">0 selected</span>
+              <span class="badge badge-gray" id="ecfReqCount">0</span>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="ecfSelAll(true);ecfUpdateSummary()">All</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="ecfSelAll(false);ecfUpdateSummary()">None</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="ecf-req-toolbar" style="border-bottom:1px solid var(--gray-200)">
+              <div class="ecf-search-wrap">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                <input id="ecfReqSearch" class="ecf-search" type="search" placeholder="Filter cost items…" oninput="ecfFilterRequests(this.value)" autocomplete="off">
+              </div>
+            </div>
+            <div class="table-scroll" style="max-height:min(360px,42vh)">
+              <table class="prf-lines-table ecf-cost-table" id="ecfCostTable">
+                <thead>
+                  <tr>
+                    <th style="width:36px"><input type="checkbox" id="ecfCostCheckAll" onchange="ecfSelAll(this.checked);ecfUpdateSummary()"></th>
+                    <th>Cost item</th>
+                    <th>Project</th>
+                    <th style="text-align:right">Lines</th>
+                    <th style="text-align:right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="ecfRequestList">
+                  <tr><td colspan="5" class="ecf-empty" style="text-align:center;padding:24px;color:var(--muted)">Select country and project to load cost lines</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="ecf-step">3</span>Claimant &amp; header</div>
             <button class="btn btn-ghost btn-sm" onclick="ecfAutoHeader(true);ecfUpdateSummary()" title="Refill from your profile and the project budget">&#8635; Auto-fill</button>
           </div>
           <div class="card-body ecf-header-body">
@@ -12623,23 +12682,24 @@ function ecfGetSelectedProjects() {
 }
 
 function ecfSelAllProjects(v) {
+  // Expense claims are one project per form — only Clear is meaningful
+  if (v) return;
   document.querySelectorAll('.ecf-proj-chk').forEach(function(c){
-    var row = c.closest('.ecf-proj');
-    if (row && row.classList.contains('ecf-hidden')) return;
-    c.checked = !!v;
-    if (row) row.classList.toggle('is-on', !!v);
+    c.checked = false;
+    var lab = c.closest('.prf-chk');
+    if (lab) lab.classList.remove('is-on');
   });
   ecfOnProjectChange();
 }
 
 function ecfFilterProjects(q) {
   q = String(q || '').toLowerCase().trim();
-  var rows = document.querySelectorAll('#ecfProjectList .ecf-proj');
+  var rows = document.querySelectorAll('#ecfProjectList .prf-chk, #ecfProjectList .ecf-proj');
   var shown = 0;
   rows.forEach(function(row) {
     var name = (row.getAttribute('data-name') || '').toLowerCase();
     var hit = !q || name.indexOf(q) !== -1;
-    row.classList.toggle('ecf-hidden', !hit);
+    row.style.display = hit ? '' : 'none';
     if (hit) shown++;
   });
   var empty = document.getElementById('ecfProjFilterEmpty');
@@ -12649,7 +12709,6 @@ function ecfFilterProjects(q) {
 function ecfFilterRequests(q) {
   q = String(q || '').toLowerCase().trim();
   var rows = document.querySelectorAll('#ecfRequestList .ecf-req');
-  var groups = document.querySelectorAll('#ecfRequestList .ecf-req-group');
   var shown = 0;
   rows.forEach(function(row) {
     var hay = (row.getAttribute('data-search') || '').toLowerCase();
@@ -12657,24 +12716,12 @@ function ecfFilterRequests(q) {
     row.style.display = hit ? '' : 'none';
     if (hit) shown++;
   });
-  // Hide group headers with no visible rows
-  groups.forEach(function(g) {
-    var next = g.nextElementSibling;
-    var any = false;
-    while (next && !next.classList.contains('ecf-req-group')) {
-      if (next.classList.contains('ecf-req') && next.style.display !== 'none') any = true;
-      next = next.nextElementSibling;
-    }
-    g.style.display = any ? '' : 'none';
-  });
-  var empty = document.getElementById('ecfReqFilterEmpty');
-  if (empty) empty.style.display = (rows.length && !shown) ? '' : 'none';
 }
 
 function ecfUpdateProjMeta() {
   var n = document.querySelectorAll('.ecf-proj-chk:checked').length;
   var el = document.getElementById('ecfProjSelectedMeta');
-  if (el) el.textContent = n + ' selected';
+  if (el) el.textContent = n ? '1 project' : 'None selected';
   var total = document.querySelectorAll('.ecf-proj-chk').length;
   var c = document.getElementById('ecfProjCount');
   if (c) c.textContent = String(total);
@@ -12686,51 +12733,127 @@ function ecfUpdateReqMeta() {
   if (el) el.textContent = n + ' selected';
 }
 
-function ecfPopulateProjects() {
-  var list = document.getElementById('ecfProjectList');
-  if (!list) return;
+function ecfProjectCountry(projectName) {
+  var p = String(projectName || '').trim();
+  if (!p) return '';
+  var bl = (budgetLines || []).find(function(l){ return String(l.project || '').trim() === p && l.country; });
+  if (bl && bl.country) return String(bl.country).trim();
+  var meta = (typeof getProjectBudgetMeta === 'function') ? getProjectBudgetMeta(p) : null;
+  if (meta && meta.country) return String(meta.country).trim();
+  var req = (requestsStore || []).find(function(r){ return String(r.project || '').trim() === p && r.country; });
+  return req ? String(req.country).trim() : '';
+}
 
-  var prevChecked = {};
-  document.querySelectorAll('.ecf-proj-chk:checked').forEach(function(c){ prevChecked[c.value] = true; });
-
+function ecfPaidProjectMap() {
   var paid = (requestsStore || []).filter(function(r){ return r.status === 'Paid'; });
   var projects = {};
   paid.forEach(function(r){
     var p = (r.project || '').trim();
     if (!p) return;
-    if (!projects[p]) projects[p] = { count: 0, total: 0 };
+    if (!projects[p]) projects[p] = { count: 0, total: 0, country: ecfProjectCountry(p) || String(r.country || '').trim() };
     projects[p].count++;
     projects[p].total += parseFloat(r.amount) || 0;
+    if (!projects[p].country) projects[p].country = ecfProjectCountry(p) || String(r.country || '').trim();
   });
-  var names = Object.keys(projects).sort(function(a,b){ return a.localeCompare(b); });
+  return projects;
+}
 
+function ecfRenderCountries() {
+  var list = document.getElementById('ecfCountryList');
+  if (!list) return;
+  var prev = {};
+  document.querySelectorAll('.ecf-country-chk:checked').forEach(function(c){ prev[c.value] = true; });
+  var projects = ecfPaidProjectMap();
+  var countries = {};
+  Object.keys(projects).forEach(function(p){
+    var c = projects[p].country || 'Unknown';
+    countries[c] = (countries[c] || 0) + 1;
+  });
+  var names = Object.keys(countries).sort(function(a,b){ return a.localeCompare(b); });
   if (!names.length) {
-    list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">No projects with paid requests. Mark requests as Paid first.</div>';
+    list.innerHTML = '<div style="padding:10px;color:var(--muted);font-size:12.5px">No paid requests yet</div>';
+    return;
+  }
+  // Single-select country chips (like PRF look)
+  list.innerHTML = names.map(function(c){
+    var on = prev[c] ? ' checked' : '';
+    var isOn = prev[c] ? ' is-on' : '';
+    return '<label class="prf-chk'+isOn+'"><input type="radio" class="ecf-country-chk" name="ecfCountry" value="'+_rqEsc(c)+'"'+on+' onchange="ecfOnCountryChange()"><span>'+_rqEsc(c)+'</span></label>';
+  }).join('');
+  var meta = document.getElementById('ecfCountryMeta');
+  var sel = document.querySelector('.ecf-country-chk:checked');
+  if (meta) meta.textContent = sel ? '1 selected' : 'Select one';
+}
+
+function ecfOnCountryChange() {
+  document.querySelectorAll('#ecfCountryList .prf-chk').forEach(function(lab){
+    var inp = lab.querySelector('input');
+    lab.classList.toggle('is-on', !!(inp && inp.checked));
+  });
+  var meta = document.getElementById('ecfCountryMeta');
+  var sel = document.querySelector('.ecf-country-chk:checked');
+  if (meta) meta.textContent = sel ? '1 selected' : 'Select one';
+  ecfPopulateProjects();
+  ecfLoadRequests();
+  ecfUpdateSummary();
+}
+
+function ecfSelectedCountry() {
+  var c = document.querySelector('.ecf-country-chk:checked');
+  return c ? c.value : '';
+}
+
+function ecfPopulateProjects() {
+  var list = document.getElementById('ecfProjectList');
+  if (!list) return;
+  var country = ecfSelectedCountry();
+  var prev = (document.querySelector('.ecf-proj-chk:checked') || {}).value || '';
+  var projects = ecfPaidProjectMap();
+  var names = Object.keys(projects).filter(function(p){
+    if (!country) return false;
+    return String(projects[p].country || 'Unknown') === country;
+  }).sort(function(a,b){ return a.localeCompare(b); });
+
+  if (!country) {
+    list.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:12.5px">Select a country first</div>';
+    ecfUpdateProjMeta();
+    return;
+  }
+  if (!names.length) {
+    list.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:12.5px">No projects with paid requests in this country</div>';
     ecfUpdateProjMeta();
     return;
   }
 
   list.innerHTML = names.map(function(p){
     var info = projects[p];
-    var checked = prevChecked[p] ? ' checked' : '';
-    var safe = p.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-    var disp = p.replace(/</g,'&lt;');
-    return '<label class="ecf-proj' + (checked ? ' is-on' : '') + '" data-name="'+safe+'">'
-      +'<input type="checkbox" class="ecf-proj-chk" value="'+safe+'"'+checked
-      +' onchange="this.closest(\'.ecf-proj\').classList.toggle(\'is-on\',this.checked);ecfOnProjectChange()" style="width:14px;height:14px;accent-color:var(--brand);flex-shrink:0">'
-      +'<div style="flex:1;min-width:0">'
-        +'<div class="ecf-proj-name" title="'+safe+'">'+disp+'</div>'
-        +'<div class="ecf-proj-meta">'+info.count+' paid</div>'
-      +'</div>'
-      +'<div class="ecf-proj-amt">'+info.total.toLocaleString()+'</div>'
-      +'</label>';
+    var checked = (prev === p) ? ' checked' : '';
+    var isOn = (prev === p) ? ' is-on' : '';
+    return '<label class="prf-chk'+isOn+'" data-name="'+_rqEsc(p)+'">'
+      +'<input type="radio" class="ecf-proj-chk" name="ecfProject" value="'+_rqEsc(p)+'"'+checked
+      +' onchange="ecfOnProjectPick(this)">'
+      +'<span><strong style="font-weight:600">'+_rqEsc(p)+'</strong>'
+      +'<span style="display:block;font-size:11px;color:var(--muted);font-weight:400">'+info.count+' paid · '+info.total.toLocaleString()+'</span></span></label>';
   }).join('')
-  + '<div id="ecfProjFilterEmpty" style="display:none;padding:14px;text-align:center;color:var(--muted);font-size:12.5px">No projects match your filter.</div>';
+  + '<div id="ecfProjFilterEmpty" style="display:none;padding:12px;text-align:center;color:var(--muted);font-size:12.5px">No projects match your filter.</div>';
 
   var search = document.getElementById('ecfProjSearch');
   if (search && search.value) ecfFilterProjects(search.value);
+  // If previous project not in list, clear
+  if (prev && names.indexOf(prev) < 0) {
+    ecfLoadRequests();
+  }
   ecfUpdateProjMeta();
 }
+
+function ecfOnProjectPick(el) {
+  document.querySelectorAll('#ecfProjectList .prf-chk').forEach(function(lab){
+    var inp = lab.querySelector('input');
+    lab.classList.toggle('is-on', !!(inp && inp.checked));
+  });
+  ecfOnProjectChange();
+}
+
 
 function ecfOnProjectChange() {
   ecfUpdateProjMeta();
@@ -12748,7 +12871,7 @@ function ecfLoadRequests() {
   var selectedProjects = ecfGetSelectedProjects();
   if (!selectedProjects.length) {
     _ecfFilteredPaid = [];
-    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">Select one or more projects above to load paid requests.</div>';
+    list.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Select country and project to load cost lines</td></tr>';
     if (countEl) countEl.textContent = '0';
     ecfUpdateReqMeta();
     ecfUpdateSummary();
@@ -12768,7 +12891,7 @@ function ecfLoadRequests() {
   _ecfFilteredPaid = paid;
 
   if (!paid.length) {
-    list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted);font-size:13px">No paid requests for the selected project(s).</div>';
+    list.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">No paid requests for this project</td></tr>';
     if (countEl) countEl.textContent = '0';
     ecfUpdateReqMeta();
     ecfUpdateSummary();
@@ -12803,31 +12926,23 @@ function ecfLoadRequests() {
   });
 
   var html = '';
-  var lastProj = null;
   groupOrder.forEach(function(gkey){
     var g = groups[gkey];
-    if (g.project !== lastProj) {
-      lastProj = g.project;
-      html += '<div class="ecf-req-group">'+(g.project||'').replace(/</g,'&lt;')+'</div>';
-    }
     var title = String(g.title || 'Cost item').replace(/</g, '&lt;');
     var n = g.refs.length || g.indices.length;
-    var sub = n + ' line' + (n === 1 ? '' : 's') + ' merged';
-    if (g.category && g.category !== g.title) sub += ' · ' + String(g.category).replace(/</g,'&lt;');
     var refsAttr = g.refs.join('|').replace(/"/g, '&quot;');
     var proj = String(g.project || '').replace(/"/g, '&quot;');
     var searchBits = g.search.join(' ').replace(/"/g, '&quot;');
-    html += '<label class="ecf-req" data-search="'+searchBits+'">'
-      +'<input type="checkbox" class="ecf-chk" onchange="ecfUpdateReqMeta();ecfUpdateSummary()" data-refs="'+refsAttr+'" data-project="'+proj+'" style="width:14px;height:14px;accent-color:var(--brand);flex-shrink:0" checked>'
-      +'<div style="min-width:0">'
-        +'<div class="ecf-req-title" title="'+title+'">'+title+'</div>'
-        +'<div class="ecf-req-sub">'+sub+'</div>'
-      +'</div>'
-      +'<div class="ecf-req-amt">'+g.currency+' '+g.amount.toLocaleString()+'</div>'
-      +'</label>';
+    var cat = (g.category && g.category !== g.title) ? ('<div class="text-muted text-sm">'+String(g.category).replace(/</g,'&lt;')+'</div>') : '';
+    html += '<tr class="ecf-req" data-search="'+searchBits+'">'
+      +'<td><input type="checkbox" class="ecf-chk" onchange="ecfUpdateReqMeta();ecfUpdateSummary()" data-refs="'+refsAttr+'" data-project="'+proj+'" checked></td>'
+      +'<td>'+title+cat+'</td>'
+      +'<td>'+String(g.project||'').replace(/</g,'&lt;')+'</td>'
+      +'<td style="text-align:right">'+n+'</td>'
+      +'<td style="text-align:right;font-weight:600">'+g.currency+' '+g.amount.toLocaleString()+'</td>'
+      +'</tr>';
   });
-  html += '<div id="ecfReqFilterEmpty" style="display:none;padding:16px;text-align:center;color:var(--muted);font-size:12.5px">No requests match your filter.</div>';
-  list.innerHTML = html;
+  list.innerHTML = html || '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">No cost lines</td></tr>';
 
   if (countEl) countEl.textContent = String(groupOrder.length);
   var reqSearch = document.getElementById('ecfReqSearch');
@@ -12836,7 +12951,16 @@ function ecfLoadRequests() {
   ecfUpdateSummary();
 }
 
-function ecfSelAll(v) { document.querySelectorAll('.ecf-chk').forEach(function(c){ if (c.closest('.ecf-req') && c.closest('.ecf-req').style.display==='none') return; c.checked = v; }); ecfUpdateReqMeta(); }
+function ecfSelAll(v) {
+  document.querySelectorAll('#ecfRequestList .ecf-chk').forEach(function(c){
+    var row = c.closest('.ecf-req');
+    if (row && row.style.display === 'none') return;
+    c.checked = !!v;
+  });
+  var all = document.getElementById('ecfCostCheckAll');
+  if (all) all.checked = !!v;
+  ecfUpdateReqMeta();
+}
 
 function ecfAutoHeader(force) {
   // force=true overwrites existing field values (used when project selection changes)
@@ -13058,7 +13182,8 @@ var ECF_LOGO_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAPAAAABkCAMAAACPfE31AAAAA3NCSVQICAjb
 
 async function ecfExportPDF() {
   var selectedProjects = ecfGetSelectedProjects();
-  if (!selectedProjects.length) { toast('Select at least one project'); return; }
+  if (!selectedProjects.length) { toast('Select a country and one project'); return; }
+  if (selectedProjects.length > 1) { toast('Expense claim is one project per form'); return; }
   var allSel = ecfGetSelected();
   if (!allSel.length) { toast('Select at least one paid request'); return; }
   var sigDataUrl = ecfGetAdminSig();
@@ -13719,6 +13844,7 @@ function ecf_hf(label,val){
 
 
 function ecfInit() {
+  ecfRenderCountries();
   ecfPopulateProjects();
   ecfLoadRequests();
   ecfInitSig();
