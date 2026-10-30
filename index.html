@@ -2047,7 +2047,7 @@
   }
   .card-title, .ws-panel-title {
     font-size: 12.5px !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
     color: var(--gray-800) !important;
   }
   .card-body, .ws-panel-body.padded { padding: 12px !important; }
@@ -2057,7 +2057,7 @@
     border-radius: 2px !important;
     font-family: Arial, Helvetica, sans-serif !important;
     font-size: 12px !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
     padding: 6px 12px !important;
   }
   .btn-primary, .btn-amber {
@@ -2095,8 +2095,8 @@
   /* Forms */
   label {
     font-size: 11px !important;
-    font-weight: 700 !important;
-    color: var(--gray-700) !important;
+    font-weight: 600 !important;
+    color: var(--gray-600) !important;
   }
   input, select, textarea {
     border-radius: 2px !important;
@@ -2116,9 +2116,9 @@
   /* Tables — NetSuite list view */
   th {
     background: var(--ns-portlet) !important;
-    color: var(--gray-700) !important;
+    color: var(--gray-600) !important;
     font-size: 11px !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
     text-transform: none !important;
     letter-spacing: 0 !important;
     border-bottom: 1px solid var(--gray-300) !important;
@@ -2395,92 +2395,198 @@
   }
 
 
-  /* Sharp corners + brand checks (global consistency) */
-  .prf-chk, .prf-chk.is-on, label.prf-chk {
+  
+  /* ═══ Spend workspace — match app shell theme ═══ */
+  #view-prf,
+  #view-expenses {
+    font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+    font-size: 13px;
+    color: var(--gray-800, #1F2937);
+    font-weight: 400;
+  }
+  #view-prf .card,
+  #view-expenses .card {
+    background: #fff;
+    border: 1px solid var(--gray-200, #E2E5EA) !important;
     border-radius: 2px !important;
+    box-shadow: none !important;
   }
-  .prf-chk.is-on {
-    border-color: var(--ns-accent, #E8913A) !important;
-    background: var(--brand-lt, #FFF6EB) !important;
-    box-shadow: 0 0 0 1px rgba(232,145,58,.2) !important;
+  #view-prf .card-header,
+  #view-expenses .card-header {
+    background: var(--ns-portlet, #F3F4F6) !important;
+    border-bottom: 1px solid var(--gray-200, #E2E5EA) !important;
+    padding: 8px 12px !important;
   }
-  .prf-chk input,
-  .ecf-chk,
-  input[type="checkbox"].ecf-chk,
-  input[type="checkbox"].prf-country-chk,
-  input[type="checkbox"].prf-cost-chk,
-  input.prf-country-chk {
-    accent-color: var(--ns-accent, #E8913A) !important;
+  #view-prf .card-title,
+  #view-expenses .card-title {
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    color: var(--gray-800, #1F2937) !important;
+    letter-spacing: 0 !important;
   }
-  .btn, .card, .ecf-search, .ecf-search-wrap input, input, select, textarea,
-  .spend-mode-bar, .spend-mode-btn, .badge, .table-filter-input {
-    border-radius: 2px !important;
+  #view-prf .ecf-step,
+  #view-expenses .ecf-step {
+    font-weight: 600 !important;
+    background: var(--gray-700, #374151) !important;
+    color: #fff !important;
+  }
+  #view-prf .ecf-meta,
+  #view-expenses .ecf-meta,
+  #view-prf .badge,
+  #view-expenses .badge {
+    font-weight: 500 !important;
+    font-size: 11px !important;
+  }
+  #view-prf th,
+  #view-expenses th {
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    color: var(--gray-600, #4B5563) !important;
+    background: var(--ns-portlet, #F3F4F6) !important;
+  }
+  #view-prf td,
+  #view-expenses td {
+    font-weight: 400 !important;
+    font-size: 12.5px !important;
+    color: var(--gray-800) !important;
+  }
+  #view-prf .ecf-req-title,
+  #view-expenses .ecf-req-title {
+    font-weight: 600 !important;
+    font-size: 12.5px !important;
+  }
+  #view-prf .ecf-req-sub,
+  #view-expenses .ecf-req-sub {
+    font-weight: 400 !important;
+    color: var(--gray-500) !important;
+  }
+  #view-prf .ecf-req-amt,
+  #view-expenses .ecf-req-amt {
+    font-weight: 600 !important;
+  }
+  #view-prf label,
+  #view-expenses label {
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    color: var(--gray-600) !important;
+  }
+  #view-prf .ecf-group-title,
+  #view-expenses .ecf-group-title {
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    color: var(--gray-500) !important;
+    letter-spacing: 0.02em;
   }
 
-  /* Spend mode tabs — same pattern as System Requests tabs */
-  .spend-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; margin-bottom: 12px; }
+  /* Chips — theme, not blue */
+  #view-prf .prf-chk,
+  #view-expenses .prf-chk {
+    border-radius: 2px !important;
+    border: 1px solid var(--gray-200) !important;
+    background: #fff !important;
+    font-weight: 400 !important;
+    font-size: 12.5px !important;
+    box-shadow: none !important;
+  }
+  #view-prf .prf-chk.is-on,
+  #view-expenses .prf-chk.is-on {
+    border-color: var(--ns-accent, #E8913A) !important;
+    background: var(--brand-lt, #FFF6EB) !important;
+    box-shadow: 0 0 0 1px rgba(232,145,58,.15) !important;
+    font-weight: 500 !important;
+  }
+  #view-prf .prf-chk input,
+  #view-expenses input[type="checkbox"] {
+    accent-color: var(--ns-accent, #E8913A) !important;
+  }
+
+  /* Mode + work tabs — quiet NetSuite tiles */
+  .spend-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: stretch;
+    margin-bottom: 10px;
+  }
   .spend-mode-bar {
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
     gap: 8px !important;
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    overflow: visible !important;
+    max-width: 400px;
     flex: 1;
-    max-width: 420px;
   }
   .spend-mode-btn {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 12px 14px !important;
+    padding: 10px 12px !important;
     background: #fff !important;
-    border: 1px solid var(--gray-200, #E2E5EA) !important;
+    border: 1px solid var(--gray-200) !important;
     border-radius: 2px !important;
-    font-size: 13px !important;
+    font-size: 12.5px !important;
     font-weight: 600 !important;
     color: var(--gray-700) !important;
     box-shadow: none !important;
     text-align: center !important;
   }
   .spend-mode-btn:hover {
-    border-color: var(--gray-400) !important;
     background: var(--gray-50) !important;
-    color: var(--gray-900) !important;
+    border-color: var(--gray-300) !important;
   }
   .spend-mode-btn.active {
     border-color: var(--ns-accent, #E8913A) !important;
     box-shadow: 0 0 0 1px var(--ns-accent, #E8913A) !important;
     background: var(--brand-lt, #FFF6EB) !important;
     color: var(--ns-accent-dk, #C46E1A) !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
   }
   .spend-toolbar .ws-actions {
-    display: grid;
-    grid-template-columns: repeat(3, auto);
+    display: flex;
     gap: 8px;
     margin-left: auto;
   }
   .spend-toolbar .ws-actions .btn {
-    padding: 12px 14px !important;
+    padding: 10px 12px !important;
     border: 1px solid var(--gray-200) !important;
     background: #fff !important;
     border-radius: 2px !important;
+    font-size: 12.5px !important;
     font-weight: 600 !important;
+    color: var(--gray-700) !important;
   }
-  .spend-toolbar .ws-actions .btn:hover {
-    border-color: var(--ns-accent, #E8913A) !important;
-    color: var(--ns-accent-dk, #C46E1A) !important;
-  }
-
-
+  .spend-toolbar .ws-actions .btn:hover,
   #prfTabForm.active, #prfTabBalance.active, #prfTabList.active {
     border-color: var(--ns-accent, #E8913A) !important;
     box-shadow: 0 0 0 1px var(--ns-accent, #E8913A) !important;
     background: var(--brand-lt, #FFF6EB) !important;
     color: var(--ns-accent-dk, #C46E1A) !important;
+    font-weight: 600 !important;
+  }
+
+  /* Aside action panel */
+  #view-prf .ecf-aside .card-title,
+  #view-expenses .ecf-aside .card-title {
+    font-weight: 600 !important;
+  }
+  #view-prf .btn-primary,
+  #view-expenses .btn-primary {
+    font-weight: 600 !important;
+    border-radius: 2px !important;
+  }
+  #view-prf .ecf-req-group,
+  #view-expenses .ecf-req-group {
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    letter-spacing: 0.03em;
+    color: var(--ns-accent-dk, #C46E1A) !important;
+    background: var(--brand-lt, #FFF6EB) !important;
+  }
+  #view-prf .spend-scope-label,
+  #view-expenses .spend-scope-label {
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    color: var(--gray-600) !important;
   }
 
 </style>
