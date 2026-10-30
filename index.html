@@ -3922,7 +3922,7 @@
                   <button type="button" class="btn btn-secondary" id="prfPreviewBtn" onclick="prfPreviewBatch()">Preview selection</button>
                   <button type="button" class="btn btn-ghost" onclick="prfResetForm()">Clear</button>
                 </div>
-                <p class="text-muted text-sm" style="margin:10px 0 0">Up to <strong>4 raises</strong> per cost item at <strong>25%</strong> of budget each. Next raise only after the previous PRF is <strong>Marked paid</strong>.</p>
+                <p class="text-muted text-sm" style="margin:10px 0 0">Amount = <strong>Budget − Actuals − paid PRFs</strong> (reducing balance). Raise again only after the previous PRF is <strong>Marked paid</strong>. Number of raises follows remaining balance.</p>
               </div>
             </div>
           </aside>
@@ -14248,9 +14248,10 @@ function prfOnCostCentreChange() {
   }
 }
 
-var PRF_TRANCHE_PCT = 0.25;
-var PRF_MAX_TRANCHES = 4;
-var PRF_FIRST_TRANCHE_PCT = PRF_TRANCHE_PCT; // 1st: 50%; later: if actuals before first paid → (bud−paid)−act else bud−max(act,paid)
+/* PRF amount = reducing balance of (Budget − Actuals − paid PRFs). Count = until remaining is 0. */
+var PRF_TRANCHE_PCT = 1; // full remaining balance each eligible raise
+var PRF_MAX_TRANCHES = 99; // no fixed 4-cap; balance drives how many raises
+var PRF_FIRST_TRANCHE_PCT = 1; // 1st: 50%; later: if actuals before first paid → (bud−paid)−act else bud−max(act,paid)
 
 function prfInit() {
   prfPopulateMapping();
@@ -14445,25 +14446,29 @@ function prfIsOverBudget(l) {
 }
 
 function prfTrancheAmount(l, reqByLine) {
+  // Reducing balance: available = Budget − Actuals − paid PRFs on this cost item.
+  // That remaining amount is what can be raised next (after prior PRF is Marked paid).
+  // How many times you can raise = until this balance reaches 0 (not a fixed 4×25%).
   var bud = parseFloat(l.budgetedAmount) || 0;
+  var act = prfLineActual(l);
   var key = prfLineKey(l);
   var prfd = (reqByLine || prfRequestedByLine())[key] || 0;
-  var nPaid = (prfPaidCountByLine())[key] || 0;
   if (bud <= 0) return 0;
-  if (nPaid >= PRF_MAX_TRANCHES) return 0;
-  var slice = bud * PRF_TRANCHE_PCT;
-  var room = Math.max(0, bud - prfd);
-  return Math.round(Math.min(slice, room) * 100) / 100;
+  var available = Math.max(0, bud - act - prfd);
+  return Math.round(available * 100) / 100;
 }
+
 
 
 function prfTrancheLabel(l, reqByLine) {
   if (prfIsOverBudget(l)) return 'Over budget';
-  var key = prfLineKey(l);
-  var nPaid = (prfPaidCountByLine())[key] || 0;
-  if (nPaid >= PRF_MAX_TRANCHES) return 'Max 4/4';
-  return (nPaid + 1) + '/4 · 25%';
+  var amt = prfTrancheAmount(l, reqByLine);
+  if (amt <= 0.009) return 'Fully covered';
+  var nPaid = (prfPaidCountByLine())[prfLineKey(l)] || 0;
+  if (nPaid <= 0) return 'Bud−Act';
+  return 'Bal−Act';
 }
+
 
 
 function prfRenderCostLines() {
