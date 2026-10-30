@@ -3598,13 +3598,13 @@
 
   <!-- -- STEP 5: WEEKLY EXPENSING -- -->
   <div id="view-expenses" class="view">
-    <div class="view-body" style="padding-top:12px">
-      <div class="spend-toolbar">
-        <div class="spend-mode-bar" role="tablist" style="margin-bottom:0">
-          <button type="button" class="spend-mode-btn" role="tab" aria-selected="false" onclick="openSpend('prf')">Request payment</button>
-          <button type="button" class="spend-mode-btn active" role="tab" aria-selected="true" onclick="openSpend('expenses')">Claim expense</button>
-        </div>
+    <div class="page-header">
+      <div>
+        <h1>Claim expense</h1>
+        <p>Country → one project → cost lines → export claim</p>
       </div>
+    </div>
+    <div class="view-body">
 
     <div class="ecf-layout">
 
@@ -3792,18 +3792,20 @@
 
   <!-- -- PAYMENT REQUEST FORM (PRF) -- -->
   <div id="view-prf" class="view">
-    <div class="view-body" style="padding-top:12px">
-      <div class="spend-toolbar">
-        <div class="spend-mode-bar" role="tablist" style="margin-bottom:0">
-          <button type="button" class="spend-mode-btn active" role="tab" aria-selected="true" onclick="openSpend('prf')">Request payment</button>
-          <button type="button" class="spend-mode-btn" role="tab" aria-selected="false" onclick="openSpend('expenses')">Claim expense</button>
+    <div class="page-header">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <h1>Request payment</h1>
+          <p>Country → project → cost lines → generate PRF</p>
         </div>
-        <div class="ws-actions" style="margin-left:auto">
+        <div class="ws-actions">
           <button type="button" class="btn btn-ghost btn-sm" id="prfTabForm" onclick="prfSwitchTab('form')">Compose</button>
           <button type="button" class="btn btn-ghost btn-sm" id="prfTabBalance" onclick="prfSwitchTab('balance')">Budget</button>
           <button type="button" class="btn btn-ghost btn-sm" id="prfTabList" onclick="prfSwitchTab('list')">Documents</button>
         </div>
       </div>
+    </div>
+    <div class="view-body">
 
       <div id="prfPanelForm" class="prf-panel">
         <div class="ecf-layout">
@@ -12166,8 +12168,9 @@ function buildSidebar() {
     nav = [
       { type:'section', label:'My Work' },
       { type:'item', label:'System Requests', view:'requests', icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
-      { type:'section', label:'Spend' },
-      { type:'item', label:'Spend',           view:'spend',    icon:'prf' },
+      { type:'section', label:'Forms' },
+      { type:'item', label:'Request payment', view:'prf',      icon:'prf' },
+      { type:'item', label:'Claim expense',   view:'expenses', icon:'expenses' },
       { type:'section', label:'Reports' },
       { type:'item', label:'My Submissions',  view:'history',  icon:'history' },
     ];
@@ -12188,8 +12191,9 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
-      { type:'section', label:'Spend' },
-      { type:'item', label:'Spend',            view:'spend',          icon:'prf' },
+      { type:'section', label:'Forms' },
+      { type:'item', label:'Request payment',  view:'prf',            icon:'prf' },
+      { type:'item', label:'Claim expense',    view:'expenses',       icon:'expenses' },
       { type:'section', label:'Reports' },
       { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
     ];
@@ -12200,8 +12204,9 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
-      { type:'section', label:'Spend' },
-      { type:'item', label:'Spend',            view:'spend',          icon:'prf' },
+      { type:'section', label:'Forms' },
+      { type:'item', label:'Request payment',  view:'prf',            icon:'prf' },
+      { type:'item', label:'Claim expense',    view:'expenses',       icon:'expenses' },
       { type:'section', label:'Reports' },
       { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
     ];
@@ -12212,8 +12217,9 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
-      { type:'section', label:'Spend' },
-      { type:'item', label:'Spend',            view:'spend',          icon:'prf' },
+      { type:'section', label:'Forms' },
+      { type:'item', label:'Request payment',  view:'prf',            icon:'prf' },
+      { type:'item', label:'Claim expense',    view:'expenses',       icon:'expenses' },
       { type:'section', label:'Reports' },
       { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
       { type:'section', label:'Admin' },
