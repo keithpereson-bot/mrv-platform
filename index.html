@@ -2628,6 +2628,68 @@
     background: var(--ns-row-hover, #FFF7ED) !important;
   }
 
+
+  /* Cost lines are a real TABLE — never apply list-grid styles to tr */
+  #view-expenses #ecfCostTable,
+  #view-expenses table.ecf-cost-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    display: table !important;
+  }
+  #view-expenses #ecfCostTable thead { display: table-header-group !important; }
+  #view-expenses #ecfCostTable tbody { display: table-row-group !important; }
+  #view-expenses #ecfCostTable tr,
+  #view-expenses #ecfCostTable tr.ecf-req,
+  #view-expenses #ecfCostTable tr.ecf-cost-row {
+    display: table-row !important;
+    grid-template-columns: none !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+  }
+  #view-expenses #ecfCostTable th,
+  #view-expenses #ecfCostTable td {
+    display: table-cell !important;
+    vertical-align: middle !important;
+    padding: 8px 10px !important;
+    border-bottom: 1px solid #EEF0F3 !important;
+    font-size: 12.5px !important;
+    font-weight: 400 !important;
+    color: #201F1E !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+  #view-expenses #ecfCostTable th {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #4B5563 !important;
+    background: #F3F4F6 !important;
+  }
+  #view-expenses #ecfCostTable th:nth-child(1),
+  #view-expenses #ecfCostTable td:nth-child(1) { width: 40px; text-align: center; }
+  #view-expenses #ecfCostTable th:nth-child(3),
+  #view-expenses #ecfCostTable td:nth-child(3) { width: 18%; }
+  #view-expenses #ecfCostTable th:nth-child(4),
+  #view-expenses #ecfCostTable td:nth-child(4) { width: 70px; text-align: right; }
+  #view-expenses #ecfCostTable th:nth-child(5),
+  #view-expenses #ecfCostTable td:nth-child(5) { width: 120px; text-align: right; font-weight: 600 !important; }
+  #view-expenses #ecfCostTable tbody tr:nth-child(even) td { background: #FAFBFC !important; }
+  #view-expenses #ecfCostTable tbody tr:hover td { background: #FFF7ED !important; }
+  #view-expenses #ecfCostTable input[type="checkbox"] {
+    width: 15px; height: 15px;
+    accent-color: var(--ns-accent, #E8913A);
+  }
+  /* Country/project chips: checkbox not radio look */
+  #ecfCountryList .prf-chk input,
+  #ecfProjectList .prf-chk input {
+    width: 15px !important;
+    height: 15px !important;
+    accent-color: var(--ns-accent, #E8913A) !important;
+    margin-top: 2px;
+  }
+
 </style>
 
 <style id="rq-styles">
@@ -2895,7 +2957,8 @@
     padding:5px 12px; font-size:10.5px; font-weight:700; text-transform:uppercase;
     letter-spacing:.04em; color:#C46E1A; background:#FFF6EB; border-bottom:1px solid #FED7AA;
   }
-  .ecf-req {
+  .ecf-req-list > .ecf-req,
+  label.ecf-req {
     display:grid; grid-template-columns:18px minmax(0,1fr) auto;
     align-items:center; gap:8px 10px;
     padding:7px 12px; border-bottom:1px solid #EDEBE9;
@@ -12708,7 +12771,7 @@ function ecfFilterProjects(q) {
 
 function ecfFilterRequests(q) {
   q = String(q || '').toLowerCase().trim();
-  var rows = document.querySelectorAll('#ecfRequestList .ecf-req');
+  var rows = document.querySelectorAll('#ecfRequestList .ecf-cost-row, #ecfRequestList .ecf-req');
   var shown = 0;
   rows.forEach(function(row) {
     var hay = (row.getAttribute('data-search') || '').toLowerCase();
@@ -12778,11 +12841,26 @@ function ecfRenderCountries() {
   list.innerHTML = names.map(function(c){
     var on = prev[c] ? ' checked' : '';
     var isOn = prev[c] ? ' is-on' : '';
-    return '<label class="prf-chk'+isOn+'"><input type="radio" class="ecf-country-chk" name="ecfCountry" value="'+_rqEsc(c)+'"'+on+' onchange="ecfOnCountryChange()"><span>'+_rqEsc(c)+'</span></label>';
+    return '<label class="prf-chk'+isOn+'"><input type="checkbox" class="ecf-country-chk" value="'+_rqEsc(c)+'"'+on+' onchange="ecfPickCountry(this)"><span>'+_rqEsc(c)+'</span></label>';
   }).join('');
   var meta = document.getElementById('ecfCountryMeta');
   var sel = document.querySelector('.ecf-country-chk:checked');
   if (meta) meta.textContent = sel ? '1 selected' : 'Select one';
+}
+
+
+function ecfPickCountry(el) {
+  document.querySelectorAll('.ecf-country-chk').forEach(function(c){
+    if (c !== el) c.checked = false;
+  });
+  if (!el.checked) { /* allow deselect */ }
+  ecfOnCountryChange();
+}
+function ecfPickProject(el) {
+  document.querySelectorAll('.ecf-proj-chk').forEach(function(c){
+    if (c !== el) c.checked = false;
+  });
+  ecfOnProjectPick(el);
 }
 
 function ecfOnCountryChange() {
@@ -12830,8 +12908,8 @@ function ecfPopulateProjects() {
     var checked = (prev === p) ? ' checked' : '';
     var isOn = (prev === p) ? ' is-on' : '';
     return '<label class="prf-chk'+isOn+'" data-name="'+_rqEsc(p)+'">'
-      +'<input type="radio" class="ecf-proj-chk" name="ecfProject" value="'+_rqEsc(p)+'"'+checked
-      +' onchange="ecfOnProjectPick(this)">'
+      +'<input type="checkbox" class="ecf-proj-chk" value="'+_rqEsc(p)+'"'+checked
+      +' onchange="ecfPickProject(this)">'
       +'<span><strong style="font-weight:600">'+_rqEsc(p)+'</strong>'
       +'<span style="display:block;font-size:11px;color:var(--muted);font-weight:400">'+info.count+' paid · '+info.total.toLocaleString()+'</span></span></label>';
   }).join('')
@@ -12934,7 +13012,7 @@ function ecfLoadRequests() {
     var proj = String(g.project || '').replace(/"/g, '&quot;');
     var searchBits = g.search.join(' ').replace(/"/g, '&quot;');
     var cat = (g.category && g.category !== g.title) ? ('<div class="text-muted text-sm">'+String(g.category).replace(/</g,'&lt;')+'</div>') : '';
-    html += '<tr class="ecf-req" data-search="'+searchBits+'">'
+    html += '<tr class="ecf-cost-row" data-search="'+searchBits+'">'
       +'<td><input type="checkbox" class="ecf-chk" onchange="ecfUpdateReqMeta();ecfUpdateSummary()" data-refs="'+refsAttr+'" data-project="'+proj+'" checked></td>'
       +'<td>'+title+cat+'</td>'
       +'<td>'+String(g.project||'').replace(/</g,'&lt;')+'</td>'
@@ -12953,7 +13031,7 @@ function ecfLoadRequests() {
 
 function ecfSelAll(v) {
   document.querySelectorAll('#ecfRequestList .ecf-chk').forEach(function(c){
-    var row = c.closest('.ecf-req');
+    var row = c.closest('.ecf-cost-row') || c.closest('.ecf-req');
     if (row && row.style.display === 'none') return;
     c.checked = !!v;
   });
