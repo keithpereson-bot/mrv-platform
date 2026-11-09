@@ -5068,12 +5068,12 @@ function mergeRequestsFromServer(serverRows) {
     try { persistDeletedToStorage(); } catch(e) {}
   }
 
-  // Local-only rows: keep unless this user explicitly deleted them
+  // Local-only rows: ALWAYS keep until seen on server or user-deleted.
+  // Never drop unpushed mobile submissions just because the protect timer expired.
   var localOnly = (requestsStore || []).filter(function(r) {
     if (!r || !r.ref) return false;
     var ref = String(r.ref);
     if (sheetsRefs.has(ref)) return false;
-    if (isProtectedLocalRef(ref)) return true;
     if (deletedRefs.has(ref)) return false;
     return true;
   });
@@ -8548,10 +8548,19 @@ async function submitAllRequests() {
     }
   } catch(e) {}
 
+  var savedOk = true;
+  try { savedOk = persistRequestsToStorage() !== false; } catch (eSave) { savedOk = false; }
+  if (!savedOk) {
+    toast('Saved in this session only — device storage full. Keep this tab open until sync succeeds.', 'warn');
+  }
   toast((activeIdx.length === 1 ? 'Request submitted (' + created.join(' + ') + ')' : activeIdx.length + ' requests submitted (' + created[0] + '–' + created[created.length - 1] + ')')
     + (anyExcess ? ' (excess noted)' : '') + (window._gas404Until ? ' · Sheets offline (local only)' : ''));
-  // Immediate push — no debounce; request should hit Sheets in ~1–3s
+  // Immediate push of dirty refs (all newly created are marked dirty)
   backgroundPush({ fast: true, skipActuals: true, dirtyOnly: true, immediate: true });
+  // Follow-up full recover push so mobile flaky networks still land every row
+  setTimeout(function() {
+    try { backgroundPush({ fast: true, skipActuals: true, dirtyOnly: false, recover: true, immediate: true }); } catch (e2) {}
+  }, 4000);
 }
 function submitRequest() { return submitAllRequests(); }
 
@@ -9451,13 +9460,20 @@ async function pushToSheets(opts) {
       };
     }
 
-    // Prefer dirty refs when any exist (even if that is the whole store).
+    // Prefer dirty refs when any exist, but NEVER drop local rows that still need a first push.
     // opts.recover=true forces a full upsert of every local request (heals gaps).
     var dirtyRefs = Object.keys(_pendingLocalRefs || {});
     var useDirty = !opts.recover && opts.dirtyOnly !== false && opts.fast && dirtyRefs.length > 0;
-    var srcList = useDirty
-      ? requestsStore.filter(function(r){ return _pendingLocalRefs[String(r.ref)]; })
-      : requestsStore;
+    var srcList;
+    if (useDirty) {
+      srcList = requestsStore.filter(function(r){
+        return r && r.ref && (_pendingLocalRefs[String(r.ref)] || isProtectedLocalRef(r.ref));
+      });
+      // Safety: if filter somehow empty but store has data, push everything
+      if (!srcList.length && requestsStore.length) srcList = requestsStore.slice();
+    } else {
+      srcList = requestsStore;
+    }
     if (!srcList.length) srcList = requestsStore;
     var reqRows = srcList.map(mapReqRow_);
     var pushedRefList = reqRows.map(function(r){ return String(r.ref || ''); }).filter(Boolean);
@@ -11398,10 +11414,11 @@ function renderHistory() {
   var name  = (currentUser.name  || '').trim().toLowerCase();
   var email = (currentUser.email || '').trim().toLowerCase();
 
-  // Match requests by requester name or email (Transport & Airtime bundles = one row)
+  // Match by requester name, email, or createdBy (mobile users often only set email)
   var mine = groupBundleRows(requestsStore.filter(function(r) {
     var rname = (r.requester || '').trim().toLowerCase();
-    return rname === name || rname === email;
+    var by = (r.createdBy || '').trim().toLowerCase();
+    return rname === name || rname === email || by === email || (name && rname.indexOf(name) === 0);
   }));
 
   // Stats
