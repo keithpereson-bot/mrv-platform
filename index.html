@@ -7092,8 +7092,8 @@ function backgroundPush(opts) {
     var attempt = function(n) {
       pushToSheets(o).then(function() {
         // Turbo window: poll every 1.5s for 20s so other users see new rows fast
-        window._turboSyncUntil = Date.now() + 20000;
-        _syncDelay = 1500;
+        window._turboSyncUntil = Date.now() + 30000;
+        _syncDelay = 5000;
         if (o.withSigs) {
           return pushSigImages().then(function(){ startAutoSync(); }, function(){ startAutoSync(); });
         }
@@ -9569,56 +9569,78 @@ async function pushSigImages() {
 
 // Status rank defined earlier (merge protection)
 
-async function pullRequestsOnly() {
+async function pullRequestsOnly(opts) {
+  opts = opts || {};
   if (!gsWebAppUrl || gsWebAppUrl === 'YOUR_WEB_APP_URL_HERE') return;
-  // Never pull while a push is in flight or right after a local write
   if (shouldSkipPull()) return;
+  if (window._pullRequestsInFlight) return;
+  window._pullRequestsInFlight = true;
+  var attempts = opts.attempts != null ? opts.attempts : 3;
+  var lastErr = null;
   try {
-    var res = await gasCall({ action: 'getRequests' });
-    if (!res || !res.ok) return;
-    // Empty server list must not wipe local requests
-    if (!res.requests || !res.requests.length) return;
-
-    var prevLen = (requestsStore || []).length;
-    var merged = mergeRequestsFromServer(res.requests);
-    // Only rewrite store/UI when something actually changed
-    var changed = merged.length !== prevLen;
-    if (!changed) {
-      var byRef = {};
-      merged.forEach(function(r){ byRef[r.ref] = r; });
-      for (var i = 0; i < requestsStore.length; i++) {
-        var a = requestsStore[i], b = byRef[a.ref];
-        if (!b || a.status !== b.status || String(a.amount) !== String(b.amount)) {
-          changed = true; break;
+    for (var attempt = 0; attempt < attempts; attempt++) {
+      try {
+        if (attempt > 0) {
+          await new Promise(function(r){ setTimeout(r, 2000 * attempt); });
+          appendSyncLog('Retrying getRequests (' + (attempt + 1) + '/' + attempts + ')…');
         }
+        var res = await gasCall({ action: 'getRequests' });
+        if (!res || !res.ok) {
+          lastErr = (res && res.error) || 'not ok';
+          continue;
+        }
+        if (!res.requests || !res.requests.length) return;
+
+        var prevLen = (requestsStore || []).length;
+        var merged = mergeRequestsFromServer(res.requests);
+        if ((!merged || !merged.length) && requestsStore && requestsStore.length) {
+          appendSyncLog('Pull ignored — empty merge would wipe ' + requestsStore.length + ' local requests');
+          return;
+        }
+        var changed = merged.length !== prevLen;
+        if (!changed) {
+          var byRef = {};
+          merged.forEach(function(r){ byRef[r.ref] = r; });
+          for (var i = 0; i < (requestsStore || []).length; i++) {
+            var a = requestsStore[i], b = byRef[a.ref];
+            if (!b || a.status !== b.status || String(a.amount) !== String(b.amount)) {
+              changed = true; break;
+            }
+          }
+        }
+        requestsStore = merged;
+        reqCounter = calcReqCounter();
+        persistRequestsToStorage();
+        if (typeof invalidateActualsCache === 'function') invalidateActualsCache();
+        rebuildRequestsTable();
+        renderHistory();
+        renderDashboard();
+        appendSyncLog('Requests synced (' + merged.length + ')');
+        try {
+          var needsHeal = (merged || []).some(function(r) {
+            return r && r.ref && statusRank_(_statusFloor[String(r.ref)] || 'Draft') >= 2
+              && isProtectedLocalRef(r.ref);
+          });
+          if (needsHeal && typeof backgroundPush === 'function') {
+            backgroundPush({ fast: true, skipActuals: true, dirtyOnly: true });
+          }
+        } catch (e) {}
+        return;
+      } catch (e) {
+        lastErr = e;
+        var msg = String((e && e.message) || e || '');
+        if (!/timed out|busy|TIMEOUT|AbortError|unreachable/i.test(msg) && attempt >= 1) break;
       }
     }
-    // Safety: never replace a non-empty store with an empty merge
-    if ((!merged || !merged.length) && requestsStore && requestsStore.length) {
-      appendSyncLog('Pull ignored — empty merge would wipe ' + requestsStore.length + ' local requests');
-      return;
+    if (lastErr) {
+      appendSyncLog('getRequests deferred: ' + ((lastErr && lastErr.message) || lastErr));
+      // Do not wipe or warn loudly — local cache remains usable offline
     }
-    requestsStore = merged;
-    reqCounter = calcReqCounter();
-    persistRequestsToStorage();
-    if (typeof invalidateActualsCache === 'function') invalidateActualsCache();
-    rebuildRequestsTable();
-    renderHistory();
-    renderDashboard();
-    // If Sheets lagged behind Approved/Paid, push the floor so other browsers stop flipping
-    try {
-      var needsHeal = (merged || []).some(function(r) {
-        return r && r.ref && statusRank_(_statusFloor[String(r.ref)] || 'Draft') >= 2
-          && isProtectedLocalRef(r.ref);
-      });
-      if (needsHeal && typeof backgroundPush === 'function') {
-        backgroundPush({ fast: true, skipActuals: true, dirtyOnly: true });
-      }
-    } catch (e) {}
-  } catch(e) {
-    if ((window._gas404Count || 0) < 2) console.warn('pullRequestsOnly:', e);
+  } finally {
+    window._pullRequestsInFlight = false;
   }
 }
+
 
 // -- Full pull: all sheets including images -- used on login --------
 async function pullFromSheets(silent) {
@@ -10057,7 +10079,7 @@ function gsPushIfConnected() { syncAfterChange(); }
 // Auto-sync: one request at a time, never overlapping.
 // (An overlapping 2s setInterval flooded Apps Script, which then throttled the
 //  deployment — the "works after refresh, disconnects shortly after" symptom.)
-var AUTO_SYNC_INTERVAL = 5000;          // version check every 8s while the tab is visible
+var AUTO_SYNC_INTERVAL = 20000;         // version check every 20s (avoid Apps Script busy)isible
 var AUTO_SYNC_MAX_BACKOFF = 120000;     // up to 2 min after repeated failures (avoid 404 storms)
 var FULL_REFRESH_EVERY_MS = 5 * 60000;  // budgets + form settings every 5 min
 var CLIENTS_REFRESH_EVERY_MS = 10 * 60000; // Clients sheet every 10 min (also on opening the request form)
@@ -10120,7 +10142,7 @@ function startAutoSync() {
     if (!document.hidden) ok = await checkVersionAndSync();
     var turbo = window._turboSyncUntil && Date.now() < window._turboSyncUntil;
     if (ok) {
-      _syncDelay = turbo ? 1500 : AUTO_SYNC_INTERVAL;
+      _syncDelay = turbo ? 5000 : AUTO_SYNC_INTERVAL;
     } else {
       _syncDelay = Math.min(AUTO_SYNC_MAX_BACKOFF, Math.max(_syncDelay, 5000) * 2);
     }
