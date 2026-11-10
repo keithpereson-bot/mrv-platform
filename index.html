@@ -742,6 +742,15 @@
   /* Never hide History / My list — all roles need submission history on mobile */
   #mob-history { display:flex !important; }
   #mob-requests { display:flex !important; }
+  #mob-logout {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #B91C1C !important;
+    min-width: 52px;
+    flex: 1 0 auto;
+  }
+  #mob-logout svg { stroke: #B91C1C !important; }
   #mobileNav .mob-nav-item span {
     max-width: 100%;
     overflow: hidden;
@@ -750,6 +759,44 @@
     font-size: 9px;
   }
   body.role-requester #mob-more { display:flex !important; }
+
+  /* Always-on mobile Sign Out (top bar is removed) */
+  #mobileSignOutFab {
+    display: none;
+    position: fixed;
+    top: max(8px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+    z-index: 400;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid #FECACA;
+    background: #FEF2F2;
+    color: #B91C1C;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #mobileSignOutFab svg { flex-shrink: 0; }
+  @media (max-width: 768px) {
+    body.is-logged-in #mobileSignOutFab { display: inline-flex !important; }
+    body.is-logged-in #mobileNav {
+      display: flex !important;
+      z-index: 300 !important;
+      height: auto;
+      min-height: 56px;
+      padding-bottom: max(4px, env(safe-area-inset-bottom));
+    }
+    body.is-logged-in #mob-logout { display: flex !important; }
+    body.is-logged-in .aside-signout {
+      display: flex !important;
+      visibility: visible !important;
+    }
+  }
   #sidebarOverlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:120; }
   #sidebarOverlay.open { display:block; }
   #menuToggle {
@@ -2260,7 +2307,11 @@
   .mob-nav-item { color: rgba(255,255,255,.55) !important; }
   .mob-nav-item.active { color: var(--ns-accent) !important; }
   .mob-nav-item.active svg { stroke: var(--ns-accent) !important; }
-  #mob-logout { color: #FCA5A5 !important; }
+  #mob-logout { color: #FCA5A5 !important; display: flex !important; visibility: visible !important; }
+  @media (max-width: 768px) {
+    #mob-logout { display: flex !important; color: #FECACA !important; }
+    #mob-logout svg { stroke: #FECACA !important; }
+  }
 
   /* PRF / budget / misc embedded UI */
   #view-prf .page-header { background: #fff !important; }
@@ -3507,16 +3558,9 @@
 
   <!-- -- STEP 4: REQUESTS -- -->
   <div id="view-requests" class="view">
-    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-      <div>
-        <h1>System Requests</h1>
-        <p class="desktop-only" style="margin:0;font-size:12px;color:var(--muted)">Drafts, queue and paid</p>
-      </div>
-      <button type="button" class="btn btn-secondary btn-sm" id="btnMySubmissions"
-        onclick="showView('history',null);try{setMobActive('mob-history')}catch(e){}"
-        title="Open My Submissions">
-        My Submissions
-      </button>
+    <div class="page-header">
+      <h1>System Requests</h1>
+      <p style="margin:0;font-size:12px;color:var(--muted)">Requests, payment queue, paid, and your submissions</p>
     </div>
     <div class="req-tabs">
       <button class="req-tab active viewer-hidden" id="tab-drafts" onclick="switchReqTab('drafts')">
@@ -3545,6 +3589,15 @@
           <div class="req-tab-title">Paid Requests</div>
         </div>
         <span class="req-tab-badge" id="badge-paid">0</span>
+      </button>
+      <button class="req-tab" id="tab-mine" onclick="switchReqTab('mine')">
+        <div class="req-tab-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <div class="req-tab-title">My Submissions</div>
+        </div>
+        <span class="req-tab-badge" id="badge-mine">0</span>
       </button>
     </div>
 
@@ -3633,6 +3686,44 @@
           <div class="table-scroll">
             <table id="tblPaid"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllPaid" onchange="toggleAllChecks('paid',this.checked)" title="Select all"></th><th>Project</th><th>Cost Summary</th><th>Details</th><th>Amount</th><th>Requester</th><th>Payee #</th><th>Finance Signatory</th><th>Paid Date</th><th>Acknowledged</th><th>Action</th></tr></thead>
             <tbody id="bodyPaid"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: My Submissions (current user's requests) -->
+    <div id="reqpanel-mine" class="req-panel" style="display:none">
+      <div class="card">
+        <div class="card-header" style="flex-wrap:wrap;gap:8px">
+          <div class="card-title">My Submissions</div>
+          <div class="flex gap-2" style="align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" id="mfilt-all" onclick="filterHistory('all')">All</button>
+            <button class="btn btn-ghost btn-sm" id="mfilt-draft" onclick="filterHistory('draft')">Drafts</button>
+            <button class="btn btn-ghost btn-sm" id="mfilt-approved" onclick="filterHistory('approved')">In Queue</button>
+            <button class="btn btn-ghost btn-sm" id="mfilt-paid" onclick="filterHistory('paid')">Paid</button>
+            <button class="btn btn-secondary btn-sm" id="signAllPaidBtnMine" onclick="openAckModal('all')" style="display:none">Sign all paid</button>
+            <span class="badge badge-gray" id="mineCount">0 requests</span>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="table-scroll">
+            <table id="tblMine">
+              <thead>
+                <tr>
+                  <th>Ref</th>
+                  <th>Project</th>
+                  <th>Type</th>
+                  <th>Details</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Approval</th>
+                  <th>Payment</th>
+                  <th>Ack</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="bodyMine"></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -6857,6 +6948,13 @@ function spendDefaultView() {
 function showView(id, el) {
   try { if (arguments[0] === "requests" || arguments[0] === "history") updateReqFormSettingsBtn(); } catch(e) {}
 
+  // My Submissions is a tab under System Requests (not a separate view)
+  var _openMine = false;
+  if (id === 'history') {
+    id = 'requests';
+    _openMine = true;
+  }
+
   // Single Spend nav entry → last mode (payment request or expense claim)
   if (id === 'spend') {
     id = spendDefaultView();
@@ -6881,18 +6979,8 @@ function showView(id, el) {
   if (id === 'reconciliation') renderReconciliation();
   if (id === 'dashboard')      renderDashboard();
   if (id === 'transactions')   renderTransactions();
-  if (id === 'history') {
-    try { renderHistory(); } catch (e) {}
-    // Background refresh so mobile sees server rows without blocking UI
-    if (gsWebAppUrl && !window._gasDeploymentDead) {
-      pullRequestsOnly({ attempts: 2 }).then(function(){ try { renderHistory(); } catch(e) {} }).catch(function(){});
-    }
-    // Ensure page scrolls to top on mobile so header/table are visible
-    try {
-      var main = document.querySelector('main');
-      if (main) main.scrollTop = 0;
-      window.scrollTo(0, 0);
-    } catch (e2) {}
+  if (id === 'requests' && typeof _openMine !== 'undefined' && _openMine) {
+    try { switchReqTab('mine'); } catch (e) {}
   }
 }
 
@@ -10103,6 +10191,19 @@ function switchReqTab(tab) {
   var panel = document.getElementById('reqpanel-'+tab);
   if (btn) btn.classList.add('active');
   if (panel) panel.style.display='';
+  if (tab === 'mine') {
+    try { renderHistory(); } catch (e) {}
+    if (gsWebAppUrl && !window._gasDeploymentDead && typeof pullRequestsOnly === 'function') {
+      pullRequestsOnly({ attempts: 2 }).then(function(){ try { renderHistory(); } catch(e) {} }).catch(function(){});
+    }
+  }
+}
+
+/** Open System Requests on the My Submissions tab (sidebar / mobile). */
+function openMySubmissions() {
+  showView('requests', null);
+  try { switchReqTab('mine'); } catch (e) {}
+  try { setMobActive('mob-requests'); } catch (e) {}
 }
 
 var _paidSort = 'date-desc';
@@ -10178,6 +10279,12 @@ function _rebuildRequestsTableNow() {
   var bd = document.getElementById('badge-drafts'); if(bd) bd.textContent = drafts.length;
   var bq = document.getElementById('badge-queue');  if(bq) bq.textContent = queue.length;
   var bp = document.getElementById('badge-paid');   if(bp) bp.textContent = paid.length;
+  var bm = document.getElementById('badge-mine');
+  if (bm) {
+    try {
+      bm.textContent = String((requestsStore || []).filter(function(r){ return typeof isMyRequest === 'function' && isMyRequest(r); }).length);
+    } catch (e) { bm.textContent = '0'; }
+  }
   // Sidebar badge = pending drafts + queue
   var sb = document.getElementById('sidebarReqBadge');
   if(sb) { var tot = drafts.length + queue.length; sb.textContent = tot; sb.style.display = tot ? '' : 'none'; }
@@ -10881,6 +10988,8 @@ function doLogout() {
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem('mrv_users');
   currentUser = null;
+  try { document.body.classList.remove('is-logged-in'); } catch (e) {}
+  try { document.body.className = document.body.className.replace(/role-\S+/g,'').trim(); } catch (e) {}
   try { document.getElementById('loginEmail').value = ''; } catch(e){}
   try { document.getElementById('loginPassword').value = ''; } catch(e){}
   try { document.getElementById('loginError').style.display = 'none'; } catch(e){}
@@ -10893,6 +11002,7 @@ function doLogout() {
 function applyRole(role) {
   document.body.className = document.body.className.replace(/role-\S+/g,'').trim();
   document.body.classList.add('role-' + (role || 'requester'));
+  document.body.classList.add('is-logged-in');
 }
 
 // -- Update nav avatar -------------------------------------------
@@ -11752,11 +11862,12 @@ function renderHistory() {
 function filterHistory(filter) {
   _historyFilter = filter;
 
-  // Update filter button styles
+  // Update filter button styles (legacy history view + mine tab)
   ['all','draft','approved','paid'].forEach(function(f) {
     var btn = document.getElementById('hfilt-'+f);
-    if (!btn) return;
-    btn.className = filter === f ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+    if (btn) btn.className = filter === f ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+    var mbtn = document.getElementById('mfilt-'+f);
+    if (mbtn) mbtn.className = filter === f ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
   });
 
   var mine = groupBundleRows((requestsStore || []).filter(isMyRequest));
@@ -11777,6 +11888,10 @@ function filterHistory(filter) {
 
   var countEl = document.getElementById('historyCount');
   if (countEl) countEl.textContent = filtered.length + ' request' + (filtered.length===1?'':'s');
+  var mineCount = document.getElementById('mineCount');
+  if (mineCount) mineCount.textContent = filtered.length + ' request' + (filtered.length===1?'':'s');
+  var badgeMine = document.getElementById('badge-mine');
+  if (badgeMine) badgeMine.textContent = String(mine.length);
 
   // Show "Sign All Paid" only if there are paid-but-unsigned requests
   var unsignedPaid = (requestsStore || []).filter(function(r){
@@ -11784,8 +11899,11 @@ function filterHistory(filter) {
   });
   var signAllBtn = document.getElementById('signAllPaidBtn');
   if (signAllBtn) signAllBtn.style.display = unsignedPaid.length > 0 ? '' : 'none';
+  var signAllBtnMine = document.getElementById('signAllPaidBtnMine');
+  if (signAllBtnMine) signAllBtnMine.style.display = unsignedPaid.length > 0 ? '' : 'none';
 
-  var tbody = document.getElementById('historyBody');
+  // Prefer the tab table; fall back to legacy history body
+  var tbody = document.getElementById('bodyMine') || document.getElementById('historyBody');
   if (!tbody) return;
 
   if (filtered.length === 0) {
@@ -11794,9 +11912,16 @@ function filterHistory(filter) {
           ? 'You have not submitted any requests yet. Click <strong>+ New Request</strong> on the Requests tab to get started.'
           : 'No requests match this filter.')
       + '</td></tr>';
-    enableSmartTable('historyBody', {
-      placeholder: 'Search submissions...', pageSize: 15, projectFilter: true,
-      statusOptions: ['Draft','Pending','Approved','Paid']
+    var emptyHtml = tbody.innerHTML;
+    ['bodyMine','historyBody'].forEach(function(tid) {
+      var el = document.getElementById(tid);
+      if (el) el.innerHTML = emptyHtml;
+      try {
+        enableSmartTable(tid, {
+          placeholder: 'Search submissions...', pageSize: 15, projectFilter: true,
+          statusOptions: ['Draft','Pending','Approved','Paid']
+        });
+      } catch (e) {}
     });
     return;
   }
@@ -11861,12 +11986,19 @@ function filterHistory(filter) {
     + '</tr>';
   }).join('');
 
-  // Smart table AFTER rows are in the DOM
-  enableSmartTable('historyBody', {
-    placeholder: 'Search submissions...',
-    pageSize: 15,
-    projectFilter: true,
-    statusOptions: ['Draft','Pending','Approved','Paid']
+  // Smart table AFTER rows are in the DOM — keep tab + legacy in sync
+  var rowsHtml = tbody.innerHTML;
+  ['bodyMine','historyBody'].forEach(function(tid) {
+    var el = document.getElementById(tid);
+    if (el) el.innerHTML = rowsHtml;
+    try {
+      enableSmartTable(tid, {
+        placeholder: 'Search submissions...',
+        pageSize: 15,
+        projectFilter: true,
+        statusOptions: ['Draft','Pending','Approved','Paid']
+      });
+    } catch (e) {}
   });
 }
 
@@ -12603,7 +12735,8 @@ function buildSidebar() {
   // Sign Out pinned at bottom of sidebar (always reachable on mobile)
   var signOutHtml =
     '<div class="aside-signout" role="button" tabindex="0" onclick="doLogout()" '
-    + 'style="display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;color:#E8913A;font-size:13px;font-weight:700;">'
+    + 'style="display:flex !important;align-items:center;justify-content:center;gap:10px;padding:14px 12px;cursor:pointer;'
+    + 'color:#B91C1C;font-size:14px;font-weight:700;background:#FEF2F2;border-top:1px solid #FECACA;margin-top:auto;">'
     + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'
     + 'Sign Out</div>';
 
@@ -12709,7 +12842,12 @@ async function afterLogin() {
 
   // Route -- user sees correct view
   var startView = (currentUser.role === 'requester') ? 'requests' : 'dashboard';
-  safeRender(function(){ showView(startView, null); }, 'showView:' + startView);
+  safeRender(function(){
+    showView(startView, null);
+    if (currentUser.role === 'requester') {
+      try { switchReqTab('mine'); } catch (e) {}
+    }
+  }, 'showView:' + startView);
 
   // ── STEP 4: Pull fresh data from Sheets in background ────────
   if (gsWebAppUrl) {
@@ -16181,6 +16319,12 @@ async function prfPullFromSheets() {
   </div>
 </div>
 
+<!-- Always-visible Sign Out on phones (top bar is hidden) -->
+<button type="button" id="mobileSignOutFab" onclick="doLogout()" title="Sign out" aria-label="Sign out">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  Sign Out
+</button>
+
 <!-- -- MOBILE BOTTOM NAV -- -->
 <nav id="mobileNav">
   <div class="mob-nav-item active non-requester-only" id="mob-dashboard" onclick="showView('dashboard',null);setMobActive('mob-dashboard')">
@@ -16191,7 +16335,7 @@ async function prfPullFromSheets() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg>
     <span>Requests</span>
   </div>
-  <div class="mob-nav-item" id="mob-history" onclick="showView('history',null);setMobActive('mob-history')" title="My Submissions">
+  <div class="mob-nav-item" id="mob-history" onclick="openMySubmissions()" title="My Submissions">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     <span>My list</span>
   </div>
@@ -16200,7 +16344,8 @@ async function prfPullFromSheets() {
     <span>More</span>
   </div>
   <!-- Always-visible Sign Out for mobile (all roles) -->
-  <div class="mob-nav-item" id="mob-logout" onclick="doLogout()" style="color:var(--danger)">
+  <div class="mob-nav-item" id="mob-logout" onclick="doLogout()" title="Sign out" role="button" tabindex="0"
+       style="display:flex !important;color:#FECACA;flex:1 0 auto;min-width:52px">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     <span>Sign Out</span>
   </div>
