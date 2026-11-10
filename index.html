@@ -2690,7 +2690,19 @@
     margin-top: 2px;
   }
 
-</style>
+
+  @media (max-width: 768px) {
+    #view-history .stats { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+    #view-history .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+    #view-history table { min-width: 520px; font-size: 12px; }
+  }
+  /* My Submissions — readable on phones */
+  @media (max-width: 768px) {
+    #view-history .stats { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+    #view-history .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+    #view-history table { min-width: 520px; font-size: 12px; }
+  }
+
 
 <style id="rq-styles">
   /* Multi-form request modal */
@@ -6770,7 +6782,13 @@ function showView(id, el) {
   if (id === 'reconciliation') renderReconciliation();
   if (id === 'dashboard')      renderDashboard();
   if (id === 'transactions')   renderTransactions();
-  if (id === 'history')        renderHistory();
+  if (id === 'history') {
+    renderHistory();
+    // Background refresh so mobile sees server rows without blocking UI
+    if (gsWebAppUrl && !window._gasDeploymentDead) {
+      pullRequestsOnly({ attempts: 2 }).then(function(){ try { renderHistory(); } catch(e) {} }).catch(function(){});
+    }
+  }
 }
 
 // -- Modals -------------------------------------------------
@@ -8553,14 +8571,14 @@ async function submitAllRequests() {
   if (!savedOk) {
     toast('Saved in this session only — device storage full. Keep this tab open until sync succeeds.', 'warn');
   }
+  try { renderHistory(); } catch (eH) {}
   toast((activeIdx.length === 1 ? 'Request submitted (' + created.join(' + ') + ')' : activeIdx.length + ' requests submitted (' + created[0] + '–' + created[created.length - 1] + ')')
-    + (anyExcess ? ' (excess noted)' : '') + (window._gas404Until ? ' · Sheets offline (local only)' : ''));
-  // Immediate push of dirty refs (all newly created are marked dirty)
+    + (anyExcess ? ' (excess noted)' : '') + (window._gas404Until ? ' · Sheets offline (local only)' : '')
+    + ' · see My Submissions');
   backgroundPush({ fast: true, skipActuals: true, dirtyOnly: true, immediate: true });
-  // Follow-up full recover push so mobile flaky networks still land every row
   setTimeout(function() {
     try { backgroundPush({ fast: true, skipActuals: true, dirtyOnly: false, recover: true, immediate: true }); } catch (e2) {}
-  }, 4000);
+  }, 1500);
 }
 function submitRequest() { return submitAllRequests(); }
 
@@ -11435,18 +11453,29 @@ function leaveJoinScreen(prefill) {
 
 var _historyFilter = 'all';
 
+function isMyRequest(r) {
+  if (!r || !currentUser) return false;
+  var name  = String(currentUser.name  || '').trim().toLowerCase();
+  var email = String(currentUser.email || '').trim().toLowerCase();
+  var rname = String(r.requester || '').trim().toLowerCase();
+  var by    = String(r.createdBy || '').trim().toLowerCase();
+  if (email && (rname === email || by === email)) return true;
+  if (name && (rname === name || by === name)) return true;
+  if (name && name.length >= 3 && rname.indexOf(name) >= 0) return true;
+  if (name && name.length >= 3) {
+    var n0 = name.split(/\s+/)[0], r0 = rname.split(/\s+/)[0];
+    if (n0 && r0 && n0 === r0) return true;
+  }
+  return false;
+}
+
 function renderHistory() {
   if (!currentUser) return;
   if (!document.getElementById('historyStats')) return;
   var name  = (currentUser.name  || '').trim().toLowerCase();
   var email = (currentUser.email || '').trim().toLowerCase();
 
-  // Match by requester name, email, or createdBy (mobile users often only set email)
-  var mine = groupBundleRows(requestsStore.filter(function(r) {
-    var rname = (r.requester || '').trim().toLowerCase();
-    var by = (r.createdBy || '').trim().toLowerCase();
-    return rname === name || rname === email || by === email || (name && rname.indexOf(name) === 0);
-  }));
+  var mine = groupBundleRows((requestsStore || []).filter(isMyRequest));
 
   // Stats
   var total    = mine.length;
@@ -11485,13 +11514,7 @@ function filterHistory(filter) {
     btn.className = filter === f ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
   });
 
-  var name  = currentUser ? (currentUser.name  || '').trim().toLowerCase() : '';
-  var email = currentUser ? (currentUser.email || '').trim().toLowerCase() : '';
-
-  var mine = groupBundleRows(requestsStore.filter(function(r) {
-    var rname = (r.requester || '').trim().toLowerCase();
-    return rname === name || rname === email;
-  }));
+  var mine = groupBundleRows((requestsStore || []).filter(isMyRequest));
 
   var filtered = mine.filter(function(r) {
     if (filter === 'draft')    return r.status === 'Draft' || r.status === 'Pending';
@@ -11511,11 +11534,8 @@ function filterHistory(filter) {
   if (countEl) countEl.textContent = filtered.length + ' request' + (filtered.length===1?'':'s');
 
   // Show "Sign All Paid" only if there are paid-but-unsigned requests
-  var uname = currentUser ? (currentUser.name||'').toLowerCase().trim() : '';
-  var unsignedPaid = requestsStore.filter(function(r){
-    return r.status==='Paid'
-      && (r.requester||'').toLowerCase().trim() === uname
-      && !r.requesterSig;
+  var unsignedPaid = (requestsStore || []).filter(function(r){
+    return r.status === 'Paid' && isMyRequest(r) && !r.requesterSig;
   });
   var signAllBtn = document.getElementById('signAllPaidBtn');
   if (signAllBtn) signAllBtn.style.display = unsignedPaid.length > 0 ? '' : 'none';
