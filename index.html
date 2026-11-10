@@ -10171,6 +10171,17 @@ function switchReqTab(tab) {
   var panel = document.getElementById('reqpanel-'+tab);
   if (btn) btn.classList.add('active');
   if (panel) panel.style.display='';
+  // Sidebar highlight: My Submissions vs System Requests
+  try {
+    document.querySelectorAll('.aside-item').forEach(function(a){ a.classList.remove('active'); });
+    if (tab === 'mine') {
+      var mineNav = document.getElementById('navMySubmissions');
+      if (mineNav) mineNav.classList.add('active');
+    } else {
+      var reqNav = document.querySelector('.aside-item[data-view="requests"]');
+      if (reqNav) reqNav.classList.add('active');
+    }
+  } catch (e) {}
   if (tab === 'mine') {
     try { renderHistory(); } catch (e) {}
     if (gsWebAppUrl && !window._gasDeploymentDead && typeof pullRequestsOnly === 'function') {
@@ -12638,6 +12649,7 @@ function buildSidebar() {
     nav = [
       { type:'section', label:'My Work' },
       { type:'item', label:'System Requests', view:'requests', icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'My Submissions',  view:'history',  icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment', view:'prf',      icon:'prf' },
       { type:'item', label:'Claim expense',   view:'expenses', icon:'expenses' },
@@ -12650,6 +12662,7 @@ function buildSidebar() {
       { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
       { type:'section', label:'Work' },
       { type:'item', label:'System Requests',  view:'requests',  icon:'requests' },
+      { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
     ];
 
   } else if (role === 'approver') {
@@ -12658,6 +12671,7 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
       { type:'item', label:'Claim expense',    view:'expenses',  icon:'expenses' },
@@ -12669,6 +12683,7 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
       { type:'item', label:'Claim expense',    view:'expenses',  icon:'expenses' },
@@ -12680,6 +12695,7 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
       { type:'item', label:'Claim expense',    view:'expenses',  icon:'expenses' },
