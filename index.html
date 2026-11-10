@@ -6792,12 +6792,21 @@ function showView(id, el) {
 }
 
 // -- Modals -------------------------------------------------
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) {
+  var el = document.getElementById(id);
+  if (!el) { console.warn('openModal: missing element', id); return; }
+  el.classList.add('open');
+}
+function closeModal(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('open');
+}
 function closeModalOutside(e, id) { if (e.target.id === id) closeModal(id); }
 
 function toast(msg) {
   const t = document.getElementById('toast');
+  if (!t) { try { console.log('[toast]', msg); } catch(e) {} return; }
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2800);
 }
@@ -6841,19 +6850,26 @@ function initCanvas(id) {
 
 function clearCanvas(id) {
   const canvas = document.getElementById(id);
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function isCanvasBlank(id) {
   const canvas = document.getElementById(id);
-  const data = canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
+  if (!canvas) return true;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return true;
+  const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   return !data.some(v => v !== 0);
 }
 
 // -- Tab switching ------------------------------------------
 function switchSigTab(btn, panelId) {
+  if (!btn) return;
   const parent = btn.closest('.sig-tabs');
+  if (!parent) return;
   parent.querySelectorAll('.sig-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   const prefix = panelId.split('-')[0] + '-' + panelId.split('-')[1];
@@ -6872,6 +6888,106 @@ function switchSigTab(btn, panelId) {
       if (c) { setTimeout(() => initCanvas(c.id), 50); }
     }
   }
+}
+
+// ── Legacy expenseClaimModal bridges ────────────────────────────────
+// The paid-requests "Claim expense" button and #expenseClaimModal still call
+// these names. The real workspace is view-expenses (ecf*). Keep the handlers
+// so clicks never throw ReferenceError; prefer the ECF workspace.
+var _ecModalSig = null;
+
+function openExpenseClaimModal() {
+  try { closeModal('expenseClaimModal'); } catch (e) {}
+  // Navigate to the maintained Claim expense workspace
+  try {
+    showView('expenses');
+    toast('Select paid requests and export from Claim expense');
+  } catch (e) {
+    console.warn(e);
+    // Fallback: open legacy modal shell if workspace unavailable
+    var m = document.getElementById('expenseClaimModal');
+    if (m) {
+      var d = document.getElementById('ecDate');
+      if (d && !d.value) {
+        var today = new Date();
+        d.value = today.toISOString().slice(0, 10);
+      }
+      openModal('expenseClaimModal');
+      try { _ecRefreshSigUI(); } catch (e2) {}
+    } else {
+      toast('Claim expense view is unavailable');
+    }
+  }
+}
+
+function ecSelectAll(on) {
+  document.querySelectorAll('#ecRequestList input[type="checkbox"], #expenseClaimModal .ec-req-chk').forEach(function(c) {
+    c.checked = !!on;
+  });
+  try { if (typeof ecUpdatePreview === 'function') ecUpdatePreview(); } catch (e) {}
+}
+
+function clearEcSig() {
+  _ecModalSig = null;
+  var applied = document.getElementById('ecSigApplied');
+  var widget = document.getElementById('ecSigWidget');
+  if (applied) applied.style.display = 'none';
+  if (widget) widget.style.display = '';
+  try { clearCanvas('ecCanvas'); } catch (e) {}
+}
+
+function applyEcDrawnSig() {
+  var canvas = document.getElementById('ecCanvas');
+  if (!canvas) { toast('Signature pad not ready'); return; }
+  if (typeof isCanvasBlank === 'function' && isCanvasBlank('ecCanvas')) {
+    toast('Draw a signature first');
+    return;
+  }
+  _ecModalSig = {
+    dataUrl: canvas.toDataURL('image/png'),
+    label: (typeof currentUser !== 'undefined' && currentUser && currentUser.name) ? currentUser.name : 'Admin signature',
+    time: new Date().toLocaleString()
+  };
+  _ecRefreshSigUI();
+}
+
+function _ecRefreshSigUI() {
+  var applied = document.getElementById('ecSigApplied');
+  var widget = document.getElementById('ecSigWidget');
+  var img = document.getElementById('ecSigImg');
+  var name = document.getElementById('ecSigName');
+  if (!_ecModalSig) {
+    if (applied) applied.style.display = 'none';
+    if (widget) widget.style.display = '';
+    return;
+  }
+  if (img) img.src = _ecModalSig.dataUrl || '';
+  if (name) name.textContent = _ecModalSig.label || 'Signature';
+  if (applied) applied.style.display = 'flex';
+  if (widget) widget.style.display = 'none';
+  // Also mirror first saved sig into preview when opening
+  var prev = document.getElementById('ecSavedPreview');
+  if (prev && typeof savedSigs !== 'undefined' && savedSigs && savedSigs.length) {
+    prev.innerHTML = '';
+    savedSigs.forEach(function(s, i) {
+      var card = document.createElement('div');
+      card.className = 'sig-card';
+      card.onclick = function() {
+        _ecModalSig = { dataUrl: s.dataUrl, label: s.label || s.name || 'Saved', time: new Date().toLocaleString() };
+        _ecRefreshSigUI();
+      };
+      card.innerHTML = (s.dataUrl ? '<img src="'+s.dataUrl+'" alt="">' : '') +
+        '<div class="sig-name">'+(s.label || s.name || ('Sig '+(i+1)))+'</div>';
+      prev.appendChild(card);
+    });
+  }
+}
+
+function generateExpenseClaim() {
+  // Legacy Excel button — route users to the working ECF export flow
+  try { closeModal('expenseClaimModal'); } catch (e) {}
+  showView('expenses');
+  toast('Use Preview / Export PDF on Claim expense to generate the form');
 }
 
 // -- SAVED SIGNATURES --------------------------------------
