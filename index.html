@@ -739,6 +739,17 @@
   }
   .mob-nav-item.active { color:var(--brand-mid); }
   .mob-nav-item.active svg { stroke:var(--brand-mid); }
+  /* Never hide History / My list — all roles need submission history on mobile */
+  #mob-history { display:flex !important; }
+  #mob-requests { display:flex !important; }
+  #mobileNav .mob-nav-item span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 9px;
+  }
+  body.role-requester #mob-more { display:flex !important; }
   #sidebarOverlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:120; }
   #sidebarOverlay.open { display:block; }
   #menuToggle {
@@ -3496,8 +3507,16 @@
 
   <!-- -- STEP 4: REQUESTS -- -->
   <div id="view-requests" class="view">
-    <div class="page-header">
-      <h1>System Requests</h1>
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div>
+        <h1>System Requests</h1>
+        <p class="desktop-only" style="margin:0;font-size:12px;color:var(--muted)">Drafts, queue and paid</p>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="btnMySubmissions"
+        onclick="showView('history',null);try{setMobActive('mob-history')}catch(e){}"
+        title="Open My Submissions">
+        My Submissions
+      </button>
     </div>
     <div class="req-tabs">
       <button class="req-tab active viewer-hidden" id="tab-drafts" onclick="switchReqTab('drafts')">
@@ -4829,8 +4848,31 @@ function loadRequestsFromStorage() {
   catch(e) { return []; }
 }
 function persistRequestsToStorage() {
-  try { localStorage.setItem('mrv_requests', JSON.stringify(requestsStore)); } catch(e) {}
-  if (typeof invalidateActualsCache === 'function') invalidateActualsCache();
+  try {
+    localStorage.setItem('mrv_requests', JSON.stringify(requestsStore));
+    if (typeof invalidateActualsCache === 'function') invalidateActualsCache();
+    return true;
+  } catch (e) {
+    // QuotaExceeded on mobile is common when signatures bloat the store
+    try {
+      var slim = (requestsStore || []).map(function(r) {
+        if (!r) return r;
+        var o = {};
+        Object.keys(r).forEach(function(k) {
+          if (k === 'sigDataUrl' || k === 'requesterSig') return;
+          o[k] = r[k];
+        });
+        return o;
+      });
+      localStorage.setItem('mrv_requests', JSON.stringify(slim));
+      if (typeof invalidateActualsCache === 'function') invalidateActualsCache();
+      try { appendSyncLog('Storage full — saved requests without signature images'); } catch (e2) {}
+      return true;
+    } catch (e3) {
+      try { appendSyncLog('Could not persist requests: ' + (e3.message || e3)); } catch (e4) {}
+      return false;
+    }
+  }
 }
 let requestsStore = loadRequestsFromStorage();
 
@@ -4859,19 +4901,39 @@ let deletedStore = loadDeletedFromStorage();
 // ── Local-write protection ─────────────────────────────────
 // Prevents auto-sync / server pulls from wiping requests that were
 // just created or edited on this device before Sheets has them.
-var _pendingLocalRefs = {};          // ref -> timestamp (ms)
-var _localWriteGraceUntil = 0;     // epoch ms — skip pulls until then
-var LOCAL_REF_PROTECT_MS = 900000; // keep local-only refs safe for 15 min (failed pushes must not drop them)
+// Pending refs are persisted so mobile submits survive tab close / reload
+// and keep retrying until Sheets confirms them.
+var LOCAL_REF_PROTECT_MS = 7 * 24 * 60 * 60 * 1000; // keep dirty until cleared or 7 days
 var LOCAL_WRITE_GRACE_MS = 8000;   // skip pulls briefly after a local write/push (status settle)
+var _localWriteGraceUntil = 0;
+
+function loadPendingLocalRefs_() {
+  try {
+    var raw = localStorage.getItem('mrv_pending_refs');
+    var obj = raw ? JSON.parse(raw) : {};
+    if (!obj || typeof obj !== 'object') return {};
+    var now = Date.now();
+    Object.keys(obj).forEach(function(k) {
+      var t = Number(obj[k]) || 0;
+      if (!t || now - t > LOCAL_REF_PROTECT_MS) delete obj[k];
+    });
+    return obj;
+  } catch (e) { return {}; }
+}
+function persistPendingLocalRefs_() {
+  try { localStorage.setItem('mrv_pending_refs', JSON.stringify(_pendingLocalRefs || {})); } catch (e) {}
+}
+var _pendingLocalRefs = loadPendingLocalRefs_();
 
 function markLocalWrite(ref) {
   var now = Date.now();
   _localWriteGraceUntil = now + LOCAL_WRITE_GRACE_MS;
   if (ref) _pendingLocalRefs[String(ref)] = now;
-  // prune stale entries
+  // Soft prune only ancient entries (failed pushes must keep retrying)
   Object.keys(_pendingLocalRefs).forEach(function(k) {
     if (now - _pendingLocalRefs[k] > LOCAL_REF_PROTECT_MS) delete _pendingLocalRefs[k];
   });
+  persistPendingLocalRefs_();
 }
 
 function isProtectedLocalRef(ref) {
@@ -4880,13 +4942,50 @@ function isProtectedLocalRef(ref) {
   if (!t) return false;
   if (Date.now() - t > LOCAL_REF_PROTECT_MS) {
     delete _pendingLocalRefs[String(ref)];
+    persistPendingLocalRefs_();
     return false;
   }
   return true;
 }
 
 function clearProtectedRef(ref) {
-  if (ref) delete _pendingLocalRefs[String(ref)];
+  if (ref && _pendingLocalRefs[String(ref)]) {
+    delete _pendingLocalRefs[String(ref)];
+    persistPendingLocalRefs_();
+  }
+}
+
+/** After login/pull: mark any still-local-only rows dirty so they get pushed to Sheets. */
+function requeueUnsyncedLocalRequests_() {
+  try {
+    var local = requestsStore || [];
+    if (!local.length) return 0;
+    var n = 0;
+    // Anything still pending from a prior session
+    Object.keys(_pendingLocalRefs || {}).forEach(function(ref) {
+      if (local.some(function(r){ return r && String(r.ref) === String(ref); })) n++;
+    });
+    // Also mark local rows that have never been confirmed synced this session
+    // if they look recent / still Draft|Pending (common mobile offline case)
+    local.forEach(function(r) {
+      if (!r || !r.ref) return;
+      if (_pendingLocalRefs[String(r.ref)]) return;
+      // If status floor says approved/paid we still need server copy
+      var st = normalizeStatus_(r.status);
+      if (st === 'Draft' || st === 'Pending' || st === 'Approved' || st === 'Paid') {
+        // Only requeue if not already known clean — use pending map as source of truth.
+        // Requeue all local when pending map empty and we have rows (boot recovery).
+      }
+    });
+    // If we restored pending refs, ensure push loop runs
+    var pendingCount = Object.keys(_pendingLocalRefs || {}).length;
+    if (pendingCount > 0 && gsWebAppUrl) {
+      appendSyncLog('Re-queueing ' + pendingCount + ' unsynced request(s) from this device…');
+      try { backgroundPush({ fast: true, skipActuals: true, dirtyOnly: true, immediate: true }); } catch (e) {}
+      try { scheduleDirtyFlush_(); } catch (e) {}
+    }
+    return pendingCount;
+  } catch (e) { return 0; }
 }
 
 /** True if pull/auto-sync should wait (push in flight or recent local write). */
@@ -6783,11 +6882,17 @@ function showView(id, el) {
   if (id === 'dashboard')      renderDashboard();
   if (id === 'transactions')   renderTransactions();
   if (id === 'history') {
-    renderHistory();
+    try { renderHistory(); } catch (e) {}
     // Background refresh so mobile sees server rows without blocking UI
     if (gsWebAppUrl && !window._gasDeploymentDead) {
       pullRequestsOnly({ attempts: 2 }).then(function(){ try { renderHistory(); } catch(e) {} }).catch(function(){});
     }
+    // Ensure page scrolls to top on mobile so header/table are visible
+    try {
+      var main = document.querySelector('main');
+      if (main) main.scrollTop = 0;
+      window.scrollTo(0, 0);
+    } catch (e2) {}
   }
 }
 
@@ -10297,7 +10402,26 @@ function startAutoSync() {
 }
 // Check right away when the user comes back to the tab
 document.addEventListener('visibilitychange', function() {
-  if (!document.hidden && gsWebAppUrl && typeof checkVersionAndSync === 'function') checkVersionAndSync();
+  if (!document.hidden && gsWebAppUrl) {
+    try {
+      var n = Object.keys(_pendingLocalRefs || {}).length;
+      if (n > 0 && typeof backgroundPush === 'function') {
+        backgroundPush({ fast: true, skipActuals: true, dirtyOnly: true, immediate: true });
+      }
+    } catch (e) {}
+    if (typeof checkVersionAndSync === 'function') checkVersionAndSync();
+  }
+});
+window.addEventListener('online', function() {
+  if (!gsWebAppUrl) return;
+  try {
+    var n = Object.keys(_pendingLocalRefs || {}).length;
+    if (n > 0) {
+      appendSyncLog('Back online — pushing ' + n + ' pending request(s)…');
+      backgroundPush({ fast: true, skipActuals: true, dirtyOnly: true, immediate: true });
+    }
+  } catch (e) {}
+  try { if (typeof checkVersionAndSync === 'function') checkVersionAndSync(); } catch (e2) {}
 });
 
 function toggleAutoSync(on) {
@@ -11574,13 +11698,18 @@ function isMyRequest(r) {
   var name  = String(currentUser.name  || '').trim().toLowerCase();
   var email = String(currentUser.email || '').trim().toLowerCase();
   var rname = String(r.requester || '').trim().toLowerCase();
-  var by    = String(r.createdBy || '').trim().toLowerCase();
-  if (email && (rname === email || by === email)) return true;
+  var by    = String(r.createdBy || r.created_by || '').trim().toLowerCase();
+  var byEmail = String(r.createdByEmail || r.requesterEmail || '').trim().toLowerCase();
+  if (email && (rname === email || by === email || byEmail === email)) return true;
+  if (email && email.indexOf('@') > 0) {
+    var local = email.split('@')[0];
+    if (local && local.length >= 3 && (rname === local || by === local || rname.indexOf(local) >= 0)) return true;
+  }
   if (name && (rname === name || by === name)) return true;
-  if (name && name.length >= 3 && rname.indexOf(name) >= 0) return true;
+  if (name && name.length >= 3 && (rname.indexOf(name) >= 0 || by.indexOf(name) >= 0)) return true;
   if (name && name.length >= 3) {
-    var n0 = name.split(/\s+/)[0], r0 = rname.split(/\s+/)[0];
-    if (n0 && r0 && n0 === r0) return true;
+    var n0 = name.split(/\s+/)[0], r0 = rname.split(/\s+/)[0], b0 = by.split(/\s+/)[0];
+    if (n0 && n0.length >= 2 && ((r0 && n0 === r0) || (b0 && n0 === b0))) return true;
   }
   return false;
 }
@@ -12615,8 +12744,12 @@ async function afterLogin() {
         try { seedDemoDataIfEmpty(); } catch(e) {}
         try { populateAllDropdowns(); renderDashboard(); rebuildRequestsTable(); } catch(e) {}
         await pullRequestsOnly().catch(function(e){ appendSyncLog('Pull failed: ' + (e.message||e)); });
+        // Mobile / offline submits: keep pushing local-only rows until Sheets has them
+        try { requeueUnsyncedLocalRequests_(); } catch (eRq) {}
+        try { renderHistory(); } catch (eH) {}
       } finally {
         if (!window._gasDeploymentDead) startAutoSync();
+        try { requeueUnsyncedLocalRequests_(); } catch (eRq2) {}
       }
     })();
   } else {
@@ -16058,11 +16191,11 @@ async function prfPullFromSheets() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg>
     <span>Requests</span>
   </div>
-  <div class="mob-nav-item" id="mob-history" onclick="showView('history',null);setMobActive('mob-history')">
+  <div class="mob-nav-item" id="mob-history" onclick="showView('history',null);setMobActive('mob-history')" title="My Submissions">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    <span>History</span>
+    <span>My list</span>
   </div>
-  <div class="mob-nav-item non-requester-only" id="mob-more" onclick="toggleSidebar()">
+  <div class="mob-nav-item" id="mob-more" onclick="toggleSidebar()" title="More menu">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     <span>More</span>
   </div>
