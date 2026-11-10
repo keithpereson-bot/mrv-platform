@@ -3276,7 +3276,7 @@
     <form id="loginForm" onsubmit="event.preventDefault();doLogin();return false;" autocomplete="on">
     <div class="form-group">
       <label>Email</label>
-      <input id="loginEmail" name="username" type="email" placeholder="you@organisation.com" autocomplete="username">
+      <input id="loginEmail" name="username" type="email" placeholder="you@company.com" autocomplete="username">
     </div>
     <div class="form-group">
       <label>Password</label>
@@ -10138,15 +10138,20 @@ function startAutoSync() {
   var token = ++_syncLoopToken;
   var tick = async function() {
     if (token !== _syncLoopToken) return; // a newer loop replaced this one
+    // Yield to the browser so this timer is not flagged as a long task
+    await new Promise(function(r){ setTimeout(r, 0); });
+    if (token !== _syncLoopToken) return;
     var ok = true;
-    if (!document.hidden) ok = await checkVersionAndSync();
+    try {
+      if (!document.hidden) ok = await checkVersionAndSync();
+    } catch (eTick) { ok = false; }
     var turbo = window._turboSyncUntil && Date.now() < window._turboSyncUntil;
     if (ok) {
       _syncDelay = turbo ? 5000 : AUTO_SYNC_INTERVAL;
     } else {
       _syncDelay = Math.min(AUTO_SYNC_MAX_BACKOFF, Math.max(_syncDelay, 5000) * 2);
     }
-    if (token === _syncLoopToken) gsAutoSyncTimer = setTimeout(tick, document.hidden ? 15000 : _syncDelay);
+    if (token === _syncLoopToken) gsAutoSyncTimer = setTimeout(tick, document.hidden ? 20000 : _syncDelay);
   };
   var firstDelay = (window._turboSyncUntil && Date.now() < window._turboSyncUntil)
     ? 800
