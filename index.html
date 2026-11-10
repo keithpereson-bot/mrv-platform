@@ -739,16 +739,14 @@
   }
   .mob-nav-item.active { color:var(--brand-mid); }
   .mob-nav-item.active svg { stroke:var(--brand-mid); }
-  /* Never hide History / My list — all roles need submission history on mobile */
-  #mob-history { display:flex !important; }
+  /* Lean mobile chrome */
   #mob-requests { display:flex !important; }
+  #mob-more { display:flex !important; }
   #mob-logout {
     display: flex !important;
     visibility: visible !important;
-    opacity: 1 !important;
     color: #B91C1C !important;
-    min-width: 52px;
-    flex: 1 0 auto;
+    min-width: 56px;
   }
   #mob-logout svg { stroke: #B91C1C !important; }
   #mobileNav .mob-nav-item span {
@@ -758,32 +756,8 @@
     white-space: nowrap;
     font-size: 9px;
   }
-  body.role-requester #mob-more { display:flex !important; }
-
-  /* Always-on mobile Sign Out (top bar is removed) */
-  #mobileSignOutFab {
-    display: none;
-    position: fixed;
-    top: max(8px, env(safe-area-inset-top));
-    right: max(8px, env(safe-area-inset-right));
-    z-index: 400;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
-    border-radius: 999px;
-    border: 1px solid #FECACA;
-    background: #FEF2F2;
-    color: #B91C1C;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 700;
-    box-shadow: 0 2px 8px rgba(0,0,0,.12);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-  #mobileSignOutFab svg { flex-shrink: 0; }
+  #mobileSignOutFab { display: none !important; }
   @media (max-width: 768px) {
-    body.is-logged-in #mobileSignOutFab { display: inline-flex !important; }
     body.is-logged-in #mobileNav {
       display: flex !important;
       z-index: 300 !important;
@@ -796,6 +770,12 @@
       display: flex !important;
       visibility: visible !important;
     }
+    #view-requests .req-tabs {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      flex-wrap: nowrap;
+    }
+    #view-requests .req-tab { flex: 0 0 auto; }
   }
   #sidebarOverlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:120; }
   #sidebarOverlay.open { display:block; }
@@ -3560,9 +3540,18 @@
   <div id="view-requests" class="view">
     <div class="page-header">
       <h1>System Requests</h1>
-      <p style="margin:0;font-size:12px;color:var(--muted)">Requests, payment queue, paid, and your submissions</p>
+      <p style="margin:0;font-size:12px;color:var(--muted)">Your submissions and team request workflow</p>
     </div>
     <div class="req-tabs">
+      <button class="req-tab" id="tab-mine" onclick="switchReqTab('mine')">
+        <div class="req-tab-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <div class="req-tab-title">My Submissions</div>
+        </div>
+        <span class="req-tab-badge" id="badge-mine">0</span>
+      </button>
       <button class="req-tab active viewer-hidden" id="tab-drafts" onclick="switchReqTab('drafts')">
         <div class="req-tab-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
@@ -3586,18 +3575,9 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </div>
         <div>
-          <div class="req-tab-title">Paid Requests</div>
+          <div class="req-tab-title">Paid</div>
         </div>
         <span class="req-tab-badge" id="badge-paid">0</span>
-      </button>
-      <button class="req-tab" id="tab-mine" onclick="switchReqTab('mine')">
-        <div class="req-tab-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <div>
-          <div class="req-tab-title">My Submissions</div>
-        </div>
-        <span class="req-tab-badge" id="badge-mine">0</span>
       </button>
     </div>
 
@@ -4333,7 +4313,7 @@
   </div>
 
   <!-- -- MY SUBMISSIONS (Requesters only) -- -->
-  <div id="view-history" class="view">
+  <div id="view-history" class="view" style="display:none !important" aria-hidden="true">
     <div class="page-header">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
         <div>
@@ -8883,7 +8863,7 @@ async function submitAllRequests() {
   try { renderHistory(); } catch (eH) {}
   toast((activeIdx.length === 1 ? 'Request submitted (' + created.join(' + ') + ')' : activeIdx.length + ' requests submitted (' + created[0] + '–' + created[created.length - 1] + ')')
     + (anyExcess ? ' (excess noted)' : '') + (window._gas404Until ? ' · Sheets offline (local only)' : '')
-    + ' · see My Submissions');
+    + ' · open My Submissions tab');
   backgroundPush({ fast: true, skipActuals: true, dirtyOnly: true, immediate: true });
   setTimeout(function() {
     try { backgroundPush({ fast: true, skipActuals: true, dirtyOnly: false, recover: true, immediate: true }); } catch (e2) {}
@@ -12661,61 +12641,52 @@ function buildSidebar() {
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment', view:'prf',      icon:'prf' },
       { type:'item', label:'Claim expense',   view:'expenses', icon:'expenses' },
-      { type:'section', label:'Reports' },
-      { type:'item', label:'My Submissions',  view:'history',  icon:'history' },
     ];
 
   } else if (role === 'viewer') {
     nav = [
       { type:'section', label:'Overview' },
-      { type:'item', label:'Dashboard',       view:'dashboard',      icon:'dashboard' },
-      { type:'item', label:'Approved Budgets',view:'budgets',        icon:'budgets' },
-      { type:'section', label:'Reports' },
-      { type:'item', label:'Paid Requests',   view:'requests',       icon:'requests' },
-      { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
+      { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
+      { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
+      { type:'section', label:'Work' },
+      { type:'item', label:'System Requests',  view:'requests',  icon:'requests' },
     ];
 
   } else if (role === 'approver') {
     nav = [
       { type:'section', label:'Cycle' },
-      { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
-      { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
-      { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
+      { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
+      { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
       { type:'section', label:'Forms' },
-      { type:'item', label:'Request payment',  view:'prf',            icon:'prf' },
-      { type:'item', label:'Claim expense',    view:'expenses',       icon:'expenses' },
-      { type:'section', label:'Reports' },
-      { type:'item', label:'My Submissions',  view:'history',        icon:'history' },
+      { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
+      { type:'item', label:'Claim expense',    view:'expenses',  icon:'expenses' },
     ];
 
   } else if (role === 'manager') {
     nav = [
       { type:'section', label:'Cycle' },
-      { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
-      { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
-      { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
+      { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
+      { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
       { type:'section', label:'Forms' },
-      { type:'item', label:'Request payment',  view:'prf',            icon:'prf' },
-      { type:'item', label:'Claim expense',    view:'expenses',       icon:'expenses' },
-      { type:'section', label:'Reports' },
-      { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
+      { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
+      { type:'item', label:'Claim expense',    view:'expenses',  icon:'expenses' },
     ];
 
-  } else { // admin -- full access including Users + Sheets
+  } else { // admin
     nav = [
       { type:'section', label:'Cycle' },
-      { type:'item', label:'Dashboard',        view:'dashboard',      icon:'dashboard' },
-      { type:'item', label:'Approved Budgets', view:'budgets',        icon:'budgets' },
-      { type:'item', label:'System Requests',  view:'requests',       icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
+      { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
+      { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
       { type:'section', label:'Forms' },
-      { type:'item', label:'Request payment',  view:'prf',            icon:'prf' },
-      { type:'item', label:'Claim expense',    view:'expenses',       icon:'expenses' },
-      { type:'section', label:'Reports' },
-      { type:'item', label:'My Submissions',   view:'history',        icon:'history' },
+      { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
+      { type:'item', label:'Claim expense',    view:'expenses',  icon:'expenses' },
       { type:'section', label:'Admin' },
-      { type:'item', label:'Manage Users',     view:'users',          icon:'users' },
+      { type:'item', label:'Manage Users',     view:'users',     icon:'users' },
       { type:'section', label:'Integration' },
-      { type:'item', label:'Google Sheets',    view:'sheets',         icon:'sheets', id:'sheetsNavItem',
+      { type:'item', label:'Google Sheets',    view:'sheets',    icon:'sheets', id:'sheetsNavItem',
         badge:'<span id="sheetsSyncBadge" class="aside-badge" style="display:none;background:var(--gold)">!</span>' },
     ];
   }
@@ -16319,13 +16290,7 @@ async function prfPullFromSheets() {
   </div>
 </div>
 
-<!-- Always-visible Sign Out on phones (top bar is hidden) -->
-<button type="button" id="mobileSignOutFab" onclick="doLogout()" title="Sign out" aria-label="Sign out">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-  Sign Out
-</button>
-
-<!-- -- MOBILE BOTTOM NAV -- -->
+<!-- -- MOBILE BOTTOM NAV (lean: primary work + menu + one Sign Out) -- -->
 <nav id="mobileNav">
   <div class="mob-nav-item active non-requester-only" id="mob-dashboard" onclick="showView('dashboard',null);setMobActive('mob-dashboard')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -16335,17 +16300,11 @@ async function prfPullFromSheets() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg>
     <span>Requests</span>
   </div>
-  <div class="mob-nav-item" id="mob-history" onclick="openMySubmissions()" title="My Submissions">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    <span>My list</span>
-  </div>
-  <div class="mob-nav-item" id="mob-more" onclick="toggleSidebar()" title="More menu">
+  <div class="mob-nav-item" id="mob-more" onclick="toggleSidebar()" title="Menu">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    <span>More</span>
+    <span>Menu</span>
   </div>
-  <!-- Always-visible Sign Out for mobile (all roles) -->
-  <div class="mob-nav-item" id="mob-logout" onclick="doLogout()" title="Sign out" role="button" tabindex="0"
-       style="display:flex !important;color:#FECACA;flex:1 0 auto;min-width:52px">
+  <div class="mob-nav-item" id="mob-logout" onclick="doLogout()" title="Sign out" role="button" tabindex="0">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     <span>Sign Out</span>
   </div>
