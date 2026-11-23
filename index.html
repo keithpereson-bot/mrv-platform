@@ -3402,6 +3402,93 @@
 
   /* ═══ PORTAL THEME (match enterprise payment system UI) ═══ */
 
+  /* Full-bleed tables — maximize height & width */
+  #view-requests {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  #view-requests .page-header {
+    margin-bottom: 8px !important;
+    padding-bottom: 6px !important;
+    flex-shrink: 0 !important;
+  }
+  #view-requests .page-header p { display: none !important; }
+  #view-requests .req-tabs {
+    flex-shrink: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  #view-requests .req-panel {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    height: auto !important;
+  }
+  #view-requests .req-panel .card {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin: 0 !important;
+    border-radius: 0 0 10px 10px !important;
+  }
+  #view-requests .req-panel .card-header {
+    flex-shrink: 0 !important;
+    padding: 10px 14px !important;
+  }
+  #view-requests .req-panel .card-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+  }
+  #view-requests .table-scroll {
+    flex: 1 1 auto !important;
+    max-height: none !important;
+    height: 100% !important;
+    overflow: auto !important;
+    min-height: 0 !important;
+  }
+  #view-requests table {
+    width: 100% !important;
+    min-width: 1100px !important;
+  }
+  #view-requests .table-filter-bar {
+    flex-shrink: 0 !important;
+    padding: 8px 12px !important;
+  }
+  main {
+    padding: 10px 12px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  main .view.active {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  /* Compact cells */
+  #view-requests table th,
+  #view-requests table td {
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    vertical-align: top !important;
+  }
+  #view-requests table th {
+    font-size: 10.5px !important;
+    white-space: nowrap !important;
+  }
+  #tblMine td, #tblPaid td, #tblQueue td, #tblDrafts td {
+    line-height: 1.35 !important;
+  }
+
+
   /* Top bar action buttons: mobile only (sidebar covers these on desktop) */
   .app-top-actions { display: none !important; }
   @media (max-width: 768px) {
@@ -4077,14 +4164,15 @@
             <table id="tblMine">
               <thead>
                 <tr>
-                  <th>Ref</th>
+                  <th>Request ID</th>
                   <th>Project</th>
-                  <th>Type</th>
+                  <th>Client</th>
+                  <th>Cost Summary</th>
                   <th>Details</th>
                   <th>Amount</th>
-                  <th>Date</th>
-                  <th>Approval</th>
-                  <th>Payment</th>
+                  <th>Requested</th>
+                  <th>Approved</th>
+                  <th>Paid</th>
                   <th>Ack</th>
                   <th>Status</th>
                 </tr>
