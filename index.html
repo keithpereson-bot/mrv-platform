@@ -1971,7 +1971,8 @@
   @media (max-width: 768px) { .app-menu-toggle { display: inline-flex !important; } }
   .app-top-title { font-size: 15px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; line-height: 1.2; color: #fff; }
   .app-top-user { font-size: 11px; color: rgba(255,255,255,.75); line-height: 1.2; }
-  .app-top-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .app-top-actions { display: none; align-items: center; gap: 8px; flex-shrink: 0; }
+  @media (max-width: 768px) { .app-top-actions { display: flex !important; } }
   .app-top-btn {
     background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22);
     color: #fff; font-family: inherit; font-size: 12px; font-weight: 600;
@@ -3400,6 +3401,13 @@
   }
 
   /* ═══ PORTAL THEME (match enterprise payment system UI) ═══ */
+
+  /* Top bar action buttons: mobile only (sidebar covers these on desktop) */
+  .app-top-actions { display: none !important; }
+  @media (max-width: 768px) {
+    .app-top-actions { display: flex !important; }
+  }
+
 
   /* Clear table grid lines */
   table {
@@ -13033,6 +13041,7 @@ function buildSidebar() {
     nav = [
       { type:'section', label:'My Work' },
       { type:'item', label:'System Requests', view:'requests', icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'section', label:'My Submissions' },
       { type:'item', label:'My Submissions',  view:'history',  icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment', view:'prf',      icon:'prf' },
@@ -13046,6 +13055,7 @@ function buildSidebar() {
       { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
       { type:'section', label:'Work' },
       { type:'item', label:'System Requests',  view:'requests',  icon:'requests' },
+      { type:'section', label:'My Submissions' },
       { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
     ];
 
@@ -13055,6 +13065,7 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'section', label:'My Submissions' },
       { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
@@ -13067,6 +13078,7 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'section', label:'My Submissions' },
       { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
@@ -13079,6 +13091,7 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'section', label:'My Submissions' },
       { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
