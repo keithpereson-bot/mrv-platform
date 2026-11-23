@@ -4735,14 +4735,15 @@
           <table>
             <thead>
               <tr>
-                <th>Ref #</th>
+                <th>Request ID</th>
                 <th>Project</th>
-                <th>Type</th>
-                <th>Category / Line</th>
+                <th>Client</th>
+                <th>Cost Summary</th>
+                <th>Details</th>
                 <th>Amount</th>
-                <th>Submitted</th>
-                <th>Approval</th>
-                <th>Payment</th>
+                <th>Requested</th>
+                <th>Approved</th>
+                <th>Paid</th>
                 <th>My Acknowledgement</th>
                 <th>Status</th>
               </tr>
@@ -6011,7 +6012,7 @@ function renderTransactions() {
   });
 
   if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No transactions yet</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--muted)">No transactions yet</td></tr>';
     return;
   }
 
@@ -6084,7 +6085,7 @@ function renderBudgetView() {
     } catch(e) {}
   }
   if (budgetLines.length === 0 && gsWebAppUrl) {
-    tbody.innerHTML = '<tr><td colspan="9" style="padding:48px;text-align:center;color:var(--muted)">'
+    tbody.innerHTML = '<tr><td colspan="11" style="padding:48px;text-align:center;color:var(--muted)">'
       + '<div style="font-weight:600;color:var(--ink);margin-bottom:4px">Loading budgets…</div>'
       + '<div style="font-size:12px">Pulling from Google Sheets</div></td></tr>';
     var done = false;
@@ -6101,7 +6102,7 @@ function renderBudgetView() {
   }
 
   if (budgetLines.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="padding:48px;text-align:center;color:var(--muted)">'
+    tbody.innerHTML = '<tr><td colspan="11" style="padding:48px;text-align:center;color:var(--muted)">'
       + '<div style="font-weight:600;color:var(--ink);margin-bottom:6px">No budgets found</div>'
       + '<div style="font-size:12.5px">Check your Budgets tab has data with the correct headers.</div></td></tr>';
     var sc = document.getElementById('budgetProjectCount');
@@ -8335,75 +8336,93 @@ function groupBundleRows(list) {
 
 /** Stable short system Request ID (e.g. MRV-K7Q2M9) — deterministic from ref. */
 function getRequestId(r) {
-  if (!r) return '—';
-  if (r.requestId) return String(r.requestId);
-  var seed = String(r.ref || r.id || r.localRef || '');
-  if (!seed) {
-    seed = [r.project, r.requester, r.amount, r.date].join('|');
+  try {
+    if (!r) return '—';
+    if (r.requestId) return String(r.requestId);
+    var seed = String(r.ref != null ? r.ref : (r.id || r.localRef || ''));
+    if (!seed) seed = String(r.project || '') + '|' + String(r.requester || '') + '|' + String(r.amount || '') + '|' + String(r.date || '');
+    var h = 2166136261;
+    for (var i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = Math.imul ? Math.imul(h, 16777619) : ((h * 16777619) | 0);
+    }
+    var alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    var out = '';
+    var n = (h >>> 0);
+    for (var k = 0; k < 6; k++) {
+      out += alphabet[n % alphabet.length];
+      n = ((Math.floor(n / alphabet.length) ^ ((h << ((k % 8) + 1)) >>> 0)) >>> 0);
+    }
+    var id = 'MRV-' + out;
+    try { r.requestId = id; } catch (e) {}
+    return id;
+  } catch (e) {
+    return 'MRV-' + String((r && r.ref) || '------').replace(/[^A-Za-z0-9]/g, '').slice(-6).toUpperCase();
   }
-  var h = 2166136261;
-  for (var i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  var alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  var out = '';
-  var n = h >>> 0;
-  for (var k = 0; k < 6; k++) {
-    out += alphabet[n % alphabet.length];
-    n = Math.floor(n / alphabet.length) ^ (h << (k + 1));
-    n = n >>> 0;
-  }
-  var id = 'MRV-' + out;
-  try { r.requestId = id; } catch (e) {}
-  return id;
 }
 
 /** Client name + SN only (own column). */
 function reqClientColHtml(r) {
-  if (!r) return '<span style="color:var(--muted)">—</span>';
-  var name = (r.clientName || '').trim();
-  var sn = (r.clientSN || '').trim();
-  if (!name && !sn) return '<span style="color:var(--muted)">—</span>';
-  return '<div style="font-weight:600;font-size:12.5px;line-height:1.3">' + _rqEsc(name || '—') + '</div>'
-    + (sn ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">SN ' + _rqEsc(sn) + '</div>' : '');
+  try {
+    if (!r) return '<span style="color:var(--muted)">—</span>';
+    var name = String(r.clientName || '').trim();
+    var sn = String(r.clientSN || '').trim();
+    if (!name && !sn) return '<span style="color:var(--muted)">—</span>';
+    return '<div style="font-weight:600;font-size:12.5px;line-height:1.3">' + _rqEsc(name || '—') + '</div>'
+      + (sn ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">SN ' + _rqEsc(sn) + '</div>' : '');
+  } catch (e) {
+    return '<span style="color:var(--muted)">—</span>';
+  }
 }
 
 /** Details without client tag (excess, bundle, transport routes). */
 function reqDetailsOnlyHtml(r) {
-  if (!r) return '<span style="color:var(--muted)">—</span>';
-  var out = '';
-  var ccy = '';
-  try { ccy = getCurrency(r.project, r.type); } catch (e) {}
-  if (r.isExcess === true || r.isExcess === 'Yes') {
-    out += '<div class="rq-excess-tag"><span class="rq-excess-badge">EXCESS</span> '
-      + (r.excessReason
-          ? '<span class="rq-excess-why" title="' + _rqEsc(r.excessReason) + '">' + _rqEsc(r.excessReason) + '</span>'
-          : '<span class="rq-muted">No justification</span>')
-      + '</div>';
+  try {
+    if (!r) return '<span style="color:var(--muted)">—</span>';
+    var out = '';
+    var ccy = '';
+    try { ccy = getCurrency(r.project, r.type); } catch (e) { ccy = ''; }
+    if (r.isExcess === true || r.isExcess === 'Yes') {
+      out += '<div class="rq-excess-tag"><span class="rq-excess-badge">EXCESS</span> '
+        + (r.excessReason
+            ? '<span class="rq-excess-why" title="' + _rqEsc(r.excessReason) + '">' + _rqEsc(r.excessReason) + '</span>'
+            : '<span class="rq-muted">No justification</span>')
+        + '</div>';
+    }
+    if (r._members && r._members.length > 1) {
+      try {
+        out += '<div class="rq-bundle-tag">' + r._members.map(function(m) {
+          var kind = /airtime/i.test((m && m.costSummary) || '') ? 'Airtime' : 'Transport';
+          return kind + ' ' + _rqEsc(ccy) + ' ' + fmt(parseFloat(m && m.amount) || 0);
+        }).join(' · ') + '</div>';
+      } catch (e2) {}
+    } else {
+      try {
+        var b = typeof reqBundleOf === 'function' ? reqBundleOf(r) : null;
+        if (b) out += '<div class="rq-bundle-tag">Transport &amp; Airtime</div>';
+      } catch (e3) {}
+    }
+    var tb = r.transportBreakdown;
+    if (typeof tb === 'string') { try { tb = JSON.parse(tb); } catch (e) { tb = null; } }
+    if (tb && tb.length) {
+      try {
+        out += '<div class="rq-route-tag" style="font-size:11px;color:var(--muted)">'
+          + tb.map(function(x) {
+              if (!x) return '';
+              var a = x.from || x.origin || '';
+              var b2 = x.to || x.dest || '';
+              return _rqEsc(a + (b2 ? ' → ' + b2 : ''));
+            }).filter(Boolean).join('; ')
+          + '</div>';
+      } catch (e4) {}
+    }
+    if (!out && r.description && r.description !== r.costSummary) {
+      out = '<div style="font-size:12px;color:var(--muted)">' + _rqEsc(r.description) + '</div>';
+    }
+    return out || '<span style="color:var(--muted)">—</span>';
+  } catch (e) {
+    return '<span style="color:var(--muted)">—</span>';
   }
-  if (r._members && r._members.length > 1) {
-    out += '<div class="rq-bundle-tag">' + r._members.map(function(m) {
-      var kind = /airtime/i.test(m.costSummary || '') ? 'Airtime' : 'Transport';
-      return kind + ' ' + _rqEsc(ccy) + ' ' + fmt(parseFloat(m.amount) || 0);
-    }).join(' · ') + '</div>';
-  } else {
-    var b = typeof reqBundleOf === 'function' ? reqBundleOf(r) : null;
-    if (b) out += '<div class="rq-bundle-tag">Transport &amp; Airtime</div>';
-  }
-  var tb = r.transportBreakdown;
-  if (typeof tb === 'string') { try { tb = JSON.parse(tb); } catch (e) { tb = null; } }
-  if (tb && tb.length) {
-    out += '<div class="rq-route-tag" style="font-size:11px;color:var(--muted)">'
-      + tb.map(function(x) {
-          return _rqEsc((x.from || x.origin || '') + (x.to || x.dest ? ' → ' + (x.to || x.dest) : ''));
-        }).filter(Boolean).join('; ')
-      + '</div>';
-  }
-  if (!out && r.description && r.description !== r.costSummary) {
-    out = '<div style="font-size:12px;color:var(--muted)">' + _rqEsc(r.description) + '</div>';
-  }
-  return out || '<span style="color:var(--muted)">—</span>';
 }
 
 function reqClientHtml(r) {
@@ -10825,51 +10844,74 @@ function _rebuildRequestsTableNow() {
 
   // ── Tab 3: Paid ──
   var bp_el = document.getElementById('bodyPaid');
-  if (bp_el) bp_el.innerHTML = paid.length===0
-    ? '<tr><td colspan="13" style="padding:24px;text-align:center;color:var(--muted)">No paid requests yet</td></tr>'
-    : paid.map(function(r) {
-        var chkCell = canDelete
-          ? '<td style="padding:6px 6px 6px 14px"><input type="checkbox" class="req-chk" data-ref="'+r.ref+'" onchange="onReqCheckChange()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--danger)"></td>'
-          : '<td></td>';
-        var payee = (typeof lookupPayee === 'function' ? lookupPayee(r) : '') || '';
-        var reqId = getRequestId(r);
-        var approvedBy = r.approvedBy || r.approver || '';
-        var approvedAt = r.approvedAt || r.approvedDate || '';
-        var requestedAt = r.date || r.createdAt || r.submittedAt || '';
-        var paidAt = r.sigTime || r.paidAt || r.paidDate || '';
-        var ackCell = r.requesterSigName
-          ? '<td><div style="display:flex;align-items:center;gap:6px">'
-              + '<span style="color:var(--success);font-size:11px">&#10003;</span>'
-              + '<div>'
-                + '<div style="font-size:12px;font-weight:500;color:var(--success)">'+_rqEsc(r.requesterSigName)+'</div>'
-                + '<div style="font-size:10.5px;color:var(--muted)">'+fmtDate(r.requesterSigTime||'')+'</div>'
-              + '</div></div></td>'
-          : '<td><span class="badge badge-gray" style="font-size:10px">Pending</span></td>';
-        return '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')
-          +' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
-          + chkCell
-          + '<td style="font-family:ui-monospace,IBM Plex Mono,monospace;font-size:11.5px;font-weight:600;letter-spacing:.03em;white-space:nowrap;color:#1E4DB7">'
-            + _rqEsc(reqId) + '</td>'
-          + '<td style="font-weight:500">'+_rqEsc(r.project||'')+'</td>'
-          + '<td class="rq-client-col">' + reqClientColHtml(r) + '</td>'
-          + '<td class="rq-cs-cell"><div class="rq-cs">'+_rqEsc(r.costSummary||r.description||'--')+'</div>'
-            +(!r._members && r.costItem ? '<div class="rq-ci">'+_rqEsc(r.costItem)+'</div>' : '')+'</td>'
-          + '<td class="rq-det-cell">' + reqDetailsOnlyHtml(r) + '</td>'
-          + '<td class="currency" style="font-weight:600;white-space:nowrap">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
-          + '<td style="font-size:12.5px">'+_rqEsc(r.requester||'')+'</td>'
-          + '<td style="font-family:IBM Plex Mono,monospace;font-size:12px;white-space:nowrap">'
-            +(payee ? _rqEsc(payee) : '<span style="color:var(--muted)">—</span>')+'</td>'
-          + '<td style="font-size:12px;white-space:nowrap;color:var(--muted)">'+fmtDate(requestedAt)+'</td>'
-          + '<td style="font-size:12px;white-space:nowrap">'
-            + (approvedBy
-                ? '<div style="font-weight:500;color:var(--success)">'+_rqEsc(approvedBy)+'</div>'
-                  +'<div style="font-size:10.5px;color:var(--muted)">'+fmtDate(approvedAt)+'</div>'
-                : '<span style="color:var(--muted)">—</span>')
-            + '</td>'
-          + '<td style="font-size:12px;white-space:nowrap;font-weight:500">'+fmtDate(paidAt)+'</td>'
-          + ackCell
-          + '</tr>';
-      }).join('');
+  if (bp_el) {
+    try { if (window._pageState) delete window._pageState['bodyPaid']; } catch (e) {}
+    try { if (typeof _pageState !== 'undefined' && _pageState) delete _pageState['bodyPaid']; } catch (e) {}
+    if (paid.length === 0) {
+      bp_el.innerHTML = '<tr><td colspan="13" style="padding:24px;text-align:center;color:var(--muted)">No paid requests yet</td></tr>';
+    } else {
+      var paidHtml = [];
+      for (var pi = 0; pi < paid.length; pi++) {
+        try {
+          var r = paid[pi];
+          if (!r) continue;
+          var chkCell = canDelete
+            ? '<td style="padding:6px 6px 6px 14px"><input type="checkbox" class="req-chk" data-ref="'+_rqEsc(String(r.ref||''))+'" onchange="onReqCheckChange()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--danger)"></td>'
+            : '<td></td>';
+          var payee = '';
+          try { payee = lookupPayee(r) || ''; } catch (e) { payee = r.payeeNumber || ''; }
+          var reqId = getRequestId(r);
+          var approvedBy = r.approvedBy || r.approver || '';
+          var approvedAt = r.approvedAt || r.approvedDate || '';
+          var requestedAt = r.date || r.createdAt || r.submittedAt || '';
+          var paidAt = r.sigTime || r.paidAt || r.paidDate || '';
+          var ackCell = r.requesterSigName
+            ? '<td><div style="display:flex;align-items:center;gap:6px">'
+                + '<span style="color:var(--success);font-size:11px">&#10003;</span>'
+                + '<div>'
+                  + '<div style="font-size:12px;font-weight:500;color:var(--success)">'+_rqEsc(r.requesterSigName)+'</div>'
+                  + '<div style="font-size:10.5px;color:var(--muted)">'+fmtDate(r.requesterSigTime||'')+'</div>'
+                + '</div></div></td>'
+            : '<td><span class="badge badge-gray" style="font-size:10px">Pending</span></td>';
+          var ccy = '';
+          try { ccy = getCurrency(r.project, r.type); } catch (e) { ccy = ''; }
+          var amt = 0;
+          try { amt = fmt(r.amount || 0); } catch (e) { amt = String(r.amount || 0); }
+          paidHtml.push(
+            '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')
+            +' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="Paid" data-ref="'+String(r.ref||'').replace(/"/g,'&quot;')+'">'
+            + chkCell
+            + '<td style="font-family:ui-monospace,IBM Plex Mono,monospace;font-size:11.5px;font-weight:600;letter-spacing:.03em;white-space:nowrap;color:#1E4DB7">'
+              + _rqEsc(reqId) + '</td>'
+            + '<td style="font-weight:500">'+_rqEsc(r.project||'')+'</td>'
+            + '<td class="rq-client-col">' + reqClientColHtml(r) + '</td>'
+            + '<td class="rq-cs-cell"><div class="rq-cs">'+_rqEsc(r.costSummary||r.description||'--')+'</div>'
+              +(!r._members && r.costItem ? '<div class="rq-ci">'+_rqEsc(r.costItem)+'</div>' : '')+'</td>'
+            + '<td class="rq-det-cell">' + reqDetailsOnlyHtml(r) + '</td>'
+            + '<td class="currency" style="font-weight:600;white-space:nowrap">'+_rqEsc(ccy)+' '+amt+'</td>'
+            + '<td style="font-size:12.5px">'+_rqEsc(r.requester||'')+'</td>'
+            + '<td style="font-family:IBM Plex Mono,monospace;font-size:12px;white-space:nowrap">'
+              +(payee ? _rqEsc(payee) : '<span style="color:var(--muted)">—</span>')+'</td>'
+            + '<td style="font-size:12px;white-space:nowrap;color:var(--muted)">'+fmtDate(requestedAt)+'</td>'
+            + '<td style="font-size:12px;white-space:nowrap">'
+              + (approvedBy
+                  ? '<div style="font-weight:500;color:var(--success)">'+_rqEsc(approvedBy)+'</div>'
+                    +'<div style="font-size:10.5px;color:var(--muted)">'+fmtDate(approvedAt)+'</div>'
+                  : '<span style="color:var(--muted)">—</span>')
+              + '</td>'
+            + '<td style="font-size:12px;white-space:nowrap;font-weight:500">'+fmtDate(paidAt)+'</td>'
+            + ackCell
+            + '</tr>'
+          );
+        } catch (rowErr) {
+          try { console.warn('paid row render error', rowErr); } catch (e) {}
+        }
+      }
+      bp_el.innerHTML = paidHtml.length
+        ? paidHtml.join('')
+        : '<tr><td colspan="13" style="padding:24px;text-align:center;color:var(--muted)">No paid requests yet</td></tr>';
+    }
+  }
 
   // Keep legacy tbody in sync for PDF etc
   var leg = document.getElementById('requestsBody');
@@ -12401,7 +12443,7 @@ function filterHistory(filter) {
   if (!tbody) return;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="padding:32px;text-align:center;color:var(--muted)">'
+    tbody.innerHTML = '<tr><td colspan="11" style="padding:32px;text-align:center;color:var(--muted)">'
       + (mine.length === 0
           ? 'You have not submitted any requests yet. Click <strong>+ New Request</strong> on the Requests tab to get started.'
           : 'No requests match this filter.')
@@ -12421,31 +12463,30 @@ function filterHistory(filter) {
   }
 
   tbody.innerHTML = filtered.map(function(r) {
-    // Status badge
     var statusMap = {
       Draft:    { cls:'badge-gray',   label:'Draft' },
       Pending:  { cls:'badge-gold',   label:'Pending' },
       Approved: { cls:'badge-blue',   label:'Approved' },
       Paid:     { cls:'badge-teal',   label:'Paid' },
     };
-    var s = statusMap[r.status] || { cls:'badge-gray', label:r.status };
+    var s = statusMap[r.status] || { cls:'badge-gray', label:r.status || '—' };
+    var reqId = (typeof getRequestId === 'function') ? getRequestId(r) : ('#' + (r.ref || ''));
+    var approvedBy = r.approvedBy || r.approver || '';
+    var approvedAt = r.approvedAt || r.approvedDate || '';
+    var requestedAt = r.date || r.createdAt || r.submittedAt || '';
+    var paidAt = (r.status === 'Paid') ? (r.sigTime || r.paidAt || r.paidDate || '') : '';
 
-    // Approval column
-    var approvalHtml = r.approvedBy
-      ? '<div style="font-size:12px;font-weight:500;color:var(--success)">&#10003; '+r.approvedBy+'</div>'
-        + '<div style="font-size:10.5px;color:var(--muted)">'+(r.approvedAt||'')+'</div>'
+    var approvalHtml = approvedBy
+      ? '<div style="font-size:12px;font-weight:500;color:var(--success)">'+_rqEsc(approvedBy)+'</div>'
+        + '<div style="font-size:10.5px;color:var(--muted)">'+fmtDate(approvedAt)+'</div>'
       : '<span style="color:var(--muted);font-size:12px">Awaiting</span>';
 
-    // Payment column
-    var paymentHtml = r.status === 'Paid'
-      ? '<div style="font-size:12px;font-weight:500;color:var(--success)">&#10003; Paid</div>'
-        + (r.sigLabel ? '<div style="font-size:10.5px;color:var(--muted)">'+r.sigLabel+'</div>' : '')
-        + (r.sigTime  ? '<div style="font-size:10.5px;color:var(--muted)">'+fmtDate(r.sigTime)+'</div>'  : '')
+    var paidHtml = r.status === 'Paid'
+      ? '<div style="font-size:12px;font-weight:500">'+fmtDate(paidAt)+'</div>'
       : r.status === 'Approved'
-        ? '<span style="font-size:12px;color:var(--warn)">&#9679; In Queue</span>'
-        : '<span style="color:var(--muted);font-size:12px">Not yet</span>';
+        ? '<span style="font-size:12px;color:var(--warn)">In Queue</span>'
+        : '<span style="color:var(--muted);font-size:12px">—</span>';
 
-    // Acknowledgement column (only for paid requests)
     var ackHtml = '';
     if (r.status === 'Paid') {
       if (r.requesterSig) {
@@ -12454,30 +12495,34 @@ function filterHistory(filter) {
           + '<span style="color:var(--success);font-size:11px;font-weight:600">✓ Signed</span>'
           + '</div>';
       } else {
-        ackHtml = '<button class="btn btn-secondary btn-sm" style="font-size:11.5px" data-aref="'+r.ref+'" onclick="openAckModal(this.dataset.aref)">'
-          + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>'
-          + ' Sign to Acknowledge</button>';
+        ackHtml = '<button class="btn btn-secondary btn-sm" style="font-size:11.5px" data-aref="'+_rqEsc(String(r.ref||''))+'" onclick="openAckModal(this.dataset.aref)">'
+          + 'Sign to Acknowledge</button>';
       }
     } else {
       ackHtml = '<span style="color:var(--muted);font-size:12px">—</span>';
     }
 
-    return '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
-      + '<td style="font-family:IBM Plex Mono,monospace;font-size:11.5px;color:var(--muted)">#'+r.ref+'</td>'
-      + '<td style="font-weight:500">'+r.project+'</td>'
-      + '<td><span class="badge badge-gray">'+(r.type||'--')+'</span></td>'
-      + '<td>'
-        + '<div style="font-size:12.5px;color:var(--ink)">'+(r.category||r.description||'--')+'</div>'
-        + (r.costSummary ? '<div style="font-size:11px;color:var(--muted)">'+r.costSummary+'</div>' : '')
-        + reqClientHtml(r)
-      + '</td>'
-      + '<td class="currency" style="font-weight:600;white-space:nowrap">'+getCurrency(r.project,r.type)+' '+fmt(r.amount||0)+'</td>'
-      + '<td style="font-size:12px;color:var(--muted);white-space:nowrap">'+fmtDate(r.date)+'</td>'
+    var ccy = '';
+    try { ccy = getCurrency(r.project, r.type); } catch (e) {}
+    var amt = '0';
+    try { amt = fmt(r.amount || 0); } catch (e) { amt = String(r.amount || 0); }
+
+    return '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')
+      +' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
+      + '<td style="font-family:ui-monospace,IBM Plex Mono,monospace;font-size:11.5px;font-weight:600;letter-spacing:.03em;white-space:nowrap;color:#1E4DB7">'
+        + _rqEsc(reqId) + '</td>'
+      + '<td style="font-weight:500">'+_rqEsc(r.project||'')+'</td>'
+      + '<td class="rq-client-col">' + reqClientColHtml(r) + '</td>'
+      + '<td class="rq-cs-cell"><div class="rq-cs">'+_rqEsc(r.costSummary||r.category||r.description||'--')+'</div>'
+        + (r.costItem ? '<div class="rq-ci">'+_rqEsc(r.costItem)+'</div>' : '') + '</td>'
+      + '<td class="rq-det-cell">' + reqDetailsOnlyHtml(r) + '</td>'
+      + '<td class="currency" style="font-weight:600;white-space:nowrap">'+_rqEsc(ccy)+' '+amt+'</td>'
+      + '<td style="font-size:12px;color:var(--muted);white-space:nowrap">'+fmtDate(requestedAt)+'</td>'
       + '<td>'+approvalHtml+'</td>'
-      + '<td>'+paymentHtml+'</td>'
+      + '<td>'+paidHtml+'</td>'
       + '<td>'+ackHtml+'</td>'
       + '<td><span class="badge '+s.cls+'">'+s.label+'</span></td>'
-    + '</tr>';
+      + '</tr>';
   }).join('');
 
   // Smart table AFTER rows are in the DOM — keep tab + legacy in sync
