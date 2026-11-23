@@ -3400,6 +3400,75 @@
   }
 
   /* ═══ PORTAL THEME (match enterprise payment system UI) ═══ */
+
+  /* Clear table grid lines */
+  table {
+    border-collapse: collapse !important;
+    border: 1px solid #CBD5E1 !important;
+  }
+  table th,
+  table td {
+    border: 1px solid #CBD5E1 !important;
+    padding: 8px 10px !important;
+  }
+  table th {
+    background: #F1F5F9 !important;
+    color: #334155 !important;
+    font-weight: 600 !important;
+  }
+  table tbody tr:nth-child(even) td {
+    background: #F8FAFC !important;
+  }
+  table tbody tr:hover td {
+    background: #EFF4FF !important;
+  }
+  .table-scroll table {
+    border: 1px solid #CBD5E1 !important;
+  }
+
+  /* Request tabs: high contrast on dark blue strip */
+  .req-tabs {
+    background: #163A8C !important;
+    padding: 6px 8px 0 !important;
+    gap: 4px !important;
+  }
+  .req-tab {
+    color: #E2E8F0 !important;
+    background: transparent !important;
+    opacity: 1 !important;
+  }
+  .req-tab .req-tab-title {
+    color: #E2E8F0 !important;
+    font-weight: 600 !important;
+  }
+  .req-tab svg {
+    stroke: #CBD5E1 !important;
+  }
+  .req-tab-badge {
+    background: rgba(255,255,255,.2) !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+  }
+  .req-tab:hover {
+    background: rgba(255,255,255,.12) !important;
+    color: #fff !important;
+  }
+  .req-tab:hover .req-tab-title { color: #fff !important; }
+  .req-tab.active {
+    background: #fff !important;
+    color: #1E4DB7 !important;
+  }
+  .req-tab.active .req-tab-title {
+    color: #1E4DB7 !important;
+  }
+  .req-tab.active svg {
+    stroke: #1E4DB7 !important;
+  }
+  .req-tab.active .req-tab-badge {
+    background: #1E4DB7 !important;
+    color: #fff !important;
+  }
+
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
   body, button, input, select, textarea {
@@ -3845,18 +3914,9 @@
   <div id="view-requests" class="view">
     <div class="page-header">
       <h1>System Requests</h1>
-      <p style="margin:0;font-size:12px;color:var(--muted)">Your submissions and team request workflow</p>
+      <p style="margin:0;font-size:12px;color:var(--muted)">Drafts, payment queue, and paid requests</p>
     </div>
     <div class="req-tabs">
-      <button class="req-tab" id="tab-mine" onclick="switchReqTab('mine')">
-        <div class="req-tab-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <div>
-          <div class="req-tab-title">My Submissions</div>
-        </div>
-        <span class="req-tab-badge" id="badge-mine">0</span>
-      </button>
       <button class="req-tab active viewer-hidden" id="tab-drafts" onclick="switchReqTab('drafts')">
         <div class="req-tab-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
