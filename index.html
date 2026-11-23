@@ -2951,11 +2951,12 @@
     .cfg-cat-head span:last-child { display:none; }
   }
   /* Excess requests — bluish row + visible justification */
-  tr.rq-excess-row, tr.rq-excess-row > td { background:#E6F0FA !important; }
-  tr.rq-excess-row:hover, tr.rq-excess-row:hover > td { background:#D8E8F7 !important; }
-  tr.rq-excess-row > td:first-child { box-shadow:inset 3px 0 0 #3B6FD8; }
+  tr.rq-excess-row, tr.rq-excess-row > td { background: transparent; }
+  tr.rq-excess-row:hover, tr.rq-excess-row:hover > td { background: #F8FAFC; }
+  tr.rq-excess-row > td:first-child { box-shadow: none; }
   .rq-excess-tag { margin-top:4px; display:flex; gap:6px; align-items:baseline; font-size:11.5px; color:var(--ink); max-width:300px; min-width:0; }
-  .rq-excess-badge { flex-shrink:0; font-size:9.5px; font-weight:700; letter-spacing:.05em; color:#fff; background:#3B6FD8; border-radius:3px; padding:1px 5px; }
+  .rq-excess-badge { display:none !important; }
+  .rq-excess-flag { flex-shrink:0; color:#1E4DB7; width:14px; height:14px; margin-top:1px; }
   .rq-excess-why { font-style:italic; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; border-bottom:1px dotted #3B6FD8; }
   .rq-excess-why.is-open { white-space:normal; overflow:visible; border-bottom:none; }
   /* Compact table pagination (one slim row) */
@@ -3398,6 +3399,48 @@
     .rq-tr-row input[data-field="desc"] { grid-column:1 / -1; }
     .rq-footer-left, .rq-footer-right { width:100%; }
     .rq-footer-sum { margin-left:auto; }
+  }
+
+
+  .paid-card-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    padding: 6px 12px !important;
+  }
+  .paid-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .paid-header-left .card-title { margin: 0 !important; font-size: 13px !important; white-space: nowrap; }
+  .paid-header-left #paidTotal { font-size: 11px !important; font-weight: 700 !important; padding: 2px 7px !important; }
+  .paid-toolbar {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    flex-shrink: 0;
+  }
+  .paid-toolbar .paid-sort {
+    font-size: 11.5px !important;
+    padding: 3px 8px !important;
+    height: 28px !important;
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 6px !important;
+    background: #fff !important;
+    max-width: 110px;
+  }
+  .paid-toolbar .paid-pdf-btn,
+  .paid-toolbar .btn {
+    height: 28px !important;
+    padding: 0 10px !important;
+    border-radius: 6px !important;
+    font-size: 11.5px !important;
+    white-space: nowrap;
   }
 
   /* ═══ PORTAL THEME (match enterprise payment system UI) ═══ */
@@ -4100,28 +4143,25 @@
     <!-- Tab: Paid Requests -->
     <div id="reqpanel-paid" class="req-panel" style="display:none">
       <div class="card">
-        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:10px;min-width:0">
-            <div class="card-title" style="margin:0">Paid Requests</div>
-            <span class="badge badge-teal" id="paidTotal" style="font-size:12px;font-weight:700">0</span>
+        <div class="card-header paid-card-header">
+          <div class="paid-header-left">
+            <span class="card-title">Paid Requests</span>
+            <span class="badge badge-teal" id="paidTotal">0</span>
           </div>
-          <div class="paid-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <select id="paidSortSelect" class="paid-sort" onchange="sortAndRebuild()"
-              style="font-size:12px;padding:6px 10px;border:1px solid #CBD5E1;border-radius:8px;background:#fff;color:#334155;cursor:pointer;height:34px">
-              <option value="date-desc">Date: Newest first</option>
-              <option value="date-asc">Date: Oldest first</option>
-              <option value="amount-desc">Amount: High to low</option>
-              <option value="amount-asc">Amount: Low to high</option>
-              <option value="requester">Requester A–Z</option>
-              <option value="project">Project A–Z</option>
+          <div class="paid-toolbar">
+            <select id="paidSortSelect" class="paid-sort" onchange="sortAndRebuild()" title="Sort">
+              <option value="date-desc">Newest</option>
+              <option value="date-asc">Oldest</option>
+              <option value="amount-desc">Amount ↓</option>
+              <option value="amount-asc">Amount ↑</option>
+              <option value="requester">Requester</option>
+              <option value="project">Project</option>
             </select>
-            <button class="btn btn-secondary btn-sm admin-only viewer-hidden" onclick="downloadAcknowledgedPDF()"
-              style="height:34px;border-radius:8px;display:inline-flex;align-items:center;gap:6px">
+            <button type="button" class="btn btn-secondary btn-sm admin-only viewer-hidden paid-pdf-btn" onclick="downloadAcknowledgedPDF()" title="Download acknowledged PDF">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Acknowledged PDF
+              PDF
             </button>
-            <button class="btn btn-ghost btn-sm admin-only" id="delSelPaid" onclick="deleteSelected('paid')" style="display:none;color:var(--danger);border-color:var(--danger);height:34px;border-radius:8px">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            <button type="button" class="btn btn-ghost btn-sm admin-only" id="delSelPaid" onclick="deleteSelected('paid')" style="display:none;color:var(--danger);border-color:var(--danger)">
               Delete (<span id="delCountPaid">0</span>)
             </button>
           </div>
@@ -7449,8 +7489,22 @@ function showView(id, el) {
   if (id === 'reconciliation') renderReconciliation();
   if (id === 'dashboard')      renderDashboard();
   if (id === 'transactions')   renderTransactions();
-  if (id === 'requests' && typeof _openMine !== 'undefined' && _openMine) {
-    try { switchReqTab('mine'); } catch (e) {}
+  if (id === 'requests') {
+    try {
+      if (typeof _openMine !== 'undefined' && _openMine) {
+        switchReqTab('mine');
+        var tMine = document.getElementById('appTopTitle');
+        if (tMine) tMine.textContent = 'MY SUBMISSIONS';
+      } else {
+        var activePanel = document.querySelector('#view-requests .req-panel.is-active');
+        if (!activePanel || activePanel.id === 'reqpanel-mine') {
+          var role = (currentUser && currentUser.role) || 'requester';
+          switchReqTab(role === 'requester' ? 'drafts' : 'paid');
+        }
+        var tReq = document.getElementById('appTopTitle');
+        if (tReq) tReq.textContent = 'SYSTEM REQUESTS';
+      }
+    } catch (e) {}
   }
 }
 
@@ -8475,7 +8529,7 @@ function reqDetailsOnlyHtml(r) {
     var ccy = '';
     try { ccy = getCurrency(r.project, r.type); } catch (e) { ccy = ''; }
     if (r.isExcess === true || r.isExcess === 'Yes') {
-      out += '<div class="rq-excess-tag"><span class="rq-excess-badge">EXCESS</span> '
+      out += '<div class="rq-excess-tag" title="Excess request">' + '<svg class="rq-excess-flag" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-label="Excess"><path d="M4 3v18h2V13h1.5l.8.8H20V4H8.3l-.8.8H6V3H4zm5 3h9v5.5h-7.2l-.8-.8H9V6z"/></svg>' + ' '
         + (r.excessReason
             ? '<span class="rq-excess-why" title="' + _rqEsc(r.excessReason) + '">' + _rqEsc(r.excessReason) + '</span>'
             : '<span class="rq-muted">No justification</span>')
@@ -8530,7 +8584,7 @@ function reqClientHtml(r) {
       + '</div>';
   }
   if (r.isExcess === true || r.isExcess === 'Yes') {
-    out += '<div class="rq-excess-tag"><span class="rq-excess-badge">EXCESS</span> '
+    out += '<div class="rq-excess-tag" title="Excess request">' + '<svg class="rq-excess-flag" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-label="Excess"><path d="M4 3v18h2V13h1.5l.8.8H20V4H8.3l-.8.8H6V3H4zm5 3h9v5.5h-7.2l-.8-.8H9V6z"/></svg>' + ' '
       + (r.excessReason
           ? '<span class="rq-excess-why" title="' + _rqEsc(r.excessReason) + '" onclick="event.stopPropagation();this.classList.toggle(\'is-open\')">' + _rqEsc(r.excessReason) + '</span>'
           : '<span class="rq-muted">No justification given</span>')
