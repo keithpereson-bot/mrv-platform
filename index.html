@@ -3402,8 +3402,8 @@
 
   /* ═══ PORTAL THEME (match enterprise payment system UI) ═══ */
 
-  /* Full-bleed tables — maximize height & width */
-  #view-requests {
+  /* Full-bleed tables — only the ACTIVE panel is shown */
+  #view-requests.view.active {
     display: flex !important;
     flex-direction: column !important;
     height: 100% !important;
@@ -3420,15 +3420,19 @@
     flex-shrink: 0 !important;
     margin-bottom: 0 !important;
   }
+  /* Default: panels hidden (JS toggles). Never force display on all. */
   #view-requests .req-panel {
+    display: none;
+    flex-direction: column;
+    padding: 0 !important;
+    min-height: 0 !important;
+  }
+  #view-requests .req-panel.is-active {
+    display: flex !important;
     flex: 1 1 auto !important;
     min-height: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    padding: 0 !important;
-    height: auto !important;
   }
-  #view-requests .req-panel .card {
+  #view-requests .req-panel.is-active .card {
     flex: 1 1 auto !important;
     min-height: 0 !important;
     display: flex !important;
@@ -3436,18 +3440,18 @@
     margin: 0 !important;
     border-radius: 0 0 10px 10px !important;
   }
-  #view-requests .req-panel .card-header {
+  #view-requests .req-panel.is-active .card-header {
     flex-shrink: 0 !important;
     padding: 10px 14px !important;
   }
-  #view-requests .req-panel .card-body {
+  #view-requests .req-panel.is-active .card-body {
     flex: 1 1 auto !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     padding: 0 !important;
   }
-  #view-requests .table-scroll {
+  #view-requests .req-panel.is-active .table-scroll {
     flex: 1 1 auto !important;
     max-height: none !important;
     height: 100% !important;
@@ -4042,7 +4046,7 @@
     </div>
 
     <!-- Tab: Requests (Draft / Pending) -->
-    <div id="reqpanel-drafts" class="req-panel">
+    <div id="reqpanel-drafts" class="req-panel is-active" style="display:flex">
       <div class="card">
         <div class="card-header">
           <div class="card-title">Requests</div>
@@ -10744,11 +10748,17 @@ async function pullFromSheets(silent) {
 
 function switchReqTab(tab) {
   document.querySelectorAll('.req-tab').forEach(function(t){ t.classList.remove('active'); });
-  document.querySelectorAll('.req-panel').forEach(function(p){ p.style.display='none'; });
+  document.querySelectorAll('.req-panel').forEach(function(p){
+    p.style.display = 'none';
+    p.classList.remove('is-active');
+  });
   var btn = document.getElementById('tab-'+tab);
   var panel = document.getElementById('reqpanel-'+tab);
   if (btn) btn.classList.add('active');
-  if (panel) panel.style.display='';
+  if (panel) {
+    panel.style.display = 'flex';
+    panel.classList.add('is-active');
+  }
   // Sidebar highlight: My Submissions vs System Requests
   try {
     document.querySelectorAll('.aside-item').forEach(function(a){ a.classList.remove('active'); });
