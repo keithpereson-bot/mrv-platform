@@ -3905,7 +3905,6 @@
     </div>
   </div>
   <div class="app-top-actions">
-    <button type="button" class="app-top-btn" onclick="showView('requests',null)">Requests</button>
     <button type="button" class="app-top-btn app-top-btn-outline" onclick="doLogout()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Logout
@@ -3920,13 +3919,6 @@
 
   <!-- -- DASHBOARD -- -->
   <div id="view-dashboard" class="view">
-    <div class="page-header">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
-        <div>
-          <h1>Dashboard</h1>
-        </div>
-      </div>
-    </div>
     <div class="view-body">
       <div id="dashStats" class="stats"></div>
       <div class="ws-grid">
@@ -3979,10 +3971,7 @@
   <div id="view-budgets" class="view">
     <div class="page-header">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
-        <div>
-          <h1>Approved Budgets</h1>
-        </div>
-        <div class="ws-actions">
+        <div class="ws-actions" style="margin-left:auto">
           <button class="btn btn-secondary btn-sm" onclick="toggleAllBudgetGroups(true)">Expand All</button>
           <button class="btn btn-secondary btn-sm" onclick="toggleAllBudgetGroups(false)">Collapse All</button>
         </div>
@@ -4025,7 +4014,6 @@
   <!-- -- STEPS 2 & 3: LOAD FUNDS -- -->
   <div id="view-funds" class="view">
     <div class="page-header">
-      <h1>Load &amp; Post Funds</h1>
       <p>Steps 2 &amp; 3 — consolidate cash requirements and post as Money-In</p>
     </div>
     <div class="view-body">
@@ -4054,10 +4042,6 @@
 
   <!-- -- STEP 4: REQUESTS -- -->
   <div id="view-requests" class="view">
-    <div class="page-header">
-      <h1>System Requests</h1>
-      <p style="margin:0;font-size:12px;color:var(--muted)">Drafts, payment queue, and paid requests</p>
-    </div>
     <div class="req-tabs">
       <button class="req-tab active viewer-hidden" id="tab-drafts" onclick="switchReqTab('drafts')">
         <div class="req-tab-icon">
@@ -4189,45 +4173,6 @@
       </div>
     </div>
 
-    <!-- Tab: My Submissions (current user's requests) -->
-    <div id="reqpanel-mine" class="req-panel" style="display:none">
-      <div class="card">
-        <div class="card-header" style="flex-wrap:wrap;gap:8px">
-          <div class="card-title">My Submissions</div>
-          <div class="flex gap-2" style="align-items:center;flex-wrap:wrap">
-            <button class="btn btn-primary btn-sm" id="mfilt-all" onclick="filterHistory('all')">All</button>
-            <button class="btn btn-ghost btn-sm" id="mfilt-draft" onclick="filterHistory('draft')">Drafts</button>
-            <button class="btn btn-ghost btn-sm" id="mfilt-approved" onclick="filterHistory('approved')">In Queue</button>
-            <button class="btn btn-ghost btn-sm" id="mfilt-paid" onclick="filterHistory('paid')">Paid</button>
-            <button class="btn btn-secondary btn-sm" id="signAllPaidBtnMine" onclick="openAckModal('all')" style="display:none">Sign all paid</button>
-            <span class="badge badge-gray" id="mineCount">0 requests</span>
-          </div>
-        </div>
-        <div class="card-body" style="padding:0">
-          <div class="table-scroll">
-            <table id="tblMine">
-              <thead>
-                <tr>
-                  <th>Request ID</th>
-                  <th>Project</th>
-                  <th>Client</th>
-                  <th>Cost Summary</th>
-                  <th>Details</th>
-                  <th>Amount</th>
-                  <th>Requested</th>
-                  <th>Approved</th>
-                  <th>Paid</th>
-                  <th>Ack</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="bodyMine"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- hidden legacy tbody for compatibility -->
     <tbody id="requestsBody" style="display:none"></tbody>
   </div>
@@ -4236,7 +4181,6 @@
   <div id="view-expenses" class="view">
     <div class="page-header">
       <div>
-        <h1>Claim expense</h1>
         <p>Country → one project → cost lines → export claim</p>
       </div>
     </div>
@@ -4431,7 +4375,6 @@
     <div class="page-header">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div>
-          <h1>Request payment</h1>
           <p>Country → project → cost lines → generate PRF</p>
         </div>
         <div class="ws-actions">
@@ -4592,9 +4535,6 @@
 
 <!-- -- STEP 6: RECONCILIATION -- -->
   <div id="view-reconciliation" class="view">
-    <div class="page-header">
-      <h1>Monthly Reconciliation</h1>
-    </div>
     <div class="view-body">
     <div id="reconStats" class="stats" style="grid-template-columns:repeat(3,1fr)"></div>
     <div class="card">
@@ -4621,9 +4561,6 @@
   </div>
   <!-- -- TRANSACTIONS -- -->
   <div id="view-transactions" class="view">
-    <div class="page-header">
-      <h1>Transaction Audit Trail</h1>
-    </div>
     <div class="view-body">
     <div class="card">
       <div class="card-header"><div class="card-title">All Transactions -- June 2026</div><button class="btn btn-secondary btn-sm" onclick="toast('PDF with signatures downloaded!')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download with Signatures</button></div>
@@ -4641,9 +4578,6 @@
   <!-- -- MY SIGNATURES -- -->
   <!-- -- GOOGLE SHEETS / APPS SCRIPT INTEGRATION -- -->
   <div id="view-sheets" class="view">
-    <div class="page-header">
-      <h1>Google Sheets Integration</h1>
-    </div>
     <div class="view-body">
     <div class="card">
       <div class="card-header">
@@ -4719,7 +4653,6 @@
     <div class="page-header">
       <div class="usr-head">
         <div>
-          <h1>Manage Users</h1>
           <p>People, roles and country access</p>
         </div>
         <div class="usr-head-actions">
@@ -4831,40 +4764,32 @@
     </div>
   </div>
 
-  <!-- -- MY SUBMISSIONS (Requesters only) -- -->
-  <div id="view-history" class="view" style="display:none !important" aria-hidden="true">
+  <!-- -- MY SUBMISSIONS (standalone page, all roles) -- -->
+  <div id="view-history" class="view">
     <div class="page-header">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-        <div>
-          <h1>My Submissions</h1>
-          <p>Track approval and payment status for your requests</p>
-        </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <p style="margin:0">Track approval and payment status for your requests</p>
         <button class="btn btn-ghost btn-sm" onclick="openMySignature()" id="histSigBtn">My signature</button>
       </div>
     </div>
     <div class="view-body">
     <div id="historyStats" class="stats" style="grid-template-columns:repeat(4,1fr)"></div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn btn-primary btn-sm" id="hfilt-all"    onclick="filterHistory('all')">All</button>
-      <button class="btn btn-ghost btn-sm"   id="hfilt-draft"  onclick="filterHistory('draft')">Drafts</button>
-      <button class="btn btn-ghost btn-sm"   id="hfilt-approved" onclick="filterHistory('approved')">In Queue</button>
-      <button class="btn btn-ghost btn-sm"   id="hfilt-paid"   onclick="filterHistory('paid')">Paid</button>
-    </div>
-
     <div class="card">
-      <div class="card-header">
-        <div class="card-title">Submission History</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <button class="btn btn-secondary btn-sm" id="signAllPaidBtn" onclick="openAckModal('all')" style="display:none">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
-            Sign All Paid
-          </button>
-          <span class="badge badge-gray" id="historyCount">0 requests</span>
+      <div class="card-header" style="flex-wrap:wrap;gap:8px">
+        <div class="flex gap-2" style="align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" id="mfilt-all" onclick="filterHistory('all')">All</button>
+          <button class="btn btn-ghost btn-sm" id="mfilt-draft" onclick="filterHistory('draft')">Drafts</button>
+          <button class="btn btn-ghost btn-sm" id="mfilt-approved" onclick="filterHistory('approved')">In Queue</button>
+          <button class="btn btn-ghost btn-sm" id="mfilt-paid" onclick="filterHistory('paid')">Paid</button>
+        </div>
+        <div class="flex gap-2" style="align-items:center;flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm" id="signAllPaidBtnMine" onclick="openAckModal('all')" style="display:none">Sign all paid</button>
+          <span class="badge badge-gray" id="mineCount">0 requests</span>
         </div>
       </div>
       <div class="card-body" style="padding:0">
         <div class="table-scroll">
-          <table>
+          <table id="tblMine">
             <thead>
               <tr>
                 <th>Request ID</th>
@@ -4876,11 +4801,11 @@
                 <th>Requested</th>
                 <th>Approved</th>
                 <th>Paid</th>
-                <th>My Acknowledgement</th>
+                <th>Ack</th>
                 <th>Status</th>
               </tr>
             </thead>
-            <tbody id="historyBody"></tbody>
+            <tbody id="bodyMine"></tbody>
           </table>
         </div>
       </div>
@@ -7448,12 +7373,6 @@ function spendDefaultView() {
 function showView(id, el) {
   try { if (arguments[0] === "requests" || arguments[0] === "history") updateReqFormSettingsBtn(); } catch(e) {}
 
-  // My Submissions is a tab under System Requests (not a separate view)
-  var _openMine = false;
-  if (id === 'history') {
-    id = 'requests';
-    _openMine = true;
-  }
 
   // Single Spend nav entry → last mode (payment request or expense claim)
   if (id === 'spend') {
@@ -7471,9 +7390,9 @@ function showView(id, el) {
   try {
     var titles = {
       dashboard:'Dashboard', requests:'System Requests', history:'My Submissions',
-      budgets:'Approved Budgets', funds:'Load Funds', expenses:'Claim Expense',
+      budgets:'Approved Budgets', funds:'Load & Post Funds', expenses:'Claim Expense',
       prf:'Request Payment', users:'Manage Users', sheets:'Google Sheets',
-      transactions:'Transactions', reconcile:'Reconcile'
+      transactions:'Transaction Audit Trail', reconciliation:'Monthly Reconciliation'
     };
     var t = document.getElementById('appTopTitle');
     if (t) t.textContent = (titles[id] || id || 'Dashboard').toUpperCase();
@@ -7491,20 +7410,18 @@ function showView(id, el) {
   if (id === 'transactions')   renderTransactions();
   if (id === 'requests') {
     try {
-      if (typeof _openMine !== 'undefined' && _openMine) {
-        switchReqTab('mine');
-        var tMine = document.getElementById('appTopTitle');
-        if (tMine) tMine.textContent = 'MY SUBMISSIONS';
-      } else {
-        var activePanel = document.querySelector('#view-requests .req-panel.is-active');
-        if (!activePanel || activePanel.id === 'reqpanel-mine') {
-          var role = (currentUser && currentUser.role) || 'requester';
-          switchReqTab(role === 'requester' ? 'drafts' : 'paid');
-        }
-        var tReq = document.getElementById('appTopTitle');
-        if (tReq) tReq.textContent = 'SYSTEM REQUESTS';
+      var activePanel = document.querySelector('#view-requests .req-panel.is-active');
+      if (!activePanel) {
+        var role = (currentUser && currentUser.role) || 'requester';
+        switchReqTab(role === 'requester' ? 'drafts' : 'paid');
       }
     } catch (e) {}
+  }
+  if (id === 'history') {
+    try { renderHistory(); } catch (e) {}
+    if (gsWebAppUrl && !window._gasDeploymentDead && typeof pullRequestsOnly === 'function') {
+      pullRequestsOnly({ attempts: 2 }).then(function(){ try { renderHistory(); } catch(e) {} }).catch(function(){});
+    }
   }
 }
 
@@ -9499,7 +9416,7 @@ async function submitAllRequests() {
   try { renderHistory(); } catch (eH) {}
   toast((activeIdx.length === 1 ? 'Request submitted (' + created.join(' + ') + ')' : activeIdx.length + ' requests submitted (' + created[0] + '–' + created[created.length - 1] + ')')
     + (anyExcess ? ' (excess noted)' : '') + (window._gas404Until ? ' · Sheets offline (local only)' : '')
-    + ' · open My Submissions tab');
+    + ' · see My Submissions');
   backgroundPush({ fast: true, skipActuals: true, dirtyOnly: true, immediate: true });
   setTimeout(function() {
     try { backgroundPush({ fast: true, skipActuals: true, dirtyOnly: false, recover: true, immediate: true }); } catch (e2) {}
@@ -10813,30 +10730,17 @@ function switchReqTab(tab) {
     panel.style.display = 'flex';
     panel.classList.add('is-active');
   }
-  // Sidebar highlight: My Submissions vs System Requests
+  // Keep System Requests highlighted in the sidebar
   try {
     document.querySelectorAll('.aside-item').forEach(function(a){ a.classList.remove('active'); });
-    if (tab === 'mine') {
-      var mineNav = document.getElementById('navMySubmissions');
-      if (mineNav) mineNav.classList.add('active');
-    } else {
-      var reqNav = document.querySelector('.aside-item[data-view="requests"]');
-      if (reqNav) reqNav.classList.add('active');
-    }
+    var reqNav = document.querySelector('.aside-item[data-view="requests"]');
+    if (reqNav) reqNav.classList.add('active');
   } catch (e) {}
-  if (tab === 'mine') {
-    try { renderHistory(); } catch (e) {}
-    if (gsWebAppUrl && !window._gasDeploymentDead && typeof pullRequestsOnly === 'function') {
-      pullRequestsOnly({ attempts: 2 }).then(function(){ try { renderHistory(); } catch(e) {} }).catch(function(){});
-    }
-  }
 }
 
-/** Open System Requests on the My Submissions tab (sidebar / mobile). */
+/** Open the My Submissions page. */
 function openMySubmissions() {
-  showView('requests', null);
-  try { switchReqTab('mine'); } catch (e) {}
-  try { setMobActive('mob-requests'); } catch (e) {}
+  showView('history', document.getElementById('navMySubmissions'));
 }
 
 var _paidSort = 'date-desc';
@@ -12597,7 +12501,7 @@ function filterHistory(filter) {
   if (filtered.length === 0) {
     tbody.innerHTML = '<tr><td colspan="11" style="padding:32px;text-align:center;color:var(--muted)">'
       + (mine.length === 0
-          ? 'You have not submitted any requests yet. Click <strong>+ New Request</strong> on the Requests tab to get started.'
+          ? 'You have not submitted any requests yet. Click <strong>+ New Request</strong> in System Requests to get started.'
           : 'No requests match this filter.')
       + '</td></tr>';
     var emptyHtml = tbody.innerHTML;
@@ -13349,7 +13253,6 @@ function buildSidebar() {
     nav = [
       { type:'section', label:'My Work' },
       { type:'item', label:'System Requests', view:'requests', icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
-      { type:'section', label:'My Submissions' },
       { type:'item', label:'My Submissions',  view:'history',  icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment', view:'prf',      icon:'prf' },
@@ -13363,7 +13266,6 @@ function buildSidebar() {
       { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
       { type:'section', label:'Work' },
       { type:'item', label:'System Requests',  view:'requests',  icon:'requests' },
-      { type:'section', label:'My Submissions' },
       { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
     ];
 
@@ -13373,7 +13275,6 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
-      { type:'section', label:'My Submissions' },
       { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
@@ -13386,7 +13287,6 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
-      { type:'section', label:'My Submissions' },
       { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
@@ -13399,7 +13299,6 @@ function buildSidebar() {
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
       { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
       { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
-      { type:'section', label:'My Submissions' },
       { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
@@ -13546,12 +13445,9 @@ async function afterLogin() {
   safeRender(function(){ renderDashboard(); },       'renderDashboard');
 
   // Route -- user sees correct view
-  var startView = (currentUser.role === 'requester') ? 'requests' : 'dashboard';
+  var startView = (currentUser.role === 'requester') ? 'history' : 'dashboard';
   safeRender(function(){
-    showView(startView, null);
-    if (currentUser.role === 'requester') {
-      try { switchReqTab('mine'); } catch (e) {}
-    }
+    showView(startView, document.querySelector('.aside-item[data-view="' + startView + '"]'));
   }, 'showView:' + startView);
 
   // ── STEP 4: Pull fresh data from Sheets in background ────────
