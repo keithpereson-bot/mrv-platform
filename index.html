@@ -3443,6 +3443,41 @@
     white-space: nowrap;
   }
 
+
+  /* Drop repeated page titles — top bar already names the view */
+  .page-header h1 {
+    display: none !important;
+  }
+  .page-header > p,
+  .page-header p {
+    display: none !important;
+  }
+  /* Compact header when only actions remain */
+  .page-header {
+    margin-bottom: 8px !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+  }
+  .page-header:empty,
+  .page-header .usr-head > div:first-child:not(:has(button)) {
+    /* title block without controls collapses via h1 hide */
+  }
+  /* Tighter sidebar brand */
+  .aside-brand {
+    padding: 12px 14px !important;
+    margin-bottom: 4px !important;
+  }
+  .aside-brand-icon {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 13px !important;
+  }
+  .aside-brand-name {
+    font-size: 13px !important;
+    letter-spacing: .06em !important;
+  }
+  .aside-brand-sub { display: none !important; }
+
   /* ═══ PORTAL THEME (match enterprise payment system UI) ═══ */
 
   /* Full-bleed tables — only the ACTIVE panel is shown */
@@ -13426,10 +13461,9 @@ function buildSidebar() {
 
   var brandHtml =
     '<div class="aside-brand">'
-    + '<div class="aside-brand-icon">MR</div>'
+    + '<div class="aside-brand-icon">F</div>'
     + '<div class="aside-brand-text">'
-    +   '<div class="aside-brand-name">MRV Platform</div>'
-    +   '<div class="aside-brand-sub">Enterprise Portal</div>'
+    +   '<div class="aside-brand-name">FACILI</div>'
     + '</div></div>';
 
   var uname = (currentUser && (currentUser.name || currentUser.email)) || '';
