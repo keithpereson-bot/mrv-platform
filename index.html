@@ -3568,6 +3568,11 @@
     border: 1px solid #CBD5E1 !important;
   }
 
+  /* Value-for-money KPI grid */
+  #dashGov .gov-kpis { grid-template-columns: repeat(4, 1fr); margin-top: 12px; }
+  @media (max-width: 900px) { #dashGov .gov-kpis { grid-template-columns: repeat(2, 1fr); } }
+  #govBanner .alert { margin-bottom: 12px; }
+
   /* Page tab bands (all views) — same dark strip as System Requests */
   .view > .page-tabs {
     border-radius: 8px 8px 0 0 !important;
@@ -3935,6 +3940,7 @@
     </div>
     <div class="view-body">
       <div id="dashStats" class="stats"></div>
+      <div id="dashGov"></div>
       <div class="ws-grid">
         <div class="card">
           <div class="card-header">
@@ -4092,6 +4098,16 @@
         </div>
         <span class="req-tab-badge" id="badge-paid">0</span>
       </button>
+      <button class="req-tab non-requester-only" id="tab-rejects" onclick="switchReqTab('rejects')">
+        <div class="req-tab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+        <div><div class="req-tab-title">Rejected</div></div>
+        <span class="req-tab-badge" id="badge-rejects">0</span>
+      </button>
+      <button class="req-tab non-requester-only" id="tab-justify" onclick="switchReqTab('justify')">
+        <div class="req-tab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div><div class="req-tab-title">Justifications</div></div>
+        <span class="req-tab-badge" id="badge-justify">0</span>
+      </button>
     </div>
 
     <!-- Tab: Requests (Draft / Pending) -->
@@ -4190,6 +4206,39 @@
 <th>Acknowledged</th>
 </tr></thead>
             <tbody id="bodyPaid"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Tab: Rejected (costs avoided) -->
+    <div id="reqpanel-rejects" class="req-panel" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Rejected requests</div>
+          <span class="badge badge-teal" id="rejectsTotal">Costs avoided: 0</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="table-scroll">
+            <table id="tblRejects"><thead><tr><th>Request ID</th><th>Project</th><th>Client SN</th><th>Cost Summary</th><th>Amount</th><th>Requester</th><th>Rejected</th><th>Reason</th><th>Action</th></tr></thead>
+            <tbody id="bodyRejects"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Justifications for missing KOBO submissions -->
+    <div id="reqpanel-justify" class="req-panel" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Justifications — paid but no KOBO submission</div>
+          <span class="badge badge-gray">Reject = recover from final stipend</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="table-scroll">
+            <table id="tblJustify"><thead><tr><th>Requester</th><th>Requests</th><th>Client SNs</th><th>Amount</th><th>Justification</th><th>Status</th><th>Decision</th></tr></thead>
+            <tbody id="bodyJustify"></tbody></table>
           </div>
         </div>
       </div>
@@ -4852,6 +4901,7 @@
       </div>
     </div>
     <div class="view-body">
+    <div id="govBanner"></div>
     <div id="historyStats" class="stats" style="grid-template-columns:repeat(4,1fr)"></div>
     <div class="card">
       <div class="card-header" style="flex-wrap:wrap;gap:8px">
@@ -4892,6 +4942,37 @@
 </div>
 
 <!-- -- MODALS -- -->
+
+<!-- Reject request modal -->
+<div id="rejectModal" class="modal-overlay" onclick="closeModalOutside(event,'rejectModal')">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div><strong>Reject request</strong><div id="rejectSub" style="font-size:12px;color:var(--muted);margin-top:2px"></div></div>
+      <button class="close-btn" onclick="closeModal('rejectModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px">The request moves to the Rejected tab and counts as a cost avoided. It can be restored later.</p>
+      <div class="form-group"><label>Reason <span class="rq-req">*</span></label>
+        <textarea id="rejectReason" rows="3" placeholder="Why is this request rejected?"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('rejectModal')">Cancel</button>
+      <button class="btn btn-primary" style="background:var(--danger);border-color:var(--danger)" onclick="confirmReject()">Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- Justification for missing KOBO submissions -->
+<div id="justifyModal" class="modal-overlay" onclick="closeModalOutside(event,'justifyModal')">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div><strong>Justify missing KOBO submissions</strong></div>
+      <button class="close-btn" onclick="closeModal('justifyModal')">×</button>
+    </div>
+    <div class="modal-body" id="justifyBody"></div>
+    <div class="modal-footer" id="justifyFoot"></div>
+  </div>
+</div>
 
 <!-- Export to Excel Modal -->
 <div id="exportModal" class="modal-overlay" onclick="closeModalOutside(event,'exportModal')">
@@ -5731,7 +5812,7 @@ function mergeRequestsFromServer(serverRows) {
       description:      String(r['Description']       || r.description  || '').trim(),
       amount:           amount,
       requester:        String(r['Requester']         || r.requester    || '').trim(),
-      createdBy:        String((local && local.createdBy) || r.createdBy || r['Created By'] || '').trim().toLowerCase(),
+      createdBy:        String((local && local.createdBy) || r.createdBy || r['Created By'] || r['Requester Email'] || '').trim().toLowerCase(),
       status:           normalizeStatus_(finalStatus),
       date:             String(r['Date']              || r.date         || '').trim(),
       sigLabel:         r['Signed By']            || r.sigLabel         || (local && local.sigLabel)         || null,
@@ -5748,6 +5829,11 @@ function mergeRequestsFromServer(serverRows) {
       excessReason:     r['Excess Reason']        || r.excessReason     || (local && local.excessReason)     || '',
       payeeNumber:      r['Payee Number']         || r.payeeNumber      || (local && local.payeeNumber)      || '',
       bundleRef:        r['Bundle Ref']           || r.bundleRef        || (local && local.bundleRef)        || '',
+      excessDecision:   r['Excess Decision']      || r.excessDecision   || (local && local.excessDecision)   || '',
+      excessDecidedBy:  r['Excess Decided By']    || r.excessDecidedBy  || (local && local.excessDecidedBy)  || '',
+      excessDecidedAt:  r['Excess Decided At']    || r.excessDecidedAt  || (local && local.excessDecidedAt)  || '',
+      paidAt:           r['Paid At']              || r.paidAt           || (local && local.paidAt)           || '',
+      requesterEmail:   String(r['Requester Email'] || r.requesterEmail || (local && local.requesterEmail) || '').toLowerCase(),
       transportBreakdown: (function(){
         var raw = r['Transport Breakdown'] || r.transportBreakdown || (local && local.transportBreakdown) || null;
         if (!raw) return null;
@@ -5779,7 +5865,8 @@ function mergeRequestsFromServer(serverRows) {
     return true;
   });
 
-  return imported.concat(localOnly);
+  var _rj = (typeof rejectedRefSet_ === 'function') ? rejectedRefSet_() : {};
+  return imported.concat(localOnly).filter(function(r) { return !_rj[String(r.ref)]; });
 }
 
 // reqCounter always derived from current store (declared AFTER requestsStore)
@@ -8022,6 +8109,7 @@ function confirmSignAndApprove() {
     var e = requestsStore.find(function(r){ return r.ref === ref; });
     if (!e || (e.status !== 'Approved' && e.ref !== activeSignRef)) return;
     e.status     = 'Paid';
+    e.paidAt     = new Date().toISOString();
     e.sigDataUrl = pendingModalSig;
     e.sigLabel   = sigLabel;
     e.sigTime    = sigTime;
@@ -10389,6 +10477,11 @@ async function pushToSheets(opts) {
         payeeNumber:      r.payeeNumber || '',
         bundleRef:        r.bundleRef || '',
         transportBreakdown: r.transportBreakdown ? JSON.stringify(r.transportBreakdown) : '',
+        excessDecision:   r.excessDecision || '',
+        excessDecidedBy:  r.excessDecidedBy || '',
+        excessDecidedAt:  r.excessDecidedAt || '',
+        paidAt:           r.paidAt || '',
+        requesterEmail:   r.requesterEmail || r.createdBy || '',
         sigDataUrl:       (!opts.fast && r.sigDataUrl && r.sigDataUrl.length > 50) ? r.sigDataUrl : '',
         requesterSig:     (!opts.fast && r.requesterSig && r.requesterSig.length > 50) ? r.requesterSig : '',
       };
@@ -10592,6 +10685,7 @@ async function pullFromSheets(silent) {
     const res = await gasCall({ action: 'getAll' });
     if (!res.ok) throw new Error(res.error || 'Pull failed');
     if (!silent) appendSyncLog('Pull OK, requests=' + (res.requests ? res.requests.length : 0));
+    try { if (res.governance) applyGovernance_(res.governance); else pullGovernance(); govFlush_(); } catch (eGov) { console.warn('governance', eGov); }
 
     // -- PRFs (Payment Request Forms) --
     if (res.prfs && res.prfs.length && typeof prfStore !== 'undefined') {
@@ -10654,6 +10748,12 @@ async function pullFromSheets(silent) {
         requesterSig:     r['Requester Sig']      || r.requesterSig     || null,
         requesterSigName: r['Requester Sig Name'] || r.requesterSigName || null,
         requesterSigTime: r['Requester Sig Time'] || r.requesterSigTime || null,
+        _gov: {
+          'Client SN': r['Client SN'], 'Client Name': r['Client Name'], 'Is Excess': r['Is Excess'],
+          'Excess Reason': r['Excess Reason'], 'Bundle Ref': r['Bundle Ref'], 'Payee Number': r['Payee Number'],
+          'Excess Decision': r['Excess Decision'], 'Excess Decided By': r['Excess Decided By'],
+          'Excess Decided At': r['Excess Decided At'], 'Paid At': r['Paid At'], 'Requester Email': r['Requester Email']
+        },
       })).filter(r => r.ref);
       if (imported.length > 0) {
         // Safe merge — never drop local-only / in-flight requests
@@ -10667,7 +10767,11 @@ async function pullFromSheets(silent) {
             'Signed By': r.sigLabel, 'Sign Time': r.sigTime,
             'Approved By': r.approvedBy, 'Approved At': r.approvedAt,
             'Requester Sig Name': r.requesterSigName, 'Requester Sig Time': r.requesterSigTime,
-            'Sig Data': r.sigDataUrl, 'Requester Sig': r.requesterSig
+            'Sig Data': r.sigDataUrl, 'Requester Sig': r.requesterSig,
+            'Client SN': r._gov['Client SN'], 'Client Name': r._gov['Client Name'], 'Is Excess': r._gov['Is Excess'],
+            'Excess Reason': r._gov['Excess Reason'], 'Bundle Ref': r._gov['Bundle Ref'], 'Payee Number': r._gov['Payee Number'],
+            'Excess Decision': r._gov['Excess Decision'], 'Excess Decided By': r._gov['Excess Decided By'],
+            'Excess Decided At': r._gov['Excess Decided At'], 'Paid At': r._gov['Paid At'], 'Requester Email': r._gov['Requester Email']
           };
         }));
         reqCounter = calcReqCounter();
@@ -10804,6 +10908,7 @@ function switchReqTab(tab) {
     panel.style.display = 'flex';
     panel.classList.add('is-active');
   }
+  if (tab === 'rejects' || tab === 'justify') { try { renderGovTabs_(); } catch (e) {} }
   // Keep System Requests highlighted in the sidebar
   try {
     document.querySelectorAll('.aside-item').forEach(function(a){ a.classList.remove('active'); });
@@ -10885,6 +10990,7 @@ function _rebuildRequestsTableNow() {
   var drafts   = groupBundleRows(allFiltered.filter(function(r){ return r.status==='Draft'||r.status==='Pending'; }));
   var queue    = groupBundleRows(allFiltered.filter(function(r){ return r.status==='Approved'; }));
   var paid     = groupBundleRows(sortPaid(allFiltered.filter(function(r){ return r.status==='Paid'; })));
+  var _roi = null; try { _roi = govRoi_(); } catch (eRoi) {}
 
   // Update tab badges
   var bd = document.getElementById('badge-drafts'); if(bd) bd.textContent = drafts.length;
@@ -10949,8 +11055,13 @@ function _rebuildRequestsTableNow() {
           : 'No pending requests')
       + '</td></tr>'
     : drafts.map(function(r) {
+        var _isEx = (r.isExcess===true||r.isExcess==='Yes');
         var approveBtn = canApprove
-          ? '<button class="btn btn-primary btn-sm" data-aref="'+r.ref+'" onclick="approveRequest(this.dataset.aref)">Approve</button>'
+          ? (_isEx
+              ? '<button class="btn btn-primary btn-sm" data-aref="'+r.ref+'" onclick="excessApprove(this.dataset.aref,\'recover\')" title="Repeat survey caused by the requester — recover from final stipend">Approve &amp; recover</button>'
+                + '<button class="btn btn-secondary btn-sm" data-aref="'+r.ref+'" onclick="excessApprove(this.dataset.aref,\'norecover\')" title="Not the requester\'s fault — extra cost">Approve, no recovery</button>'
+              : '<button class="btn btn-primary btn-sm" data-aref="'+r.ref+'" onclick="approveRequest(this.dataset.aref)">Approve</button>')
+            + '<button class="btn btn-ghost btn-sm" style="color:var(--danger)" data-rref="'+r.ref+'" onclick="openRejectModal(this.dataset.rref)">Reject</button>'
           : '<span class="badge badge-gray">Awaiting approval</span>';
         return '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
           + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.date)+'</td>')
@@ -10967,7 +11078,7 @@ function _rebuildRequestsTableNow() {
           ? '<button class="btn btn-amber btn-sm" data-mref="'+r.ref+'" data-mreq="'+r.requester+'" onclick="openSignAndApprove(this,this.dataset.mref,this.dataset.mreq)">Mark Paid</button>'
           : '<span class="badge badge-gold">Awaiting payment</span>';
         return '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
-          + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.approvedAt||r.date)+'</td>', true)
+          + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.approvedAt||r.date)+(govExcessDecisionTag_(r)?'<div>'+govExcessDecisionTag_(r)+'</div>':'')+'</td>', true)
           + '<td style="display:flex;gap:4px;align-items:center">'+payBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
       }).join('');
@@ -11029,7 +11140,8 @@ function _rebuildRequestsTableNow() {
                     +'<div style="font-size:10.5px;color:var(--muted)">'+fmtDate(approvedAt)+'</div>'
                   : '<span style="color:var(--muted)">—</span>')
               + '</td>'
-            + '<td style="font-size:12px;white-space:nowrap;font-weight:500">'+fmtDate(paidAt)+'</td>'
+            + '<td style="font-size:12px;white-space:nowrap;font-weight:500">'+fmtDate(paidAt)
+              + '<div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">'+govKoboBadge_(r.ref,_roi)+govExcessDecisionTag_(r)+'</div></td>'
             + ackCell
             + '</tr>'
           );
@@ -11057,6 +11169,7 @@ function _rebuildRequestsTableNow() {
     statusOptions:['Approved'] });
   enableSmartTable('bodyPaid',   { placeholder:'Search paid requests...', pageSize:20, projectFilter:true,
     statusOptions:['Paid'] });
+  try { renderGovTabs_(); } catch (eGt) {}
 }
 
 
@@ -11704,6 +11817,746 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#navUserAvatar') && !e.target.closest('#userMenuDropdown')) closeUserMenu();
 });
 
+/* ==== MRV_ROI_ENGINE v1 — identical copy in Code.gs and the MRV HTML app ==== */
+/**
+ * Pure function: decides, for every PAID facilitation, whether it produced value
+ * (a KOBO survey for that Client SN) or a loss — plus all governance KPIs.
+ *
+ * input = {
+ *   requests:  [{ ref, project, clientSN, amount, status, paidAt, sigTime, date,
+ *                 requester, requesterEmail, bundleRef, isExcess, excessDecision }],
+ *   kobo:      [{ clientSN, project, submittedAt, submissionId }],
+ *   rejects:   [{ ref, amount, bundleRef }],
+ *   justifications: [{ id, refs:[...], status:'Pending'|'Approved'|'Rejected', submittedAt }],
+ *   limits:    { 'Project A': 4, ... }        // max facilitations per Client SN
+ *   windowHours: 24,                          // KOBO must arrive within this after payment
+ *   trackFrom: '2026-11-25',                  // payments before this are not tracked
+ *   now: Date | ISO string
+ * }
+ *
+ * Matching rule (one-to-one, so 4 payments need 4 surveys — one survey can never
+ * "cover" several payments):
+ *   - A Transport & Airtime bundle = one facilitation (one survey expected).
+ *   - Per project + Client SN, paid facilitations (oldest payment first) are paired
+ *     with KOBO submissions (oldest first). A submission is only eligible if it was
+ *     made on/after the day the request was raised (or has no timestamp).
+ */
+function mrvComputeRoi(input) {
+  input = input || {};
+  var now = input.now ? mrvTs_(input.now) : Date.now();
+  if (now == null) now = Date.now();
+  var winH = Number(input.windowHours) > 0 ? Number(input.windowHours) : 24;
+  var WIN = winH * 3600000;
+  var trackFrom = input.trackFrom ? mrvTs_(input.trackFrom) : null;
+  var limits = input.limits || {};
+
+  function low(s) { return String(s == null ? '' : s).trim().toLowerCase(); }
+  function num(v) { var n = parseFloat(String(v == null ? '' : v).replace(/,/g, '')); return isNaN(n) ? 0 : n; }
+  function truthy(v) { return v === true || low(v) === 'yes' || low(v) === 'true'; }
+  function dayStart(t) { var d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function limitFor(project) {
+    var l = limits[project];
+    if (l == null) { for (var k in limits) { if (low(k) === low(project)) { l = limits[k]; break; } } }
+    var n = parseInt(l, 10);
+    return isNaN(n) || n <= 0 ? null : n;
+  }
+
+  // -- Justification status by ref (latest submission wins) --
+  var justByRef = {};
+  (input.justifications || []).slice().sort(function(a, b) {
+    return (mrvTs_(a.submittedAt) || 0) - (mrvTs_(b.submittedAt) || 0);
+  }).forEach(function(j) {
+    var refs = j.refs;
+    if (typeof refs === 'string') { try { refs = JSON.parse(refs); } catch (e) { refs = String(refs).split(/[\s,]+/); } }
+    (refs || []).forEach(function(ref) { if (ref) justByRef[String(ref)] = { id: j.id, status: low(j.status) }; });
+  });
+
+  // -- Build facilitation units from PAID requests --
+  var units = {}, unitList = [];
+  var excess = { recoverAmt: 0, recoverCount: 0, noRecoverAmt: 0, noRecoverCount: 0, undecidedCount: 0 };
+  var excessSeen = {};
+  (input.requests || []).forEach(function(r) {
+    if (!r || !r.ref) return;
+    var st = low(r.status);
+    var key = r.bundleRef ? 'b:' + r.bundleRef : 'r:' + r.ref;
+    // Excess economics (paid only — approved-but-unpaid is not yet money out)
+    if (st === 'paid' && truthy(r.isExcess)) {
+      var dec = low(r.excessDecision);
+      var first = !excessSeen[key]; excessSeen[key] = true;
+      if (dec === 'recover') { excess.recoverAmt += num(r.amount); if (first) excess.recoverCount++; }
+      else if (dec === 'norecover') { excess.noRecoverAmt += num(r.amount); if (first) excess.noRecoverCount++; }
+      else if (first) excess.undecidedCount++;
+    }
+    if (st !== 'paid') return;
+    var u = units[key];
+    if (!u) {
+      u = units[key] = {
+        key: key, refs: [], project: String(r.project || '').trim(), clientSN: '',
+        amount: 0, paidAt: null, reqAt: null,
+        requester: String(r.requester || '').trim(),
+        requesterKey: low(r.requesterEmail) || low(r.requester)
+      };
+      unitList.push(u);
+    }
+    u.refs.push(String(r.ref));
+    u.amount += num(r.amount);
+    if (!u.clientSN && r.clientSN) u.clientSN = String(r.clientSN).trim();
+    if (!u.requesterKey) u.requesterKey = low(r.requesterEmail) || low(r.requester);
+    var p = mrvTs_(r.paidAt) || mrvTs_(r.sigTime);
+    if (p != null && (u.paidAt == null || p > u.paidAt)) u.paidAt = p;
+    var q = mrvTs_(r.date);
+    if (q != null && (u.reqAt == null || q < u.reqAt)) u.reqAt = q;
+  });
+
+  // -- KOBO submissions, de-duplicated by submission id --
+  var koboBySN = {}, seenId = {}, koboCount = 0;
+  (input.kobo || []).forEach(function(k, i) {
+    var sn = low(k && k.clientSN);
+    if (!sn) return;
+    var id = low(k.submissionId);
+    if (id) { if (seenId[id]) return; seenId[id] = true; }
+    koboCount++;
+    (koboBySN[sn] = koboBySN[sn] || []).push({ project: low(k.project), ts: mrvTs_(k.submittedAt), order: i, used: false });
+  });
+  Object.keys(koboBySN).forEach(function(sn) {
+    koboBySN[sn].sort(function(a, b) {
+      if (a.ts == null && b.ts == null) return a.order - b.order;
+      if (a.ts == null) return 1;
+      if (b.ts == null) return -1;
+      return a.ts - b.ts;
+    });
+  });
+
+  // -- Group by project + SN and pair one-to-one --
+  var groups = {};
+  unitList.forEach(function(u) {
+    if (!u.clientSN) { u.state = 'nosn'; return; }
+    var g = low(u.project) + '\u0000' + low(u.clientSN);
+    (groups[g] = groups[g] || []).push(u);
+  });
+  Object.keys(groups).forEach(function(g) {
+    var list = groups[g].sort(function(a, b) {
+      if (a.paidAt == null && b.paidAt == null) return a.refs[0] < b.refs[0] ? -1 : 1;
+      if (a.paidAt == null) return 1;
+      if (b.paidAt == null) return -1;
+      return a.paidAt - b.paidAt;
+    });
+    var lim = limitFor(list[0].project);
+    var subs = koboBySN[low(list[0].clientSN)] || [];
+    var proj = low(list[0].project);
+    list.forEach(function(u, idx) {
+      u.seq = idx + 1;
+      u.limit = lim;
+      u.overLimit = !!(lim && u.seq > lim);
+      var floor = u.reqAt != null ? dayStart(u.reqAt) : null;
+      for (var s = 0; s < subs.length; s++) {
+        var k = subs[s];
+        if (k.used) continue;
+        if (k.project && k.project !== proj) continue;
+        if (k.ts != null && floor != null && k.ts < floor) continue;
+        k.used = true;
+        u.koboAt = k.ts;
+        break;
+      }
+    });
+  });
+
+  // -- Decide state per unit --
+  unitList.forEach(function(u) {
+    if (u.state === 'nosn') return;
+    if (trackFrom != null && (u.paidAt == null || u.paidAt < trackFrom)) { u.state = 'untracked'; return; }
+    if (u.koboAt !== undefined) {
+      u.state = (u.paidAt != null && u.koboAt != null && u.koboAt > u.paidAt + WIN) ? 'late' : 'value';
+      return;
+    }
+    var j = null;
+    for (var i = 0; i < u.refs.length; i++) { if (justByRef[u.refs[i]]) { j = justByRef[u.refs[i]]; break; } }
+    if (j) {
+      u.justificationId = j.id;
+      if (j.status === 'approved') { u.state = 'justified'; return; }
+      if (j.status === 'rejected') { u.state = 'recovered'; return; }
+      u.state = 'review'; return;
+    }
+    if (u.paidAt != null && now <= u.paidAt + WIN) { u.state = 'pending'; u.dueAt = u.paidAt + WIN; return; }
+    u.state = 'loss';
+    if (u.paidAt != null) u.dueAt = u.paidAt + WIN;
+  });
+
+  // -- KPIs --
+  function bucket() { return { count: 0, amount: 0 }; }
+  var k = {
+    tracked: bucket(), value: bucket(), late: bucket(), pending: bucket(), loss: bucket(),
+    review: bucket(), justified: bucket(), recovered: bucket(), untracked: bucket(), nosn: bucket(),
+    overLimit: bucket(), koboSubmissions: koboCount
+  };
+  var byProject = {}, flagged = {}, perRef = {};
+  unitList.forEach(function(u) {
+    var b = k[u.state]; if (b) { b.count++; b.amount += u.amount; }
+    if (u.overLimit) { k.overLimit.count++; k.overLimit.amount += u.amount; }
+    if (u.state !== 'nosn' && u.state !== 'untracked') {
+      k.tracked.count++; k.tracked.amount += u.amount;
+      var p = byProject[u.project] = byProject[u.project] || {
+        project: u.project, paid: bucket(), value: bucket(), loss: bucket(), pending: bucket(), review: bucket(), limit: u.limit
+      };
+      p.paid.count++; p.paid.amount += u.amount;
+      var pb = (u.state === 'value' || u.state === 'late') ? p.value
+             : (u.state === 'loss') ? p.loss
+             : (u.state === 'pending') ? p.pending
+             : (u.state === 'review') ? p.review : null;
+      if (pb) { pb.count++; pb.amount += u.amount; }
+    }
+    if ((u.state === 'loss' || u.state === 'review') && u.requesterKey) {
+      var f = flagged[u.requesterKey] = flagged[u.requesterKey] || { requester: u.requester, key: u.requesterKey, lossRefs: [], reviewRefs: [], amount: 0 };
+      (u.state === 'loss' ? f.lossRefs : f.reviewRefs).push.apply(u.state === 'loss' ? f.lossRefs : f.reviewRefs, u.refs);
+      f.amount += u.amount;
+    }
+    u.refs.forEach(function(ref) {
+      perRef[ref] = { state: u.state, unit: u.key, clientSN: u.clientSN, seq: u.seq || null, limit: u.limit || null,
+        overLimit: !!u.overLimit, koboAt: u.koboAt != null ? u.koboAt : null, paidAt: u.paidAt, dueAt: u.dueAt || null,
+        amount: u.amount, refs: u.refs, justificationId: u.justificationId || '' };
+    });
+  });
+
+  var rejected = bucket(), rseen = {};
+  (input.rejects || []).forEach(function(r) {
+    if (!r) return;
+    rejected.amount += num(r.amount);
+    var key = r.bundleRef ? 'b:' + r.bundleRef : 'r:' + r.ref;
+    if (!rseen[key]) { rseen[key] = 1; rejected.count++; }
+  });
+
+  var valueAmt = k.value.amount + k.late.amount;
+  var resolvedAmt = valueAmt + k.loss.amount + k.review.amount + k.justified.amount + k.recovered.amount;
+  return {
+    windowHours: winH,
+    units: unitList,
+    perRef: perRef,
+    byProject: Object.keys(byProject).map(function(p) { return byProject[p]; }),
+    flagged: Object.keys(flagged).map(function(f) { return flagged[f]; }),
+    kpis: {
+      paid: k.tracked,
+      value: { count: k.value.count + k.late.count, amount: valueAmt },
+      late: k.late,
+      pending: k.pending,
+      loss: k.loss,
+      underReview: k.review,
+      justified: k.justified,
+      untracked: k.untracked,
+      noClientSN: k.nosn,
+      overLimit: k.overLimit,
+      koboSubmissions: k.koboSubmissions,
+      roiRate: resolvedAmt > 0 ? valueAmt / resolvedAmt : null,
+      costsAvoided: rejected,
+      costSavings: {
+        amount: excess.recoverAmt + k.recovered.amount,
+        count: excess.recoverCount + k.recovered.count,
+        excessRecover: { count: excess.recoverCount, amount: excess.recoverAmt },
+        justificationRejected: k.recovered
+      },
+      extraCost: { count: excess.noRecoverCount, amount: excess.noRecoverAmt },
+      excessUndecided: excess.undecidedCount,
+      flaggedRequesters: Object.keys(flagged).length
+    }
+  };
+}
+
+/** Timestamp parser shared by the engine: Date, ISO, "24 Nov 2026 21:43", dd/mm/yyyy [hh:mm]. */
+function mrvTs_(v) {
+  if (v == null || v === '') return null;
+  if (Object.prototype.toString.call(v) === '[object Date]') return isNaN(v.getTime()) ? null : v.getTime();
+  if (typeof v === 'number') return v > 1e11 ? v : null;
+  var s = String(v).trim();
+  if (!s) return null;
+  var m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?:[ T,]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (m) {
+    var y = +m[3]; if (y < 100) y += 2000;
+    var d1 = new Date(y, +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+    return isNaN(d1.getTime()) ? null : d1.getTime();
+  }
+  var d = new Date(s);
+  if (!isNaN(d.getTime())) return d.getTime();
+  d = new Date(s.replace(/,/g, ''));
+  return isNaN(d.getTime()) ? null : d.getTime();
+}
+/* ==== /MRV_ROI_ENGINE ==== */
+
+// ==============================================================
+// GOVERNANCE — KOBO value check, rejects, excess decisions,
+// justifications, recoveries. Server: Code.gs governance actions.
+// ==============================================================
+
+var govStore = loadGovStore_();
+function loadGovStore_() {
+  var d = { kobo: [], rejects: [], justifications: [], recoveries: [], koboConfig: { windowHours: 24, trackFrom: '' }, outbox: [] };
+  try { var s = JSON.parse(localStorage.getItem('mrv_gov') || 'null'); if (s) for (var k in d) if (s[k] != null) d[k] = s[k]; } catch (e) {}
+  return d;
+}
+function persistGovStore_() {
+  try { localStorage.setItem('mrv_gov', JSON.stringify(govStore)); } catch (e) {}
+}
+function govCanApprove_() {
+  var role = currentUser ? (currentUser.role || 'requester') : 'requester';
+  return role === 'admin' || role === 'approver';
+}
+function govEsc_(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function govNowLabel_() {
+  var d = new Date();
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+function rejectedRefSet_() {
+  var s = {};
+  (govStore.rejects || []).forEach(function(r) { if (r && r.ref) s[String(r.ref)] = true; });
+  return s;
+}
+
+/** Ingest governance payload (from getAll.governance or getGovernance). */
+function applyGovernance_(g) {
+  if (!g || g.ok === false) return;
+  var pendingRejects = {}, pendingRestores = {}, pendingJust = {};
+  (govStore.outbox || []).forEach(function(job) {
+    if (job.action === 'rejectRequests') (job.refs || []).forEach(function(r) { pendingRejects[r] = job; });
+    if (job.action === 'restoreRejects') (job.refs || []).forEach(function(r) { pendingRestores[r] = true; });
+    if (job.action === 'submitJustification') pendingJust[job.id] = job;
+  });
+  if (Array.isArray(g.kobo)) govStore.kobo = g.kobo;
+  if (g.koboConfig) govStore.koboConfig = g.koboConfig;
+  if (Array.isArray(g.recoveries)) govStore.recoveries = g.recoveries;
+  if (Array.isArray(g.rejects)) {
+    // Keep local rejects that are still waiting to reach the server
+    var srv = g.rejects.filter(function(r) { return !pendingRestores[r.ref]; });
+    var have = {};
+    srv.forEach(function(r) { have[r.ref] = true; });
+    (govStore.rejects || []).forEach(function(r) { if (pendingRejects[r.ref] && !have[r.ref]) srv.push(r); });
+    govStore.rejects = srv;
+  }
+  if (Array.isArray(g.justifications)) {
+    var js = g.justifications.slice();
+    var hasJ = {};
+    js.forEach(function(j) { hasJ[j.id] = true; });
+    (govStore.justifications || []).forEach(function(j) { if (pendingJust[j.id] && !hasJ[j.id]) js.push(j); });
+    govStore.justifications = js;
+  }
+  persistGovStore_();
+  // Rejected requests never live in the request tables
+  var rj = rejectedRefSet_();
+  if (requestsStore && requestsStore.some(function(r) { return rj[r.ref]; })) {
+    requestsStore = requestsStore.filter(function(r) { return !rj[r.ref]; });
+    try { persistRequestsToStorage(); } catch (e) {}
+  }
+  govRefreshUi_();
+}
+
+async function pullGovernance() {
+  if (!gsWebAppUrl) return;
+  try {
+    var g = await gasCall({ action: 'getGovernance' });
+    if (g && g.ok) applyGovernance_(g);
+  } catch (e) {}
+}
+
+// ---------- outbox: optimistic local change, reliable server write ----------
+function govQueue_(job) {
+  govStore.outbox = govStore.outbox || [];
+  govStore.outbox.push(job);
+  persistGovStore_();
+  govFlush_();
+}
+var _govFlushing = false;
+async function govFlush_() {
+  if (_govFlushing || !gsWebAppUrl || !(govStore.outbox || []).length) return;
+  _govFlushing = true;
+  var changed = false;
+  try {
+    while (govStore.outbox.length) {
+      var job = govStore.outbox[0];
+      var res;
+      try { res = await gasCall(job); } catch (e) { res = null; }
+      var done = res && (res.ok || /^Already /.test(String(res.error || '')) || /Unknown action/.test(String(res.error || '')));
+      if (res && !res.ok && !done) {
+        // Server refused (validation) — drop the job and tell the user
+        toast('Server refused: ' + (res.error || job.action), 'warn');
+        done = true;
+      }
+      if (!done) break; // offline — retry later
+      govStore.outbox.shift();
+      persistGovStore_();
+      changed = true;
+    }
+  } finally {
+    _govFlushing = false;
+  }
+  if (changed) pullGovernance();
+  else if ((govStore.outbox || []).length) setTimeout(govFlush_, 30000);
+}
+
+// ---------- ROI (shared engine) ----------
+function govRoi_() {
+  var limits = (typeof reqFormConfig !== 'undefined' && reqFormConfig && reqFormConfig.projectLimits) || {};
+  return mrvComputeRoi({
+    requests: (requestsStore || []).map(function(r) {
+      return {
+        ref: r.ref, project: r.project, clientSN: r.clientSN, amount: r.amount, status: r.status,
+        paidAt: r.paidAt, sigTime: r.sigTime, date: r.date, requester: r.requester,
+        requesterEmail: r.requesterEmail || r.createdBy || '', bundleRef: r.bundleRef,
+        isExcess: r.isExcess, excessDecision: r.excessDecision
+      };
+    }),
+    kobo: govStore.kobo || [],
+    rejects: govStore.rejects || [],
+    justifications: govStore.justifications || [],
+    limits: limits,
+    windowHours: (govStore.koboConfig || {}).windowHours || 24,
+    trackFrom: (govStore.koboConfig || {}).trackFrom || '',
+    now: new Date()
+  });
+}
+
+var GOV_STATE = {
+  value:     { label: 'KOBO ✓',          cls: 'badge-teal' },
+  late:      { label: 'KOBO late',        cls: 'badge-gold' },
+  pending:   { label: 'Awaiting KOBO',    cls: 'badge-blue' },
+  loss:      { label: 'No KOBO',          cls: 'badge-danger' },
+  review:    { label: 'Justification sent', cls: 'badge-gold' },
+  justified: { label: 'Justified',        cls: 'badge-gray' },
+  recovered: { label: 'Recover from stipend', cls: 'badge-danger' }
+};
+function govKoboBadge_(ref, roi) {
+  var s = roi && roi.perRef[ref];
+  if (!s || !GOV_STATE[s.state]) return '';
+  var g = GOV_STATE[s.state];
+  var tip = s.state === 'pending' && s.dueAt ? ' title="Due by ' + govEsc_(fmtDate(new Date(s.dueAt).toISOString())) + '"' : '';
+  var over = s.overLimit ? ' <span class="badge badge-danger" title="Facilitation ' + s.seq + ' of limit ' + s.limit + '">Over limit</span>' : '';
+  return '<span class="badge ' + g.cls + '"' + tip + '>' + g.label + '</span>' + over;
+}
+
+/** Facilitations the current user still owes a KOBO submission or justification for. */
+function govMyStatus_() {
+  if (!currentUser) return { canStart: true, loss: [], review: [] };
+  var roi = govRoi_();
+  var mine = roi.units.filter(function(u) {
+    var fake = { requester: u.requester, createdBy: u.requesterKey, requesterEmail: u.requesterKey };
+    try { return isMyRequest(fake); } catch (e) { return false; }
+  });
+  var loss = mine.filter(function(u) { return u.state === 'loss'; });
+  var review = mine.filter(function(u) { return u.state === 'review'; });
+  return { canStart: !loss.length && !review.length, loss: loss, review: review, roi: roi };
+}
+
+/** Gate every "start a new form" entry point. Returns true when allowed. */
+function govGateNewForm() {
+  var st = govMyStatus_();
+  if (st.canStart) return true;
+  openJustifyModal(st);
+  return false;
+}
+
+// ---------- Justification (requester) ----------
+var _justifyUnits = [];
+function openJustifyModal(st) {
+  st = st || govMyStatus_();
+  _justifyUnits = st.loss || [];
+  var body = document.getElementById('justifyBody');
+  var foot = document.getElementById('justifyFoot');
+  if (!body) return;
+  var cur = getDefaultCurrency();
+  if (!_justifyUnits.length && st.review && st.review.length) {
+    body.innerHTML = '<div class="alert alert-warn">Your justification for ' + st.review.length
+      + ' facilitation(s) is waiting for approval. You can start a new request once it has been reviewed.</div>';
+    foot.innerHTML = '<button class="btn btn-ghost" onclick="closeModal(\'justifyModal\')">Close</button>';
+  } else {
+    var rows = _justifyUnits.map(function(u) {
+      return '<tr><td style="font-family:ui-monospace,monospace;font-size:11.5px">' + govEsc_(u.refs.join(' + ')) + '</td>'
+        + '<td>' + govEsc_(u.project) + '</td><td>' + govEsc_(u.clientSN) + '</td>'
+        + '<td class="currency">' + fmt(u.amount) + '</td>'
+        + '<td style="font-size:12px;color:var(--danger)">' + (u.dueAt ? fmtDate(new Date(u.dueAt).toISOString()) : '—') + '</td></tr>';
+    }).join('');
+    body.innerHTML = '<div class="alert alert-warn" style="margin-bottom:12px">Your account is flagged: these paid facilitations have no KOBO survey submitted within '
+      + ((govStore.koboConfig || {}).windowHours || 24) + ' hours. Explain why before starting a new request. '
+      + 'If the justification is rejected, the amount is recovered from your final stipend.</div>'
+      + '<div class="table-scroll" style="margin-bottom:12px"><table><thead><tr><th>Request</th><th>Project</th><th>Client SN</th><th>Amount</th><th>KOBO was due</th></tr></thead><tbody>'
+      + rows + '</tbody></table></div>'
+      + '<div class="form-group"><label>Justification <span class="rq-req">*</span></label>'
+      + '<textarea id="justifyReason" rows="4" placeholder="Why was the survey not submitted? (e.g. client relocated, network outage — include dates)"></textarea></div>';
+    foot.innerHTML = '<button class="btn btn-ghost" onclick="closeModal(\'justifyModal\')">Cancel</button>'
+      + '<button class="btn btn-primary" onclick="submitJustification()">Submit justification</button>';
+  }
+  openModal('justifyModal');
+}
+
+function submitJustification() {
+  var reason = String((document.getElementById('justifyReason') || {}).value || '').trim();
+  if (reason.length < 10) { toast('Please give a fuller justification', 'warn'); return; }
+  var refs = [];
+  _justifyUnits.forEach(function(u) { refs = refs.concat(u.refs); });
+  if (!refs.length) { closeModal('justifyModal'); return; }
+  var id = 'JUS-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 1000);
+  var amount = _justifyUnits.reduce(function(s, u) { return s + u.amount; }, 0);
+  govStore.justifications.push({
+    id: id, requester: currentUser.name || '', requesterEmail: String(currentUser.email || '').toLowerCase(),
+    refs: refs, clientSNs: _justifyUnits.map(function(u) { return u.clientSN; }).join(', '), amount: amount,
+    reason: reason, submittedAt: new Date().toISOString(), status: 'Pending'
+  });
+  persistGovStore_();
+  govQueue_({ action: 'submitJustification', id: id, email: currentUser.email || '', name: currentUser.name || '', refs: refs, reason: reason });
+  closeModal('justifyModal');
+  toast('Justification submitted — an approver will review it');
+  govRefreshUi_();
+}
+
+// ---------- Justification review (approver) ----------
+function reviewJustification(id, decision) {
+  var j = (govStore.justifications || []).find(function(x) { return x.id === id; });
+  if (!j) return;
+  var note = '';
+  if (decision === 'reject') {
+    note = window.prompt('Reason for rejecting? The amount will be recovered from the requester\'s final stipend.', '') ;
+    if (note === null) return;
+  }
+  j.status = decision === 'approve' ? 'Approved' : 'Rejected';
+  j.reviewedBy = currentUser ? currentUser.name : '';
+  j.reviewedAt = new Date().toISOString();
+  j.reviewNote = note || '';
+  persistGovStore_();
+  govQueue_({ action: 'reviewJustification', id: id, decision: decision, by: j.reviewedBy, note: note || '' });
+  toast(decision === 'approve' ? 'Justification approved' : 'Justification rejected — recovery from stipend recorded');
+  govRefreshUi_();
+}
+
+// ---------- Reject / restore ----------
+var _rejectRefs = [];
+function openRejectModal(ref) {
+  _rejectRefs = (typeof bundleMateRefs === 'function') ? bundleMateRefs(ref) : [ref];
+  var r = (requestsStore || []).find(function(x) { return x.ref === ref; }) || {};
+  var amt = _rejectRefs.reduce(function(s, x) {
+    var e = requestsStore.find(function(y) { return y.ref === x; }); return s + (parseFloat(e && e.amount) || 0);
+  }, 0);
+  document.getElementById('rejectSub').textContent = _rejectRefs.join(' + ') + ' · ' + (r.requester || '') + ' · ' + getCurrency(r.project, r.type) + ' ' + fmt(amt);
+  document.getElementById('rejectReason').value = '';
+  openModal('rejectModal');
+}
+function confirmReject() {
+  var reason = String(document.getElementById('rejectReason').value || '').trim();
+  if (!reason) { toast('Give a reason for rejecting', 'warn'); return; }
+  var by = currentUser ? currentUser.name : '';
+  var moved = [];
+  requestsStore = requestsStore.filter(function(r) {
+    if (_rejectRefs.indexOf(r.ref) === -1) return true;
+    if (r.status === 'Paid') return true;
+    moved.push(r);
+    return false;
+  });
+  if (!moved.length) { closeModal('rejectModal'); toast('Nothing to reject (paid requests cannot be rejected)'); return; }
+  moved.forEach(function(r) {
+    govStore.rejects.push({
+      ref: r.ref, project: r.project, clientSN: r.clientSN, amount: r.amount, bundleRef: r.bundleRef || '',
+      requester: r.requester, requesterEmail: r.createdBy || '', costSummary: r.costSummary, costItem: r.costItem,
+      type: r.type, category: r.category, clientName: r.clientName, excessReason: r.excessReason, isExcess: r.isExcess,
+      prevStatus: r.status, status: r.status, date: r.date,
+      rejectedBy: by, rejectedAt: new Date().toISOString(), rejectReason: reason, _local: r
+    });
+  });
+  persistGovStore_();
+  persistRequestsToStorage();
+  var rows = moved.map(function(r) { var o = {}; for (var k in r) if (k !== 'sigDataUrl' && k !== 'requesterSig') o[k] = r[k]; o.requesterEmail = r.createdBy || ''; return o; });
+  govQueue_({ action: 'rejectRequests', refs: moved.map(function(r) { return r.ref; }), reason: reason, by: by, rows: rows });
+  closeModal('rejectModal');
+  toast(moved.length > 1 ? moved.length + ' requests rejected' : 'Request rejected — moved to Rejected');
+  rebuildRequestsTable();
+  govRefreshUi_();
+}
+function restoreReject(ref) {
+  var rec = (govStore.rejects || []).find(function(r) { return r.ref === ref; });
+  if (!rec) return;
+  var refs = (govStore.rejects || []).filter(function(r) { return rec.bundleRef ? r.bundleRef === rec.bundleRef : r.ref === ref; }).map(function(r) { return r.ref; });
+  govStore.rejects = govStore.rejects.filter(function(r) { return refs.indexOf(r.ref) === -1; });
+  refs.forEach(function(x) {
+    var src = rec.ref === x ? rec : null;
+    var local = (src && src._local) || null;
+    var back = local || {
+      ref: x, project: rec.project, type: rec.type, category: rec.category, costSummary: rec.costSummary,
+      costItem: rec.costItem, amount: rec.amount, requester: rec.requester, createdBy: rec.requesterEmail,
+      clientSN: rec.clientSN, clientName: rec.clientName, isExcess: rec.isExcess === true || rec.isExcess === 'Yes',
+      excessReason: rec.excessReason, bundleRef: rec.bundleRef, date: rec.date
+    };
+    back.status = rec.prevStatus || 'Pending';
+    if (!requestsStore.some(function(r) { return r.ref === x; })) requestsStore.push(back);
+  });
+  persistGovStore_();
+  persistRequestsToStorage();
+  govQueue_({ action: 'restoreRejects', refs: refs, by: currentUser ? currentUser.name : '' });
+  toast('Restored to Requests');
+  rebuildRequestsTable();
+  govRefreshUi_();
+}
+
+// ---------- Excess decisions ----------
+function excessApprove(ref, decision) {
+  var refs = (typeof bundleMateRefs === 'function') ? bundleMateRefs(ref) : [ref];
+  var label = decision === 'recover'
+    ? 'Approve and RECOVER this amount from the requester\'s final stipend?\n(Repeat survey caused by the requester — becomes a cost saving.)'
+    : 'Approve and DO NOT recover?\n(Not the requester\'s fault — recorded as an extra cost.)';
+  if (!window.confirm(label)) return;
+  var by = currentUser ? currentUser.name : '';
+  var at = govNowLabel_();
+  var rows = [];
+  requestsStore.forEach(function(r) {
+    if (refs.indexOf(r.ref) === -1) return;
+    if (r.status === 'Draft' || r.status === 'Pending') {
+      r.status = 'Approved'; r.approvedBy = by; r.approvedAt = at;
+      try { raiseStatusFloor(r.ref, 'Approved'); } catch (e) {}
+    }
+    r.excessDecision = decision; r.excessDecidedBy = by; r.excessDecidedAt = at;
+    try { markLocalWrite(r.ref); } catch (e) {}
+    var o = {}; for (var k in r) if (k !== 'sigDataUrl' && k !== 'requesterSig') o[k] = r[k];
+    o.requesterEmail = r.createdBy || ''; rows.push(o);
+  });
+  persistRequestsToStorage();
+  govQueue_({ action: 'excessDecision', refs: refs, decision: decision, by: by, rows: rows });
+  rebuildRequestsTable();
+  renderDashboard();
+  toast(decision === 'recover' ? 'Approved — to be recovered from stipend' : 'Approved — extra cost (no recovery)');
+}
+function govExcessDecisionTag_(r) {
+  if (!(r.isExcess === true || r.isExcess === 'Yes') || !r.excessDecision) return '';
+  return r.excessDecision === 'recover'
+    ? '<span class="badge badge-danger" title="Recover from final stipend">Recover</span>'
+    : '<span class="badge badge-gray" title="Extra cost — not recovered">No recovery</span>';
+}
+
+// ---------- Tables: Rejected + Justifications tabs ----------
+function renderGovTabs_() {
+  var canAct = govCanApprove_();
+  var cur = getDefaultCurrency();
+  var rj = (govStore.rejects || []).slice().sort(function(a, b) { return String(b.rejectedAt).localeCompare(String(a.rejectedAt)); });
+  var br = document.getElementById('badge-rejects'); if (br) br.textContent = rj.length;
+  var body = document.getElementById('bodyRejects');
+  if (body) {
+    body.innerHTML = rj.length ? rj.map(function(r) {
+      return '<tr data-project="' + govEsc_(r.project) + '" data-status="Rejected" data-ref="' + govEsc_(r.ref) + '">'
+        + '<td style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:600;color:#1E4DB7">' + govEsc_(r.ref) + '</td>'
+        + '<td style="font-weight:500">' + govEsc_(r.project) + '</td>'
+        + '<td>' + govEsc_(r.clientSN || '—') + '</td>'
+        + '<td class="rq-cs-cell"><div class="rq-cs">' + govEsc_(r.costSummary || '--') + '</div>' + (r.costItem ? '<div class="rq-ci">' + govEsc_(r.costItem) + '</div>' : '') + '</td>'
+        + '<td class="currency" style="font-weight:600;white-space:nowrap">' + govEsc_(getCurrency(r.project, r.type)) + ' ' + fmt(parseFloat(r.amount) || 0) + '</td>'
+        + '<td style="font-size:12.5px">' + govEsc_(r.requester) + '</td>'
+        + '<td style="font-size:12px"><div style="font-weight:500">' + govEsc_(r.rejectedBy) + '</div><div style="font-size:10.5px;color:var(--muted)">' + fmtDate(r.rejectedAt) + '</div></td>'
+        + '<td style="font-size:12px;max-width:260px">' + govEsc_(r.rejectReason) + '</td>'
+        + '<td>' + (canAct ? '<button class="btn btn-ghost btn-sm" data-ref="' + govEsc_(r.ref) + '" onclick="restoreReject(this.dataset.ref)">Restore</button>' : '') + '</td>'
+        + '</tr>';
+    }).join('') : '<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">No rejected requests</td></tr>';
+    var tot = rj.reduce(function(s, r) { return s + (parseFloat(r.amount) || 0); }, 0);
+    var t = document.getElementById('rejectsTotal'); if (t) t.textContent = 'Costs avoided: ' + cur + ' ' + fmt(tot);
+  }
+
+  var js = (govStore.justifications || []).slice().sort(function(a, b) {
+    var pa = a.status === 'Pending' ? 0 : 1, pb = b.status === 'Pending' ? 0 : 1;
+    return pa - pb || String(b.submittedAt).localeCompare(String(a.submittedAt));
+  });
+  var pending = js.filter(function(j) { return j.status === 'Pending'; }).length;
+  var bj = document.getElementById('badge-justify'); if (bj) bj.textContent = pending;
+  var jb = document.getElementById('bodyJustify');
+  if (jb) {
+    jb.innerHTML = js.length ? js.map(function(j) {
+      var st = j.status === 'Pending' ? 'badge-gold' : j.status === 'Approved' ? 'badge-teal' : 'badge-danger';
+      var act = (canAct && j.status === 'Pending')
+        ? '<button class="btn btn-primary btn-sm" data-id="' + govEsc_(j.id) + '" onclick="reviewJustification(this.dataset.id,\'approve\')">Approve</button> '
+          + '<button class="btn btn-ghost btn-sm" style="color:var(--danger)" data-id="' + govEsc_(j.id) + '" onclick="reviewJustification(this.dataset.id,\'reject\')">Reject &amp; recover</button>'
+        : (j.reviewedBy ? '<div style="font-size:11.5px">' + govEsc_(j.reviewedBy) + '</div><div style="font-size:10.5px;color:var(--muted)">' + govEsc_(j.reviewNote || '') + '</div>' : '');
+      return '<tr data-status="' + govEsc_(j.status) + '">'
+        + '<td style="font-size:12.5px;font-weight:500">' + govEsc_(j.requester) + '<div style="font-size:10.5px;color:var(--muted)">' + fmtDate(j.submittedAt) + '</div></td>'
+        + '<td style="font-family:ui-monospace,monospace;font-size:11.5px">' + govEsc_((j.refs || []).join(', ')) + '</td>'
+        + '<td>' + govEsc_(j.clientSNs || '') + '</td>'
+        + '<td class="currency">' + cur + ' ' + fmt(j.amount || 0) + '</td>'
+        + '<td style="font-size:12.5px;max-width:320px;white-space:normal">' + govEsc_(j.reason) + '</td>'
+        + '<td><span class="badge ' + st + '">' + govEsc_(j.status) + '</span></td>'
+        + '<td style="white-space:nowrap">' + act + '</td></tr>';
+    }).join('') : '<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--muted)">No justifications submitted</td></tr>';
+  }
+}
+
+// ---------- Requester banner (My Submissions) ----------
+function renderGovBanner_() {
+  var el = document.getElementById('govBanner');
+  if (!el) return;
+  var st = govMyStatus_();
+  if (st.loss.length) {
+    el.innerHTML = '<div class="alert alert-warn" style="justify-content:space-between;align-items:center">'
+      + '<span><strong>Account flagged:</strong> ' + st.loss.length + ' paid facilitation(s) have no KOBO survey after '
+      + ((govStore.koboConfig || {}).windowHours || 24) + 'h. New requests are blocked until you justify them.</span>'
+      + '<button class="btn btn-primary btn-sm" onclick="openJustifyModal()">Justify now</button></div>';
+  } else if (st.review.length) {
+    el.innerHTML = '<div class="alert alert-info">Your justification is under review. New requests unlock once an approver decides.</div>';
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+// ---------- Dashboard KPIs ----------
+function renderGovDashboard_() {
+  var el = document.getElementById('dashGov');
+  if (!el) return;
+  var roi = govRoi_();
+  var k = roi.kpis;
+  var cur = getDefaultCurrency();
+  var pct = function(x) { return x == null ? '—' : Math.round(x * 100) + '%'; };
+  var card = function(label, val, sub, color, tip) {
+    return '<div class="stat-card"' + (tip ? ' title="' + govEsc_(tip) + '"' : '') + '><div class="stat-label">' + label + '</div>'
+      + '<div class="stat-value" style="color:' + color + '">' + val + '</div><div class="stat-sub">' + sub + '</div></div>';
+  };
+  var html = '<div class="stats gov-kpis">'
+    + card('ROI rate', pct(k.roiRate), 'Value ÷ resolved paid', 'var(--brand)', 'Share of paid facilitations (past the KOBO window) that produced a survey')
+    + card('Value delivered', fmtK(k.value.amount, cur), k.value.count + ' paid with KOBO' + (k.late.count ? ' · ' + k.late.count + ' late' : ''), 'var(--success)')
+    + card('Loss — no KOBO', fmtK(k.loss.amount, cur), k.loss.count + ' overdue · ' + k.underReview.count + ' under review', 'var(--danger)')
+    + card('Awaiting KOBO', fmtK(k.pending.amount, cur), k.pending.count + ' within ' + roi.windowHours + 'h window', 'var(--ink)')
+    + card('Costs avoided', fmtK(k.costsAvoided.amount, cur), k.costsAvoided.count + ' rejected request(s)', 'var(--success)')
+    + card('Cost savings', fmtK(k.costSavings.amount, cur), k.costSavings.excessRecover.count + ' excess + ' + k.costSavings.justificationRejected.count + ' rejected justif. to recover', 'var(--success)')
+    + card('Extra cost', fmtK(k.extraCost.amount, cur), k.extraCost.count + ' excess approved, not recovered', 'var(--warn)')
+    + card('Flagged requesters', String(k.flaggedRequesters), k.overLimit.count + ' over-limit facilitation(s)', k.flaggedRequesters ? 'var(--danger)' : 'var(--ink)')
+    + '</div>';
+
+  var proj = roi.byProject.slice().sort(function(a, b) { return b.paid.amount - a.paid.amount; });
+  html += '<div class="ws-grid" style="margin-top:12px"><div class="card"><div class="card-header"><div class="card-title">Value by project</div>'
+    + '<span class="badge badge-gray">' + k.koboSubmissions + ' KOBO submissions loaded</span></div>'
+    + '<div class="card-body" style="padding:0"><div class="table-scroll"><table><thead><tr><th>Project</th><th>Limit / SN</th><th>Paid</th><th>Value</th><th>Loss</th><th>Awaiting</th><th>ROI</th></tr></thead><tbody>'
+    + (proj.length ? proj.map(function(p) {
+        var resolved = p.paid.amount - p.pending.amount;
+        var rate = resolved > 0 ? Math.round(p.value.amount / resolved * 100) + '%' : '—';
+        return '<tr><td class="font-600">' + govEsc_(p.project) + '</td><td>' + (p.limit || '—') + '</td>'
+          + '<td class="currency">' + p.paid.count + ' · ' + fmt(p.paid.amount) + '</td>'
+          + '<td class="currency" style="color:var(--success)">' + p.value.count + ' · ' + fmt(p.value.amount) + '</td>'
+          + '<td class="currency" style="color:var(--danger)">' + (p.loss.count + p.review.count) + ' · ' + fmt(p.loss.amount + p.review.amount) + '</td>'
+          + '<td class="currency">' + p.pending.count + '</td><td class="font-600">' + rate + '</td></tr>';
+      }).join('') : '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:16px">No tracked paid facilitations yet'
+        + ((govStore.koboConfig || {}).trackFrom ? ' (tracking from ' + govEsc_(govStore.koboConfig.trackFrom) + ')' : '') + '</td></tr>')
+    + '</tbody></table></div></div></div>';
+
+  var fl = roi.flagged.slice().sort(function(a, b) { return b.amount - a.amount; });
+  html += '<div class="card"><div class="card-header"><div class="card-title">Flagged requesters</div><span class="badge badge-gray">KOBO due within ' + roi.windowHours + 'h of payment</span></div>'
+    + '<div class="card-body" style="padding:0"><div class="table-scroll"><table><thead><tr><th>Requester</th><th>No KOBO</th><th>Under review</th><th>Amount at risk</th></tr></thead><tbody>'
+    + (fl.length ? fl.map(function(f) {
+        return '<tr><td class="font-600">' + govEsc_(f.requester || f.key) + '</td><td style="color:var(--danger)">' + f.lossRefs.length + '</td>'
+          + '<td>' + f.reviewRefs.length + '</td><td class="currency">' + cur + ' ' + fmt(f.amount) + '</td></tr>';
+      }).join('') : '<tr><td colspan="4" class="text-muted" style="text-align:center;padding:16px">No flagged requesters</td></tr>')
+    + '</tbody></table></div></div></div></div>';
+  el.innerHTML = html;
+}
+
+function govRefreshUi_() {
+  try { renderGovTabs_(); } catch (e) { console.warn('gov tabs', e); }
+  try { renderGovBanner_(); } catch (e) { console.warn('gov banner', e); }
+  try { renderGovDashboard_(); } catch (e) { console.warn('gov dash', e); }
+}
+
+// Wrap renderers / entry points (function declarations are hoisted, so reassigning is safe)
+(function() {
+  var _rd = renderDashboard;
+  renderDashboard = function() { var out = _rd.apply(this, arguments); try { renderGovDashboard_(); } catch (e) {} return out; };
+  var _rh = renderHistory;
+  renderHistory = function() { var out = _rh.apply(this, arguments); try { renderGovBanner_(); } catch (e) {} return out; };
+  var _nr = openNewRequestModal;
+  openNewRequestModal = function() { if (!govGateNewForm()) return; return _nr.apply(this, arguments); };
+})();
+
 // -- Role permissions (single source of truth) ---------------------
 // Used by the showView guard AND by buildSidebar, so a role only ever
 // sees navigation it is allowed to open.
@@ -11727,6 +12580,7 @@ showView = function(id, el) {
   var role    = currentUser.role    || 'requester';
   var country = currentUser.country || '';
 
+  if ((id === 'prf' || id === 'expenses' || id === 'spend') && !govGateNewForm()) return;
   if (!canAccessView(role, id)) {
     var msg = {
       requester: 'Access restricted -- contact Admin for other sections',
@@ -12581,6 +13435,7 @@ function filterHistory(filter) {
     return;
   }
 
+  var _roiH = null; try { _roiH = govRoi_(); } catch (eR) {}
   tbody.innerHTML = filtered.map(function(r) {
     var statusMap = {
       Draft:    { cls:'badge-gray',   label:'Draft' },
@@ -12640,7 +13495,8 @@ function filterHistory(filter) {
       + '<td>'+approvalHtml+'</td>'
       + '<td>'+paidHtml+'</td>'
       + '<td>'+ackHtml+'</td>'
-      + '<td><span class="badge '+s.cls+'">'+s.label+'</span></td>'
+      + '<td><span class="badge '+s.cls+'">'+s.label+'</span>'
+        + (r.status === 'Paid' ? '<div style="margin-top:3px">'+govKoboBadge_(r.ref,_roiH)+'</div>' : '') + '</td>'
       + '</tr>';
   }).join('');
 
@@ -13806,7 +14662,7 @@ function confirmBulkApprove(){
   expandBundleRefs(checked.map(function(c){ return c.dataset.ref; })).forEach(function(ref){
     var e=requestsStore.find(function(r){return r.ref===ref;});
     if(!e||e.status!=='Approved')return;
-    e.status='Paid'; e.sigDataUrl=pendingBulkSig; e.sigLabel=pendingBulkLabel; e.sigTime=t;
+    e.status='Paid'; e.paidAt=new Date().toISOString(); e.sigDataUrl=pendingBulkSig; e.sigLabel=pendingBulkLabel; e.sigTime=t;
     markLocalWrite(e.ref);
   });
   persistRequestsToStorage();
