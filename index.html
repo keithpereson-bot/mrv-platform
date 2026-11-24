@@ -11630,6 +11630,21 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#navUserAvatar') && !e.target.closest('#userMenuDropdown')) closeUserMenu();
 });
 
+// -- Role permissions (single source of truth) ---------------------
+// Used by the showView guard AND by buildSidebar, so a role only ever
+// sees navigation it is allowed to open.
+var ROLE_VIEWS = {
+  requester: ['requests','history'],
+  viewer:    ['dashboard','budgets','transactions','reconciliation','requests','history'],
+  approver:  ['dashboard','budgets','requests','history','prf','expenses','spend','funds','transactions','reconciliation'],
+  manager:   ['dashboard','budgets','requests','history','prf','expenses','spend','funds','transactions','reconciliation'],
+  admin:     '*'
+};
+function canAccessView(role, id) {
+  var allowed = ROLE_VIEWS[role || 'requester'] || ROLE_VIEWS.requester;
+  return allowed === '*' || allowed.indexOf(id) >= 0;
+}
+
 // -- showView role guard -----------------------------------------
 const _origShowView = showView;
 showView = function(id, el) {
@@ -11638,46 +11653,13 @@ showView = function(id, el) {
   var role    = currentUser.role    || 'requester';
   var country = currentUser.country || '';
 
-  // Requester: only requests + history
-  if (role === 'requester') {
-    if (id !== 'requests' && id !== 'history') {
-      toast('Access restricted -- contact Admin for other sections');
-      return;
-    }
-  }
-
-  // History (My Submissions) is accessible to ALL roles
-  // (each user only sees their own requests)
-
-  // Approver: no admin, no sheets
-  if (role === 'approver') {
-    var blocked = ['sheets','users'];
-    if (blocked.includes(id)) {
-      toast('Access restricted');
-      return;
-    }
-  }
-
-  // Viewer: read-only -- dashboard, budgets, paid requests, transactions, reconciliation only
-  if (role === 'viewer') {
-    var viewerAllowed = ['dashboard','budgets','transactions','reconciliation','requests','history'];
-    if (!viewerAllowed.includes(id)) {
-      toast('Access restricted -- Viewer accounts are read-only');
-      return;
-    }
-  }
-
-  // Manager: full access except Manage Users and Google Sheets
-  if (role === 'manager') {
-    if (id === 'users' || id === 'sheets') {
-      toast('Access restricted -- contact the system Admin');
-      return;
-    }
-  }
-
-  // Admin only for sheets + users
-  if (['sheets','users'].includes(id) && role !== 'admin') {
-    toast('Admin access required');
+  if (!canAccessView(role, id)) {
+    var msg = {
+      requester: 'Access restricted -- contact Admin for other sections',
+      viewer:    'Access restricted -- Viewer accounts are read-only',
+      manager:   'Access restricted -- contact the system Admin'
+    };
+    toast(msg[role] || 'Access restricted');
     return;
   }
 
@@ -13310,6 +13292,14 @@ function buildSidebar() {
         badge:'<span id="sheetsSyncBadge" class="aside-badge" style="display:none;background:var(--gold)">!</span>' },
     ];
   }
+
+  // Hide anything this role cannot open, then drop empty section headers
+  nav = nav.filter(function(n) { return n.type === 'section' || canAccessView(role, n.view); });
+  nav = nav.filter(function(n, i) {
+    if (n.type !== 'section') return true;
+    var next = nav[i + 1];
+    return next && next.type !== 'section';
+  });
 
   var itemsHtml = nav.map(function(n) {
     if (n.type === 'section') {
