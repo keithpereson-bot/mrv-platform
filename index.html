@@ -4893,6 +4893,10 @@
         <div class="req-tab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
         <div><div class="req-tab-title">Paid</div></div><span class="req-tab-badge" id="mcount-paid">0</span>
       </button>
+      <button type="button" class="req-tab" id="mfilt-rejected" onclick="filterHistory('rejected')">
+        <div class="req-tab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+        <div><div class="req-tab-title">Rejected</div></div><span class="req-tab-badge" id="mcount-rejected">0</span>
+      </button>
     </div>
     <div class="page-header">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
@@ -4920,10 +4924,10 @@
                 <th>Project</th>
                 <th>Client</th>
                 <th>Cost Summary</th>
-                <th>Details</th>
+                <th id="mineThDetails">Details</th>
                 <th>Amount</th>
                 <th>Requested</th>
-                <th>Approved</th>
+                <th id="mineThApproved">Approved</th>
                 <th>Paid</th>
                 <th>Ack</th>
                 <th>Status</th>
@@ -12424,6 +12428,10 @@ function govExcessDecisionTag_(r) {
 }
 
 // ---------- Tables: Rejected + Justifications tabs ----------
+function filterHistoryCountsOnly_() {
+  var rc = document.getElementById('mcount-rejected');
+  if (rc && typeof myRejectedRows_ === 'function') rc.textContent = String(myRejectedRows_().length);
+}
 function renderGovTabs_() {
   var canAct = govCanApprove_();
   var cur = getDefaultCurrency();
@@ -12543,6 +12551,7 @@ function renderGovDashboard_() {
 
 function govRefreshUi_() {
   try { renderGovTabs_(); } catch (e) { console.warn('gov tabs', e); }
+  try { var hv = document.getElementById('view-history'); if (hv && hv.classList.contains('active')) renderHistory(); else filterHistoryCountsOnly_(); } catch (e) {}
   try { renderGovBanner_(); } catch (e) { console.warn('gov banner', e); }
   try { renderGovDashboard_(); } catch (e) { console.warn('gov dash', e); }
 }
@@ -13361,16 +13370,73 @@ function renderHistory() {
   filterHistory(_historyFilter);
 }
 
+/** The current user's rejected requests (bundles merged into one row). */
+function myRejectedRows_() {
+  var list = ((typeof govStore !== 'undefined' && govStore.rejects) || []).filter(function(r) {
+    return isMyRequest({ requester: r.requester, createdBy: r.requesterEmail || '', requesterEmail: r.requesterEmail || '' });
+  });
+  var byKey = {}, out = [];
+  list.forEach(function(r) {
+    var key = r.bundleRef ? 'b:' + r.bundleRef : 'r:' + r.ref;
+    var row = byKey[key];
+    if (!row) {
+      row = byKey[key] = { refs: [], project: r.project, type: r.type, clientSN: r.clientSN, clientName: r.clientName,
+        costSummary: r.costSummary, costItem: r.costItem, amount: 0, date: r.date, rejectedBy: r.rejectedBy,
+        rejectedAt: r.rejectedAt, rejectReason: r.rejectReason, bundle: !!r.bundleRef };
+      out.push(row);
+    }
+    row.refs.push(r.ref);
+    row.amount += parseFloat(r.amount) || 0;
+    if (r.costSummary && row.costSummary && row.costSummary.indexOf(r.costSummary) === -1) row.costSummary += ' + ' + r.costSummary;
+  });
+  return out.sort(function(a, b) { return String(b.rejectedAt || '').localeCompare(String(a.rejectedAt || '')); });
+}
+
+function renderMyRejected_(rows) {
+  var esc = function(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var mc = document.getElementById('mineCount');
+  if (mc) mc.textContent = rows.length + ' rejected';
+  var html = rows.length ? rows.map(function(r) {
+    return '<tr data-project="' + esc(r.project) + '" data-status="Rejected">'
+      + '<td style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:600;color:#1E4DB7">' + esc(r.refs.join(' + ')) + '</td>'
+      + '<td style="font-weight:500">' + esc(r.project) + '</td>'
+      + '<td>' + esc(r.clientName || '—') + (r.clientSN ? '<div style="font-size:10.5px;color:var(--muted)">SN ' + esc(r.clientSN) + '</div>' : '') + '</td>'
+      + '<td class="rq-cs-cell"><div class="rq-cs">' + esc(r.costSummary || '--') + '</div>' + (r.costItem ? '<div class="rq-ci">' + esc(r.costItem) + '</div>' : '') + '</td>'
+      + '<td style="font-size:12.5px;white-space:normal;max-width:320px">'
+        + '<div style="border-left:3px solid var(--danger);background:#FEF2F2;padding:6px 9px;border-radius:4px;color:#7F1D1D">'
+        + esc(r.rejectReason || 'No reason given') + '</div></td>'
+      + '<td class="currency" style="font-weight:600;white-space:nowrap">' + esc(getCurrency(r.project, r.type)) + ' ' + fmt(r.amount) + '</td>'
+      + '<td style="font-size:12px;color:var(--muted);white-space:nowrap">' + fmtDate(r.date) + '</td>'
+      + '<td style="font-size:12px;white-space:nowrap"><div style="font-weight:500">' + esc(r.rejectedBy || '—') + '</div>'
+        + '<div style="font-size:10.5px;color:var(--muted)">' + fmtDate(r.rejectedAt) + '</div></td>'
+      + '<td style="color:var(--muted)">—</td><td style="color:var(--muted)">—</td>'
+      + '<td><span class="badge badge-danger">Rejected</span></td></tr>';
+  }).join('') : '<tr><td colspan="11" style="padding:28px;text-align:center;color:var(--muted)">None of your requests have been rejected.</td></tr>';
+  ['bodyMine', 'historyBody'].forEach(function(tid) {
+    var el = document.getElementById(tid);
+    if (!el) return;
+    el.innerHTML = html;
+    try { enableSmartTable(tid, { placeholder: 'Search rejected requests...', pageSize: 15, projectFilter: true, statusOptions: ['Rejected'] }); } catch (e) {}
+  });
+}
+
 function filterHistory(filter) {
   _historyFilter = filter;
 
   // Update filter button styles (legacy history view + mine tab)
-  ['all','draft','approved','paid'].forEach(function(f) {
+  ['all','draft','approved','paid','rejected'].forEach(function(f) {
     var btn = document.getElementById('hfilt-'+f);
     if (btn) btn.className = filter === f ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
     var mbtn = document.getElementById('mfilt-'+f);
     if (mbtn) mbtn.classList.toggle('active', filter === f);
   });
+
+  var myRejects = myRejectedRows_();
+  var rc = document.getElementById('mcount-rejected'); if (rc) rc.textContent = String(myRejects.length);
+  var thD = document.getElementById('mineThDetails'), thA = document.getElementById('mineThApproved');
+  if (thD) thD.textContent = filter === 'rejected' ? 'Reason for rejection' : 'Details';
+  if (thA) thA.textContent = filter === 'rejected' ? 'Rejected' : 'Approved';
+  if (filter === 'rejected') { renderMyRejected_(myRejects); return; }
 
   var mine = groupBundleRows((requestsStore || []).filter(isMyRequest));
 
