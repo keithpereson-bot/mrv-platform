@@ -3600,6 +3600,12 @@
   .rq-multi-note svg { flex-shrink:0; margin-top:1px; }
   .rq-form .rq-multi-note, #reqFormsWrap .rq-multi-note { margin:8px 0; font-size:12.5px; }
 
+  .kobo-status { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-top:12px; padding:8px 12px;
+    background:#fff; border:1px solid var(--border); border-radius:10px; font-size:12.5px; color:var(--muted); }
+  .kobo-status strong { color:var(--ink); }
+  .kobo-status .kobo-warn { color:#B45309; font-weight:600; }
+  .kobo-status .btn { margin-left:auto; }
+
   /* Value-for-money KPI grid */
   #dashGov .gov-kpis { grid-template-columns: repeat(4, 1fr); margin-top: 12px; }
   @media (max-width: 900px) { #dashGov .gov-kpis { grid-template-columns: repeat(2, 1fr); } }
@@ -12075,6 +12081,10 @@ function mrvComputeRoi(input) {
   var snk = mrvSnKey_;
   function num(v) { var n = parseFloat(String(v == null ? '' : v).replace(/,/g, '')); return isNaN(n) ? 0 : n; }
   function truthy(v) { return v === true || low(v) === 'yes' || low(v) === 'true'; }
+  function projectsAgree(a, b) {
+    a = String(a || '').replace(/[^a-z0-9]/g, ''); b = String(b || '').replace(/[^a-z0-9]/g, '');
+    return !a || !b || a === b || a.indexOf(b) >= 0 || b.indexOf(a) >= 0;
+  }
   function dayStart(t) { var d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); }
   function limitFor(project) {
     var l = limits[project];
@@ -12187,13 +12197,14 @@ function mrvComputeRoi(input) {
       u.limit = lim;
       u.overLimit = !!(lim && mx > lim);
       var floor = u.reqAt != null ? dayStart(u.reqAt) : null;
-      // Pass 1: submissions by this person's payee number. Pass 2: legacy rows with no payee number.
+      // Pass 1: submissions by this person's payee number (project spelling ignored — payee + SN is specific).
+      // Pass 2: legacy rows with no payee number (project must roughly agree when both are given).
       for (var pass = 1; pass <= 2 && u.koboAt === undefined; pass++) {
         for (var s = 0; s < subs.length; s++) {
           var k = subs[s];
           if (k.used) continue;
-          if (pass === 1 ? (!k.payee || k.payee !== u.payeeKey) : !!k.payee) continue;
-          if (k.project && k.project !== proj) continue;
+          if (pass === 1 ? (!k.payee || !u.payeeKey || k.payee !== u.payeeKey) : !!k.payee) continue;
+          if (pass === 2 && !projectsAgree(k.project, proj)) continue;
           if (k.ts != null && floor != null && k.ts < floor) continue;
           k.used = true;
           u.koboAt = k.ts;
@@ -12220,6 +12231,7 @@ function mrvComputeRoi(input) {
       if (j.status === 'rejected') { u.state = 'recovered'; return; }
       u.state = 'review'; return;
     }
+    if (!u.payeeKey) u.noPayee = true;
     if (u.paidAt != null && now <= u.paidAt + WIN) { u.state = 'pending'; u.dueAt = u.paidAt + WIN; return; }
     u.state = 'loss';
     if (u.paidAt != null) u.dueAt = u.paidAt + WIN;
@@ -12256,7 +12268,7 @@ function mrvComputeRoi(input) {
     u.refs.forEach(function(ref) {
       perRef[ref] = { state: u.state, unit: u.key, clientSN: u.clientSN, seq: u.seq || null, limit: u.limit || null,
         overLimit: !!u.overLimit, koboAt: u.koboAt != null ? u.koboAt : null, paidAt: u.paidAt, dueAt: u.dueAt || null,
-        amount: u.amount, refs: u.refs, justificationId: u.justificationId || '' };
+        amount: u.amount, refs: u.refs, justificationId: u.justificationId || '', noPayee: !!u.noPayee };
     });
   });
 
@@ -12289,6 +12301,8 @@ function mrvComputeRoi(input) {
       notKoboTracked: k.exempt,
       overLimit: k.overLimit,
       koboSubmissions: k.koboSubmissions,
+      koboUnmatched: Object.keys(koboBySN).reduce(function(n, sn) { return n + koboBySN[sn].filter(function(x) { return !x.used; }).length; }, 0),
+      waitingNoPayee: unitList.filter(function(u) { return u.noPayee && (u.state === 'pending' || u.state === 'loss'); }).length,
       roiRate: resolvedAmt > 0 ? valueAmt / resolvedAmt : null,
       costsAvoided: rejected,
       costSavings: {
@@ -12420,7 +12434,8 @@ function mrvTs_(v) {
 
 var govStore = loadGovStore_();
 function loadGovStore_() {
-  var d = { kobo: [], rejects: [], justifications: [], recoveries: [], koboConfig: { windowHours: 24, trackFrom: '' }, outbox: [] };
+  var d = { kobo: [], rejects: [], justifications: [], recoveries: [], koboConfig: { windowHours: 24, trackFrom: '' }, outbox: [],
+            payees: {}, koboMeta: null, govAt: '' };
   try { var s = JSON.parse(localStorage.getItem('mrv_gov') || 'null'); if (s) for (var k in d) if (s[k] != null) d[k] = s[k]; } catch (e) {}
   return d;
 }
@@ -12451,7 +12466,9 @@ function applyGovernance_(g) {
     if (job.action === 'restoreRejects') (job.refs || []).forEach(function(r) { pendingRestores[r] = true; });
     if (job.action === 'submitJustification') pendingJust[job.id] = job;
   });
-  if (Array.isArray(g.kobo)) govStore.kobo = g.kobo;
+  if (Array.isArray(g.kobo)) { govStore.kobo = g.kobo; govStore.govAt = new Date().toISOString(); }
+  if (g.koboMeta) govStore.koboMeta = g.koboMeta;
+  if (g.payees && typeof g.payees === 'object') govStore.payees = g.payees;
   if (g.koboConfig) govStore.koboConfig = g.koboConfig;
   if (Array.isArray(g.recoveries)) govStore.recoveries = g.recoveries;
   if (Array.isArray(g.rejects)) {
@@ -12481,6 +12498,17 @@ function applyGovernance_(g) {
   govRefreshUi_();
 }
 
+async function refreshKoboNow(btn) {
+  if (!gsWebAppUrl) { toast('Not connected to the Apps Script', 'warn'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Refreshing…'; }
+  try {
+    var g = await gasCall({ action: 'getGovernance' });
+    if (g && g.ok) { applyGovernance_(g); toast('KOBO data refreshed — ' + (g.kobo || []).length + ' submission(s)'); }
+    else toast('Refresh failed: ' + ((g && g.error) || 'no response'), 'warn');
+  } catch (e) { toast('Refresh failed', 'warn'); }
+  if (btn) { btn.disabled = false; btn.textContent = 'Refresh KOBO'; }
+  try { rebuildRequestsTable(); renderHistory(); } catch (e) {}
+}
 async function pullGovernance() {
   if (!gsWebAppUrl) return;
   try {
@@ -12491,7 +12519,7 @@ async function pullGovernance() {
 // Keep governance (rejects, justifications, KOBO) fresh even between full syncs
 setInterval(function() {
   if (currentUser && document.visibilityState !== 'hidden') { pullGovernance(); govFlush_(); }
-}, 90000);
+}, 60000);
 
 // ---------- outbox: optimistic local change, reliable server write ----------
 function govQueue_(job) {
@@ -12538,6 +12566,7 @@ async function govFlush_() {
 // ---------- ROI (shared engine) ----------
 function govPayeeMap_() {
   var m = {};
+  Object.keys(govStore.payees || {}).forEach(function(k) { m[k] = govStore.payees[k]; });
   (typeof usersStore !== 'undefined' && usersStore || []).forEach(function(u) {
     var p = String(u.payeeNumber || u['Payee Number'] || '').trim();
     if (!p) return;
@@ -12589,6 +12618,10 @@ function govKoboBadge_(ref, roi) {
   if (!s || !GOV_STATE[s.state]) return '';
   var g = GOV_STATE[s.state];
   var tip = s.state === 'pending' && s.dueAt ? ' title="Due by ' + govEsc_(fmtDate(new Date(s.dueAt).toISOString())) + '"' : '';
+  if ((s.state === 'pending' || s.state === 'loss') && s.noPayee) {
+    tip = ' title="No payee number for this requester (request or Users tab) — KOBO submissions with a payee number cannot be matched to it"';
+    return '<span class="badge ' + g.cls + '"' + tip + '>' + g.label + '</span> <span class="badge badge-gold"' + tip + '>No payee #</span>';
+  }
   var over = s.overLimit ? ' <span class="badge badge-danger" title="Facilitation ' + s.seq + ' of limit ' + s.limit + '">Over limit</span>' : '';
   return '<span class="badge ' + g.cls + '"' + tip + '>' + g.label + '</span>' + over;
 }
@@ -12900,6 +12933,18 @@ function renderGovDashboard_() {
         + ((govStore.koboConfig || {}).trackFrom ? ' (tracking from ' + govEsc_(govStore.koboConfig.trackFrom) + ')' : '') + '</td></tr>')
     + '</tbody></table></div></div></div>';
 
+  var km = govStore.koboMeta;
+  var ago = govStore.govAt ? Math.max(0, Math.round((Date.now() - new Date(govStore.govAt).getTime()) / 60000)) : null;
+  var koboStatusHtml = '<div class="kobo-status">'
+    + '<span><strong>KOBO data:</strong> ' + k.koboSubmissions + ' submission(s) read'
+    + (km && km.tabs ? ' from ' + km.tabs.map(function(t) { return govEsc_(t.name) + ' (' + t.rows + ')'; }).join(', ') : '')
+    + (ago != null ? ' · refreshed ' + (ago < 1 ? 'just now' : ago + ' min ago') : ' · not loaded yet') + '</span>'
+    + (km && km.skippedNoSN ? '<span class="kobo-warn">' + km.skippedNoSN + ' row(s) skipped — no Client SN</span>' : '')
+    + (km && km.rows && !km.withPayee ? '<span class="kobo-warn">No Payee Number column found</span>' : '')
+    + (k.koboUnmatched ? '<span>' + k.koboUnmatched + ' submission(s) not matched to a paid request</span>' : '')
+    + (k.waitingNoPayee ? '<span class="kobo-warn">' + k.waitingNoPayee + ' request(s) waiting — requester has no payee number</span>' : '')
+    + '<button class="btn btn-secondary btn-sm" onclick="refreshKoboNow(this)">Refresh KOBO</button></div>';
+
   var fl = roi.flagged.slice().sort(function(a, b) { return b.amount - a.amount; });
   html += '<div class="card"><div class="card-header"><div class="card-title">Flagged requesters</div><span class="badge badge-gray">KOBO due within ' + roi.windowHours + 'h of payment</span></div>'
     + '<div class="card-body" style="padding:0"><div class="table-scroll"><table><thead><tr><th>Requester</th><th>No KOBO</th><th>Under review</th><th>Amount at risk</th></tr></thead><tbody>'
@@ -12908,11 +12953,12 @@ function renderGovDashboard_() {
           + '<td>' + f.reviewRefs.length + '</td><td class="currency">' + cur + ' ' + fmt(f.amount) + '</td></tr>';
       }).join('') : '<tr><td colspan="4" class="text-muted" style="text-align:center;padding:16px">No flagged requesters</td></tr>')
     + '</tbody></table></div></div></div></div>';
-  el.innerHTML = html;
+  el.innerHTML = html.replace('<div class="ws-grid"', koboStatusHtml + '<div class="ws-grid"');
 }
 
 function govRefreshUi_() {
   try { renderGovTabs_(); } catch (e) { console.warn('gov tabs', e); }
+  try { if (document.getElementById('reqpanel-paid') && document.getElementById('reqpanel-paid').classList.contains('is-active')) rebuildRequestsTable(); } catch (e) {}
   try { var hv = document.getElementById('view-history'); if (hv && hv.classList.contains('active')) renderHistory(); else filterHistoryCountsOnly_(); } catch (e) {}
   try { renderGovBanner_(); } catch (e) { console.warn('gov banner', e); }
   try { renderGovDashboard_(); } catch (e) { console.warn('gov dash', e); }
@@ -12920,6 +12966,8 @@ function govRefreshUi_() {
 
 // Wrap renderers / entry points (function declarations are hoisted, so reassigning is safe)
 (function() {
+  var _sv = showView;
+  showView = function(id) { var out = _sv.apply(this, arguments); if (id === 'dashboard' || id === 'history') { try { pullGovernance(); } catch (e) {} } return out; };
   var _rd = renderDashboard;
   renderDashboard = function() { var out = _rd.apply(this, arguments); try { renderGovDashboard_(); } catch (e) {} return out; };
   var _rh = renderHistory;
