@@ -3594,6 +3594,12 @@
     border: 1px solid #CBD5E1 !important;
   }
 
+  /* Same client requested by several requesters (informational) */
+  .rq-multi-note { display:flex; align-items:flex-start; gap:6px; margin-top:6px; padding:5px 8px; border-radius:6px;
+    background:#EFF6FF; border:1px solid #BFDBFE; color:#1E40AF; font-size:11.5px; line-height:1.35; }
+  .rq-multi-note svg { flex-shrink:0; margin-top:1px; }
+  .rq-form .rq-multi-note, #reqFormsWrap .rq-multi-note { margin:8px 0; font-size:12.5px; }
+
   /* Value-for-money KPI grid */
   #dashGov .gov-kpis { grid-template-columns: repeat(4, 1fr); margin-top: 12px; }
   @media (max-width: 900px) { #dashGov .gov-kpis { grid-template-columns: repeat(2, 1fr); } }
@@ -8536,6 +8542,18 @@ function reqBundleOf(r) {
 }
 
 /** Count requests for project + Client SN. A Transport & Airtime bundle counts once. */
+/** Units the CURRENT USER already has for this project + Client SN + cost item. */
+function countMyRequestsForItem(project, clientSN, item) {
+  var idx = limitIndex_();
+  var me = idx.keyOf({ requester: currentUser && currentUser.name, requesterEmail: currentUser && currentUser.email });
+  var n = idx.counts[idx.groupKey(project, clientSN, me, String(item || '').trim().toLowerCase())] || 0;
+  if (!n && currentUser && currentUser.name) {
+    // name-only identity (no email on older rows)
+    var byName = idx.groupKey(project, clientSN, String(currentUser.name).trim().toLowerCase(), String(item || '').trim().toLowerCase());
+    n = idx.counts[byName] || 0;
+  }
+  return n;
+}
 function countRequestsForClientSN(project, clientSN) {
   var sn = snKey(clientSN);
   if (!sn || !project) return 0;
@@ -8675,33 +8693,55 @@ function closeKebabs() {
 document.addEventListener('click', function(e) { if (!e.target.closest || !e.target.closest('.kebab')) closeKebabs(); });
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeKebabs(); });
 
+/** Live requests in limit-index shape (rejected requests are not in requestsStore). */
+function limitRows_() {
+  return (requestsStore || []).map(function(r) {
+    return { ref: r.ref, project: r.project, clientSN: r.clientSN, bundleRef: reqBundleOf(r) || '',
+      requester: r.requester, requesterEmail: r.requesterEmail || r.createdBy || '',
+      costItem: r.costItem, costSummary: r.costSummary, date: r.date };
+  });
+}
+var _limIdx = null, _limIdxSig = '';
+function limitIndex_() {
+  var sig = (requestsStore || []).length + '|' + (requestsStore || []).map(function(r) { return r.ref; }).join(',').length;
+  if (_limIdx && sig === _limIdxSig) return _limIdx;
+  _limIdx = mrvLimitIndex_(limitRows_()); _limIdxSig = sig;
+  return _limIdx;
+}
+/** Everyone who has requested this client on this project (display names). */
+function clientRequesters_(project, sn) {
+  var who = limitIndex_().requesters[String(project || '').trim().toLowerCase() + '\u0000' + snKey(sn)] || {};
+  return Object.keys(who).map(function(k) { return who[k]; });
+}
+function multiRequesterNoteHtml_(r) {
+  if (!r || !r.clientSN || !r.project) return '';
+  var names = clientRequesters_(r.project, r.clientSN);
+  if (names.length < 2) return '';
+  return '<div class="rq-multi-note" title="Other requesters do not count toward this requester\'s limit">'
+    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> '
+    + 'This Client SN has been requested by multiple requesters (' + _rqEsc(names.join(', ')) + ')</div>';
+}
+
 /** Excess by position: the (limit+1)th facilitation for a project + Client SN is excess,
  *  whether or not the requester's device flagged it. Cached per render pass. */
 var _derivedExcess = null, _derivedExcessSig = '';
 function derivedExcessMap_() {
   var sig = (requestsStore || []).length + '|' + JSON.stringify(reqFormConfig.projectLimits || {});
   if (_derivedExcess && sig === _derivedExcessSig) return _derivedExcess;
-  var groups = {};
+  var idx = limitIndex_();
+  var map = {};
   (requestsStore || []).forEach(function(r) {
     if (!r || !r.ref || !r.clientSN || !r.project) return;
     var lim = getProjectRequestLimit(r.project);
-    if (!lim) return;
-    var key = String(r.project).trim().toLowerCase() + '\u0000' + snKey(r.clientSN);
-    var unit = reqBundleOf(r) || ('ref:' + r.ref);
-    var g = groups[key] = groups[key] || { lim: lim, units: {} };
-    var u = g.units[unit] = g.units[unit] || { refs: [], t: Infinity, ref: r.ref };
-    u.refs.push(r.ref);
-    var t = (typeof mrvTs_ === 'function' ? mrvTs_(r.date) : null);
-    if (t != null && t < u.t) u.t = t;
+    var p = idx.pos[r.ref];
+    if (lim && p && p.seq > lim) map[r.ref] = { seq: p.seq, limit: lim };
   });
-  var map = {};
-  Object.keys(groups).forEach(function(k) {
-    var g = groups[k];
-    var units = Object.keys(g.units).map(function(x) { return g.units[x]; })
-      .sort(function(a, b) { return (a.t - b.t) || String(a.ref).localeCompare(String(b.ref)); });
-    units.forEach(function(u, i) {
-      if (i + 1 > g.lim) u.refs.forEach(function(ref) { map[ref] = { seq: i + 1, limit: g.lim }; });
-    });
+  // a bundle is excess if any of its items is
+  (requestsStore || []).forEach(function(r) {
+    var b = reqBundleOf(r);
+    if (!b || map[r.ref]) return;
+    var mate = (requestsStore || []).find(function(x) { return reqBundleOf(x) === b && map[x.ref]; });
+    if (mate) map[r.ref] = map[mate.ref];
   });
   _derivedExcess = map; _derivedExcessSig = sig;
   return map;
@@ -8724,7 +8764,7 @@ function excessTagHtml_(r, clickable) {
   var why = r.excessReason
     ? '<span class="rq-excess-why" title="' + _rqEsc(r.excessReason) + '"' + (clickable ? ' onclick="event.stopPropagation();this.classList.toggle(\'is-open\')"' : '') + '>' + _rqEsc(r.excessReason) + '</span>'
     : '<span class="rq-muted" style="color:var(--danger);font-weight:600">'
-      + (und ? 'Not declared by requester — facilitation ' + und.seq + ' of limit ' + und.limit : 'No justification given') + '</span>';
+      + (und ? 'Not declared by requester — request ' + und.seq + ' for this item (limit ' + und.limit + ')' : 'No justification given') + '</span>';
   return '<div class="rq-excess-tag" title="Excess request">'
     + '<svg class="rq-excess-flag" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-label="Excess"><path d="M4 3v18h2V13h1.5l.8.8H20V4H8.3l-.8.8H6V3H4zm5 3h9v5.5h-7.2l-.8-.8H9V6z"/></svg> '
     + why + '</div>';
@@ -8738,6 +8778,7 @@ function reqDetailsOnlyHtml(r) {
     var ccy = '';
     try { ccy = getCurrency(r.project, r.type); } catch (e) { ccy = ''; }
     if (isExcessReq_(r)) out += excessTagHtml_(r, false);
+    out += multiRequesterNoteHtml_(r);
     if (r._members && r._members.length > 1) {
       try {
         out += '<div class="rq-bundle-tag">' + r._members.map(function(m) {
@@ -8787,6 +8828,7 @@ function reqClientHtml(r) {
       + '</div>';
   }
   if (isExcessReq_(r)) out += excessTagHtml_(r, true);
+  out += multiRequesterNoteHtml_(r);
   if (r._members && r._members.length > 1) {
     out += '<div class="rq-bundle-tag">' + r._members.map(function(m) {
       var kind = /airtime/i.test(m.costSummary || '') ? 'Airtime' : 'Transport';
@@ -8918,8 +8960,10 @@ function _validateAllReqForms() {
   return _reqForms.map(function(f) {
     var v = _validateReqForm(f, batch);
     if (v.client && v.spec && v.spec.needClient) {
-      var key = f.project + '\u0000' + snKey(v.client.clientSN);
-      batch[key] = (batch[key] || 0) + 1;
+      (v.items || []).forEach(function(item) {
+        var key = f.project + '\u0000' + snKey(v.client.clientSN) + '\u0000' + item;
+        batch[key] = (batch[key] || 0) + 1;
+      });
     }
     return v;
   });
@@ -8958,19 +9002,29 @@ function _validateReqForm(f, batch) {
       } else {
         out.client = c;
         var lim = getProjectRequestLimit(f.project);
-        var srvKey = String(f.project || '').trim().toLowerCase() + '\u0000' + snKey(c.clientSN);
-        var srv = window._srvExcess && window._srvExcess[srvKey];
-        if (srv && srv.limit) lim = srv.limit;
-        if (lim != null && lim > 0) {
-          var key = f.project + '\u0000' + snKey(c.clientSN);
-          var localCnt = countRequestsForClientSN(f.project, c.clientSN);
-          var cnt = Math.max(localCnt, srv ? srv.count : 0) + ((batch && batch[key]) || 0);
-          if (cnt >= lim) {
+        var srvAll = window._srvExcess || {};
+        var meKey = srvAll.__me || '';
+        var items = (spec.parts || []).map(function(p) { return mrvItemKey_(p.line || {}); }).filter(Boolean);
+        out.items = items;
+        items.forEach(function(item) {
+          var gk = String(f.project || '').trim().toLowerCase() + '\u0000' + snKey(c.clientSN) + '\u0000' + meKey + '\u0000' + item;
+          var srv = meKey ? srvAll[gk] : null;
+          var l2 = (srv && srv.limit) || lim;
+          if (!(l2 > 0)) return;
+          var bk = f.project + '\u0000' + snKey(c.clientSN) + '\u0000' + item;
+          var cnt = Math.max(countMyRequestsForItem(f.project, c.clientSN, item), srv ? srv.count : 0) + ((batch && batch[bk]) || 0);
+          if (cnt >= l2 && !out.excess) {
             out.excess = true;
-            out.excessInfo = cnt + '/' + lim;
-            if (!String(f.excessReason || '').trim()) errs.push('Give a reason for the excess request');
+            out.excessInfo = 'you already have ' + cnt + ' for this item, limit ' + l2;
           }
-        }
+        });
+        if (out.excess && !String(f.excessReason || '').trim()) errs.push('Give a reason for the excess request');
+        // Other requesters for this client: note only, never counted
+        var who = clientRequesters_(f.project, c.clientSN);
+        var srvWho = (window._srvRequesters || {})[String(f.project || '').trim().toLowerCase() + '\u0000' + snKey(c.clientSN)];
+        if (srvWho) srvWho.forEach(function(x) { if (who.indexOf(x.name) === -1) who.push(x.name); });
+        var mine = String((currentUser && currentUser.name) || '').trim().toLowerCase();
+        out.otherRequesters = who.filter(function(n) { return String(n).trim().toLowerCase() !== mine; });
       }
     }
   }
@@ -9264,7 +9318,10 @@ function _reqCardHtml(f, idx, v) {
     }
 
     if (spec.needClient) {
-      h += '<div class="rq-excess" id="rqex-' + f.id + '"' + (v.excess ? '' : ' style="display:none"') + '><div class="rq-excess-title">Excess request — limit reached for this client on this project (<span id="rqexi-' + f.id + '">' + _rqEsc(v.excessInfo) + '</span>)</div>'
+      h += '<div class="rq-multi-note" id="rqmulti-' + f.id + '"' + ((v.otherRequesters || []).length ? '' : ' style="display:none"') + '>'
+        + 'This Client SN has also been requested by: <span id="rqmultin-' + f.id + '">' + _rqEsc((v.otherRequesters || []).join(', ')) + '</span>. '
+        + 'Their requests do not count toward your limit.</div>';
+      h += '<div class="rq-excess" id="rqex-' + f.id + '"' + (v.excess ? '' : ' style="display:none"') + '><div class="rq-excess-title">Excess request — limit reached for this client and cost item (<span id="rqexi-' + f.id + '">' + _rqEsc(v.excessInfo) + '</span>)</div>'
         + '<label>Reason for excess request <span class="rq-req">*</span></label>'
         + '<textarea rows="2" data-f="' + f.id + '" data-k="excessReason" placeholder="Explain why an additional request is needed...">' + _rqEsc(f.excessReason) + '</textarea></div>';
     }
@@ -9380,6 +9437,12 @@ function _refreshReqStatus() {
     if (ex) ex.style.display = v.excess ? '' : 'none';
     var exi = document.getElementById('rqexi-' + f.id);
     if (exi) exi.textContent = v.excessInfo || '';
+    var mn = document.getElementById('rqmulti-' + f.id);
+    if (mn) {
+      mn.style.display = (v.otherRequesters || []).length ? '' : 'none';
+      var mnn = document.getElementById('rqmultin-' + f.id);
+      if (mnn) mnn.textContent = (v.otherRequesters || []).join(', ');
+    }
     if (v.spec) {
       var ccy = getCurrency(f.project, f.type);
       var sb = document.getElementById('rqsub-' + f.id);
@@ -9555,7 +9618,7 @@ document.addEventListener('click', function(e) {
 // ── Submit all forms at once ─────────────────────────────
 async function submitAllRequests() {
   if (_reqSubmitting) return;
-  window._srvExcess = null;
+  window._srvExcess = null; window._srvRequesters = null;
   var btn = document.getElementById('submitReqBtn');
   var activeIdx = [];
   _reqForms.forEach(function(f, i){ if (!_isBlankForm(f)) activeIdx.push(i); });
@@ -9579,13 +9642,20 @@ async function submitAllRequests() {
     // Live limit check: the sheet knows about every requester's submissions, this device may not
     if (needsClients && gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
       if (btn) btn.textContent = 'Checking limits…';
-      var items = activeIdx.map(function(i) { return { project: _reqForms[i].project, clientSN: _reqForms[i].clientSN }; })
-        .filter(function(x) { return x.project && x.clientSN; });
+      var items = activeIdx.map(function(i) {
+        var f0 = _reqForms[i], sp = _formSpec(f0);
+        return { project: f0.project, clientSN: f0.clientSN,
+          costItems: sp ? sp.parts.map(function(p) { return mrvItemKey_(p.line || {}); }).filter(Boolean) : [] };
+      }).filter(function(x) { return x.project && x.clientSN; });
       if (items.length) {
         try {
-          var chk = await Promise.race([gasCall({ action: 'checkExcess', items: items }), new Promise(function(r){ setTimeout(function(){ r(null); }, 5000); })]);
+          var chk = await Promise.race([gasCall({ action: 'checkExcess', items: items,
+            requester: currentUser.name || '', requesterEmail: currentUser.email || '' }),
+            new Promise(function(r){ setTimeout(function(){ r(null); }, 5000); })]);
           if (chk && chk.ok) {
             window._srvExcess = chk.items || {};
+            window._srvExcess.__me = chk.me || '';
+            window._srvRequesters = chk.requesters || {};
             if (chk.limits && typeof chk.limits === 'object' && Object.keys(chk.limits).length) {
               reqFormConfig.projectLimits = chk.limits;
               saveReqFormConfigToStorage(reqFormConfig);
@@ -12074,6 +12144,9 @@ function mrvComputeRoi(input) {
     });
   });
 
+  // -- Request-limit positions (per requester, per cost item) over ALL live requests --
+  var limIdx = mrvLimitIndex_(input.requests || []);
+
   // -- Group by project + SN and pair one-to-one --
   var groups = {};
   unitList.forEach(function(u) {
@@ -12092,9 +12165,11 @@ function mrvComputeRoi(input) {
     var subs = koboBySN[snk(list[0].clientSN)] || [];
     var proj = low(list[0].project);
     list.forEach(function(u, idx) {
-      u.seq = idx + 1;
+      var mx = 0;
+      u.refs.forEach(function(ref) { var p = limIdx.pos[ref]; if (p && p.seq > mx) mx = p.seq; });
+      u.seq = mx || (idx + 1);
       u.limit = lim;
-      u.overLimit = !!(lim && u.seq > lim);
+      u.overLimit = !!(lim && mx > lim);
       var floor = u.reqAt != null ? dayStart(u.reqAt) : null;
       for (var s = 0; s < subs.length; s++) {
         var k = subs[s];
@@ -12205,6 +12280,68 @@ function mrvComputeRoi(input) {
       flaggedRequesters: Object.keys(flagged).length
     }
   };
+}
+
+/** Cost item key used by the request limit (Cost Item, falling back to Cost Summary). */
+function mrvItemKey_(r) {
+  return String((r && (r.costItem || r.costSummary)) || '').trim().toLowerCase();
+}
+
+/** Requester identity: email when known; a bare name is mapped to the email that
+ *  name uses elsewhere, so old rows (name only) and new rows (email) match. */
+function mrvRequesterResolver_(rows) {
+  var low = function(s) { return String(s == null ? '' : s).trim().toLowerCase(); };
+  var nameToEmail = {};
+  (rows || []).forEach(function(r) {
+    var em = low(r && r.requesterEmail), nm = low(r && r.requester);
+    if (em && nm && !nameToEmail[nm]) nameToEmail[nm] = em;
+  });
+  return function(r) {
+    var em = low(r && r.requesterEmail), nm = low(r && r.requester);
+    return em || nameToEmail[nm] || nm;
+  };
+}
+
+/**
+ * Request-limit index. The limit applies per requester, per cost item, per project + Client SN:
+ * limit 1 = each requester may request each cost item once for a client. Other requesters'
+ * requests never count against you. A Transport & Airtime bundle counts once per item.
+ *
+ * rows: [{ ref, project, clientSN, requester, requesterEmail, costItem, costSummary, bundleRef, date }]
+ * returns {
+ *   pos:    { ref: { seq, group } }               — facilitation number of that row's item
+ *   counts: { group: n }                           — units so far per group
+ *   requesters: { project\u0000sn: { key: displayName } } — everyone who requested that client
+ *   keyOf:  function(row) → requester key, groupKey(project, sn, reqKey, item)
+ * }
+ */
+function mrvLimitIndex_(rows) {
+  rows = (rows || []).filter(function(r) { return r && r.ref && r.clientSN && r.project; });
+  var keyOf = mrvRequesterResolver_(rows);
+  var low = function(s) { return String(s == null ? '' : s).trim().toLowerCase(); };
+  var groupKey = function(project, sn, reqKey, item) {
+    return low(project) + '\u0000' + mrvSnKey_(sn) + '\u0000' + reqKey + '\u0000' + item;
+  };
+  var sorted = rows.slice().sort(function(a, b) {
+    var ta = mrvTs_(a.date), tb = mrvTs_(b.date);
+    if (ta != null && tb != null && ta !== tb) return ta - tb;
+    if (ta == null && tb != null) return 1;
+    if (tb == null && ta != null) return -1;
+    return String(a.ref).localeCompare(String(b.ref));
+  });
+  var counts = {}, unitSeq = {}, pos = {}, requesters = {};
+  sorted.forEach(function(r) {
+    var rk = keyOf(r);
+    var item = mrvItemKey_(r);
+    var g = groupKey(r.project, r.clientSN, rk, item);
+    var unit = g + '\u0000' + (r.bundleRef ? 'b:' + r.bundleRef : 'r:' + r.ref);
+    if (!unitSeq[unit]) { counts[g] = (counts[g] || 0) + 1; unitSeq[unit] = counts[g]; }
+    pos[r.ref] = { seq: unitSeq[unit], group: g };
+    var sk = low(r.project) + '\u0000' + mrvSnKey_(r.clientSN);
+    var who = requesters[sk] = requesters[sk] || {};
+    if (rk && !who[rk]) who[rk] = String(r.requester || r.requesterEmail || rk).trim();
+  });
+  return { pos: pos, counts: counts, requesters: requesters, keyOf: keyOf, groupKey: groupKey };
 }
 
 /** Canonical Client SN for matching: trims, lower-cases and ignores leading zeros on
@@ -12367,7 +12504,8 @@ function govRoi_() {
         ref: r.ref, project: r.project, clientSN: r.clientSN, amount: r.amount, status: r.status,
         paidAt: r.paidAt, sigTime: r.sigTime, date: r.date, requester: r.requester,
         requesterEmail: r.requesterEmail || r.createdBy || '', bundleRef: r.bundleRef,
-        isExcess: r.isExcess, excessDecision: r.excessDecision
+        isExcess: r.isExcess, excessDecision: r.excessDecision,
+        costItem: r.costItem, costSummary: r.costSummary
       };
     }),
     kobo: govStore.kobo || [],
