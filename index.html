@@ -10620,7 +10620,12 @@ async function pullRequestsOnly(opts) {
           lastErr = (res && res.error) || 'not ok';
           continue;
         }
-        if (!res.requests || !res.requests.length) return;
+        // Apply server rejects BEFORE merging, so rejected requests leave every device
+        try {
+          if (Array.isArray(res.rejects)) applyGovernance_({ ok: true, rejects: res.rejects });
+          else await pullGovernance();
+        } catch (eRj) {}
+        if (!res.requests || !res.requests.length) { try { renderHistory(); } catch (e) {} return; }
 
         var prevLen = (requestsStore || []).length;
         var merged = mergeRequestsFromServer(res.requests);
@@ -12146,6 +12151,8 @@ function applyGovernance_(g) {
   if (requestsStore && requestsStore.some(function(r) { return rj[r.ref]; })) {
     requestsStore = requestsStore.filter(function(r) { return !rj[r.ref]; });
     try { persistRequestsToStorage(); } catch (e) {}
+    try { rebuildRequestsTable(); } catch (e) {}
+    try { renderDashboard(); } catch (e) {}
   }
   govRefreshUi_();
 }
@@ -12157,6 +12164,10 @@ async function pullGovernance() {
     if (g && g.ok) applyGovernance_(g);
   } catch (e) {}
 }
+// Keep governance (rejects, justifications, KOBO) fresh even between full syncs
+setInterval(function() {
+  if (currentUser && document.visibilityState !== 'hidden') { pullGovernance(); govFlush_(); }
+}, 90000);
 
 // ---------- outbox: optimistic local change, reliable server write ----------
 function govQueue_(job) {
@@ -12175,7 +12186,14 @@ async function govFlush_() {
       var job = govStore.outbox[0];
       var res;
       try { res = await gasCall(job); } catch (e) { res = null; }
-      var done = res && (res.ok || /^Already /.test(String(res.error || '')) || /Unknown action/.test(String(res.error || '')));
+      if (res && !res.ok && /Unknown action/.test(String(res.error || ''))) {
+        if (!window._govOldBackendWarned) {
+          window._govOldBackendWarned = true;
+          toast('Apps Script is out of date — deploy the latest MRV_AppScript.gs. Rejects/justifications are queued until then.', 'warn');
+        }
+        break; // keep the job queued
+      }
+      var done = res && (res.ok || /^Already /.test(String(res.error || '')));
       if (res && !res.ok && !done) {
         // Server refused (validation) — drop the job and tell the user
         toast('Server refused: ' + (res.error || job.action), 'warn');
