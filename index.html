@@ -2950,10 +2950,36 @@
     .cfg-row-cat, .cfg-cat-head { grid-template-columns:1fr; }
     .cfg-cat-head span:last-child { display:none; }
   }
-  /* Excess requests — bluish row + visible justification */
+  /* Excess requests — light red row on the Requests (approval) tab only */
   tr.rq-excess-row, tr.rq-excess-row > td { background: transparent; }
   tr.rq-excess-row:hover, tr.rq-excess-row:hover > td { background: #F8FAFC; }
   tr.rq-excess-row > td:first-child { box-shadow: none; }
+  #bodyDrafts tr.rq-excess-row, #bodyDrafts tr.rq-excess-row > td { background: #FDE2E2 !important; }
+  #bodyDrafts tr.rq-excess-row:hover, #bodyDrafts tr.rq-excess-row:hover > td { background: #FBD0D0 !important; }
+  #bodyDrafts tr.rq-excess-row > td { border-color: #F5C2C2 !important; }
+  #bodyDrafts tr.rq-excess-row > td:first-child { box-shadow: inset 3px 0 0 #E05252 !important; }
+
+  /* Decision buttons — green approves, red rejects */
+  .btn.btn-approve { background:#15803D; border-color:#15803D; color:#fff; }
+  .btn.btn-approve:hover { background:#166534; border-color:#166534; color:#fff; }
+  .btn.btn-approve-alt { background:#fff; border-color:#15803D; color:#15803D; }
+  .btn.btn-approve-alt:hover { background:#F0FDF4; color:#166534; }
+  .btn.btn-reject { background:#DC2626; border-color:#DC2626; color:#fff; }
+  .btn.btn-reject:hover { background:#B91C1C; border-color:#B91C1C; color:#fff; }
+
+  /* ⋯ overflow menu */
+  .kebab { position:relative; display:inline-flex; }
+  .kebab-btn { width:32px; height:30px; padding:0 !important; justify-content:center; }
+  .kebab-btn svg { pointer-events:none; }
+  .kebab-menu { display:none; position:absolute; right:0; top:calc(100% + 6px); min-width:200px; z-index:60;
+    background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 10px 28px rgba(15,23,42,.14); padding:6px; }
+  .kebab.open .kebab-menu { display:block; }
+  .kebab-host-open { position:relative !important; z-index:90 !important; overflow:visible !important; }
+  .card:has(.kebab-host-open) { overflow:visible !important; z-index:90; position:relative; }
+  .kebab-item { display:flex; align-items:center; gap:9px; width:100%; padding:8px 10px; border:0; background:none;
+    border-radius:7px; font:inherit; font-size:13px; color:var(--ink); text-align:left; cursor:pointer; }
+  .kebab-item:hover { background:#F1F5F9; }
+  .kebab-item svg { flex-shrink:0; color:var(--muted); }
   .rq-excess-tag { margin-top:4px; display:flex; gap:6px; align-items:baseline; font-size:11.5px; color:var(--ink); max-width:300px; min-width:0; }
   .rq-excess-badge { display:none !important; }
   .rq-excess-flag { flex-shrink:0; color:#1E4DB7; width:14px; height:14px; margin-top:1px; }
@@ -4120,15 +4146,23 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
               Delete Selected (<span id="delCountDrafts">0</span>)
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="downloadRequestsPDF()">Download PDF</button>
-            <button class="btn btn-secondary btn-sm admin-only" onclick="showExportModal()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-              Export Excel
-            </button>
             <button class="btn btn-primary btn-sm viewer-hidden" onclick="openNewRequestModal()">+ New Request</button>
-      <button class="btn btn-secondary btn-sm admin-only" id="reqFormSettingsBtn" onclick="openReqFormSettings()" title="Request form rules — standard amounts, categories, limits">
-        Form Settings
-      </button>
+            <div class="kebab" id="reqMoreMenu">
+              <button type="button" class="btn btn-secondary btn-sm kebab-btn" title="More options" aria-label="More options" aria-haspopup="true" onclick="toggleKebab(event,'reqMoreMenu')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>
+              </button>
+              <div class="kebab-menu" role="menu">
+                <button type="button" class="kebab-item" role="menuitem" onclick="closeKebabs();downloadRequestsPDF()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download PDF</button>
+                <button type="button" class="kebab-item admin-only" role="menuitem" onclick="closeKebabs();showExportModal()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                  Export Excel</button>
+                <button type="button" class="kebab-item admin-only" id="reqFormSettingsBtn" role="menuitem" onclick="closeKebabs();openReqFormSettings()" title="Request form rules — standard amounts, categories, limits">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  Form Settings</button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="card-body" style="padding:0">
@@ -8620,6 +8654,27 @@ function reqClientColHtml(r) {
   }
 }
 
+/** ⋯ overflow menus */
+function toggleKebab(ev, id) {
+  if (ev) ev.stopPropagation();
+  var el = document.getElementById(id);
+  if (!el) return;
+  var open = !el.classList.contains('open');
+  closeKebabs();
+  if (open) {
+    el.classList.add('open');
+    // Lift the header above sticky table headers while the menu is open
+    var host = el.closest('.card-header') || el.parentElement;
+    if (host) { host.classList.add('kebab-host-open'); }
+  }
+}
+function closeKebabs() {
+  document.querySelectorAll('.kebab.open').forEach(function(k) { k.classList.remove('open'); });
+  document.querySelectorAll('.kebab-host-open').forEach(function(h) { h.classList.remove('kebab-host-open'); });
+}
+document.addEventListener('click', function(e) { if (!e.target.closest || !e.target.closest('.kebab')) closeKebabs(); });
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeKebabs(); });
+
 /** Excess by position: the (limit+1)th facilitation for a project + Client SN is excess,
  *  whether or not the requester's device flagged it. Cached per render pass. */
 var _derivedExcess = null, _derivedExcessSig = '';
@@ -11149,12 +11204,12 @@ function _rebuildRequestsTableNow() {
         var _isEx = isExcessReq_(r);
         var approveBtn = canApprove
           ? (_isEx
-              ? '<button class="btn btn-primary btn-sm" data-aref="'+r.ref+'" onclick="excessApprove(this.dataset.aref,\'recover\')" title="Repeat survey caused by the requester — recover from final stipend">Approve &amp; recover</button>'
-                + '<button class="btn btn-secondary btn-sm" data-aref="'+r.ref+'" onclick="excessApprove(this.dataset.aref,\'norecover\')" title="Not the requester\'s fault — extra cost">Approve, no recovery</button>'
-              : '<button class="btn btn-primary btn-sm" data-aref="'+r.ref+'" onclick="approveRequest(this.dataset.aref)">Approve</button>')
-            + '<button class="btn btn-ghost btn-sm" style="color:var(--danger)" data-rref="'+r.ref+'" onclick="openRejectModal(this.dataset.rref)">Reject</button>'
+              ? '<button class="btn btn-approve btn-sm" data-aref="'+r.ref+'" onclick="excessApprove(this.dataset.aref,\'recover\')" title="Repeat survey caused by the requester — recover from final stipend">Approve &amp; recover</button>'
+                + '<button class="btn btn-approve-alt btn-sm" data-aref="'+r.ref+'" onclick="excessApprove(this.dataset.aref,\'norecover\')" title="Not the requester\'s fault — extra cost">Approve, no recovery</button>'
+              : '<button class="btn btn-approve btn-sm" data-aref="'+r.ref+'" onclick="approveRequest(this.dataset.aref)">Approve</button>')
+            + '<button class="btn btn-reject btn-sm" data-rref="'+r.ref+'" onclick="openRejectModal(this.dataset.rref)">Reject</button>'
           : '<span class="badge badge-gray">Awaiting approval</span>';
-        return '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
+        return '<tr'+(isExcessReq_(r)?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
           + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.date)+'</td>')
           + '<td style="display:flex;gap:4px;align-items:center">'+approveBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
@@ -11168,7 +11223,7 @@ function _rebuildRequestsTableNow() {
         var payBtn = canApprove
           ? '<button class="btn btn-amber btn-sm" data-mref="'+r.ref+'" data-mreq="'+r.requester+'" onclick="openSignAndApprove(this,this.dataset.mref,this.dataset.mreq)">Mark Paid</button>'
           : '<span class="badge badge-gold">Awaiting payment</span>';
-        return '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
+        return '<tr'+(isExcessReq_(r)?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
           + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.approvedAt||r.date)+(govExcessDecisionTag_(r)?'<div>'+govExcessDecisionTag_(r)+'</div>':'')+'</td>', true)
           + '<td style="display:flex;gap:4px;align-items:center">'+payBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
@@ -11210,7 +11265,7 @@ function _rebuildRequestsTableNow() {
           var amt = 0;
           try { amt = fmt(r.amount || 0); } catch (e) { amt = String(r.amount || 0); }
           paidHtml.push(
-            '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')
+            '<tr'+(isExcessReq_(r)?' class="rq-excess-row"':'')
             +' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="Paid" data-ref="'+String(r.ref||'').replace(/"/g,'&quot;')+'">'
             + chkCell
             + '<td style="font-family:ui-monospace,IBM Plex Mono,monospace;font-size:11.5px;font-weight:600;letter-spacing:.03em;white-space:nowrap;color:#1E4DB7">'
@@ -12578,8 +12633,8 @@ function renderGovTabs_() {
     jb.innerHTML = js.length ? js.map(function(j) {
       var st = j.status === 'Pending' ? 'badge-gold' : j.status === 'Approved' ? 'badge-teal' : 'badge-danger';
       var act = (canAct && j.status === 'Pending')
-        ? '<button class="btn btn-primary btn-sm" data-id="' + govEsc_(j.id) + '" onclick="reviewJustification(this.dataset.id,\'approve\')">Approve</button> '
-          + '<button class="btn btn-ghost btn-sm" style="color:var(--danger)" data-id="' + govEsc_(j.id) + '" onclick="reviewJustification(this.dataset.id,\'reject\')">Reject &amp; recover</button>'
+        ? '<button class="btn btn-approve btn-sm" data-id="' + govEsc_(j.id) + '" onclick="reviewJustification(this.dataset.id,\'approve\')">Approve</button> '
+          + '<button class="btn btn-reject btn-sm" data-id="' + govEsc_(j.id) + '" onclick="reviewJustification(this.dataset.id,\'reject\')">Reject &amp; recover</button>'
         : (j.reviewedBy ? '<div style="font-size:11.5px">' + govEsc_(j.reviewedBy) + '</div><div style="font-size:10.5px;color:var(--muted)">' + govEsc_(j.reviewNote || '') + '</div>' : '');
       return '<tr data-status="' + govEsc_(j.status) + '">'
         + '<td style="font-size:12.5px;font-weight:500">' + govEsc_(j.requester) + '<div style="font-size:10.5px;color:var(--muted)">' + fmtDate(j.submittedAt) + '</div></td>'
@@ -13658,7 +13713,7 @@ function filterHistory(filter) {
     var amt = '0';
     try { amt = fmt(r.amount || 0); } catch (e) { amt = String(r.amount || 0); }
 
-    return '<tr'+(r.isExcess===true||r.isExcess==='Yes'?' class="rq-excess-row"':'')
+    return '<tr'+(isExcessReq_(r)?' class="rq-excess-row"':'')
       +' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
       + '<td style="font-family:ui-monospace,IBM Plex Mono,monospace;font-size:11.5px;font-weight:600;letter-spacing:.03em;white-space:nowrap;color:#1E4DB7">'
         + _rqEsc(reqId) + '</td>'
