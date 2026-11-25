@@ -5827,7 +5827,7 @@ function mergeRequestsFromServer(serverRows) {
       requesterSigTime: r['Requester Sig Time']   || r.requesterSigTime || (local && local.requesterSigTime) || null,
       sigDataUrl:       r['Sig Data']             || r.sigDataUrl       || (local && local.sigDataUrl)       || null,
       requesterSig:     r['Requester Sig']        || r.requesterSig     || (local && local.requesterSig)     || null,
-      clientSN:         r['Client SN']            || r.clientSN         || (local && local.clientSN)         || '',
+      clientSN:         displaySN_(r['Client SN'] || r.clientSN || (local && local.clientSN) || ''),
       clientName:       r['Client Name']          || r.clientName       || (local && local.clientName)       || '',
       isExcess:         (r['Is Excess'] || r.isExcess || (local && local.isExcess)) ? true : false,
       excessReason:     r['Excess Reason']        || r.excessReason     || (local && local.excessReason)     || '',
@@ -8291,6 +8291,17 @@ function normalizeClientSN_(v) {
   return s;
 }
 
+/** Canonical SN key (shared with the ROI engine): 04344 and 4344 are the same client. */
+function snKey(v) { return mrvSnKey_(v); }
+/** Restore the Clients-tab spelling (leading zeros) of an SN that arrived as a number. */
+function displaySN_(v) {
+  var raw = String(v == null ? '' : v).trim();
+  if (!raw || !/^\d+$/.test(raw)) return raw;
+  var k = snKey(raw);
+  var hit = (clientsStore || []).find(function(c) { return snKey(c.clientSN) === k; });
+  return hit ? String(hit.clientSN) : raw;
+}
+
 function mapClientRow_(r) {
   if (!r || typeof r !== 'object') return { clientName:'', clientSN:'', project:'', country:'' };
   if (r['Client SN'] == null && r.clientSN == null) {
@@ -8362,7 +8373,7 @@ async function pullClientsFromSheets() {
     clientsStore = (rows || []).map(mapClientRow_).filter(function(c){ return !!c.clientSN; });
     var seen = {};
     clientsStore = clientsStore.filter(function(c) {
-      var k = c.clientSN.toLowerCase();
+      var k = snKey(c.clientSN);
       if (seen[k]) return false;
       seen[k] = true;
       return true;
@@ -8492,13 +8503,13 @@ function reqBundleOf(r) {
 
 /** Count requests for project + Client SN. A Transport & Airtime bundle counts once. */
 function countRequestsForClientSN(project, clientSN) {
-  var sn = String(clientSN || '').trim().toLowerCase();
+  var sn = snKey(clientSN);
   if (!sn || !project) return 0;
   var seen = {};
   var n = 0;
   (requestsStore || []).forEach(function(r) {
     if ((r.project || '') !== project) return;
-    if (String(r.clientSN || '').trim().toLowerCase() !== sn) return;
+    if (snKey(r.clientSN) !== sn) return;
     var key = reqBundleOf(r) || ('ref:' + r.ref);
     if (seen[key]) return;
     seen[key] = true;
@@ -8804,7 +8815,7 @@ function _validateAllReqForms() {
   return _reqForms.map(function(f) {
     var v = _validateReqForm(f, batch);
     if (v.client && v.spec && v.spec.needClient) {
-      var key = f.project + '\u0000' + String(v.client.clientSN).toLowerCase();
+      var key = f.project + '\u0000' + snKey(v.client.clientSN);
       batch[key] = (batch[key] || 0) + 1;
     }
     return v;
@@ -8845,7 +8856,7 @@ function _validateReqForm(f, batch) {
         out.client = c;
         var lim = getProjectRequestLimit(f.project);
         if (lim != null && lim > 0) {
-          var key = f.project + '\u0000' + String(c.clientSN).toLowerCase();
+          var key = f.project + '\u0000' + snKey(c.clientSN);
           var cnt = countRequestsForClientSN(f.project, c.clientSN) + ((batch && batch[key]) || 0);
           if (cnt >= lim) {
             out.excess = true;
@@ -10797,7 +10808,7 @@ async function pullFromSheets(silent) {
       clientsStore = (res.clients || []).map(mapClientRow_).filter(function(c){ return !!c.clientSN; });
       var seenC = {};
       clientsStore = clientsStore.filter(function(c) {
-        var k = c.clientSN.toLowerCase();
+        var k = snKey(c.clientSN);
         if (seenC[k]) return false;
         seenC[k] = true;
         return true;
@@ -11860,6 +11871,7 @@ function mrvComputeRoi(input) {
   var limits = input.limits || {};
 
   function low(s) { return String(s == null ? '' : s).trim().toLowerCase(); }
+  var snk = mrvSnKey_;
   function num(v) { var n = parseFloat(String(v == null ? '' : v).replace(/,/g, '')); return isNaN(n) ? 0 : n; }
   function truthy(v) { return v === true || low(v) === 'yes' || low(v) === 'true'; }
   function dayStart(t) { var d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); }
@@ -11920,7 +11932,7 @@ function mrvComputeRoi(input) {
   // -- KOBO submissions, de-duplicated by submission id --
   var koboBySN = {}, seenId = {}, koboCount = 0;
   (input.kobo || []).forEach(function(k, i) {
-    var sn = low(k && k.clientSN);
+    var sn = snk(k && k.clientSN);
     if (!sn) return;
     var id = low(k.submissionId);
     if (id) { if (seenId[id]) return; seenId[id] = true; }
@@ -11940,7 +11952,7 @@ function mrvComputeRoi(input) {
   var groups = {};
   unitList.forEach(function(u) {
     if (!u.clientSN) { u.state = 'nosn'; return; }
-    var g = low(u.project) + '\u0000' + low(u.clientSN);
+    var g = low(u.project) + '\u0000' + snk(u.clientSN);
     (groups[g] = groups[g] || []).push(u);
   });
   Object.keys(groups).forEach(function(g) {
@@ -11951,7 +11963,7 @@ function mrvComputeRoi(input) {
       return a.paidAt - b.paidAt;
     });
     var lim = limitFor(list[0].project);
-    var subs = koboBySN[low(list[0].clientSN)] || [];
+    var subs = koboBySN[snk(list[0].clientSN)] || [];
     var proj = low(list[0].project);
     list.forEach(function(u, idx) {
       u.seq = idx + 1;
@@ -12067,6 +12079,15 @@ function mrvComputeRoi(input) {
       flaggedRequesters: Object.keys(flagged).length
     }
   };
+}
+
+/** Canonical Client SN for matching: trims, lower-cases and ignores leading zeros on
+ *  all-digit SNs, so "04344" (Clients tab) and 4344 (Sheets auto-number) are the same client. */
+function mrvSnKey_(v) {
+  var s = String(v == null ? '' : v).trim().toLowerCase();
+  if (/^\d{1,3}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
+  if (/^\d+$/.test(s)) s = s.replace(/^0+(?=\d)/, '');
+  return s;
 }
 
 /** Timestamp parser shared by the engine: Date, ISO, "24 Nov 2026 21:43", dd/mm/yyyy [hh:mm]. */
