@@ -3606,6 +3606,12 @@
   .kobo-status .kobo-warn { color:#B45309; font-weight:600; }
   .kobo-status .btn { margin-left:auto; }
 
+  .kobo-countdown { background:#DBEAFE; color:#1E40AF; white-space:nowrap; }
+  .kobo-countdown.kobo-cd-warn { background:#FEF3C7; color:#92400E; }
+  .kobo-countdown.kobo-cd-late { background:#FEE2E2; color:#991B1B; }
+  .kobo-due-banner ul { margin:6px 0 0; padding-left:18px; }
+  .kobo-due-banner li { margin:3px 0; }
+
   /* Value-for-money KPI grid */
   #dashGov .gov-kpis { grid-template-columns: repeat(4, 1fr); margin-top: 12px; }
   @media (max-width: 900px) { #dashGov .gov-kpis { grid-template-columns: repeat(2, 1fr); } }
@@ -5952,6 +5958,14 @@ function getCurrency(project, type) {
 }
 
 // Format date strings for display -- handles ISO, Sheets serial numbers, and text dates
+/** Date AND time (exact payment time), e.g. "25 Nov 2026 21:43". */
+function fmtDateTime_(val) {
+  var t = (typeof mrvTs_ === 'function') ? mrvTs_(val) : null;
+  if (t == null) return fmtDate(val);
+  var d = new Date(t);
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' '
+    + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
 function fmtDate(val) {
   if (!val || val === '--' || val === 'null') return '--';
   // Sheets serial number (days since 1899-12-30)
@@ -11327,7 +11341,7 @@ function _rebuildRequestsTableNow() {
           var approvedBy = r.approvedBy || r.approver || '';
           var approvedAt = r.approvedAt || r.approvedDate || '';
           var requestedAt = r.date || r.createdAt || r.submittedAt || '';
-          var paidAt = r.sigTime || r.paidAt || r.paidDate || '';
+          var paidAt = r.paidAt || r.sigTime || r.paidDate || '';
           var ackCell = r.requesterSigName
             ? '<td><div style="display:flex;align-items:center;gap:6px">'
                 + '<span style="color:var(--success);font-size:11px">&#10003;</span>'
@@ -11362,7 +11376,7 @@ function _rebuildRequestsTableNow() {
                     +'<div style="font-size:10.5px;color:var(--muted)">'+fmtDate(approvedAt)+'</div>'
                   : '<span style="color:var(--muted)">—</span>')
               + '</td>'
-            + '<td style="font-size:12px;white-space:nowrap;font-weight:500">'+fmtDate(paidAt)
+            + '<td style="font-size:12px;white-space:nowrap;font-weight:500">'+fmtDateTime_(paidAt)
               + '<div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">'+govKoboBadge_(r.ref,_roi)+govExcessDecisionTag_(r)+'</div></td>'
             + ackCell
             + '</tr>'
@@ -12218,7 +12232,7 @@ function mrvComputeRoi(input) {
   // -- Decide state per unit --
   unitList.forEach(function(u) {
     if (u.state === 'nosn' || u.state === 'exempt') return;
-    if (trackFrom != null && (u.paidAt == null || u.paidAt < trackFrom)) { u.state = 'untracked'; return; }
+    if (trackFrom != null && u.paidAt != null && u.paidAt < trackFrom) { u.state = 'untracked'; return; }
     if (u.koboAt !== undefined) {
       u.state = (u.paidAt != null && u.koboAt != null && u.koboAt > u.paidAt + WIN) ? 'late' : 'value';
       return;
@@ -12232,9 +12246,11 @@ function mrvComputeRoi(input) {
       u.state = 'review'; return;
     }
     if (!u.payeeKey) u.noPayee = true;
-    if (u.paidAt != null && now <= u.paidAt + WIN) { u.state = 'pending'; u.dueAt = u.paidAt + WIN; return; }
+    // A requester is only ever flagged once a KNOWN payment time is more than windowHours old.
+    if (u.paidAt == null) { u.state = 'pending'; u.noPaidTime = true; return; }
+    u.dueAt = u.paidAt + WIN;
+    if (now <= u.dueAt) { u.state = 'pending'; return; }
     u.state = 'loss';
-    if (u.paidAt != null) u.dueAt = u.paidAt + WIN;
   });
 
   // -- KPIs --
@@ -12268,7 +12284,8 @@ function mrvComputeRoi(input) {
     u.refs.forEach(function(ref) {
       perRef[ref] = { state: u.state, unit: u.key, clientSN: u.clientSN, seq: u.seq || null, limit: u.limit || null,
         overLimit: !!u.overLimit, koboAt: u.koboAt != null ? u.koboAt : null, paidAt: u.paidAt, dueAt: u.dueAt || null,
-        amount: u.amount, refs: u.refs, justificationId: u.justificationId || '', noPayee: !!u.noPayee };
+        amount: u.amount, refs: u.refs, justificationId: u.justificationId || '', noPayee: !!u.noPayee,
+        noPaidTime: !!u.noPaidTime };
     });
   });
 
@@ -12419,6 +12436,24 @@ function mrvTs_(v) {
     var y = +m[3]; if (y < 100) y += 2000;
     var d1 = new Date(y, +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
     return isNaN(d1.getTime()) ? null : d1.getTime();
+  }
+  var MON = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11 };
+  var hm = function(h, mi, se, ap) {
+    h = +(h || 0); if (ap) { ap = ap.toLowerCase(); if (ap === 'pm' && h < 12) h += 12; if (ap === 'am' && h === 12) h = 0; }
+    return [h, +(mi || 0), +(se || 0)];
+  };
+  // 25 Nov 2026 21:43  |  25-Nov-2026 9:43 PM  |  25 November 2026
+  var m2 = s.match(/^(\d{1,2})[\s\-]+([A-Za-z]{3,9})\.?[\s\-,]+(\d{4})(?:[,\sT]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?)?/i);
+  if (m2 && MON[m2[2].slice(0, 4).toLowerCase()] != null || (m2 && MON[m2[2].slice(0, 3).toLowerCase()] != null)) {
+    var mo = MON[m2[2].slice(0, 4).toLowerCase()]; if (mo == null) mo = MON[m2[2].slice(0, 3).toLowerCase()];
+    var t2 = hm(m2[4], m2[5], m2[6], m2[7]);
+    return new Date(+m2[3], mo, +m2[1], t2[0], t2[1], t2[2]).getTime();
+  }
+  // Nov 25, 2026 8:59 PM
+  var m3 = s.match(/^([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})(?:[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?)?/i);
+  if (m3) {
+    var mo3 = MON[m3[1].slice(0, 4).toLowerCase()]; if (mo3 == null) mo3 = MON[m3[1].slice(0, 3).toLowerCase()];
+    if (mo3 != null) { var t3 = hm(m3[4], m3[5], m3[6], m3[7]); return new Date(+m3[3], mo3, +m3[2], t3[0], t3[1], t3[2]).getTime(); }
   }
   var d = new Date(s);
   if (!isNaN(d.getTime())) return d.getTime();
@@ -12613,9 +12648,39 @@ var GOV_STATE = {
   justified: { label: 'Justified',        cls: 'badge-gray' },
   recovered: { label: 'Recover from stipend', cls: 'badge-danger' }
 };
+function govLeft_(ms) {
+  if (ms <= 0) return 'overdue';
+  var h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
+  return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
+}
+function govCountdownHtml_(dueAt) {
+  var left = dueAt - Date.now();
+  var cls = left <= 3600000 ? ' kobo-cd-late' : (left <= 3 * 3600000 ? ' kobo-cd-warn' : '');
+  return '<span class="badge kobo-countdown' + cls + '" data-due="' + dueAt + '" title="KOBO due by ' + govEsc_(fmtDateTime_(new Date(dueAt).toISOString()))
+    + ' — the requester is locked if no survey is submitted by then">KOBO due in ' + govLeft_(dueAt - Date.now()) + '</span>';
+}
+/** Live countdowns: refresh the text every 30 s; when one runs out, redraw so the state changes. */
+setInterval(function() {
+  var expired = false;
+  document.querySelectorAll('.kobo-countdown[data-due]').forEach(function(el) {
+    var left = (+el.getAttribute('data-due')) - Date.now();
+    el.textContent = (el.getAttribute('data-prefix') || 'KOBO due in ') + govLeft_(left);
+    el.classList.toggle('kobo-cd-warn', left > 0 && left <= 3 * 3600000);
+    el.classList.toggle('kobo-cd-late', left <= 3600000);
+    if (left <= 0) expired = true;
+  });
+  if (expired) { try { rebuildRequestsTable(); renderHistory(); renderDashboard(); } catch (e) {} }
+}, 30000);
 function govKoboBadge_(ref, roi) {
   var s = roi && roi.perRef[ref];
   if (!s || !GOV_STATE[s.state]) return '';
+  if (s.state === 'pending' && s.dueAt && !s.noPayee) {
+    return govCountdownHtml_(s.dueAt)
+      + (s.overLimit ? ' <span class="badge badge-danger">Over limit</span>' : '');
+  }
+  if (s.state === 'pending' && s.noPaidTime) {
+    return '<span class="badge badge-gray" title="Payment time not recorded — this request will not lock the requester">Awaiting KOBO</span>';
+  }
   var g = GOV_STATE[s.state];
   var tip = s.state === 'pending' && s.dueAt ? ' title="Due by ' + govEsc_(fmtDate(new Date(s.dueAt).toISOString())) + '"' : '';
   if ((s.state === 'pending' || s.state === 'loss') && s.noPayee) {
@@ -12665,7 +12730,7 @@ function openJustifyModal(st) {
       return '<tr><td style="font-family:ui-monospace,monospace;font-size:11.5px">' + govEsc_(u.refs.join(' + ')) + '</td>'
         + '<td>' + govEsc_(u.project) + '</td><td>' + govEsc_(u.clientSN) + '</td>'
         + '<td class="currency">' + fmt(u.amount) + '</td>'
-        + '<td style="font-size:12px;color:var(--danger)">' + (u.dueAt ? fmtDate(new Date(u.dueAt).toISOString()) : '—') + '</td></tr>';
+        + '<td style="font-size:12px;color:var(--danger)">' + (u.dueAt ? fmtDateTime_(new Date(u.dueAt).toISOString()) : '—') + '</td></tr>';
     }).join('');
     body.innerHTML = '<div class="alert alert-warn" style="margin-bottom:12px">Your account is flagged: these paid facilitations have no KOBO survey submitted within '
       + ((govStore.koboConfig || {}).windowHours || 24) + ' hours. Explain why before starting a new request. '
@@ -12889,7 +12954,21 @@ function renderGovBanner_() {
   } else if (st.review.length) {
     el.innerHTML = '<div class="alert alert-info">Your justification is under review. New requests unlock once an approver decides.</div>';
   } else {
-    el.innerHTML = '';
+    var due = (st.roi ? st.roi.units : []).filter(function(u) {
+      if (u.state !== 'pending' || !u.dueAt) return false;
+      try { return isMyRequest({ requester: u.requester, createdBy: u.requesterKey, requesterEmail: u.requesterKey }); } catch (e) { return false; }
+    }).sort(function(a, b) { return a.dueAt - b.dueAt; });
+    if (due.length) {
+      var lines = due.slice(0, 5).map(function(u) {
+        return '<li>Client SN <strong>' + govEsc_(u.clientSN) + '</strong> (' + govEsc_(u.project) + ') — submit by '
+          + govEsc_(fmtDateTime_(new Date(u.dueAt).toISOString())) + ' · ' + govCountdownHtml_(u.dueAt) + '</li>';
+      }).join('');
+      el.innerHTML = '<div class="alert alert-info kobo-due-banner"><div><strong>KOBO surveys due.</strong> Submit each survey within '
+        + ((govStore.koboConfig || {}).windowHours || 24) + ' hours of payment, or your account will be locked until you justify it.'
+        + '<ul>' + lines + '</ul>' + (due.length > 5 ? '<div>+' + (due.length - 5) + ' more</div>' : '') + '</div></div>';
+    } else {
+      el.innerHTML = '';
+    }
   }
 }
 
@@ -13924,7 +14003,7 @@ function filterHistory(filter) {
     var approvedBy = r.approvedBy || r.approver || '';
     var approvedAt = r.approvedAt || r.approvedDate || '';
     var requestedAt = r.date || r.createdAt || r.submittedAt || '';
-    var paidAt = (r.status === 'Paid') ? (r.sigTime || r.paidAt || r.paidDate || '') : '';
+    var paidAt = (r.status === 'Paid') ? (r.paidAt || r.sigTime || r.paidDate || '') : '';
 
     var approvalHtml = approvedBy
       ? '<div style="font-size:12px;font-weight:500;color:var(--success)">'+_rqEsc(approvedBy)+'</div>'
@@ -13932,7 +14011,7 @@ function filterHistory(filter) {
       : '<span style="color:var(--muted);font-size:12px">Awaiting</span>';
 
     var paidHtml = r.status === 'Paid'
-      ? '<div style="font-size:12px;font-weight:500">'+fmtDate(paidAt)+'</div>'
+      ? '<div style="font-size:12px;font-weight:500">'+fmtDateTime_(paidAt)+'</div>'
       : r.status === 'Approved'
         ? '<span style="font-size:12px;color:var(--warn)">In Queue</span>'
         : '<span style="color:var(--muted);font-size:12px">—</span>';
