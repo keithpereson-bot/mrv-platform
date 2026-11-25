@@ -12041,7 +12041,8 @@ document.addEventListener('click', e => {
  * input = {
  *   requests:  [{ ref, project, clientSN, amount, status, paidAt, sigTime, date,
  *                 requester, requesterEmail, bundleRef, isExcess, excessDecision }],
- *   kobo:      [{ clientSN, project, submittedAt, submissionId }],
+ *   kobo:      [{ clientSN, project, submittedAt, submissionId, payeeNumber }],
+ *   payees:    { 'alice@x.com': '0712…', 'alice': '0712…' }   // requester → payee (fallback)
  *   rejects:   [{ ref, amount, bundleRef }],
  *   justifications: [{ id, refs:[...], status:'Pending'|'Approved'|'Rejected', submittedAt }],
  *   limits:    { 'Project A': 4, ... }        // max facilitations per Client SN
@@ -12050,6 +12051,10 @@ document.addEventListener('click', e => {
  *   now: Date | ISO string
  * }
  *
+ * Only "Enumerator Field Transport & Airtime" is matched with KOBO (other cost items that
+ * need a Client SN are paid normally and shown as "not KOBO-tracked").
+ * A submission is matched only against the requests of the person who submitted it,
+ * identified by payee (M-Pesa) number — never by typed name.
  * Matching rule (one-to-one, so 4 payments need 4 surveys — one survey can never
  * "cover" several payments):
  *   - A Transport & Airtime bundle = one facilitation (one survey expected).
@@ -12089,6 +12094,8 @@ function mrvComputeRoi(input) {
   });
 
   // -- Build facilitation units from PAID requests --
+  var payees = input.payees || {};
+  var trackedWords = (input.trackedItems && input.trackedItems.length) ? input.trackedItems.map(low) : null;
   var units = {}, unitList = [];
   var excess = { recoverAmt: 0, recoverCount: 0, noRecoverAmt: 0, noRecoverCount: 0, undecidedCount: 0 };
   var excessSeen = {};
@@ -12111,9 +12118,15 @@ function mrvComputeRoi(input) {
         key: key, refs: [], project: String(r.project || '').trim(), clientSN: '',
         amount: 0, paidAt: null, reqAt: null,
         requester: String(r.requester || '').trim(),
-        requesterKey: low(r.requesterEmail) || low(r.requester)
+        requesterKey: low(r.requesterEmail) || low(r.requester),
+        payeeKey: '', koboTracked: false
       };
       unitList.push(u);
+    }
+    if (mrvKoboTracked_(r, trackedWords)) u.koboTracked = true;
+    if (!u.payeeKey) {
+      u.payeeKey = mrvPhoneKey_(r.payeeNumber)
+        || mrvPhoneKey_(payees[low(r.requesterEmail)]) || mrvPhoneKey_(payees[low(r.requester)]);
     }
     u.refs.push(String(r.ref));
     u.amount += num(r.amount);
@@ -12133,7 +12146,8 @@ function mrvComputeRoi(input) {
     var id = low(k.submissionId);
     if (id) { if (seenId[id]) return; seenId[id] = true; }
     koboCount++;
-    (koboBySN[sn] = koboBySN[sn] || []).push({ project: low(k.project), ts: mrvTs_(k.submittedAt), order: i, used: false });
+    (koboBySN[sn] = koboBySN[sn] || []).push({ project: low(k.project), ts: mrvTs_(k.submittedAt), order: i, used: false,
+      payee: mrvPhoneKey_(k.payeeNumber) });
   });
   Object.keys(koboBySN).forEach(function(sn) {
     koboBySN[sn].sort(function(a, b) {
@@ -12150,8 +12164,10 @@ function mrvComputeRoi(input) {
   // -- Group by project + SN and pair one-to-one --
   var groups = {};
   unitList.forEach(function(u) {
+    if (!u.koboTracked) { u.state = 'exempt'; return; }
     if (!u.clientSN) { u.state = 'nosn'; return; }
-    var g = low(u.project) + '\u0000' + snk(u.clientSN);
+    // One person's payments are only compared with that person's submissions
+    var g = low(u.project) + '\u0000' + snk(u.clientSN) + '\u0000' + (u.payeeKey || ('req:' + u.requesterKey));
     (groups[g] = groups[g] || []).push(u);
   });
   Object.keys(groups).forEach(function(g) {
@@ -12171,21 +12187,26 @@ function mrvComputeRoi(input) {
       u.limit = lim;
       u.overLimit = !!(lim && mx > lim);
       var floor = u.reqAt != null ? dayStart(u.reqAt) : null;
-      for (var s = 0; s < subs.length; s++) {
-        var k = subs[s];
-        if (k.used) continue;
-        if (k.project && k.project !== proj) continue;
-        if (k.ts != null && floor != null && k.ts < floor) continue;
-        k.used = true;
-        u.koboAt = k.ts;
-        break;
+      // Pass 1: submissions by this person's payee number. Pass 2: legacy rows with no payee number.
+      for (var pass = 1; pass <= 2 && u.koboAt === undefined; pass++) {
+        for (var s = 0; s < subs.length; s++) {
+          var k = subs[s];
+          if (k.used) continue;
+          if (pass === 1 ? (!k.payee || k.payee !== u.payeeKey) : !!k.payee) continue;
+          if (k.project && k.project !== proj) continue;
+          if (k.ts != null && floor != null && k.ts < floor) continue;
+          k.used = true;
+          u.koboAt = k.ts;
+          u.koboBy = k.payee || '';
+          break;
+        }
       }
     });
   });
 
   // -- Decide state per unit --
   unitList.forEach(function(u) {
-    if (u.state === 'nosn') return;
+    if (u.state === 'nosn' || u.state === 'exempt') return;
     if (trackFrom != null && (u.paidAt == null || u.paidAt < trackFrom)) { u.state = 'untracked'; return; }
     if (u.koboAt !== undefined) {
       u.state = (u.paidAt != null && u.koboAt != null && u.koboAt > u.paidAt + WIN) ? 'late' : 'value';
@@ -12208,14 +12229,14 @@ function mrvComputeRoi(input) {
   function bucket() { return { count: 0, amount: 0 }; }
   var k = {
     tracked: bucket(), value: bucket(), late: bucket(), pending: bucket(), loss: bucket(),
-    review: bucket(), justified: bucket(), recovered: bucket(), untracked: bucket(), nosn: bucket(),
+    review: bucket(), justified: bucket(), recovered: bucket(), untracked: bucket(), nosn: bucket(), exempt: bucket(),
     overLimit: bucket(), koboSubmissions: koboCount
   };
   var byProject = {}, flagged = {}, perRef = {};
   unitList.forEach(function(u) {
     var b = k[u.state]; if (b) { b.count++; b.amount += u.amount; }
     if (u.overLimit) { k.overLimit.count++; k.overLimit.amount += u.amount; }
-    if (u.state !== 'nosn' && u.state !== 'untracked') {
+    if (u.state !== 'nosn' && u.state !== 'untracked' && u.state !== 'exempt') {
       k.tracked.count++; k.tracked.amount += u.amount;
       var p = byProject[u.project] = byProject[u.project] || {
         project: u.project, paid: bucket(), value: bucket(), loss: bucket(), pending: bucket(), review: bucket(), limit: u.limit
@@ -12265,6 +12286,7 @@ function mrvComputeRoi(input) {
       justified: k.justified,
       untracked: k.untracked,
       noClientSN: k.nosn,
+      notKoboTracked: k.exempt,
       overLimit: k.overLimit,
       koboSubmissions: k.koboSubmissions,
       roiRate: resolvedAmt > 0 ? valueAmt / resolvedAmt : null,
@@ -12280,6 +12302,24 @@ function mrvComputeRoi(input) {
       flaggedRequesters: Object.keys(flagged).length
     }
   };
+}
+
+/** Is this request one that must be matched with a KOBO survey?
+ *  Default: Enumerator Field Transport / Enumerator Field Airtime (not training, refresher or
+ *  coordinator lines). Override with koboConfig.trackedItems (phrases to look for). */
+function mrvKoboTracked_(r, trackedWords) {
+  var t = (String((r && r.costSummary) || '') + ' ' + String((r && r.costItem) || '')).toLowerCase().replace(/\s+/g, ' ');
+  if (trackedWords) return trackedWords.some(function(w) { return w && t.indexOf(w) !== -1; });
+  if (/training|refresher|coordinator/.test(t)) return false;
+  return /enumerator/.test(t) && /(transport|airtime)/.test(t);
+}
+
+/** Payee (M-Pesa) number key: digits only, last 9 — 0712 345 678, +254712345678 and
+ *  254712345678 are the same person. */
+function mrvPhoneKey_(v) {
+  var d = String(v == null ? '' : v).replace(/\D/g, '');
+  if (d.length < 7) return '';
+  return d.length > 9 ? d.slice(-9) : d;
 }
 
 /** Cost item key used by the request limit (Cost Item, falling back to Cost Summary). */
@@ -12496,6 +12536,21 @@ async function govFlush_() {
 }
 
 // ---------- ROI (shared engine) ----------
+function govPayeeMap_() {
+  var m = {};
+  (typeof usersStore !== 'undefined' && usersStore || []).forEach(function(u) {
+    var p = String(u.payeeNumber || u['Payee Number'] || '').trim();
+    if (!p) return;
+    var em = String(u.email || '').trim().toLowerCase(), nm = String(u.name || '').trim().toLowerCase();
+    if (em) m[em] = p;
+    if (nm && !m[nm]) m[nm] = p;
+  });
+  if (currentUser && currentUser.payeeNumber) {
+    if (currentUser.email) m[String(currentUser.email).toLowerCase()] = currentUser.payeeNumber;
+    if (currentUser.name && !m[String(currentUser.name).toLowerCase()]) m[String(currentUser.name).toLowerCase()] = currentUser.payeeNumber;
+  }
+  return m;
+}
 function govRoi_() {
   var limits = (typeof reqFormConfig !== 'undefined' && reqFormConfig && reqFormConfig.projectLimits) || {};
   return mrvComputeRoi({
@@ -12503,7 +12558,7 @@ function govRoi_() {
       return {
         ref: r.ref, project: r.project, clientSN: r.clientSN, amount: r.amount, status: r.status,
         paidAt: r.paidAt, sigTime: r.sigTime, date: r.date, requester: r.requester,
-        requesterEmail: r.requesterEmail || r.createdBy || '', bundleRef: r.bundleRef,
+        requesterEmail: r.requesterEmail || r.createdBy || '', bundleRef: reqBundleOf(r), payeeNumber: r.payeeNumber,
         isExcess: r.isExcess, excessDecision: r.excessDecision,
         costItem: r.costItem, costSummary: r.costSummary
       };
@@ -12512,6 +12567,8 @@ function govRoi_() {
     rejects: govStore.rejects || [],
     justifications: govStore.justifications || [],
     limits: limits,
+    payees: govPayeeMap_(),
+    trackedItems: (govStore.koboConfig || {}).trackedItems || null,
     windowHours: (govStore.koboConfig || {}).windowHours || 24,
     trackFrom: (govStore.koboConfig || {}).trackFrom || '',
     now: new Date()
@@ -12828,7 +12885,8 @@ function renderGovDashboard_() {
 
   var proj = roi.byProject.slice().sort(function(a, b) { return b.paid.amount - a.paid.amount; });
   html += '<div class="ws-grid" style="margin-top:12px"><div class="card"><div class="card-header"><div class="card-title">Value by project</div>'
-    + '<span class="badge badge-gray">' + k.koboSubmissions + ' KOBO submissions loaded</span></div>'
+    + '<span class="badge badge-gray" title="Only Enumerator Field Transport &amp; Airtime is matched with KOBO, by the submitter\'s payee number">'
+    + k.koboSubmissions + ' KOBO submissions · Enumerator Field Transport &amp; Airtime only</span></div>'
     + '<div class="card-body" style="padding:0"><div class="table-scroll"><table><thead><tr><th>Project</th><th>Limit / SN</th><th>Paid</th><th>Value</th><th>Loss</th><th>Awaiting</th><th>ROI</th></tr></thead><tbody>'
     + (proj.length ? proj.map(function(p) {
         var resolved = p.paid.amount - p.pending.amount;
@@ -12838,7 +12896,7 @@ function renderGovDashboard_() {
           + '<td class="currency" style="color:var(--success)">' + p.value.count + ' · ' + fmt(p.value.amount) + '</td>'
           + '<td class="currency" style="color:var(--danger)">' + (p.loss.count + p.review.count) + ' · ' + fmt(p.loss.amount + p.review.amount) + '</td>'
           + '<td class="currency">' + p.pending.count + '</td><td class="font-600">' + rate + '</td></tr>';
-      }).join('') : '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:16px">No tracked paid facilitations yet'
+      }).join('') : '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:16px">No paid Enumerator Field Transport &amp; Airtime to match yet'
         + ((govStore.koboConfig || {}).trackFrom ? ' (tracking from ' + govEsc_(govStore.koboConfig.trackFrom) + ')' : '') + '</td></tr>')
     + '</tbody></table></div></div></div>';
 
