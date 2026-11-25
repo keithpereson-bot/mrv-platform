@@ -8396,14 +8396,14 @@ async function pullClientsFromSheets() {
 function getClientBySN(sn) {
   sn = normalizeClientSN_(sn);
   if (!sn) return null;
-  var snKey = sn.toLowerCase();
+  var wantKey = mrvSnKey_(sn);
   var ctry = '';
   try { ctry = String((typeof getUserCountry === 'function' ? getUserCountry() : '') || '').trim().toLowerCase(); } catch(e) {}
   var match = null;
   (clientsStore || []).forEach(function(c) {
     if (match) return;
     var csn = normalizeClientSN_(c.clientSN);
-    if (!csn || csn.toLowerCase() !== snKey) return;
+    if (!csn || mrvSnKey_(csn) !== wantKey) return;
     var cc = String(c.country || '').trim().toLowerCase();
     if (ctry && cc && cc !== ctry) return;
     match = c;
@@ -8519,7 +8519,12 @@ function countRequestsForClientSN(project, clientSN) {
 }
 
 function getProjectRequestLimit(project) {
-  var lim = (reqFormConfig.projectLimits || {})[project];
+  var lims = reqFormConfig.projectLimits || {};
+  var lim = lims[project];
+  if (lim == null) {
+    var pk = String(project || '').trim().toLowerCase();
+    Object.keys(lims).forEach(function(k) { if (lim == null && String(k).trim().toLowerCase() === pk) lim = lims[k]; });
+  }
   if (lim == null || lim === '') return null;
   var n = parseInt(lim, 10);
   return isNaN(n) ? null : n;
@@ -8615,6 +8620,61 @@ function reqClientColHtml(r) {
   }
 }
 
+/** Excess by position: the (limit+1)th facilitation for a project + Client SN is excess,
+ *  whether or not the requester's device flagged it. Cached per render pass. */
+var _derivedExcess = null, _derivedExcessSig = '';
+function derivedExcessMap_() {
+  var sig = (requestsStore || []).length + '|' + JSON.stringify(reqFormConfig.projectLimits || {});
+  if (_derivedExcess && sig === _derivedExcessSig) return _derivedExcess;
+  var groups = {};
+  (requestsStore || []).forEach(function(r) {
+    if (!r || !r.ref || !r.clientSN || !r.project) return;
+    var lim = getProjectRequestLimit(r.project);
+    if (!lim) return;
+    var key = String(r.project).trim().toLowerCase() + '\u0000' + snKey(r.clientSN);
+    var unit = reqBundleOf(r) || ('ref:' + r.ref);
+    var g = groups[key] = groups[key] || { lim: lim, units: {} };
+    var u = g.units[unit] = g.units[unit] || { refs: [], t: Infinity, ref: r.ref };
+    u.refs.push(r.ref);
+    var t = (typeof mrvTs_ === 'function' ? mrvTs_(r.date) : null);
+    if (t != null && t < u.t) u.t = t;
+  });
+  var map = {};
+  Object.keys(groups).forEach(function(k) {
+    var g = groups[k];
+    var units = Object.keys(g.units).map(function(x) { return g.units[x]; })
+      .sort(function(a, b) { return (a.t - b.t) || String(a.ref).localeCompare(String(b.ref)); });
+    units.forEach(function(u, i) {
+      if (i + 1 > g.lim) u.refs.forEach(function(ref) { map[ref] = { seq: i + 1, limit: g.lim }; });
+    });
+  });
+  _derivedExcess = map; _derivedExcessSig = sig;
+  return map;
+}
+/** True if flagged by the requester/server OR over the limit by position. */
+function isExcessReq_(r) {
+  if (!r) return false;
+  if (r.isExcess === true || r.isExcess === 'Yes') return true;
+  var m = derivedExcessMap_();
+  if (m[r.ref]) return true;
+  return !!(r._members && r._members.some(function(x) { return x && m[x.ref]; }));
+}
+function excessUndeclaredInfo_(r) {
+  if (!r || r.isExcess === true || r.isExcess === 'Yes') return null;
+  var m = derivedExcessMap_();
+  return m[r.ref] || (r._members && r._members.map(function(x) { return m[x.ref]; }).filter(Boolean)[0]) || null;
+}
+function excessTagHtml_(r, clickable) {
+  var und = excessUndeclaredInfo_(r);
+  var why = r.excessReason
+    ? '<span class="rq-excess-why" title="' + _rqEsc(r.excessReason) + '"' + (clickable ? ' onclick="event.stopPropagation();this.classList.toggle(\'is-open\')"' : '') + '>' + _rqEsc(r.excessReason) + '</span>'
+    : '<span class="rq-muted" style="color:var(--danger);font-weight:600">'
+      + (und ? 'Not declared by requester — facilitation ' + und.seq + ' of limit ' + und.limit : 'No justification given') + '</span>';
+  return '<div class="rq-excess-tag" title="Excess request">'
+    + '<svg class="rq-excess-flag" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-label="Excess"><path d="M4 3v18h2V13h1.5l.8.8H20V4H8.3l-.8.8H6V3H4zm5 3h9v5.5h-7.2l-.8-.8H9V6z"/></svg> '
+    + why + '</div>';
+}
+
 /** Details without client tag (excess, bundle, transport routes). */
 function reqDetailsOnlyHtml(r) {
   try {
@@ -8622,13 +8682,7 @@ function reqDetailsOnlyHtml(r) {
     var out = '';
     var ccy = '';
     try { ccy = getCurrency(r.project, r.type); } catch (e) { ccy = ''; }
-    if (r.isExcess === true || r.isExcess === 'Yes') {
-      out += '<div class="rq-excess-tag" title="Excess request">' + '<svg class="rq-excess-flag" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-label="Excess"><path d="M4 3v18h2V13h1.5l.8.8H20V4H8.3l-.8.8H6V3H4zm5 3h9v5.5h-7.2l-.8-.8H9V6z"/></svg>' + ' '
-        + (r.excessReason
-            ? '<span class="rq-excess-why" title="' + _rqEsc(r.excessReason) + '">' + _rqEsc(r.excessReason) + '</span>'
-            : '<span class="rq-muted">No justification</span>')
-        + '</div>';
-    }
+    if (isExcessReq_(r)) out += excessTagHtml_(r, false);
     if (r._members && r._members.length > 1) {
       try {
         out += '<div class="rq-bundle-tag">' + r._members.map(function(m) {
@@ -8677,13 +8731,7 @@ function reqClientHtml(r) {
       + ' <span class="rq-client-tag-sn">SN ' + _rqEsc(r.clientSN) + '</span>'
       + '</div>';
   }
-  if (r.isExcess === true || r.isExcess === 'Yes') {
-    out += '<div class="rq-excess-tag" title="Excess request">' + '<svg class="rq-excess-flag" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-label="Excess"><path d="M4 3v18h2V13h1.5l.8.8H20V4H8.3l-.8.8H6V3H4zm5 3h9v5.5h-7.2l-.8-.8H9V6z"/></svg>' + ' '
-      + (r.excessReason
-          ? '<span class="rq-excess-why" title="' + _rqEsc(r.excessReason) + '" onclick="event.stopPropagation();this.classList.toggle(\'is-open\')">' + _rqEsc(r.excessReason) + '</span>'
-          : '<span class="rq-muted">No justification given</span>')
-      + '</div>';
-  }
+  if (isExcessReq_(r)) out += excessTagHtml_(r, true);
   if (r._members && r._members.length > 1) {
     out += '<div class="rq-bundle-tag">' + r._members.map(function(m) {
       var kind = /airtime/i.test(m.costSummary || '') ? 'Airtime' : 'Transport';
@@ -8855,9 +8903,13 @@ function _validateReqForm(f, batch) {
       } else {
         out.client = c;
         var lim = getProjectRequestLimit(f.project);
+        var srvKey = String(f.project || '').trim().toLowerCase() + '\u0000' + snKey(c.clientSN);
+        var srv = window._srvExcess && window._srvExcess[srvKey];
+        if (srv && srv.limit) lim = srv.limit;
         if (lim != null && lim > 0) {
           var key = f.project + '\u0000' + snKey(c.clientSN);
-          var cnt = countRequestsForClientSN(f.project, c.clientSN) + ((batch && batch[key]) || 0);
+          var localCnt = countRequestsForClientSN(f.project, c.clientSN);
+          var cnt = Math.max(localCnt, srv ? srv.count : 0) + ((batch && batch[key]) || 0);
           if (cnt >= lim) {
             out.excess = true;
             out.excessInfo = cnt + '/' + lim;
@@ -9448,6 +9500,7 @@ document.addEventListener('click', function(e) {
 // ── Submit all forms at once ─────────────────────────────
 async function submitAllRequests() {
   if (_reqSubmitting) return;
+  window._srvExcess = null;
   var btn = document.getElementById('submitReqBtn');
   var activeIdx = [];
   _reqForms.forEach(function(f, i){ if (!_isBlankForm(f)) activeIdx.push(i); });
@@ -9466,6 +9519,24 @@ async function submitAllRequests() {
         try {
           await Promise.race([pullClientsFromSheets(), new Promise(function(r){ setTimeout(r, 2500); })]);
         } catch(e) {}
+      }
+    }
+    // Live limit check: the sheet knows about every requester's submissions, this device may not
+    if (needsClients && gsWebAppUrl && gsWebAppUrl !== 'YOUR_WEB_APP_URL_HERE') {
+      if (btn) btn.textContent = 'Checking limits…';
+      var items = activeIdx.map(function(i) { return { project: _reqForms[i].project, clientSN: _reqForms[i].clientSN }; })
+        .filter(function(x) { return x.project && x.clientSN; });
+      if (items.length) {
+        try {
+          var chk = await Promise.race([gasCall({ action: 'checkExcess', items: items }), new Promise(function(r){ setTimeout(function(){ r(null); }, 5000); })]);
+          if (chk && chk.ok) {
+            window._srvExcess = chk.items || {};
+            if (chk.limits && typeof chk.limits === 'object' && Object.keys(chk.limits).length) {
+              reqFormConfig.projectLimits = chk.limits;
+              saveReqFormConfigToStorage(reqFormConfig);
+            }
+          }
+        } catch (eChk) {}
       }
     }
   } finally {
@@ -11075,7 +11146,7 @@ function _rebuildRequestsTableNow() {
           : 'No pending requests')
       + '</td></tr>'
     : drafts.map(function(r) {
-        var _isEx = (r.isExcess===true||r.isExcess==='Yes');
+        var _isEx = isExcessReq_(r);
         var approveBtn = canApprove
           ? (_isEx
               ? '<button class="btn btn-primary btn-sm" data-aref="'+r.ref+'" onclick="excessApprove(this.dataset.aref,\'recover\')" title="Repeat survey caused by the requester — recover from final stipend">Approve &amp; recover</button>'
@@ -12449,6 +12520,7 @@ function excessApprove(ref, decision) {
       try { raiseStatusFloor(r.ref, 'Approved'); } catch (e) {}
     }
     r.excessDecision = decision; r.excessDecidedBy = by; r.excessDecidedAt = at;
+    if (!(r.isExcess === true || r.isExcess === 'Yes')) { r.isExcess = true; }
     try { markLocalWrite(r.ref); } catch (e) {}
     var o = {}; for (var k in r) if (k !== 'sigDataUrl' && k !== 'requesterSig') o[k] = r[k];
     o.requesterEmail = r.createdBy || ''; rows.push(o);
@@ -12460,7 +12532,7 @@ function excessApprove(ref, decision) {
   toast(decision === 'recover' ? 'Approved — to be recovered from stipend' : 'Approved — extra cost (no recovery)');
 }
 function govExcessDecisionTag_(r) {
-  if (!(r.isExcess === true || r.isExcess === 'Yes') || !r.excessDecision) return '';
+  if (!isExcessReq_(r) || !r.excessDecision) return '';
   return r.excessDecision === 'recover'
     ? '<span class="badge badge-danger" title="Recover from final stipend">Recover</span>'
     : '<span class="badge badge-gray" title="Extra cost — not recovered">No recovery</span>';
