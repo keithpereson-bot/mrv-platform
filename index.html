@@ -5073,12 +5073,6 @@
         <div><div class="req-tab-title">Rejected</div></div><span class="req-tab-badge" id="mcount-rejected">0</span>
       </button>
     </div>
-    <div class="page-header">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-        <p style="margin:0">Track approval and payment status for your requests</p>
-        <button class="btn btn-ghost btn-sm" onclick="openMySignature()" id="histSigBtn">My signature</button>
-      </div>
-    </div>
     <div class="view-body">
     <div id="govBanner"></div>
     <div id="historyStats" class="stats" style="grid-template-columns:repeat(4,1fr)"></div>
@@ -5086,6 +5080,7 @@
       <div class="card-header" style="flex-wrap:wrap;gap:8px">
         <div class="card-title">Submissions</div>
         <div class="flex gap-2" style="align-items:center;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="openMySignature()" id="histSigBtn" title="Set up or change your saved signature">My signature</button>
           <button class="btn btn-secondary btn-sm" id="signAllPaidBtnMine" onclick="openAckModal('all')" style="display:none">Sign all paid</button>
           <span class="badge badge-gray" id="mineCount">0 requests</span>
         </div>
