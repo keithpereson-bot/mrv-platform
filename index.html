@@ -4185,7 +4185,7 @@
         </div>
         <div class="card-body" style="padding:0">
           <div class="table-scroll">
-            <table id="tblDrafts"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllDrafts" onchange="toggleAllChecks('drafts',this.checked)" title="Select all"></th><th>Project</th><th>Cost Summary</th><th>Details</th><th>Amount</th><th>Requester</th><th>Date</th><th>Action</th></tr></thead>
+            <table id="tblDrafts"><thead><tr><th style="width:32px;padding:8px 6px 8px 14px"><input type="checkbox" id="chkAllDrafts" onchange="toggleAllChecks('drafts',this.checked)" title="Select all"></th><th>Project</th><th>Cost Summary</th><th>Details</th><th>Amount</th><th>Requester</th><th>Requested</th><th>Action</th></tr></thead>
             <tbody id="bodyDrafts"></tbody></table>
           </div>
         </div>
@@ -5960,6 +5960,16 @@ function getCurrency(project, type) {
 // Format date strings for display -- handles ISO, Sheets serial numbers, and text dates
 /** Date AND time (exact payment time), e.g. "25 Nov 2026 21:43". */
 function fmtDateTime_(val) { return fmtDate(val); }
+/** Date on one line, exact time underneath (or "time not recorded" for old date-only records). */
+function whenHtml_(val, muted) {
+  var txt = fmtDate(val);
+  if (txt === '--') return '<span style="color:var(--muted)">—</span>';
+  var m = txt.match(/^(.*\d{4}) (\d{2}:\d{2})$/);
+  var col = muted ? 'var(--muted)' : 'var(--ink)';
+  return m
+    ? '<div style="color:' + col + '">' + _rqEsc(m[1]) + '</div><div style="font-weight:600;color:' + col + '">' + _rqEsc(m[2]) + '</div>'
+    : '<div style="color:' + col + '">' + _rqEsc(txt) + '</div><div style="font-size:10.5px;color:var(--muted)">time not recorded</div>';
+}
 /** Exact action time — an absolute timestamp, so it reads correctly in every country's time zone. */
 function nowStamp_() { return new Date().toISOString(); }
 function fmtDate(val) {
@@ -11304,7 +11314,7 @@ function _rebuildRequestsTableNow() {
             + '<button class="btn btn-reject btn-sm" data-rref="'+r.ref+'" onclick="openRejectModal(this.dataset.rref)">Reject</button>'
           : '<span class="badge badge-gray">Awaiting approval</span>';
         return '<tr'+(isExcessReq_(r)?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
-          + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.date)+'</td>')
+          + cols(r, '<td style="font-size:12px;white-space:nowrap">'+whenHtml_(r.date)+'</td>')
           + '<td style="display:flex;gap:4px;align-items:center">'+approveBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
       }).join('');
@@ -11318,7 +11328,11 @@ function _rebuildRequestsTableNow() {
           ? '<button class="btn btn-amber btn-sm" data-mref="'+r.ref+'" data-mreq="'+r.requester+'" onclick="openSignAndApprove(this,this.dataset.mref,this.dataset.mreq)">Mark Paid</button>'
           : '<span class="badge badge-gold">Awaiting payment</span>';
         return '<tr'+(isExcessReq_(r)?' class="rq-excess-row"':'')+' data-project="'+String(r.project||'').replace(/"/g,'&quot;')+'" data-status="'+String(r.status||'')+'" data-ref="'+String(r.ref||'')+'">'
-          + cols(r, '<td style="color:var(--muted);font-size:12px;white-space:nowrap">'+fmtDate(r.approvedAt||r.date)+(govExcessDecisionTag_(r)?'<div>'+govExcessDecisionTag_(r)+'</div>':'')+'</td>', true)
+          + cols(r, '<td style="font-size:12px;white-space:nowrap">'
+              + '<div style="font-weight:600;color:var(--success)">'+_rqEsc(r.approvedBy||'—')+'</div>'
+              + whenHtml_(r.approvedAt, true)
+              + '<div style="font-size:10.5px;color:var(--muted);margin-top:2px">Requested '+_rqEsc(fmtDate(r.date))+'</div>'
+              + (govExcessDecisionTag_(r)?'<div>'+govExcessDecisionTag_(r)+'</div>':'')+'</td>', true)
           + '<td style="display:flex;gap:4px;align-items:center">'+payBtn+delBtn(r.ref)+'</td>'
           +'</tr>';
       }).join('');
