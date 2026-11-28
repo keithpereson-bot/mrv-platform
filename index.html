@@ -5891,7 +5891,10 @@ function mergeRequestsFromServer(serverRows) {
       paidAt:           r['Paid At']              || r.paidAt           || (local && local.paidAt)           || '',
       requesterEmail:   String(r['Requester Email'] || r.requesterEmail || (local && local.requesterEmail) || '').toLowerCase(),
       transportBreakdown: (function(){
-        var raw = r['Transport Breakdown'] || r.transportBreakdown || (local && local.transportBreakdown) || null;
+        var srvTb = r['Transport Breakdown'] || r.transportBreakdown;
+        var locTb = local && local.transportBreakdown;
+        if (!srvTb && locTb && (locTb.length || String(locTb).length > 2)) (window._tbHeal = window._tbHeal || []).push(r['Ref #'] || r.ref);
+        var raw = srvTb || locTb || null;
         if (!raw) return null;
         if (typeof raw === 'object') return raw;
         try { return JSON.parse(raw); } catch(e) { return null; }
@@ -5922,6 +5925,13 @@ function mergeRequestsFromServer(serverRows) {
   });
 
   var _rj = (typeof rejectedRefSet_ === 'function') ? rejectedRefSet_() : {};
+  if (window._tbHeal && window._tbHeal.length) {
+    var heal = window._tbHeal.splice(0);
+    setTimeout(function() {
+      heal.forEach(function(ref) { try { markLocalWrite(ref); } catch (e) {} });
+      try { backgroundPush({}); } catch (e) {}
+    }, 1500);
+  }
   return imported.concat(localOnly).filter(function(r) { return !_rj[String(r.ref)]; });
 }
 
@@ -8826,20 +8836,7 @@ function reqDetailsOnlyHtml(r) {
         if (b) out += '<div class="rq-bundle-tag">Transport &amp; Airtime</div>';
       } catch (e3) {}
     }
-    var tb = r.transportBreakdown;
-    if (typeof tb === 'string') { try { tb = JSON.parse(tb); } catch (e) { tb = null; } }
-    if (tb && tb.length) {
-      try {
-        out += '<div class="rq-route-tag" style="font-size:11px;color:var(--muted)">'
-          + tb.map(function(x) {
-              if (!x) return '';
-              var a = x.from || x.origin || '';
-              var b2 = x.to || x.dest || '';
-              return _rqEsc(a + (b2 ? ' → ' + b2 : ''));
-            }).filter(Boolean).join('; ')
-          + '</div>';
-      } catch (e4) {}
-    }
+    try { out += transportRouteHtml_(r); } catch (e4) {}
     if (!out && r.description && r.description !== r.costSummary) {
       out = '<div style="font-size:12px;color:var(--muted)">' + _rqEsc(r.description) + '</div>';
     }
@@ -8872,20 +8869,35 @@ function reqClientHtml(r) {
     var b = reqBundleOf(r);
     if (b) out += '<div class="rq-bundle-tag">Transport &amp; Airtime</div>';
   }
-  var tb = r.transportBreakdown;
-  if (typeof tb === 'string') { try { tb = JSON.parse(tb); } catch(e) { tb = null; } }
-  if (tb && tb.length) {
-    var tot = tb.reduce(function(s, x){ return s + (parseFloat(x.total) || ((parseFloat(x.qty) || 0) * (parseFloat(x.unit) || 0))); }, 0);
-    out += '<details class="rq-route" onclick="event.stopPropagation()"><summary>Route · ' + tb.length + ' leg' + (tb.length === 1 ? '' : 's') + '</summary>'
-      + '<div class="rq-route-grid"><span class="h">Route / description</span><span class="h n">Qty</span><span class="h n">Unit</span><span class="h n">Total</span>'
-      + tb.map(function(x) {
-          var q = parseFloat(x.qty) || 0, u = parseFloat(x.unit) || 0;
-          var t = parseFloat(x.total); if (isNaN(t)) t = q * u;
-          return '<span>' + _rqEsc(x.desc || '—') + '</span><span class="n">' + fmt(q) + '</span><span class="n">' + fmt(u) + '</span><span class="n">' + fmt(t) + '</span>';
-        }).join('')
-      + '<span class="f">Total</span><span class="f"></span><span class="f"></span><span class="f n">' + fmt(tot) + '</span></div></details>';
-  }
+  out += transportRouteHtml_(r);
   return out;
+}
+
+/** Transport route legs (expandable) — same view on Requests, Payment Queue, Paid and My Submissions.
+ *  Handles current legs {desc, qty, unit, total} and older {from, to} legs. */
+function transportRouteHtml_(r) {
+  var tb = r && r.transportBreakdown;
+  if (typeof tb === 'string') { try { tb = JSON.parse(tb); } catch(e) { tb = null; } }
+  if ((!tb || !tb.length) && r && r._members) {
+    var m = r._members.find(function(x) { return x && x.transportBreakdown && (x.transportBreakdown.length || String(x.transportBreakdown).length > 2); });
+    if (m) { tb = m.transportBreakdown; if (typeof tb === 'string') { try { tb = JSON.parse(tb); } catch(e2) { tb = null; } } }
+  }
+  if (!tb || !tb.length) return '';
+  var legDesc = function(x) {
+    if (!x) return '—';
+    if (x.desc) return x.desc;
+    var a = x.from || x.origin || '', b = x.to || x.dest || '';
+    return (a + (b ? ' → ' + b : '')) || '—';
+  };
+  var tot = tb.reduce(function(s, x){ return s + (parseFloat(x && x.total) || ((parseFloat(x && x.qty) || 0) * (parseFloat(x && x.unit) || 0))); }, 0);
+  return '<details class="rq-route" onclick="event.stopPropagation()"><summary>Route · ' + tb.length + ' leg' + (tb.length === 1 ? '' : 's') + '</summary>'
+    + '<div class="rq-route-grid"><span class="h">Route / description</span><span class="h n">Qty</span><span class="h n">Unit</span><span class="h n">Total</span>'
+    + tb.map(function(x) {
+        var q = parseFloat(x && x.qty) || 0, u = parseFloat(x && x.unit) || 0;
+        var t = parseFloat(x && x.total); if (isNaN(t)) t = q * u;
+        return '<span>' + _rqEsc(legDesc(x)) + '</span><span class="n">' + (q ? fmt(q) : '—') + '</span><span class="n">' + (u ? fmt(u) : '—') + '</span><span class="n">' + (t ? fmt(t) : '—') + '</span>';
+      }).join('')
+    + '<span class="f">Total</span><span class="f"></span><span class="f"></span><span class="f n">' + (tot ? fmt(tot) : '—') + '</span></div></details>';
 }
 
 // ========================================================
@@ -11002,7 +11014,8 @@ async function pullFromSheets(silent) {
           'Client SN': r['Client SN'], 'Client Name': r['Client Name'], 'Is Excess': r['Is Excess'],
           'Excess Reason': r['Excess Reason'], 'Bundle Ref': r['Bundle Ref'], 'Payee Number': r['Payee Number'],
           'Excess Decision': r['Excess Decision'], 'Excess Decided By': r['Excess Decided By'],
-          'Excess Decided At': r['Excess Decided At'], 'Paid At': r['Paid At'], 'Requester Email': r['Requester Email']
+          'Excess Decided At': r['Excess Decided At'], 'Paid At': r['Paid At'], 'Requester Email': r['Requester Email'],
+          'Transport Breakdown': r['Transport Breakdown']
         },
       })).filter(r => r.ref);
       if (imported.length > 0) {
@@ -11021,7 +11034,8 @@ async function pullFromSheets(silent) {
             'Client SN': r._gov['Client SN'], 'Client Name': r._gov['Client Name'], 'Is Excess': r._gov['Is Excess'],
             'Excess Reason': r._gov['Excess Reason'], 'Bundle Ref': r._gov['Bundle Ref'], 'Payee Number': r._gov['Payee Number'],
             'Excess Decision': r._gov['Excess Decision'], 'Excess Decided By': r._gov['Excess Decided By'],
-            'Excess Decided At': r._gov['Excess Decided At'], 'Paid At': r._gov['Paid At'], 'Requester Email': r._gov['Requester Email']
+            'Excess Decided At': r._gov['Excess Decided At'], 'Paid At': r._gov['Paid At'], 'Requester Email': r._gov['Requester Email'],
+            'Transport Breakdown': r._gov['Transport Breakdown']
           };
         }));
         reqCounter = calcReqCounter();
