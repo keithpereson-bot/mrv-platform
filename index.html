@@ -5169,7 +5169,7 @@
       </button>
       <button class="btn btn-secondary" onclick="exportToExcel('budgets')" style="justify-content:flex-start;gap:12px;padding:14px 16px">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        <div style="text-align:left"><div style="font-weight:600">Approved Budgets</div><div style="font-size:11.5px;color:var(--muted)">Budget lines with actuals and utilisation</div></div>
+        <div style="text-align:left"><div style="font-weight:600">Projects</div><div style="font-size:11.5px;color:var(--muted)">Budget lines with actuals and utilisation</div></div>
       </button>
       <button class="btn btn-secondary" onclick="exportToExcel('all')" style="justify-content:flex-start;gap:12px;padding:14px 16px;border-color:var(--teal)">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -7758,8 +7758,8 @@ function showView(id, el) {
   if (el && el.classList) el.classList.add('active');
   try {
     var titles = {
-      dashboard:'Dashboard', requests:'System Requests', history:'My Submissions',
-      budgets:'Approved Budgets', funds:'Load & Post Funds', expenses:'Claim Expense',
+      dashboard:'Dashboard', requests:'Field Requests', history:'My Submissions',
+      budgets:'Projects', funds:'Load & Post Funds', expenses:'Claim Expense',
       prf:'Request Payment', users:'Manage Users', sheets:'Google Sheets',
       transactions:'Transaction Audit Trail', reconciliation:'Monthly Reconciliation'
     };
@@ -13132,15 +13132,18 @@ function renderGovDashboard_() {
     return '<div class="stat-card"' + (tip ? ' title="' + govEsc_(tip) + '"' : '') + '><div class="stat-label">' + label + '</div>'
       + '<div class="stat-value" style="color:' + color + '">' + val + '</div><div class="stat-sub">' + sub + '</div></div>';
   };
+  var netSav = (k.costSavings.amount || 0) - (k.extraCost.amount || 0);
   var html = '<div class="stats gov-kpis">'
     + card('ROI rate', pct(k.roiRate), 'Value ÷ resolved paid', 'var(--brand)', 'Share of paid facilitations (past the KOBO window) that produced a survey')
     + card('Value delivered', fmtK(k.value.amount, cur), k.value.count + ' paid with KOBO' + (k.late.count ? ' · ' + k.late.count + ' late' : ''), 'var(--success)')
-    + card('Loss — no KOBO', fmtK(k.loss.amount, cur), k.loss.count + ' overdue · ' + k.underReview.count + ' under review', 'var(--danger)')
+    + card('Loss — no KOBO', fmtK(k.loss.amount, cur), k.loss.count + ' overdue · ' + k.underReview.count + ' in review · ' + k.flaggedRequesters + ' flagged', 'var(--danger)',
+        k.flaggedRequesters + ' flagged requester(s) · ' + k.overLimit.count + ' over-limit facilitation(s)')
     + card('Awaiting KOBO', fmtK(k.pending.amount, cur), k.pending.count + ' within ' + roi.windowHours + 'h window', 'var(--ink)')
     + card('Costs avoided', fmtK(k.costsAvoided.amount, cur), k.costsAvoided.count + ' rejected request(s)', 'var(--success)')
     + card('Cost savings', fmtK(k.costSavings.amount, cur), k.costSavings.excessRecover.count + ' excess + ' + k.costSavings.justificationRejected.count + ' rejected justif. to recover', 'var(--success)')
     + card('Extra cost', fmtK(k.extraCost.amount, cur), k.extraCost.count + ' excess approved, not recovered', 'var(--warn)')
-    + card('Flagged requesters', String(k.flaggedRequesters), k.overLimit.count + ' over-limit facilitation(s)', k.flaggedRequesters ? 'var(--danger)' : 'var(--ink)')
+    + card('Net savings', (netSav < 0 ? '-' : '') + fmtK(Math.abs(netSav), cur), 'Cost savings − extra cost', 'var(--ink)',
+        'Cost savings ' + cur + ' ' + fmt(k.costSavings.amount) + ' minus extra cost ' + cur + ' ' + fmt(k.extraCost.amount))
     + '</div>';
 
   var proj = roi.byProject.slice().sort(function(a, b) { return b.paid.amount - a.paid.amount; });
@@ -14121,7 +14124,7 @@ function filterHistory(filter) {
   if (filtered.length === 0) {
     tbody.innerHTML = '<tr><td colspan="11" style="padding:32px;text-align:center;color:var(--muted)">'
       + (mine.length === 0
-          ? 'You have not submitted any requests yet. Click <strong>+ New Request</strong> in System Requests to get started.'
+          ? 'You have not submitted any requests yet. Click <strong>+ New Request</strong> in Field Requests to get started.'
           : 'No requests match this filter.')
       + '</td></tr>';
     var emptyHtml = tbody.innerHTML;
@@ -14432,7 +14435,7 @@ function exportToExcel(type) {
     var bws = XLSX.utils.aoa_to_sheet(bdata);
     bws['!cols'] = [22,14,14,12,8,6,14,22,16,10,8,14,14,14,10].map(function(w){ return {wch:w}; });
     styleExcelSheet(bws, bdata[0].length);
-    XLSX.utils.book_append_sheet(wb, bws, 'Approved Budgets');
+    XLSX.utils.book_append_sheet(wb, bws, 'Projects');
   }
 
   // ── Summary sheet (full workbook only) ──
@@ -14873,7 +14876,7 @@ function buildSidebar() {
   if (role === 'requester') {
     nav = [
       { type:'section', label:'My Work' },
-      { type:'item', label:'System Requests', view:'requests', icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Field Requests', view:'requests', icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
       { type:'item', label:'My Submissions',  view:'history',  icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment', view:'prf',      icon:'prf' },
@@ -14884,9 +14887,9 @@ function buildSidebar() {
     nav = [
       { type:'section', label:'Overview' },
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
-      { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
+      { type:'item', label:'Projects', view:'budgets',   icon:'budgets' },
       { type:'section', label:'Work' },
-      { type:'item', label:'System Requests',  view:'requests',  icon:'requests' },
+      { type:'item', label:'Field Requests',  view:'requests',  icon:'requests' },
       { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
     ];
 
@@ -14894,8 +14897,8 @@ function buildSidebar() {
     nav = [
       { type:'section', label:'Cycle' },
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
-      { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
-      { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Projects', view:'budgets',   icon:'budgets' },
+      { type:'item', label:'Field Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
       { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
@@ -14906,8 +14909,8 @@ function buildSidebar() {
     nav = [
       { type:'section', label:'Cycle' },
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
-      { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
-      { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Projects', view:'budgets',   icon:'budgets' },
+      { type:'item', label:'Field Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
       { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
@@ -14918,8 +14921,8 @@ function buildSidebar() {
     nav = [
       { type:'section', label:'Cycle' },
       { type:'item', label:'Dashboard',        view:'dashboard', icon:'dashboard' },
-      { type:'item', label:'Approved Budgets', view:'budgets',   icon:'budgets' },
-      { type:'item', label:'System Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
+      { type:'item', label:'Projects', view:'budgets',   icon:'budgets' },
+      { type:'item', label:'Field Requests',  view:'requests',  icon:'requests', badge:'<span class="aside-badge" id="sidebarReqBadge">0</span>' },
       { type:'item', label:'My Submissions',   view:'history',   icon:'history', id:'navMySubmissions' },
       { type:'section', label:'Forms' },
       { type:'item', label:'Request payment',  view:'prf',       icon:'prf' },
