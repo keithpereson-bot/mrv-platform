@@ -3862,6 +3862,84 @@
     background: #163A8C !important;
   }
 
+
+  /* ================================================================
+     TAB BANDS — single authoritative style (all pages)
+     Segmented pills: the selected tab is a fully rounded white pill,
+     vertically centred with even spacing inside the dark band.
+     ================================================================ */
+  body .req-tabs, body .view > .req-tabs.page-tabs {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+    background: #163A8C !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 6px !important;
+    margin: 0 0 12px !important;
+    min-height: 0 !important;
+    overflow-x: auto !important;
+    scrollbar-width: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .12);
+  }
+  body .req-tabs::-webkit-scrollbar { display: none; }
+  body .req-tabs .req-tab {
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    height: 38px !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 14px !important;
+    border: none !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: rgba(255, 255, 255, .78) !important;
+    cursor: pointer;
+    white-space: nowrap !important;
+    transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  body .req-tabs .req-tab::before,
+  body .req-tabs .req-tab::after { display: none !important; }
+  body .req-tabs .req-tab > div { display: flex; align-items: center; }
+  body .req-tabs .req-tab-icon {
+    width: auto !important; height: auto !important; min-width: 0 !important;
+    padding: 0 !important; margin: 0 !important;
+    background: transparent !important; border: none !important; box-shadow: none !important;
+    display: inline-flex !important; align-items: center; justify-content: center;
+  }
+  body .req-tabs .req-tab svg { width: 16px; height: 16px; stroke: rgba(255, 255, 255, .72) !important; }
+  body .req-tabs .req-tab-title {
+    font-size: 13.5px !important; font-weight: 600 !important; line-height: 1 !important;
+    color: inherit !important; margin: 0 !important;
+  }
+  body .req-tabs .req-tab-label { display: none !important; }
+  body .req-tabs .req-tab-badge {
+    display: inline-flex !important; align-items: center; justify-content: center;
+    min-width: 22px !important; height: 20px !important; padding: 0 7px !important; margin: 0 !important;
+    border-radius: 999px !important; font-size: 11px !important; font-weight: 700 !important; line-height: 1 !important;
+    background: rgba(255, 255, 255, .16) !important; color: #fff !important;
+  }
+  body .req-tabs .req-tab:hover { background: rgba(255, 255, 255, .10) !important; color: #fff !important; }
+  body .req-tabs .req-tab:hover svg { stroke: #fff !important; }
+  body .req-tabs .req-tab:focus-visible { outline: 2px solid rgba(255, 255, 255, .7) !important; outline-offset: 1px; }
+  body .req-tabs .req-tab.active,
+  body .req-tabs #prfTabForm.active, body .req-tabs #prfTabBalance.active, body .req-tabs #prfTabList.active {
+    background: #fff !important;
+    color: #1E4DB7 !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .25) !important;
+  }
+  body .req-tabs .req-tab.active svg { stroke: #1E4DB7 !important; }
+  body .req-tabs .req-tab.active .req-tab-badge { background: #E8EEFC !important; color: #1E4DB7 !important; }
+  /* System Requests: same spacing to the panel below as every other page */
+  body #view-requests .req-tabs { margin-bottom: 12px !important; }
+  @media (max-width: 640px) {
+    body .req-tabs .req-tab { height: 36px !important; padding: 0 11px !important; }
+    body .req-tabs .req-tab-title { font-size: 13px !important; }
+  }
 </style>
 </head>
 <body>
@@ -11160,7 +11238,8 @@ async function pullFromSheets(silent) {
 // Actuals only update when status moves to Paid
 
 function switchReqTab(tab) {
-  document.querySelectorAll('.req-tab').forEach(function(t){ t.classList.remove('active'); });
+  // Only System Requests' own tabs — other pages' tab bands keep their selection
+  document.querySelectorAll('#view-requests .req-tab').forEach(function(t){ t.classList.remove('active'); });
   document.querySelectorAll('.req-panel').forEach(function(p){
     p.style.display = 'none';
     p.classList.remove('is-active');
