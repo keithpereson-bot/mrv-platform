@@ -5959,30 +5959,36 @@ function getCurrency(project, type) {
 
 // Format date strings for display -- handles ISO, Sheets serial numbers, and text dates
 /** Date AND time (exact payment time), e.g. "25 Nov 2026 21:43". */
-function fmtDateTime_(val) {
-  var t = (typeof mrvTs_ === 'function') ? mrvTs_(val) : null;
-  if (t == null) return fmtDate(val);
-  var d = new Date(t);
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' '
-    + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-}
+function fmtDateTime_(val) { return fmtDate(val); }
+/** Exact action time — an absolute timestamp, so it reads correctly in every country's time zone. */
+function nowStamp_() { return new Date().toISOString(); }
 function fmtDate(val) {
-  if (!val || val === '--' || val === 'null') return '--';
-  // Sheets serial number (days since 1899-12-30)
-  if (typeof val === 'number' || (!isNaN(Number(val)) && String(val).length < 6)) {
-    var d = new Date((Number(val) - 25569) * 86400000);
-    if (!isNaN(d)) return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  if (val == null || val === '' || val === '--' || val === 'null') return '--';
+  var t = null, hasTime = false;
+  if (Object.prototype.toString.call(val) === '[object Date]') {
+    t = isNaN(val.getTime()) ? null : val.getTime();
+    hasTime = true;
+  } else if (typeof val === 'number' || (!isNaN(Number(val)) && String(val).trim() !== '' && String(val).length < 12)) {
+    // Sheets serial number (days since 1899-12-30); a fraction carries the time
+    var n = Number(val);
+    if (n > 20000 && n < 80000) { t = Math.round((n - 25569) * 86400000); hasTime = (n % 1) !== 0; }
+  } else {
+    var s = String(val).trim();
+    t = (typeof mrvTs_ === 'function') ? mrvTs_(s) : (isNaN(new Date(s)) ? null : new Date(s).getTime());
+    // A time is shown only if the stored value has one (ISO "T…" or "hh:mm")
+    hasTime = /T\d{2}:\d{2}|\d{1,2}:\d{2}/.test(s);
+    if (t == null) return s;
   }
-  // Already a formatted string
-  var s = String(val).trim();
-  if (!s) return '--';
-  // Try parsing ISO or common formats
-  var d = new Date(s);
-  if (!isNaN(d) && d.getFullYear() > 2000) {
-    return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  if (t == null) return String(val);
+  var d = new Date(t);
+  if (d.getFullYear() < 2000) return String(val);
+  var out = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  // A date stored without a time comes back from Sheets as local midnight — do not show a fake 00:00
+  var midnight = d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0 && d.getMilliseconds() === 0;
+  if (hasTime && !midnight) {
+    out += ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   }
-  // Return as-is if already readable (e.g. "01 Jun 2026 09:30")
-  return s;
+  return out;
 }
 
 // Format number with currency symbol
@@ -6308,7 +6314,7 @@ function renderTransactions() {
       + '<td>' + r.project + '</td>'
       + '<td class="text-muted text-sm">' + r.desc + '</td>'
       + '<td class="currency">' + r.ccy + ' ' + fmt(r.amount) + '</td>'
-      + '<td>' + r.date + '</td>'
+      + '<td>' + fmtDate(r.date) + '</td>'
       + '<td>' + r.signer + '</td>'
       + '<td><span class="badge ' + r.statusBadge + '">' + r.status + '</span></td>'
       + '</tr>';
@@ -7506,7 +7512,7 @@ async function downloadRequestsPDF() {
 
     // Date
     doc.setTextColor(...MUTED);
-    doc.text(r.date, COL_X[5]+2, y + rowH/2 + 1.5, {baseline:'middle'});
+    doc.text(fmtDate(r.date), COL_X[5]+2, y + rowH/2 + 1.5, {baseline:'middle'});
 
     // Status badge
     const statusColors = {
@@ -7543,7 +7549,7 @@ async function downloadRequestsPDF() {
           doc.setFontSize(5.5);
           doc.setFont('helvetica','normal');
           doc.setTextColor(...MUTED);
-          doc.text(r.sigLabel + (r.sigTime ? '  -  '+r.sigTime : ''), imgX + SIG_IMG_MAXW/2, y+rowH-1.5, {align:'center'});
+          doc.text(r.sigLabel + (r.sigTime ? '  -  '+fmtDate(r.sigTime) : ''), imgX + SIG_IMG_MAXW/2, y+rowH-1.5, {align:'center'});
         }
       } catch(e) {
         doc.setFont('helvetica','italic');
@@ -8138,8 +8144,7 @@ function approveRequest(ref) {
     if (_refs.indexOf(requestsStore[i].ref) !== -1 && (requestsStore[i].status === 'Draft' || requestsStore[i].status === 'Pending' || requestsStore[i].ref === ref)) {
       requestsStore[i].status     = 'Approved';
       requestsStore[i].approvedBy = currentUser ? currentUser.name : 'Officer';
-      requestsStore[i].approvedAt = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-                                  + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      requestsStore[i].approvedAt = nowStamp_();
       found = true;
       raiseStatusFloor(requestsStore[i].ref, 'Approved');
       markLocalWrite(requestsStore[i].ref);
@@ -8163,8 +8168,7 @@ function confirmSignAndApprove() {
   if (!pendingModalSig) { toast('Please provide a signature first'); return; }
 
   var sigLabel = document.getElementById('modalSigName').textContent || 'Officer';
-  var sigTime  = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-               + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  var sigTime  = nowStamp_();
   var entry = requestsStore.find(function(r){ return r.ref===activeSignRef; });
   if (!entry) { toast('Request not found'); return; }
 
@@ -9708,7 +9712,7 @@ async function submitAllRequests() {
   }
 
   var name = String(currentUser.name || '').trim();
-  var today = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  var today = nowStamp_();   // request date + exact time
   var payee = '';
   if (currentUser && currentUser.payeeNumber) payee = String(currentUser.payeeNumber);
   else {
@@ -11169,8 +11173,8 @@ function sortAndRebuild() {
 function sortPaid(rows) {
   return rows.slice().sort(function(a, b) {
     switch (_paidSort) {
-      case 'date-asc':    return new Date(a.sigTime||a.date||0) - new Date(b.sigTime||b.date||0);
-      case 'date-desc':   return new Date(b.sigTime||b.date||0) - new Date(a.sigTime||a.date||0);
+      case 'date-asc':    return (mrvTs_(a.paidAt||a.sigTime||a.date)||0) - (mrvTs_(b.paidAt||b.sigTime||b.date)||0);
+      case 'date-desc':   return (mrvTs_(b.paidAt||b.sigTime||b.date)||0) - (mrvTs_(a.paidAt||a.sigTime||a.date)||0);
       case 'amount-desc': return (parseFloat(b.amount)||0) - (parseFloat(a.amount)||0);
       case 'amount-asc':  return (parseFloat(a.amount)||0) - (parseFloat(b.amount)||0);
       case 'requester':   return (a.requester||'').localeCompare(b.requester||'');
@@ -12482,10 +12486,7 @@ function govCanApprove_() {
   return role === 'admin' || role === 'approver';
 }
 function govEsc_(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-function govNowLabel_() {
-  var d = new Date();
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-}
+function govNowLabel_() { return nowStamp_(); }
 function rejectedRefSet_() {
   var s = {};
   (govStore.rejects || []).forEach(function(r) { if (r && r.ref) s[String(r.ref)] = true; });
@@ -14174,8 +14175,7 @@ function saveAndApplyAckSigFromFile(e) {
 
 function confirmAck() {
   if (!_pendingAckSig) { toast('Please provide your signature first'); return; }
-  var now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-    + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  var now = nowStamp_();
   var name = currentUser ? currentUser.name : 'Requester';
 
   var targets;
@@ -15213,7 +15213,7 @@ function confirmBulkApprove(){
   if(!pendingBulkSig){toast('Please select or draw a signature first');return;}
   var checked=Array.from(document.querySelectorAll('.bulk-chk:checked'));
   if(!checked.length){toast('No requests selected');return;}
-  var t=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  var t=nowStamp_();
   expandBundleRefs(checked.map(function(c){ return c.dataset.ref; })).forEach(function(ref){
     var e=requestsStore.find(function(r){return r.ref===ref;});
     if(!e||e.status!=='Approved')return;
@@ -15820,7 +15820,7 @@ function ecfRefreshPreview() {
   var BR=B+';text-align:right';
   var dataRows=d.rows.map(function(r,i){
     return '<tr style="'+(i%2?'background:#fafafa':'')+'">'
-      +'<td style="'+B+'">'+r.date+'</td><td style="'+B+'" colspan="2">'+r.details+'</td>'
+      +'<td style="'+B+'">'+fmtDate(r.date)+'</td><td style="'+B+'" colspan="2">'+r.details+'</td>'
       +'<td style="'+B+';text-align:center">'+r.receipt+'</td>'
       +'<td style="'+BR+'">'+r.tzs+'</td><td style="'+BR+'">'+r.usd+'</td>'
       +'<td style="'+B+'">'+r.bu+'</td><td style="'+B+'">'+r.acct+'</td></tr>';
@@ -16131,7 +16131,7 @@ async function ecfExportPDF() {
       var rx = ML;
       var amt = parseFloat(r.amount) || 0;
       var vals = [
-        {v: r.date || '',                 w: CW.date, a: 'center'},
+        {v: r.date ? fmtDate(r.date) : '', w: CW.date, a: 'center'},
         {v: r.details || '',              w: CW.det,  a: 'left'},
         {v: String(r.receipt),            w: CW.rec,  a: 'center'},
         {v: cur + ' ' + fmt(amt),         w: CW.kes,  a: 'right'},
@@ -17369,8 +17369,7 @@ function prfAttachSignature(rec) {
   if (!sig) return rec;
   rec.sigDataUrl = sig.dataUrl;
   rec.sigLabel = sig.label || (currentUser && currentUser.name) || 'Signed';
-  rec.sigTime = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-    + ' ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  rec.sigTime = nowStamp_();
   return rec;
 }
 
