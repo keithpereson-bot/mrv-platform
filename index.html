@@ -3940,6 +3940,51 @@
     body .req-tabs .req-tab { height: 36px !important; padding: 0 11px !important; }
     body .req-tabs .req-tab-title { font-size: 13px !important; }
   }
+
+  /* ================================================================
+     KPI CARDS — compact, plain white, black text (all pages)
+     ================================================================ */
+  body .stats {
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+  }
+  /* Dashboard: the two KPI blocks read as one compact grid (8px apart like the cards) */
+  body #dashStats { margin-bottom: 0 !important; }
+  body #dashGov .gov-kpis { margin-top: 0 !important; }
+  body #view-dashboard .view-body > #dashGov { margin-top: -2px !important; }
+  body .stat-card, body .stat-card:nth-child(n),
+  body .budget-kpi-row .stat-card {
+    background: #fff !important;
+    border: 1px solid #E5E7EB !important;
+    border-left: 1px solid #E5E7EB !important;
+    border-left-color: #E5E7EB !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    padding: 9px 14px !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+  body .stat-card::before, body .stat-card::after,
+  body .budget-kpi-row .stat-card::before { display: none !important; }
+  body .stat-card .stat-label,
+  body .budget-kpi-row .stat-label {
+    font-size: 10.5px !important; font-weight: 600 !important; letter-spacing: .03em !important;
+    text-transform: uppercase; color: #111 !important; margin: 0 0 2px !important; line-height: 1.3 !important;
+  }
+  body .stat-card .stat-value,
+  body .budget-kpi-row .stat-value {
+    font-size: 19px !important; font-weight: 700 !important; line-height: 1.2 !important;
+    color: #111 !important; margin: 0 !important;
+  }
+  body .stat-card .stat-sub,
+  body .budget-kpi-row .stat-sub {
+    font-size: 11.5px !important; color: #111 !important; margin: 1px 0 0 !important; line-height: 1.3 !important;
+  }
+  body .stat-card *, body .stat-card .stat-value[style] { color: #111 !important; }
+  @media (max-width: 640px) {
+    body .stat-card { padding: 8px 11px !important; }
+    body .stat-card .stat-value { font-size: 17px !important; }
+  }
 </style>
 </head>
 <body>
